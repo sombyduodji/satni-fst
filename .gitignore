@@ -5,7 +5,8 @@ satni.db
 sanakirja.db
 
 # Buildien tulokset ja väliaikaiset tiedostot
-dist/
+# dist on linkki synkronoituun kansioon ~/dist/satni-fst (ei kauttaviivaa: linkki ei ole kansio)
+/dist
 build/
 *.spec
 version.py
