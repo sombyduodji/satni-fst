@@ -1027,7 +1027,7 @@ class SatniGUI:
         }
 
     def render_gradation(self, view):
-        """Piirtää astevaihtelurivin: [GD dahkat] → [HD dagan]  hk → g  |  oahpa: ryhmä [hkk III][hk II][g I]"""
+        """Piirtää astevaihtelurivin: [GD dahkat] → [HD dagan]  hk → g  |  ryhmä: nimi [hkk III][hk II][g I]"""
         c = self.c
         for widget in self.gradation_frame.winfo_children():
             widget.destroy()
@@ -1054,7 +1054,7 @@ class SatniGUI:
         text("→", fg=c["subtle"], padx=(0, 4))
         text(view["weak"], fg=c["hd_fg"], font=self.F(12, "bold"), padx=(0, 18))
 
-        text("oahpa:", fg=c["subtle"], font=self.F(9), padx=(0, 4))
+        text("ryhmä:", fg=c["subtle"], font=self.F(9), padx=(0, 4))
         text(view["group"], fg=c["muted"], font=self.F(9), padx=(0, 8))
         # Sama kirjoitusasu voi esiintyä kahdessa asteessa (ss III, ss II); korostetaan vain ensimmäinen
         strong_done = False

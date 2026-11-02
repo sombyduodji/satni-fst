@@ -1,6 +1,6 @@
 """Suomenkielisten käännösten taivutusmuodot GiellaLT:n lang-fin-FST:llä: taulu fin_forms tietokantaan satni.db.
 
-LÄHDE (ks. CREDITS.md): GiellaLT lang-fin -analysaattori ja -generaattori (UiT, Giellatekno), lisenssi GPL-3.0+.
+LÄHDE (ks. CREDITS.md): GiellaLT lang-fin -analysaattori ja -generaattori (UiT, Giellatekno), lisenssi GPL-3.0.
 Valmiiksi käännetyt mallit haetaan GiellaLT:n nightly-paketista giella-fin (./hae_sanakirjat.sh -> giella-fin/).
 
 Taivutetaan saamen substantiivien, verbien, adjektiivien ja numeraalien yksisanaiset suomenkieliset käännökset

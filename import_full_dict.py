@@ -100,6 +100,11 @@ INFLECTION_START = {"Sg", "Pl", "Nom", "Attr", "Inf", "Ess"}
 FINNISH_LETTER_FIXES = str.maketrans({"æ": "ä", "Æ": "Ä", "ø": "ö", "Ø": "Ö"})
 
 
+# FST:n tuottamat muodot, joita ei oteta tietokantaan: lang-sme 6b1ae1cb40 tuottaa nämä lyhenteille EMRIP ja
+# Radisson-SAS perusmuodon lisäksi, eivätkä ne ole käytössä (päätös 2026-11-02).
+REJECTED_FORMS = {"EMRIPa", "Radisson-SASa"}
+
+
 def fix_finnish_text(text):
     return text.translate(FINNISH_LETTER_FIXES)
 
@@ -822,6 +827,8 @@ def main():
         for prefix in word_prefixes:
             for tag, suffix in forms_for(pos, prefix):
                 for surf in generated.get(prefix + suffix, []):
+                    if surf in REJECTED_FORMS:
+                        continue
                     if (tag, surf) not in rows:
                         rows.append((tag, surf))
         cursor.executemany(

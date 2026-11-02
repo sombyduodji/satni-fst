@@ -1084,7 +1084,7 @@ function renderGradation() {
     else if (value === w.hd_cluster) cls = "hd";
     return `<span class="${cls}">${esc(value)} <small>${esc(q2 || "")}</small></span>`;
   }).join('<span class="sep"> · </span>');
-  // Omat solut: esimerkkimuodot, konsonantit, asteet ja Oahpan ryhmä; solu rivittyy kokonaisena
+  // Omat solut: esimerkkimuodot, konsonantit, asteet ja astevaihteluryhmä; solu rivittyy kokonaisena
   const cell = (cap, val, cls = "") => `<div class="grad-cell ${cls}"><span class="gc-cap">${esc(cap)}</span><span class="gc-val">${val}</span></div>`;
   const arrow = '<span class="arrow">→</span>';
   el.innerHTML = `<div class="grad-head">${esc(t("gradation"))}</div><div class="grad-cells">`
