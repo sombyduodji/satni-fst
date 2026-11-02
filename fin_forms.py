@@ -29,8 +29,10 @@ GENERATOR = os.path.join(FST_DIR, "generator-gt-norm.hfstol")
 DB_FILE = os.path.join(SCRIPT_DIR, "satni.db")
 
 PERSONS = ["Sg1", "Sg2", "Sg3", "Pl1", "Pl2", "Pl3"]
-# Vain sovelluksessa käytetyt sijat (web/app.js: finPhrase); adessiivi ja ablatiivi jätetään pois tilan säästämiseksi
-CASES = ["Nom", "Gen", "Par", "Ine", "Ela", "Ill", "All", "Ess"]
+# Sovelluksessa käytetyt sijat. Adessiivi, ablatiivi ja translatiivi vain hakua varten (talolla -> viesus, taloksi -> viessun);
+# ne otetaan mukaan, vain jos analysaattori tunnistaa muodon yleiskieliseksi samaksi sijaksi (add_fin_forms).
+CASES = ["Nom", "Gen", "Par", "Ine", "Ela", "Ill", "All", "Ess", "Ade", "Abl", "Tra"]
+SEARCH_ONLY_CASES = ("Ade", "Abl", "Tra")
 NOMINAL_CELLS = {f"{n}+{c}": f"{n}+{c}" for n in ("Sg", "Pl") for c in CASES}
 # Solu -> generaattorin tagit perusmuodon ja sanaluokan jälkeen
 CELLS = {
@@ -192,6 +194,13 @@ def add_fin_forms(cursor):
     form_analyses = lookup(ANALYSER, sorted(multi))
     nonstandard = frozenset((re.sub(r"\+(Dial|Err/\w+|Use/\w+)", "", a), f) for f, analyses in form_analyses.items()
                             for a in analyses if re.search(r"\+(Dial|Err/|Use/)", a))
+    # Hakua varten lisätyt sijat: muodon pitää analysoitua samaksi luvuksi ja sijaksi ilman virhe- tai murremerkintää
+    search_only = {q: q.rsplit("+", 2)[-2] + "+" + q.rsplit("+", 1)[-1] for q in generated if q.endswith(SEARCH_ONLY_CASES)}
+    search_forms = lookup(ANALYSER, sorted({f for q in search_only for f in generated[q]}))
+
+    def confirmed(query, form):
+        return query not in search_only or any(a.endswith("+" + search_only[query]) and not re.search(r"\+(Dial|Err/|Use/)", a)
+                                               for a in search_forms.get(form, []))
 
     rows = []
     for (word, pos), reqs in requests.items():
@@ -201,7 +210,7 @@ def add_fin_forms(cursor):
             if cell == "citation" or not any(query.startswith(st + "+") for st in valid_stems):
                 continue
             for form in generated.get(query, []):
-                if (query, form) in nonstandard and len(generated[query]) > 1:
+                if ((query, form) in nonstandard and len(generated[query]) > 1) or not confirmed(query, form):
                     continue
                 cells.setdefault(cell, [])
                 if form not in cells[cell]:
