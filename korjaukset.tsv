@@ -12,5 +12,19 @@
 # n_smefin.xml: substantiivilla vihtta oli virheellisesti numeraalin käännös "viisi" (pos="Pcle")
 vihtta	N	vihta, vasta
 
-# Duaalipronomini kuten moai = me kaksi, doai = te kaksi (lähteessä soai = he)
-soai	Pron	he kaksi
+# Duaalipronominit samalla tavalla kuin sovelluksen merkintä me (2), käyttäjän tarkistamat
+moai	Pron	me (2)
+doai	Pron	te (2)
+soai	Pron	he (2)
+
+# Yleisiä sanoja ilman suomennosta, käyttäjän tarkistamat 2026-11-02 (docs/puuttuvat-suomennokset.md)
+maiddai	Adv	myös
+máid	Adv	myös
+eisseváldi	N	viranomainen, virkavalta
+earenomáš	A	erityinen
+ihtin	Adv	huomenna
+ovtta oaivilis	Adv	samaa mieltä
+nubbi	Pron	toinen
+galle	Pron	kuinka monta, montako
+galle	Adv	kuinka monta, montako
+galle	Num	kuinka monta, montako
