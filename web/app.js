@@ -306,6 +306,9 @@ function queryDatabase(query) {
     )) {
       const rank = r.nr !== null ? (r.fold === b ? 1.5 + Math.min(r.nr, 9) / 100 : 4)
         : r.fold === b ? 2 : r.fold.startsWith(`${b},`) ? 3 : 4;
+      // Pronominilla pitää olla tämä muoto (jolle: guhte, jolla on Sg+Ill, eikä juohke "jokainen", jolla ei ole)
+      if (pos === "Pron" && !all(`SELECT 1 FROM paradigms p JOIN tags t ON t.id = p.tag_id WHERE p.word_id = ? AND t.tag = ? LIMIT 1`,
+                                 [r.id, samiTagOfFinCell(cell, "PRON")]).length) continue;
       // Persoonapronomini ennen samannäköisiä substantiivin muotoja (teille = te eikä tie, tee), tarkin ensin (hänelle = son ennen sanaa dat "se, hän")
       add({ ...r, via: { base, cell } }, pos === "Pron" ? (PERS_PRONOUNS[r.sme_lemma] ? 4.3 : 4.4) + rank / 100 : 4.5 + rank / 10);  // suora osuma (pienempi rank) säilyy ennallaan
     }
@@ -393,7 +396,12 @@ function translationFormsOf(word, lang) {
 // Suomen muodon solu -> saamen paradigman tagi samassa muodossa (Prs+Sg1 -> Ind+Prs+Sg1 = jugan). null, jos
 // saamessa ei ole yhtä vastinetta (partitiivi, adessiivi ...): silloin näytetään vain perusmuoto.
 function samiTagOfFinCell(cell, pos) {
-  if (pos === "PRON") return SAMI_CASE_OF_FIN_PRONOUN[cell] || null;
+  if (pos === "PRON") {
+    // Persoonapronominit: "All" -> Ill; muut pronominit: "Pl+All" -> Pl+Ill, essiivi ilman lukua
+    const [number, finCase] = cell.includes("+") ? cell.split("+") : [null, cell];
+    const sami = finCase === "Nom" ? "Nom" : SAMI_CASE_OF_FIN_PRONOUN[finCase];
+    return sami && number && sami !== "Ess" ? `${number}+${sami}` : sami || null;
+  }
   const p = cell.split("+");
   if (pos === "V") {
     if (cell === "Inf" || cell === "PrfPrc") return cell;
@@ -430,19 +438,23 @@ function suggestWords(prefix, withForms = true) {
   // Oma tyhjä hakusana (mus, munnje ilman suomennosta) on turha, kun perusmuoto (mun) näkyy
   const useful = forms.length ? rows.filter((r) => fold(r.sme_lemma) !== q || r[col]) : rows;
   const seen = new Set();
-  return [...exact, ...forms, ...useful]
+  return [...forms, ...exact, ...useful]
     .filter((r) => !seen.has(r.sme_lemma + r.pos) && seen.add(r.sme_lemma + r.pos)).slice(0, 8);
 }
 
 // Koko sanan osumat taivutusmuotona tai liitepartikkelin kanssa samalla haulla kuin Enter (queryDatabase); form = kirjoitettu sana
 function formSuggestions(text) {
   const typed = text.trim();
-  if (fold(typed).length < 3 || typed.includes(" ")) return [];
+  if (fold(typed).length < 2 || typed.includes(" ")) return [];
   const col = LANGUAGES[settings.lang].col;
-  const hits = queryDatabase(typed).filter((r) => r.via || r.clitics || r.finClitic || r.rank === 1.2 || r.rank === 5);
+  const results = queryDatabase(typed);
+  const isForm = (r) => r.via || r.clitics || r.finClitic || r.rank === 1.2 || r.rank === 5;
+  // Suorat osumat samassa järjestyksessä kuin Enterillä: missä = gos ennen pronominin mii muotoa mas
+  const direct = results.filter((r) => !isForm(r) && r.rank <= 3).slice(0, 3);
+  const hits = results.filter(isForm);
   // Ilman käännöstä oleva rinnakkaismuoto (mon = mun) vain, jos muuta ei ole
   const shown = hits.some((r) => r[col]) ? hits.filter((r) => r[col]) : hits;
-  return shown.slice(0, 3).map((r) => {
+  return [...direct, ...shown.slice(0, 3).map((r) => {
     const translated = r.via || r.finClitic;
     // Saamen muoto kursiivilla perusmuodon perässä: mus -> mun mus, minulla -> mun mus (ja oikealla haettu suomen sana)
     let smeForm = translated ? null : typed;
@@ -451,7 +463,7 @@ function formSuggestions(text) {
       smeForm = tag ? (loadWord(r.id).paradigm.get(tag) || [])[0] || null : null;
     }
     return { ...r, form: typed, smeForm, formNote: translated ? typed : translationOf(r, 2) };
-  });
+  })];
 }
 
 function loadWord(id) {
@@ -674,6 +686,18 @@ function selectResult(i, pushHistory = true) {
   if (pushHistory) addHistory(w.sme_lemma);
 }
 
+// Sanakirjan omat hakusanat, jotka ovat perussana + liitepartikkeli (ollugo = paljonko = ollu + -go). Vain varmimmat: lang-sme
+// analysoi ja generoi sanan liitepartikkelilla, ja suomennos on perussanan suomennos + suomen liite (lang-finin analyysi).
+// Merkitystä ei näytetä, koska sana on kiteytynyt omaksi sanakseen (dego = kuten, ei kysymys).
+const LEXICAL_CLITICS = Object.fromEntries((
+  "ainge=ain+ge attášitgo=attášit+go buorebutge=buorebut+ge dallege=dalle+ge dallehan=dalle+han " +
+  "dallenai=dalle+nai deba=de+ba duođaige=duođai+ge dálge=dál+ge earáge=eará+ge galhan=gal+han geasge=geas+ge " +
+  "goabbáge=goabbá+ge goasge=goas+ge gosabat=gosa+bat gosage=gosa+ge iige=ii+ge inge=in+ge joba=jo+ba " +
+  "jogo=jo+go juoba=juo+ba juobe=juo+be juogo=juo+go maninge=manin+ge mannege=manne+ge moge=mo+ge nuba=nu+ba " +
+  "nube=nu+be nuge=nu+ge nuvtge=nuvt+ge oktage=okta+ge ollugo=ollu+go velge=vel+ge velgo=vel+go velába=velá+ba " +
+  "veláge=velá+ge álguige=álgui+ge"
+).split(" ").map((item) => { const [word, parts] = item.split("="); return [word, parts.split("+")]; }));
+
 // Muut kielet -asetuksessa valittujen kielten käännökset pääkäännöksen alle (Englanniksi: house)
 function renderExtraTranslations(w, groups) {
   const lines = settings.extraLangs.filter((l) => LANGUAGES[l]).map((lang) => {
@@ -764,7 +788,10 @@ function renderInfo(w) {
   $("form-translation").hidden = !html;
   $("form-translation").innerHTML = html;
   if (w.notes) info.push(w.notes);
-  $("word-info").textContent = info.join("  ·  ");
+  // ollugo = ollu + -go, perussana linkkinä
+  const parts = !state.clitic && LEXICAL_CLITICS[w.sme_lemma];
+  const baseLink = parts ? `${esc(w.sme_lemma)} = <a class="base-link" href="#/sana/${encodeURIComponent(parts[0])}">${esc(parts[0])}</a> + -${esc(parts[1])}` : "";
+  $("word-info").innerHTML = [baseLink, ...info.map(esc)].filter(Boolean).join("  ·  ");
 }
 
 // --- Käännöksen taivutus: haetun saamen muodon vastine suomeksi tai norjaksi ---
@@ -907,19 +934,19 @@ function finPhrase(tag, pos, f) {
   const n = parts[0] === "Pl" ? "Pl" : "Sg";
   switch (parts[parts.length - 1]) {
     case "Nom": return f[`${n}+Nom`];
-    case "Acc": return join(f[n === "Sg" ? "Sg+Gen" : "Pl+Nom"], f[`${n}+Par`]);  // talon / taloa (objekti)
+    case "Acc": return join(f[`${n}+Acc`], f[n === "Sg" ? "Sg+Gen" : "Pl+Nom"], f[`${n}+Par`]);  // kenet, talon / taloa (objekti)
     case "Gen": return f[`${n}+Gen`];
     case "Ill": return join(f[`${n}+Ill`], f[`${n}+All`]);
-    case "Loc": return join(f[`${n}+Ine`], f[`${n}+Ela`]);
+    case "Loc": return join(f[`${n}+Ine`], f[`${n}+Ela`], f[`${n}+Ade`], f[`${n}+Abl`]);  // Ade ja Abl vain pronomineilla
     case "Com": return f[`${n}+Gen`] && `${f[`${n}+Gen`]} kanssa`;
-    case "Ess": return f["Sg+Ess"];
+    case "Ess": return join(f["Sg+Ess"], f["Sg+Tra"]);  // Tra vain pronomineilla
   }
   return null;
 }
 
 const FORM_PHRASES = { fin: finPhrase, nob: nobPhrase };
 // Sanaluokat, joiden käännökset taipuvat (taulukoissa fin_forms ja nob_forms sanaluokka on kirjoitettu näin)
-const FORM_POS = { N: "N", V: "V", A: "A", NUM: "Num" };
+const FORM_POS = { N: "N", V: "V", A: "A", NUM: "Num", PRON: "Pron" };
 
 // Haetun muodon tagit -> "jeg lager, jeg gjør" (yksi ilmaus käännöstä kohden, tagien vaihtoehdot /-merkillä)
 // Pohjoissaamen liitepartikkeli suomeksi (GiellaLT lang-fin: +Qst, +Foc/kin, +Foc/kaan, +Foc/han):
