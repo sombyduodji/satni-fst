@@ -1066,7 +1066,7 @@ function translationOfForm(w, tags, finClitics = null) {
 function renderGradation() {
   const w = state.word;
   const el = $("gradation");
-  if (UNINFLECTED_POS.includes(w.pos.toUpperCase()) || !state.paradigm.size) { el.innerHTML = ""; return; }
+  if (!settings.showGrade || UNINFLECTED_POS.includes(w.pos.toUpperCase()) || !state.paradigm.size) { el.innerHTML = ""; return; }
   if (!w.gradation) { el.innerHTML = `<div class="grad-head">${esc(t("gradation"))}</div><span class="muted"><i>${esc(t("noGradation"))}</i></span>`; return; }
 
   // Esimerkkimuodot: haettu muoto tai perusmuoto ja tavallisin vastakkaisen asteen muoto
@@ -2043,7 +2043,7 @@ function bindEvents() {
   $("grade-toggle").checked = settings.showGrade;
   $("grade-toggle").onchange = (e) => {
     settings.showGrade = e.target.checked; saveSettings();
-    if (state.word) { renderTable(); renderRaw(); }
+    if (state.word) { renderGradation(); renderTable(); renderRaw(); }
   };
   $("voice-list").addEventListener("change", (e) => { settings.voice = e.target.value; saveSettings(); });
   $("voice-list").addEventListener("click", (e) => {
