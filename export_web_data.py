@@ -15,6 +15,7 @@ import shutil
 import sqlite3
 import subprocess
 
+import apertium_data
 import skolt_data
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -106,6 +107,8 @@ def main():
         CREATE TABLE fin_forms (word TEXT, pos TEXT, forms TEXT, back INTEGER, PRIMARY KEY (word, pos)) WITHOUT ROWID;
         -- Koltansaame (kokeellinen, skolt_data.py): suomen/norjan sanan vahvimmat koltan vastineet ("a, b, c")
         CREATE TABLE sms (lang TEXT, fold TEXT, pos TEXT, words TEXT, PRIMARY KEY (lang, fold, pos)) WITHOUT ROWID;
+        -- Apertium (kokeellinen, apertium_data.py): norjan käännös sanoille, joilla sitä ei muuten ole
+        CREATE TABLE apertium (word_id INTEGER PRIMARY KEY, nob TEXT) WITHOUT ROWID;
     """)
 
     trans_cols = ", ".join(TRANSLATION_COLUMNS.values())
@@ -149,6 +152,10 @@ def main():
     sms_rows = {(lang, fold(word), pos): words for lang, word, pos, words in skolt_data.rows(SCRIPT_DIR)}
     dst.executemany("INSERT INTO sms VALUES (?,?,?,?)", ((*k, v) for k, v in sms_rows.items()))
     print(f"Koltansaame: {len(sms_rows)} riviä" if sms_rows else "Koltansaame: sanakirjoja ei löytynyt (hae_sanakirjat.sh)")
+
+    apertium_rows = apertium_data.rows(src)
+    dst.executemany("INSERT INTO apertium VALUES (?,?)", apertium_rows)
+    print(f"Apertium: {len(apertium_rows)} riviä" if apertium_rows else "Apertium: apertium-sme-nob-lähdettä ei löytynyt")
 
     dst.executescript("""
         CREATE INDEX idx_lemma_fold ON dictionary(lemma_fold);

@@ -24,6 +24,8 @@ combines their work into one offline app.
 
 **Skolt Sámi word frequencies** (`sms_frekvenssit.tsv`): counts of dictionary words in the texts marked free in GiellaLT's [corpus-sms](https://github.com/giellalt/corpus-sms), used only to order words. No corpus text is included.
 
+**Apertium Norwegian translations (experimental):** the bilingual dictionary of [apertium/apertium-sme-nob](https://github.com/apertium/apertium-sme-nob) (GPL-2.0-or-later, © Apertium contributors), used for words with no Norwegian translation in GiellaLT and marked as unchecked (`apertium_data.py`).
+
 All are © GiellaLT / Divvun / Giellatekno and their contributors, licensed under
 [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/), except
 `dict-fin-sms`, which is under [CC BY 3.0 Unported](https://creativecommons.org/licenses/by/3.0/).

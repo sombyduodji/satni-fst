@@ -53,6 +53,13 @@ dict-nob-sms
   words are kept (same word class, main meaning, both sources agreeing).
   For a North Sámi word they are found through its Finnish translation.
 
+Norwegian translations (experimental): Apertium apertium-sme-nob
+  © 2010-2019 Apertium contributors.
+  Licence: GPL-2.0-or-later, used here under GPL-3.0 (GPL-3.0.txt).
+  https://github.com/apertium/apertium-sme-nob
+  Changes: only the bilingual dictionary is used, for nouns, verbs,
+  adjectives and adverbs with no Norwegian translation in GiellaLT.
+
 North Sámi morphology: GiellaLT lang-sme
   Authors: Linda Wiechetek, Katri Hiovain-Asikainen, Inga Lill Sigga
   Mikkelsen, Sjur N. Moshagen, Flammie A Pirinen, Trond Trosterud,

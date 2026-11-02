@@ -52,8 +52,8 @@ const DEFAULT_SETTINGS = {
   // ei yhtään. Hakuun ne eivät vaikuta.
   extraLangs: [],
   // Kokeelliset ominaisuudet (valikon lopussa), kukin erikseen: ocr = kuvasta haku (Android-sovellus),
-  // sms = koltansaamen sanat sanakortissa, tableTr = muotojen käännökset taivutustaulukossa. experimental: vanha yhteinen kytkin (= ocr), siirretään exp.ocr:ään.
-  exp: { ocr: false, sms: false, tableTr: false },
+  // sms = koltansaamen sanat sanakortissa, tableTr = muotojen käännökset taivutustaulukossa, apertium = Apertiumin norjan käännökset. experimental: vanha yhteinen kytkin (= ocr), siirretään exp.ocr:ään.
+  exp: { ocr: false, sms: false, tableTr: false, apertium: false },
   // Kuvasta haku: suunta ("sme" = saamen teksti, "ui" = käyttöliittymän kielen teksti), merkintätapa ja väri
   ocrFrom: "sme", ocrStyle: "frame", ocrColor: "#2563eb",
 };
@@ -696,6 +696,7 @@ function selectResult(i, pushHistory = true) {
   state.transWords = first ? splitList(first.translations).slice(0, 4) : splitList(w[LANGUAGES[settings.lang].col]).slice(0, 3);
   if (first && first.restrictions) trans += ` (${first.restrictions})`;
   $("translation").textContent = trans || t("noTranslationIn")[settings.lang];
+  renderApertium(w, trans);
   renderExtraTranslations(w, groups);
   $("more-meanings").textContent = ownGroup.length > 1 ? t("moreMeanings", ownGroup.length - 1) :
     groups.some(([lang]) => lang !== settings.lang) ? t("otherLangs") : "";
@@ -739,6 +740,23 @@ function renderPositions(w) {
 }
 
 // Muut kielet -asetuksessa valittujen kielten käännökset pääkäännöksen alle (Englanniksi: house)
+// Apertium (kokeellinen, tietokannan taulu apertium, apertium_data.py): norjan käännös konekääntimen sanastosta,
+// vain jos sanalla ei ole käännöstä sanakirjoissa. Ei vaikuta hakuun, ja rivi merkitään tarkistamattomaksi.
+function renderApertium(w, trans) {
+  const line = $("apertium-line");
+  line.hidden = true;
+  if (trans || !settings.exp.apertium || settings.lang !== "nob") return;
+  let rows = [];
+  try {
+    rows = all("SELECT nob FROM apertium WHERE word_id = ?", [w.id]);
+  } catch (e) {
+    return;  // vanha tietokanta ilman taulua
+  }
+  if (!rows.length) return;
+  line.innerHTML = `${esc(rows[0].nob)} <span class="muted small">(${esc(t("apertiumNote"))})</span>`;
+  line.hidden = false;
+}
+
 function renderExtraTranslations(w, groups) {
   const lines = settings.extraLangs.filter((l) => LANGUAGES[l]).map((lang) => {
     const own = (groups.find(([l]) => l === lang) || [lang, []])[1][0];
@@ -1849,6 +1867,7 @@ function bindExperimental() {
     applyExperimental();
     if (name === "sms" && state.results.length) searchAgainKeepingWord();
     if (name === "tableTr" && state.word) renderTable();
+    if (name === "apertium" && state.results.length) searchAgainKeepingWord();
   };
   $("experimental-section").addEventListener("change", (e) => {
     const name = e.target.dataset.exp;
@@ -1856,7 +1875,7 @@ function bindExperimental() {
     if (!e.target.checked) { set(name, false); return; }
     e.target.checked = false;  // päälle vasta, kun käyttäjä hyväksyy
     pending = name;
-    const key = { ocr: "expOcr", sms: "expSms", tableTr: "expTableTr" }[name];
+    const key = { ocr: "expOcr", sms: "expSms", tableTr: "expTableTr", apertium: "expApertium" }[name];
     $("exp-dlg-title").textContent = t(key);
     $("exp-dlg-body").innerHTML = t(key + "Info");
     $("exp-dlg").showModal();
