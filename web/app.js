@@ -720,11 +720,9 @@ const LEXICAL_CLITICS = Object.fromEntries((
 // Asemasanat sanakortissa: genetiivi + alde (päällä) tai vuolde (alla). Tässä sanakirjojen esimerkeistä tarkistetut (jieŋa alde =
 // jäällä, beavddi vuolde = pöydän alla). Vain nämä: alde ja vuolde eivät sovi kaikkiin sanoihin, joten rivejä ei muodosteta.
 const ATTESTED_POSITIONS = {
-  beavdi: { alde: "beavddi", vuolde: "beavddi" }, jiekŋa: { alde: "jieŋa" }, eatnu: { alde: "eanu" }, geaidnu: { alde: "geainnu" },
-  lávdi: { alde: "lávddi" }, spábba: { alde: "spáppa" }, deahkka: { alde: "deahka" }, dievvá: { alde: "dievá" },
-  eana: { alde: "eatnama" }, mearra: { alde: "meara" }, gilga: { alde: "gilgga" }, seaŋga: { vuolde: "seaŋgga" },
-  soffá: { vuolde: "soffá" }, šaldi: { vuolde: "šalddi" }, govččas: { vuolde: "gokčasa" }, muorralátna: { vuolde: "muorralána" },
-  várri: { vuolde: "vári" },
+  beavdi: { alde: "beavddi", vuolde: "beavddi" }, jiekŋa: { alde: "jieŋa" }, spábba: { alde: "spáppa" }, deahkka: { alde: "deahka" },
+  eana: { alde: "eatnama" }, seaŋga: { vuolde: "seaŋgga" }, soffá: { vuolde: "soffá" }, šaldi: { vuolde: "šalddi" },
+  govččas: { vuolde: "gokčasa" }, muorralátna: { vuolde: "muorralána" },
 };
 
 function renderPositions(w) {

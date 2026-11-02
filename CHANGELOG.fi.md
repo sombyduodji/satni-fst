@@ -10,7 +10,7 @@ Sátni FST:n kaikki versiot. Lataukset: [GitHub-julkaisut](https://github.com/so
 - **Ei epävarmoja saamen muotoja.** Suomen *-lla*, *-lta*, *-lle* ja *-ksi* eivät vastaa yhtä saamen muotoa: *pöydällä* on
   *beavddi alde*, ei *beavddis*. Näille sovellus löytää sanan, mutta ei enää ehdota muotoa. Tämä korjaa version 0.9.1, joka
   näytti esimerkiksi *kolmelle ≈ golbmii*. Ihmisiä koskevat muodot säilyvät: *minulla = mus*, *kenelle = geasa*.
-- **Asemasanat sanakortissa:** *päällä: beavddi alde · alla: beavddi vuolde*, 17 substantiiville, jotka on tarkistettu
+- **Asemasanat sanakortissa:** *päällä: beavddi alde · alla: beavddi vuolde*, 10 substantiiville, jotka on tarkistettu
   sanakirjojen esimerkeistä. Vain tarkistetut ilmaukset näytetään, koska nämä sanat eivät sovi kaikkiin substantiiveihin.
 - **37 liitepartikkelillisen hakusanan perussana:** *ollugo = ollu + -go*, ja linkki sanaan *ollu*.
 - **Genetiivin päämuoto ensin:** *talon ≈ viesu*, ei *vieso*. Toinen muoto löytyy edelleen haulla.
