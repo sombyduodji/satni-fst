@@ -52,8 +52,8 @@ const DEFAULT_SETTINGS = {
   // ei yhtään. Hakuun ne eivät vaikuta.
   extraLangs: [],
   // Kokeelliset ominaisuudet (valikon lopussa), kukin erikseen: ocr = kuvasta haku (Android-sovellus),
-  // sms = koltansaamen sanat sanakortissa. experimental: vanha yhteinen kytkin (= ocr), siirretään exp.ocr:ään.
-  exp: { ocr: false, sms: false },
+  // sms = koltansaamen sanat sanakortissa, tableTr = muotojen käännökset taivutustaulukossa. experimental: vanha yhteinen kytkin (= ocr), siirretään exp.ocr:ään.
+  exp: { ocr: false, sms: false, tableTr: false },
   // Kuvasta haku: suunta ("sme" = saamen teksti, "ui" = käyttöliittymän kielen teksti), merkintätapa ja väri
   ocrFrom: "sme", ocrStyle: "frame", ocrColor: "#2563eb",
 };
@@ -306,7 +306,8 @@ function queryDatabase(query) {
     )) {
       const rank = r.nr !== null ? (r.fold === b ? 1.5 + Math.min(r.nr, 9) / 100 : 4)
         : r.fold === b ? 2 : r.fold.startsWith(`${b},`) ? 3 : 4;
-      add({ ...r, via: { base, cell } }, 4.5 + rank / 10);  // suora osuma (pienempi rank) säilyy ennallaan
+      // Persoonapronomini ennen samannäköisiä substantiivin muotoja (teille = te eikä tie, tee), tarkin ensin (hänelle = son ennen sanaa dat "se, hän")
+      add({ ...r, via: { base, cell } }, pos === "Pron" ? (PERS_PRONOUNS[r.sme_lemma] ? 4.3 : 4.4) + rank / 100 : 4.5 + rank / 10);  // suora osuma (pienempi rank) säilyy ennallaan
     }
   }
   // 7 = perusmuoto alkaa hakusanalla; monisanaiset ilmaukset (dahkat iežas ...) vain, jos haussa on välilyönti
@@ -369,6 +370,13 @@ const SAMI_HIT_RANKS = [1, 1.2, 5, 5.5, 6];
 function translationFormsOf(word, lang) {
   if (!word || word.includes(" ") || !FORM_PHRASES[lang]) return [];
   const out = [];
+  if (lang === "fin") {
+    for (const fi of FIN_PRONOUN_FORMS) {
+      for (const [cell, form] of Object.entries(fi)) {
+        if (form === word && cell !== "Nom") out.push({ base: fi.Nom, cell, pos: "Pron" });
+      }
+    }
+  }
   try {
     for (const r of all(
       `SELECT word, pos, forms FROM ${lang}_forms WHERE ';' || forms || ';' LIKE ? OR ';' || forms || ';' LIKE ?
@@ -387,6 +395,7 @@ function translationFormsOf(word, lang) {
 // Suomen muodon solu -> saamen paradigman tagi samassa muodossa (Prs+Sg1 -> Ind+Prs+Sg1 = jugan). null, jos
 // saamessa ei ole yhtä vastinetta (partitiivi, adessiivi ...): silloin näytetään vain perusmuoto.
 function samiTagOfFinCell(cell, pos) {
+  if (pos === "PRON") return SAMI_CASE_OF_FIN_PRONOUN[cell] || null;
   const p = cell.split("+");
   if (pos === "V") {
     if (cell === "Inf" || cell === "PrfPrc") return cell;
@@ -736,17 +745,65 @@ function renderInfo(w) {
 // --- Käännöksen taivutus: haetun saamen muodon vastine suomeksi tai norjaksi ---
 // Muodot taulukoissa fin_forms (GiellaLT lang-fin, ks. fin_forms.py) ja nob_forms (Norsk ordbank, nob_forms.py).
 
-const NOB_PRONOUNS = { Sg1: "jeg", Sg2: "du", Sg3: "han/hun", Du1: "vi to", Du2: "dere to", Du3: "de to",
+const NOB_PRONOUNS = { Sg1: "jeg", Sg2: "du", Sg3: "han/hun", Du1: "vi (2)", Du2: "dere (2)", Du3: "de (2)",
                        Pl1: "vi", Pl2: "dere", Pl3: "de" };
+const FIN_PRONOUNS = { Sg1: "minä", Sg2: "sinä", Sg3: "hän", Du1: "me (2)", Du2: "te (2)", Du3: "he (2)",
+                       Pl1: "me", Pl2: "te", Pl3: "he" };
+// lang-fin antaa olla-verbin potentiaaliksi ollen / lie; yleiskielessä lienen, en liene
+const FIN_OLLA_POTENTIAL = { "Pot+Sg1": "lienen", "Pot+Sg2": "lienet", "Pot+Sg3": "lienee", "Pot+Pl1": "lienemme",
+                             "Pot+Pl2": "lienette", "Pot+Pl3": "lienevät", "Pot+ConNeg": "liene" };
+const FIN_NEG_AUX = { Sg1: "en", Sg2: "et", Sg3: "ei", Du1: "emme", Du2: "ette", Du3: "eivät", Pl1: "emme", Pl2: "ette", Pl3: "eivät" };
+
+// Persoonapronominien muodot: suomi lang-fin-generaattorista (yleiskieliset muodot), norja vastaa dict-sme-nob:n
+// taivutettuja hakusanoja (munnje = til meg, muinna = med meg, munin = som meg). Pronomineja ei ole taulukoissa
+// fin_forms / nob_forms, jotka kattavat vain substantiivit, verbit ja adjektiivit.
+const finPronoun = (Nom, Acc, Gen, Par, stem, Ill, front, Com) => {
+  const [a, o] = front ? ["ä", "ö"] : ["a", "o"];
+  return { Nom, Acc, Gen, Par, Ine: `${stem}ss${a}`, Ela: `${stem}st${a}`, Ill, Ade: `${stem}ll${a}`, Abl: `${stem}lt${a}`,
+           All: `${stem}lle`, Ess: `${stem}n${a}`, Tra: `${stem}ksi`, Com };
+};
+const FIN_MINA = finPronoun("minä", "minut", "minun", "minua", "minu", "minuun", false, "minun kanssani");
+const FIN_SINA = finPronoun("sinä", "sinut", "sinun", "sinua", "sinu", "sinuun", false, "sinun kanssasi");
+const FIN_HAN = finPronoun("hän", "hänet", "hänen", "häntä", "häne", "häneen", true, "hänen kanssaan");
+const FIN_ME = finPronoun("me", "meidät", "meidän", "meitä", "mei", "meihin", true, "meidän kanssamme");
+const FIN_TE = finPronoun("te", "teidät", "teidän", "teitä", "tei", "teihin", true, "teidän kanssanne");
+const FIN_HE = finPronoun("he", "heidät", "heidän", "heitä", "hei", "heihin", true, "heidän kanssaan");
+const FIN_PRONOUN_FORMS = [FIN_MINA, FIN_SINA, FIN_HAN, FIN_ME, FIN_TE, FIN_HE];
+const nobPronoun = (Nom, obj, Gen) => ({ Nom, Acc: obj, Gen, Ill: `til ${obj}`, Loc: `hos ${obj} / fra ${obj}`,
+                                         Com: `med ${obj}`, Ess: `som ${obj}` });
+const NOB_MEG = nobPronoun("jeg", "meg", "min"), NOB_DEG = nobPronoun("du", "deg", "din");
+const NOB_HAM = nobPronoun("han/hun", "ham/henne", "hans/hennes"), NOB_OSS = nobPronoun("vi", "oss", "vår");
+const NOB_DERE = nobPronoun("dere", "dere", "deres"), NOB_DEM = nobPronoun("de", "dem", "deres");
+// Saamen persoonapronomini -> muodot; dual: näytetään muodossa "meille (2)"
+const PERS_PRONOUNS = {
+  mun: { fin: FIN_MINA, nob: NOB_MEG }, don: { fin: FIN_SINA, nob: NOB_DEG }, son: { fin: FIN_HAN, nob: NOB_HAM },
+  moai: { fin: FIN_ME, nob: NOB_OSS, dual: true }, doai: { fin: FIN_TE, nob: NOB_DERE, dual: true },
+  soai: { fin: FIN_HE, nob: NOB_DEM, dual: true }, mii: { fin: FIN_ME, nob: NOB_OSS },
+  dii: { fin: FIN_TE, nob: NOB_DERE }, sii: { fin: FIN_HE, nob: NOB_DEM },
+};
+// Suomen pronominin sija -> saamen sija (minulle = munnje, minulla = mus)
+const SAMI_CASE_OF_FIN_PRONOUN = { Acc: "Acc", Gen: "Gen", Par: "Acc", Ine: "Loc", Ela: "Loc", Ill: "Ill", Ade: "Loc",
+                                   Abl: "Loc", All: "Ill", Ess: "Ess", Tra: "Ess", Com: "Com" };
+
+// Saamen sija -> persoonapronominin muodot käännöskielellä, yleisin ensin (mus = minulla / minulta / minussa / minusta)
+function pronounPhrase(tag, forms, lang) {
+  if (lang === "nob") return forms[tag] || null;
+  const cells = { Nom: ["Nom"], Acc: ["Acc", "Par"], Gen: ["Gen"], Ill: ["All", "Ill"], Loc: ["Ade", "Abl", "Ine", "Ela"],
+                  Com: ["Com"], Ess: ["Ess", "Tra"] }[tag];
+  return cells ? cells.map((c) => forms[c]).join(" / ") : null;
+}
+const markDual = (phrase) => phrase.split(" / ").map((p) => `${p} (2)`).join(" / ");
 // Saamen duaali on suomeksi monikko (moai dagaime = me (kaksi) teemme)
 const FIN_PERSON = { Sg1: "Sg1", Sg2: "Sg2", Sg3: "Sg3", Du1: "Pl1", Du2: "Pl2", Du3: "Pl3", Pl1: "Pl1", Pl2: "Pl2", Pl3: "Pl3" };
 
 // "Sg+Indef=hus;Sg+Def=huset;..." -> {"Sg+Indef": "hus", ...}; vaihtoehdoista (husene/husa) ensimmäinen
 function translationForms(lang, word, pos) {
+  if (lang === "nob" && pos === "Num") return word ? { word, __back: null } : null;
   try {
     const row = all(`SELECT * FROM ${lang}_forms WHERE word = ? AND pos = ?`, [word, pos])[0];
     if (!row) return null;
     const forms = Object.fromEntries(row.forms.split(";").map((c) => c.split("=")).map(([k, v]) => [k, v.split("/")[0]]));
+    if (lang === "fin" && word === "olla") Object.assign(forms, FIN_OLLA_POTENTIAL);
     // Suomen vokaalisointu liitepartikkelia varten (1/0; puuttuu vanhasta tietokannasta)
     forms.__back = row.back === undefined || row.back === null ? null : !!row.back;
     return forms;
@@ -759,6 +816,11 @@ function translationForms(lang, word, pos) {
 // Saamessa ei ole määräistä artikkelia: prepositioiden kanssa käytetään määräistä muotoa.
 function nobPhrase(tag, pos, f) {
   const parts = tag.split("+");
+  // Numeraali ei taivu norjassa: tre, til tre, med tre (genetiiville ei ole luonnollista vastinetta)
+  if (pos === "Num") {
+    return { Nom: f.word, Acc: f.word, Ill: `til ${f.word}`, Loc: `i ${f.word} / fra ${f.word}`, Com: `med ${f.word}`,
+             Ess: `som ${f.word}` }[parts[parts.length - 1]] || null;
+  }
   if (pos === "V") {
     const person = parts.find((p) => NOB_PRONOUNS[p]);
     if (tag === "Inf") return f.Inf && `å ${f.Inf}`;
@@ -772,7 +834,7 @@ function nobPhrase(tag, pos, f) {
     if (parts[0] === "Ind") return parts[1] === "Prs" ? f.Prs && `${who} ${f.Prs}` : f.Prt && `${who} ${f.Prt}`;
     if (parts[0] === "Cond") return f.Inf && `${who} ville ${f.Inf}`;
     if (parts[0] === "Pot") return f.Prs && `${who} ${f.Prs} kanskje`;
-    if (parts[0] === "Imprt") return ["Sg2", "Du2", "Pl2"].includes(person) ? f.Imp && `${f.Imp}!` : f.Inf && `la ${person === "Sg1" ? "meg" : person.endsWith("1") ? "oss" : "dem"} ${f.Inf}`;
+    if (parts[0] === "Imprt") return ["Sg2", "Du2", "Pl2"].includes(person) ? f.Imp && `${f.Imp}!` : f.Inf && `la ${{ Sg1: "meg", Sg3: "ham/henne", Du1: "oss (2)", Pl1: "oss", Du3: "dem (2)", Pl3: "dem" }[person]} ${f.Inf}`;
     return null;
   }
   if (pos === "A") {
@@ -831,6 +893,8 @@ function finPhrase(tag, pos, f) {
 }
 
 const FORM_PHRASES = { fin: finPhrase, nob: nobPhrase };
+// Sanaluokat, joiden käännökset taipuvat (taulukoissa fin_forms ja nob_forms sanaluokka on kirjoitettu näin)
+const FORM_POS = { N: "N", V: "V", A: "A", NUM: "Num" };
 
 // Haetun muodon tagit -> "jeg lager, jeg gjør" (yksi ilmaus käännöstä kohden, tagien vaihtoehdot /-merkillä)
 // Pohjoissaamen liitepartikkeli suomeksi (GiellaLT lang-fin: +Qst, +Foc/kin, +Foc/kaan, +Foc/han):
@@ -880,7 +944,13 @@ function finWithClitics(phrase, clitics, back) {
 }
 
 function translationOfForm(w, tags, finClitics = null) {
-  const pos = ["N", "V", "A"].find((p) => p === w.pos.toUpperCase());
+  const pron = w.subtype === "Pers" && PERS_PRONOUNS[w.sme_lemma];
+  if (pron && pron[settings.lang]) {
+    const phrases = tags.map((tag) => pronounPhrase(tag, pron[settings.lang], settings.lang)).filter(Boolean)
+      .map((p) => (finClitics ? finWithClitics(p, finClitics, null) : p)).map((p) => (pron.dual ? markDual(p) : p));
+    return [...new Set(phrases)].join(" / ");
+  }
+  const pos = FORM_POS[w.pos.toUpperCase()];
   if (!pos) return "";
   const out = [];
   for (const word of state.transWords || []) {
@@ -938,6 +1008,63 @@ function renderGradation() {
 
 // --- Taivutustaulukko ---
 
+// Kokeellinen (exp.tableTr): muodon käännös taivutustaulukon solussa. Käytetään ensimmäistä käännöstä, jolle on
+// taivutus. Jos oikeaa muotoa ei saada (esim. älkää tehkö, partisiipit), solu jää ilman käännöstä eikä muotoa arvata.
+function formTranslator(w) {
+  const pos = FORM_POS[w.pos.toUpperCase()];
+  const lang = settings.lang;
+  const pron = w.subtype === "Pers" && PERS_PRONOUNS[w.sme_lemma];
+  if (pron && pron[lang]) return (tags) => translationOfForm(w, tags);
+  if (!pos || !FORM_PHRASES[lang]) return () => "";
+  let forms = null;
+  for (const word of state.transWords || []) {
+    forms = translationForms(lang, word.replace(/\(.*?\)/g, "").trim(), pos);
+    if (forms) break;
+  }
+  if (!forms) return () => "";
+  const f = forms;
+  return (tags, neg = null) => {
+    const phrases = tags.map((tag) => (neg ? negVerbPhrase(lang, tag, neg, f) : positivePhrase(lang, tag, pos, f))).filter(Boolean);
+    return [...new Set(phrases.flatMap((p) => p.split(" / ")))].join(" / ");
+  };
+}
+
+function positivePhrase(lang, tag, pos, f) {
+  const phrase = FORM_PHRASES[lang](tag, pos, f);
+  if (!phrase || pos !== "V") return phrase;
+  const person = tag.split("+").pop();
+  if (lang !== "fin" || !FIN_PRONOUNS[person]) {
+    return lang === "nob" && tag === `Imprt+Du2` ? `${phrase} (2)` : phrase;
+  }
+  if (tag.startsWith("Imprt")) return person.startsWith("Du") ? `${phrase} (2)` : phrase;
+  return `${FIN_PRONOUNS[person]} ${phrase}`;
+}
+
+// Kielteinen muoto persoonan mukaan (mun in daga = minä en tee, jeg gjør ikke). tag on saamen ConNeg-tagi.
+function negVerbPhrase(lang, tag, person, f) {
+  const plural = person.startsWith("Pl") || person.startsWith("Du");
+  if (lang === "fin") {
+    const who = FIN_PRONOUNS[person], aux = FIN_NEG_AUX[person];
+    // Monikon partisiippi: tehnyt -> tehneet, tullut -> tulleet (aina -[uy]t -> -eet)
+    const prt = f.PrfPrc && (plural ? f.PrfPrc.replace(/[uy]t$/, "eet") : f.PrfPrc);
+    const main = { "Ind+Prs+ConNeg": f["Prs+ConNeg"], "Ind+Prt+ConNeg": prt, "Cond+Prs+ConNeg": f["Cond+ConNeg"],
+                   "Pot+Prs+ConNeg": f["Pot+ConNeg"] }[tag];
+    if (tag === "Imprt+ConNeg") return person === "Sg2" && f["Prs+ConNeg"] ? `älä ${f["Prs+ConNeg"]}` : null;
+    return main && `${who} ${aux} ${main}`;
+  }
+  const who = NOB_PRONOUNS[person];
+  switch (tag) {
+    case "Ind+Prs+ConNeg": return f.Prs && `${who} ${f.Prs} ikke`;
+    case "Ind+Prt+ConNeg": return f.Prt && `${who} ${f.Prt} ikke`;
+    case "Cond+Prs+ConNeg": return f.Inf && `${who} ville ikke ${f.Inf}`;
+    case "Pot+Prs+ConNeg": return f.Prs && `${who} ${f.Prs} kanskje ikke`;
+    case "Imprt+ConNeg":
+      if (!f.Imp || !["Sg2", "Du2", "Pl2"].includes(person)) return null;
+      return `ikke ${f.Imp}!${person === "Du2" ? " (2)" : ""}`;
+  }
+  return null;
+}
+
 function renderTable() {
   const w = state.word;
   const pos = w.pos.toUpperCase();
@@ -950,8 +1077,9 @@ function renderTable() {
     for (const tag of tags) for (const v of p.get(tag) || []) if (!seen.has(v)) { seen.add(v); out.push([tag, v]); }
     return out;
   };
+  const translate = settings.exp.tableTr ? formTranslator(w) : null;
   // Muotosolu: pronomini harmaana, muodot asteen värillä; napautus ääntää muodon
-  const cell = (items, prefix = "") => {
+  const cell = (items, prefix = "", trTags = null, neg = null) => {
     if (!items.length) return `<td class="pron">-</td>`;
     const forms = items.map(([tag, v]) => {
       const g = showGrade ? state.grades.get(tag + "|" + v) : null;
@@ -959,7 +1087,8 @@ function renderTable() {
       const speak = (prefix ? prefix + " " : "") + v;
       return `<span class="form ${cls}" data-speak="${esc(speak)}" title="${esc(t("listenTo", speak))}">${esc(v)}</span>`;
     }).join('<span class="sep"> / </span>');
-    return `<td>${prefix ? `<span class="pron">${esc(prefix)}</span> ` : ""}${forms}</td>`;
+    const tr = translate ? translate(trTags || items.map(([tag]) => tag), neg) : "";
+    return `<td>${prefix ? `<span class="pron">${esc(prefix)}</span> ` : ""}${forms}${tr ? `<span class="form-tr">${esc(tr)}</span>` : ""}</td>`;
   };
   const label = (t) => `<td class="label">${esc(t)}</td>`;
   const section = (...cells) => `<tr class="section">${cells.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`;
@@ -971,18 +1100,18 @@ function renderTable() {
     let rows = section(t("indicative"), t("present"), "", t("preterite"), "");
     for (const pp of PERSONS) {
       const pr = PRONOUNS[pp];
-      rows += `<tr>${label(pp)}${cell(pairs(`Ind+Prs+${pp}`), pr)}${cell(pairs("Ind+Prs+ConNeg"), `${pr} ${NEG_AUX[pp]}`)}` +
-              `${cell(pairs(`Ind+Prt+${pp}`), pr)}${cell(pairs("Ind+Prt+ConNeg"), `${pr} ${NEG_AUX[pp]}`)}</tr>`;
+      rows += `<tr>${label(pp)}${cell(pairs(`Ind+Prs+${pp}`), pr)}${cell(pairs("Ind+Prs+ConNeg"), `${pr} ${NEG_AUX[pp]}`, null, pp)}` +
+              `${cell(pairs(`Ind+Prt+${pp}`), pr)}${cell(pairs("Ind+Prt+ConNeg"), `${pr} ${NEG_AUX[pp]}`, null, pp)}</tr>`;
     }
     rows += section("", t("conditional"), "", t("potential"), "");
     for (const pp of PERSONS) {
       const pr = PRONOUNS[pp];
-      rows += `<tr>${label(pp)}${cell(pairs(`Cond+Prs+${pp}`), pr)}${cell(pairs("Cond+Prs+ConNeg"), `${pr} ${NEG_AUX[pp]}`)}` +
-              `${cell(pairs(`Pot+Prs+${pp}`), pr)}${cell(pairs("Pot+Prs+ConNeg"), `${pr} ${NEG_AUX[pp]}`)}</tr>`;
+      rows += `<tr>${label(pp)}${cell(pairs(`Cond+Prs+${pp}`), pr)}${cell(pairs("Cond+Prs+ConNeg"), `${pr} ${NEG_AUX[pp]}`, null, pp)}` +
+              `${cell(pairs(`Pot+Prs+${pp}`), pr)}${cell(pairs("Pot+Prs+ConNeg"), `${pr} ${NEG_AUX[pp]}`, null, pp)}</tr>`;
     }
     rows += section("", t("imperative"), "", "", "");
     for (const pp of PERSONS) {
-      rows += `<tr>${label(pp)}${cell(pairs(`Imprt+${pp}`))}${cell(pairs("Imprt+ConNeg"), NEG_AUX_IMPRT[pp])}<td></td><td></td></tr>`;
+      rows += `<tr>${label(pp)}${cell(pairs(`Imprt+${pp}`))}${cell(pairs("Imprt+ConNeg"), NEG_AUX_IMPRT[pp], null, pp)}<td></td><td></td></tr>`;
     }
     let nf = section(t("nonFinite"), "");
     VERB_NONFINITE_TAGS.forEach((tag, i) => { nf += `<tr>${label(t("nonFiniteRows")[i])}${cell(pairs(tag))}</tr>`; });
@@ -992,13 +1121,14 @@ function renderTable() {
   } else if (!p.has("Sg+Nom") && !p.has("Pl+Nom") && p.has("Nom")) {
     // Persoona- ja refleksiivipronominit: luku ja persoona kuuluvat jo perusmuotoon
     let rows = "";
-    for (const [name, cases] of [...CASE_ROWS, ["Ess", ["Ess"]]]) rows += `<tr>${label(name)}${cell(pairs(...cases))}</tr>`;
+    for (const [name, cases] of [...CASE_ROWS, ["Ess", ["Ess"]]]) rows += `<tr>${label(name)}${cell(pairs(...cases), "", cases)}</tr>`;
     html = table([t("caseCol"), t("formCol")], rows);
   } else {
     // ol. = ovttaidlohku (yksikkö), ml. = máŋggaidlohku (monikko)
     let rows = p.has("Attr") ? `<tr>${label("Attr")}${cell(pairs("Attr"))}<td></td></tr>` : "";
     for (const [name, cases] of CASE_ROWS) {
-      rows += `<tr>${label(name)}${cell(pairs(...cases.map((c) => "Sg+" + c)))}${cell(pairs(...cases.map((c) => "Pl+" + c)))}</tr>`;
+      const sg = cases.map((c) => "Sg+" + c), pl = cases.map((c) => "Pl+" + c);
+      rows += `<tr>${label(name)}${cell(pairs(...sg), "", sg)}${cell(pairs(...pl), "", pl)}</tr>`;
     }
     rows += `<tr>${label("Ess")}${cell(pairs("Ess"))}<td></td></tr>`;
     if (pos === "A" && [...p.keys()].some((t) => t.startsWith("Comp") || t.startsWith("Superl"))) {
@@ -1011,6 +1141,7 @@ function renderTable() {
 
   $("panel-table").innerHTML =
     (legend ? `<p class="legend">${t("gradeLegend")}</p>` : "") +
+    (translate && html.includes("form-tr") ? `<p class="hint form-tr-note">${esc(t("tableTrNote"))}</p>` : "") +
     html + `<p class="hint">${esc(t("tapHint"))}</p>`;
 }
 
@@ -1155,6 +1286,8 @@ function updateFavButton() {
   $("fav-btn").title = on ? t("removeFavourite") : t("addFavourite");
   $("fav-btn").setAttribute("aria-label", $("fav-btn").title);
 }
+const HISTORY_SHOWN = 10;
+let historyExpanded = false;
 function renderSidebar() {
   const fill = (id, words, empty) => {
     $(id).innerHTML = words.length
@@ -1162,7 +1295,9 @@ function renderSidebar() {
       : `<li class="empty">${empty}</li>`;
   };
   fill("favourites", settings.favourites, esc(t("noFavourites")));
-  fill("history", settings.history, esc(t("noHistory")));
+  // Historiasta 10 viimeisintä; Lisää… näyttää loput, ja valikon avaaminen palauttaa kymmeneen
+  fill("history", historyExpanded ? settings.history : settings.history.slice(0, HISTORY_SHOWN), esc(t("noHistory")));
+  $("history-more").hidden = historyExpanded || settings.history.length <= HISTORY_SHOWN;
 }
 
 // --- Hakuehdotukset ---
@@ -1599,6 +1734,7 @@ function bindExperimental() {
     saveSettings();
     applyExperimental();
     if (name === "sms" && state.results.length) searchAgainKeepingWord();
+    if (name === "tableTr" && state.word) renderTable();
   };
   $("experimental-section").addEventListener("change", (e) => {
     const name = e.target.dataset.exp;
@@ -1606,7 +1742,7 @@ function bindExperimental() {
     if (!e.target.checked) { set(name, false); return; }
     e.target.checked = false;  // päälle vasta, kun käyttäjä hyväksyy
     pending = name;
-    const key = name === "ocr" ? "expOcr" : "expSms";
+    const key = { ocr: "expOcr", sms: "expSms", tableTr: "expTableTr" }[name];
     $("exp-dlg-title").textContent = t(key);
     $("exp-dlg-body").innerHTML = t(key + "Info");
     $("exp-dlg").showModal();
@@ -1823,11 +1959,14 @@ function bindEvents() {
     const b = e.target.closest("[data-lang]");
     if (b) setUiLanguage(b.dataset.lang);
   });
-  $("sidebar-toggle").onclick = () => document.body.classList.toggle("sidebar-open");
+  $("sidebar-toggle").onclick = () => {
+    if (document.body.classList.toggle("sidebar-open") && historyExpanded) { historyExpanded = false; renderSidebar(); }
+  };
   $("drawer-scrim").onclick = closeDrawer;
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrawer(); });
   $("sidebar").addEventListener("click", (e) => { if (e.target.closest("a")) document.body.classList.remove("sidebar-open"); });
   $("clear-history").onclick = () => { settings.history = []; saveSettings(); renderSidebar(); };
+  $("history-more").onclick = () => { historyExpanded = true; renderSidebar(); };
   window.addEventListener("popstate", routeFromHash);
   window.addEventListener("hashchange", routeFromHash);
   document.addEventListener("keydown", (e) => {

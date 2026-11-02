@@ -283,6 +283,10 @@ table.paradigm tr.section td {
 .form:hover { background: var(--select); }
 .form.picked { background: var(--select); outline: 2px solid var(--accent); }
 .pron { color: var(--muted); }
+.form-tr { display: block; color: var(--muted); font-size: 12px; font-style: italic; font-weight: 400; line-height: 1.25; margin-top: 1px; }
+.form-tr-note { margin: 0 0 8px; }
+.menu-end { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.menu-end .about-coffee { margin: 4px 0 0; }
 .sep { color: var(--subtle); }
 .hint { color: var(--subtle); font-size: 13px; margin: 12px 0 0; }
 
