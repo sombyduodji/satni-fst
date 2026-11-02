@@ -11,12 +11,11 @@ Sátni FST:n kaikki versiot. Lataukset: [GitHub-julkaisut](https://github.com/so
   *beavddi alde*, ei *beavddis*. Näille sovellus löytää sanan, mutta ei enää ehdota muotoa. Tämä korjaa version 0.9.1, joka
   näytti esimerkiksi *kolmelle ≈ golbmii*. Ihmisiä koskevat muodot säilyvät: *minulla = mus*, *kenelle = geasa*.
 - **Asemasanat sanakortissa:** *päällä: beavddi alde · alla: beavddi vuolde*, 17 substantiiville, jotka on tarkistettu
-  sanakirjojen esimerkeistä. Muille substantiiveille muodostettu rivi kokeellisella kytkimellä.
+  sanakirjojen esimerkeistä. Vain tarkistetut ilmaukset näytetään, koska nämä sanat eivät sovi kaikkiin substantiiveihin.
 - **37 liitepartikkelillisen hakusanan perussana:** *ollugo = ollu + -go*, ja linkki sanaan *ollu*.
 - **Genetiivin päämuoto ensin:** *talon ≈ viesu*, ei *vieso*. Toinen muoto löytyy edelleen haulla.
 - **Hakuehdotukset:** rivi *Haetaan muotoja…* muotohaun ajaksi, suorat osumat ensin ja ehdotukset kahdesta kirjaimesta.
-- **Asetukset:** astevaihtelun asetus on kytkin, ja se piilottaa myös Astevaihtelu-laatikon. Kokeellinen kytkin on nyt
-  *Konekäännökset ja muut kielikokeilut*, ja kuvahaun asetus on *Valokuvahaku*.
+- **Asetukset:** astevaihtelun asetus on kytkin, ja se piilottaa myös Astevaihtelu-laatikon. Kuvahaun asetus on *Valokuvahaku*.
 
 ## 0.9.1 — 2026-11-02
 

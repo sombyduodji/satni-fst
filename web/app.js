@@ -718,7 +718,7 @@ const LEXICAL_CLITICS = Object.fromEntries((
 ).split(" ").map((item) => { const [word, parts] = item.split("="); return [word, parts.split("+")]; }));
 
 // Asemasanat sanakortissa: genetiivi + alde (päällä) tai vuolde (alla). Tässä sanakirjojen esimerkeistä tarkistetut (jieŋa alde =
-// jäällä, beavddi vuolde = pöydän alla), jotka näkyvät aina. Muille substantiiveille kokeellinen muodostettu rivi (exp.tableTr).
+// jäällä, beavddi vuolde = pöydän alla). Vain nämä: alde ja vuolde eivät sovi kaikkiin sanoihin, joten rivejä ei muodosteta.
 const ATTESTED_POSITIONS = {
   beavdi: { alde: "beavddi", vuolde: "beavddi" }, jiekŋa: { alde: "jieŋa" }, eatnu: { alde: "eanu" }, geaidnu: { alde: "geainnu" },
   lávdi: { alde: "lávddi" }, spábba: { alde: "spáppa" }, deahkka: { alde: "deahka" }, dievvá: { alde: "dievá" },
@@ -730,17 +730,10 @@ const ATTESTED_POSITIONS = {
 function renderPositions(w) {
   const el = $("position-line");
   const attested = w.pos === "N" && w.subtype !== "Prop" ? ATTESTED_POSITIONS[w.sme_lemma] : null;
+  el.hidden = !attested;
+  if (!attested) return;
   const phrase = (po, gen) => `${esc(t(po === "alde" ? "positionOn" : "positionUnder"))}: <b>${esc(gen)} ${po}</b>`;
-  const shown = attested ? Object.entries(attested).map(([po, gen]) => phrase(po, gen)) : [];
-  let trial = [];
-  if (settings.exp.tableTr && w.pos === "N" && w.subtype !== "Prop") {
-    // Genetiivi, joka on sama kuin akkusatiivi (beavddi, viesu), ei rinnakkaismuotoa (beavdde, vieso)
-    const acc = state.paradigm.get("Sg+Acc") || [];
-    const gen = (state.paradigm.get("Sg+Gen") || []).find((f) => acc.includes(f));
-    if (gen) trial = ["alde", "vuolde"].filter((po) => !(attested && attested[po])).map((po) => phrase(po, gen));
-  }
-  el.innerHTML = [...shown, ...trial].join("  ·  ") + (trial.length ? ` <span class="exp-mark">(${esc(t("positionTrial"))})</span>` : "");
-  el.hidden = !shown.length && !trial.length;
+  el.innerHTML = Object.entries(attested).map(([po, gen]) => phrase(po, gen)).join("  ·  ");
 }
 
 // Muut kielet -asetuksessa valittujen kielten käännökset pääkäännöksen alle (Englanniksi: house)
@@ -1842,7 +1835,7 @@ function bindExperimental() {
     saveSettings();
     applyExperimental();
     if (name === "sms" && state.results.length) searchAgainKeepingWord();
-    if (name === "tableTr" && state.word) { renderTable(); renderPositions(state.word); }
+    if (name === "tableTr" && state.word) renderTable();
   };
   $("experimental-section").addEventListener("change", (e) => {
     const name = e.target.dataset.exp;
