@@ -46,6 +46,12 @@ const UI_TEXTS = {
       koltansaamen välillä ei ole sanakirjaa, joten saamen sanalle ne haetaan sen suomennosten kautta ja merkitään
       ”suomen kautta”. Ne voivat silloin kuulua sanan toiseen merkitykseen.</p>
       <p>Koltansaamen osaaja ei ole vielä tarkistanut aineistoa.</p>`,
+    expApertium: "Apertium-käännökset", expApertiumDesc: "Norjan käännös sanoille, joilla sitä ei ole sanakirjoissa.",
+    expApertiumInfo: `<p>Kun käännöskielenä on norja ja sanalta puuttuu käännös, sanakortissa näytetään käännös
+      Apertium-konekääntimen sanastosta (apertium-sme-nob).</p>
+      <p>Sanasto on tehty konekääntämistä varten, ei sanakirjaksi. Käännös voi olla karkea tai väärä, eikä sitä ole
+      tarkistettu. Nämä käännökset eivät vaikuta hakuun.</p>`,
+    apertiumNote: "Apertium, tarkistamaton",
     expEnable: "Ota käyttöön", cancel: "Peruuta", smsVia: "suomen kautta",
     ocrError: "Kuvan käsittely ei onnistunut.", ocrNoApp: "Kamerasovellusta ei löytynyt.",
     showGrade: "Näytä astevaihtelu",
@@ -218,6 +224,12 @@ const UI_TEXTS = {
       finnes ingen ordbok mellom nordsamisk og skoltesamisk, så for et samisk ord hentes de via de finske oversettelsene
       og merkes «via finsk». Da kan de høre til en annen betydning av ordet.</p>
       <p>Materialet er ennå ikke kontrollert av noen som kan skoltesamisk.</p>`,
+    expApertium: "Apertium-oversettelser", expApertiumDesc: "Norsk oversettelse av ord som ikke har det i ordbøkene.",
+    expApertiumInfo: `<p>Når oversettelsesspråket er norsk og et ord mangler oversettelse, viser ordkortet en oversettelse
+      fra ordlisten til maskinoversetteren Apertium (apertium-sme-nob).</p>
+      <p>Ordlisten er laget for maskinoversettelse, ikke som ordbok. Oversettelsen kan være grov eller feil, og den er
+      ikke kontrollert. Disse oversettelsene påvirker ikke søket.</p>`,
+    apertiumNote: "Apertium, ikke kontrollert",
     expEnable: "Slå på", cancel: "Avbryt", smsVia: "via finsk",
     ocrError: "Kunne ikke behandle bildet.", ocrNoApp: "Fant ingen kameraapp.",
     showGrade: "Vis stadieveksling",
