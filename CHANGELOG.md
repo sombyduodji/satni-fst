@@ -3,6 +3,21 @@
 All releases of Sátni FST. Downloads: [GitHub releases](https://github.com/sombyduodji/satni-fst/releases).
 [Suomi](CHANGELOG.fi.md) · [Norsk](CHANGELOG.nb.md)
 
+## 0.9.2 — 2026-11-02
+
+- **Finnish search finds more forms.** Other common pronouns (*kenelle*, *tälle*, *niille*, *jolle*) and the endings *-lla*,
+  *-lta* and *-ksi* of nouns, adjectives and numerals (*talolla*, *pöydältä*, *taloksi*) now find the word.
+- **No uncertain Sámi forms.** Finnish *-lla*, *-lta*, *-lle* and *-ksi* don't match a single Sámi form: *pöydällä* is
+  *beavddi alde*, not *beavddis*. For these the app finds the word but no longer suggests a form. This corrects 0.9.1, which
+  showed for example *kolmelle ≈ golbmii*. Forms about people stay: *minulla = mus*, *kenelle = geasa*.
+- **Position words on the word card:** *päällä: beavddi alde · alla: beavddi vuolde*, for 10 nouns checked against dictionary
+  examples. Only checked phrases are shown, because these words don't fit every noun.
+- **The base word of 37 dictionary words with a clitic:** *ollugo = ollu + -go*, with a link to *ollu*.
+- **Main genitive form first:** *talon ≈ viesu*, not *vieso*. The other form stays searchable.
+- **Search suggestions:** a *Searching for forms…* row while forms are looked up, direct matches first, and suggestions from
+  two letters.
+- **Settings:** the gradation setting is a switch and also hides the gradation box. The photo search setting has a shorter name.
+
 ## 0.9.1 — 2026-11-02
 
 - **Finnish search finds inflected personal pronouns.** *minulle*, *minulla*, *minut*, *sinulle*, *hänelle*, *meille*

@@ -28,12 +28,13 @@ const UI_TEXTS = {
     ocrNoWords: "Tekstiä löytyi, mutta ei sanakirjan sanoja.",
     experimental: "Kokeelliset ominaisuudet", experimentalOn: "Käytössä", experimentalOff: "Pois käytöstä",
     experimentalHint: "Kokeiluversioita: voivat vielä muuttua tai poistua.",
-    expOcr: "Hae sanaa valokuvasta", expOcrDesc: "📷 hakukentän vieressä: sanakirjan sanat merkitään kuvaan.",
+    expOcr: "Valokuvahaku", expOcrDesc: "Tunnistaa valokuvan tekstistä sanakirjan sanat. Käynnistys 📷-painikkeesta.",
     expOcrInfo: `<p>Hakukentän viereen tulee 📷-painike. Ota kuva tekstistä tai valitse kuva, ja sanakirjan sanat merkitään
       kuvaan. Napauta sanaa, niin näet käännöksen.</p>
       <p>Teksti tunnistetaan puhelimessa Googlen ML Kitillä, eikä kuva lähde laitteelta. ML Kit voi lähettää Googlelle
       nimettömiä käyttötilastoja, kun toimintoa käytetään.</p>`,
     expTableTr: "Konekäännökset taulukossa", expTableTrDesc: "Jokaisen muodon konekäännös sen alla taivutustaulukossa.",
+    positionOn: "päällä", positionUnder: "alla",
     expTableTrInfo: `<p>Taivutustaulukon muotojen alle tulee konekäännös pienellä: <i>mun lean – minä olen</i>. Duaali merkitään
       numerolla: <i>moai letne – me (2) olemme</i>.</p>
       <p>Käännökset muodostetaan automaattisesti sanan ensimmäisestä käännöksestä, joten ne eivät ole aina oikein.
@@ -47,11 +48,11 @@ const UI_TEXTS = {
       <p>Koltansaamen osaaja ei ole vielä tarkistanut aineistoa.</p>`,
     expEnable: "Ota käyttöön", cancel: "Peruuta", smsVia: "suomen kautta",
     ocrError: "Kuvan käsittely ei onnistunut.", ocrNoApp: "Kamerasovellusta ei löytynyt.",
-    showGrade: "Näytä aste (GD/HD)",
+    showGrade: "Näytä astevaihtelu",
     settings: "Asetukset", otherLanguages: "Muut kielet",
     extraLangsHint: "Valittujen kielten käännökset näkyvät sanakortissa suomennoksen lisäksi.",
     voice: "Ääni",
-    favourites: "★ Suosikit", history: "Historia", clearHistory: "Tyhjennä historia", clearHistoryTitle: "Tyhjennetäänkö historia?",
+    favourites: "★ Suosikit", history: "Historia", searchingForms: "Haetaan muotoja…", clearHistory: "Tyhjennä historia", clearHistoryTitle: "Tyhjennetäänkö historia?",
     clearHistoryBody: "Kaikki hakuhistoria poistetaan. Suosikit säilyvät.", clearHistoryOk: "Tyhjennä", historyMore: "Lisää…",
     coffeeText: "Sátni FST on kaikille ilmainen ja pysyy ilmaisena. Jos haluat olla mukana tukemassa työtä, voit tarjota minulle kahvit. Giitu ❤️",
     noFavourites: "Ei vielä suosikkeja", noHistory: "Ei hakuja",
@@ -169,12 +170,13 @@ const UI_TEXTS = {
     ocrNoWords: "Fant tekst, men ingen ord fra ordboka.",
     experimental: "Eksperimentelle funksjoner", experimentalOn: "På", experimentalOff: "Av",
     experimentalHint: "Prøveversjoner: kan fortsatt endres eller fjernes.",
-    expOcr: "Søk etter ord i et bilde", expOcrDesc: "📷 ved søkefeltet: ordene fra ordboka merkes i bildet.",
+    expOcr: "Bildesøk", expOcrDesc: "Finner ordene fra ordboka i teksten på et bilde. Starter med 📷-knappen.",
     expOcrInfo: `<p>En 📷-knapp vises ved søkefeltet. Ta et bilde av tekst eller velg et bilde, så blir ordene fra ordboka
       merket i bildet. Trykk på et ord for å se oversettelsen.</p>
       <p>Teksten gjenkjennes på telefonen med Googles ML Kit, og bildet forlater ikke enheten. ML Kit kan sende anonym
       bruksstatistikk til Google når funksjonen brukes.</p>`,
     expTableTr: "Maskinoversettelser i tabellen", expTableTrDesc: "Maskinoversettelsen under hver form i bøyingstabellen.",
+    positionOn: "på", positionUnder: "under",
     expTableTrInfo: `<p>Under formene i bøyingstabellen vises maskinoversettelsen med liten skrift: <i>mun lean – jeg er</i>. Dualis merkes
       med tall: <i>moai letne – vi (2) er</i>.</p>
       <p>Oversettelsene lages automatisk fra ordets første oversettelse, så de er ikke alltid riktige.
@@ -188,11 +190,11 @@ const UI_TEXTS = {
       <p>Materialet er ennå ikke kontrollert av noen som kan skoltesamisk.</p>`,
     expEnable: "Slå på", cancel: "Avbryt", smsVia: "via finsk",
     ocrError: "Kunne ikke behandle bildet.", ocrNoApp: "Fant ingen kameraapp.",
-    showGrade: "Vis stadium (GD/HD)",
+    showGrade: "Vis stadieveksling",
     settings: "Innstillinger", otherLanguages: "Andre språk",
     extraLangsHint: "Oversettelser på valgte språk vises på ordkortet i tillegg til den norske.",
     voice: "Stemme",
-    favourites: "★ Favoritter", history: "Historikk", clearHistory: "Tøm historikken", clearHistoryTitle: "Tømme historikken?",
+    favourites: "★ Favoritter", history: "Historikk", searchingForms: "Søker etter former…", clearHistory: "Tøm historikken", clearHistoryTitle: "Tømme historikken?",
     clearHistoryBody: "All søkehistorikk slettes. Favorittene beholdes.", clearHistoryOk: "Tøm", historyMore: "Flere…",
     coffeeText: "Sátni FST er gratis for alle og vil alltid være det. Vil du være med og støtte arbeidet, kan du spandere en kaffe på meg. Giitu ❤️",
     noFavourites: "Ingen favoritter ennå", noHistory: "Ingen søk",

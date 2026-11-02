@@ -62,7 +62,8 @@
             <option value="light" data-i18n="themeLight">Vaalea</option>
             <option value="dark" data-i18n="themeDark">Tumma</option>
           </select></div>
-        <label class="check" id="grade-option"><input type="checkbox" id="grade-toggle" checked> <span data-i18n="showGrade">Näytä aste (GD/HD)</span></label>
+        <label class="switch-row" id="grade-option"><span data-i18n="showGrade">Näytä astevaihtelu</span>
+          <input type="checkbox" class="switch" role="switch" id="grade-toggle" checked></label>
         <div class="setting-row voice-head"><span data-i18n="voice">Ääni</span></div>
         <div id="voice-list" class="voice-list" role="radiogroup" data-i18n-aria="voice"></div>
       </section>
@@ -90,7 +91,7 @@
         <p class="muted small" data-i18n="experimentalHint"></p>
         <div class="toggle-list">
           <label class="switch-row" id="exp-ocr-row" hidden>
-            <span class="switch-text"><span data-i18n="expOcr">Hae sanaa valokuvasta</span>
+            <span class="switch-text"><span data-i18n="expOcr">Valokuvahaku</span>
               <span class="muted small" data-i18n="expOcrDesc"></span></span>
             <input type="checkbox" class="switch" role="switch" data-exp="ocr">
           </label>
@@ -146,6 +147,7 @@
         <p class="translation"><span id="translation"></span> <a href="#" id="more-meanings" class="more"></a></p>
         <p id="form-translation" class="form-translation" hidden></p>
         <p id="extra-translations" class="extra-translations" hidden></p>
+        <p id="position-line" class="muted small" hidden></p>
         <div id="gradation" class="gradation"></div>
         <p id="word-info" class="muted small"></p>
         <!-- Sanasta muualla: pyöristetyt linkkipillerit kortin alaosassa (styles.css) -->

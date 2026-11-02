@@ -29,8 +29,10 @@ GENERATOR = os.path.join(FST_DIR, "generator-gt-norm.hfstol")
 DB_FILE = os.path.join(SCRIPT_DIR, "satni.db")
 
 PERSONS = ["Sg1", "Sg2", "Sg3", "Pl1", "Pl2", "Pl3"]
-# Vain sovelluksessa käytetyt sijat (web/app.js: finPhrase); adessiivi ja ablatiivi jätetään pois tilan säästämiseksi
-CASES = ["Nom", "Gen", "Par", "Ine", "Ela", "Ill", "All", "Ess"]
+# Sovelluksessa käytetyt sijat. Adessiivi, ablatiivi ja translatiivi vain hakua varten (talolla -> viesus, taloksi -> viessun);
+# ne otetaan mukaan, vain jos analysaattori tunnistaa muodon yleiskieliseksi samaksi sijaksi (add_fin_forms).
+CASES = ["Nom", "Gen", "Par", "Ine", "Ela", "Ill", "All", "Ess", "Ade", "Abl", "Tra"]
+SEARCH_ONLY_CASES = ("Ade", "Abl", "Tra")
 NOMINAL_CELLS = {f"{n}+{c}": f"{n}+{c}" for n in ("Sg", "Pl") for c in CASES}
 # Solu -> generaattorin tagit perusmuodon ja sanaluokan jälkeen
 CELLS = {
@@ -52,6 +54,15 @@ CELLS = {
 }
 # Likimääräisiä ilmauksia, joiden taivutusmuodot eivät ole luotettavia (ei taivuteta, taulukkoon ei tule käännöstä)
 APPROXIMATE_NUMERALS = {"parisen", "parikymmentä", "parisataa", "parituhatta", "kolmisenkymmentä", "toistakymmentä", "neljäkolmatta"}
+# Muut yleiset pronominit (persoonapronominit ovat web/app.js:ssä): sana, sen yksikön ja monikon analyysin perusmuoto.
+# Mukana kaikki sijat, myös adessiivi ja ablatiivi (kenellä, keneltä). pos on "Pron".
+PRONOUNS = {"kuka": ("kuka", "kuka"), "mikä": ("mikä", "mikä"), "tämä": ("tämä", "nämä"), "tuo": ("tuo", "nuo"), "se": ("se", "ne"),
+            "jokin": ("jokin", "jokin"), "joku": ("joku", "joku"), "joka": ("joka", "joka"), "kumpi": ("kumpi", "kumpi")}
+PRONOUN_CASES = ["Nom", "Acc", "Gen", "Par", "Ine", "Ela", "Ill", "Ade", "Abl", "All", "Ess", "Tra"]
+# Puhekieliset ja vanhat muodot, joita ei tarjota, sekä essiivit minä ja sinä (mikä, se), jotka sekoittuvat persoonapronomineihin
+PRONOUN_DROP = {"sissä", "sistä", "kutka", "keitten", "kenä", "tää", "tän", "tään", "näitten", "noitten", "niitten", "jotai", "jostai", "jollai",
+                "joltai", "joissai", "joistai", "joillai", "joiltai", "joitai", "johonka", "joittenka", "joidenka", "joitten", "joittenkin",
+                "joittenkuitten", "kumpahan", "kumpain", "kumpihin", "minä", "sinä"}
 FIN_POS = {"N": "N", "V": "V", "A": "A", "Num": "Num"}
 
 
@@ -143,6 +154,21 @@ def clean_variants(forms, cell, pos, word):
     return keep
 
 
+def pronoun_rows():
+    """Muiden pronominien rivit fin_forms-tauluun: ("kuka", "Pron", "Sg+Nom=kuka;Sg+Gen=kenen;...")."""
+    queries = {(word, f"{number}+{case}"): f"{stem}+Pron+{number}+{case}" for word, stems_ in PRONOUNS.items()
+               for number, stem in zip(("Sg", "Pl"), stems_) for case in PRONOUN_CASES}
+    generated = lookup(GENERATOR, sorted(queries.values()), generate=True)
+    cells = {}
+    for (word, cell), query in queries.items():
+        # Yleisempi muoto ensin: mihin, johon, johonkin (ei minne, jonne, jonnekin)
+        forms = sorted((f for f in generated.get(query, []) if f not in PRONOUN_DROP),
+                       key=lambda f: f.startswith(("minne", "jonne")))
+        if forms:
+            cells.setdefault(word, []).append(f"{cell}={'/'.join(forms)}")
+    return [(word, "Pron", ";".join(c)) for word, c in cells.items()]
+
+
 def add_fin_forms(cursor):
     print("Taivutetaan suomenkieliset käännökset (GiellaLT lang-fin)...")
     cursor.execute("DROP TABLE IF EXISTS fin_forms")
@@ -168,6 +194,13 @@ def add_fin_forms(cursor):
     form_analyses = lookup(ANALYSER, sorted(multi))
     nonstandard = frozenset((re.sub(r"\+(Dial|Err/\w+|Use/\w+)", "", a), f) for f, analyses in form_analyses.items()
                             for a in analyses if re.search(r"\+(Dial|Err/|Use/)", a))
+    # Hakua varten lisätyt sijat: muodon pitää analysoitua samaksi luvuksi ja sijaksi ilman virhe- tai murremerkintää
+    search_only = {q: q.rsplit("+", 2)[-2] + "+" + q.rsplit("+", 1)[-1] for q in generated if q.endswith(SEARCH_ONLY_CASES)}
+    search_forms = lookup(ANALYSER, sorted({f for q in search_only for f in generated[q]}))
+
+    def confirmed(query, form):
+        return query not in search_only or any(a.endswith("+" + search_only[query]) and not re.search(r"\+(Dial|Err/|Use/)", a)
+                                               for a in search_forms.get(form, []))
 
     rows = []
     for (word, pos), reqs in requests.items():
@@ -177,7 +210,7 @@ def add_fin_forms(cursor):
             if cell == "citation" or not any(query.startswith(st + "+") for st in valid_stems):
                 continue
             for form in generated.get(query, []):
-                if (query, form) in nonstandard and len(generated[query]) > 1:
+                if ((query, form) in nonstandard and len(generated[query]) > 1) or not confirmed(query, form):
                     continue
                 cells.setdefault(cell, [])
                 if form not in cells[cell]:
@@ -185,6 +218,7 @@ def add_fin_forms(cursor):
         if cells:
             forms = ";".join(f"{c}={'/'.join(clean_variants(cells[c], c, pos, word))}" for c in CELLS[pos] if c in cells)
             rows.append((word, pos, forms))
+    rows += pronoun_rows()
     cursor.executemany("INSERT INTO fin_forms VALUES (?, ?, ?)", rows)
     cursor.execute("CREATE INDEX idx_fin_forms_word ON fin_forms(word)")
     print(f"  {len(rows)}/{len(words)} suomenkieliselle sanalle löytyi taivutus")

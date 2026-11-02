@@ -124,6 +124,8 @@ select {
   box-shadow: 0 10px 30px rgba(0, 0, 0, .15); max-height: 340px; overflow-y: auto;
 }
 .suggestions li { padding: 8px 10px; border-radius: 6px; cursor: pointer; display: flex; gap: 8px; align-items: baseline; }
+.suggestions li.sugg-loading { color: var(--muted); font-size: 13px; cursor: default; pointer-events: none; }
+.sugg-ring { width: 14px; height: 14px; flex: none; border-radius: 50%; border: 2px solid var(--line, rgba(127, 127, 127, .3)); border-top-color: var(--accent); animation: speak-spin .8s linear infinite; }
 .suggestions li .sugg-form { color: var(--muted); }
 .suggestions li .pos { color: var(--subtle); font-size: 12px; }
 .suggestions li .trans { color: var(--muted); font-size: 13px; margin-left: auto; text-align: right; }
@@ -547,6 +549,8 @@ body.drawer-layout.sidebar-open .drawer-scrim {
 }
 body.drawer-layout .icon-btn { display: inline-block; }
 .settings-section .check { display: flex; align-items: center; gap: 8px; padding: 6px 8px; }
+.settings-section > .switch-row { padding: 6px 8px; border-radius: 8px; font-size: 14px; font-weight: 400; }
+.settings-section > .switch-row:hover { background: var(--chip); }
 /* ☰ vasempaan yläkulmaan; kieli, teema ja ääni ovat valikossa */
 body.drawer-layout .topbar { justify-content: flex-start; }
 body.drawer-layout .topbar .brand { flex: 1; }
@@ -572,3 +576,4 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
   background: var(--surface-alt); color: var(--text); cursor: pointer;
 }
 .first-run-lang svg { width: 32px; height: 22px; border-radius: 3px; }
+.base-link { color: var(--accent); font-weight: 600; }
