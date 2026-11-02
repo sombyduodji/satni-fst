@@ -3,6 +3,21 @@
 Alle versjoner av Sátni FST. Nedlastinger: [GitHub-utgivelser](https://github.com/sombyduodji/satni-fst/releases).
 [English](CHANGELOG.md) · [Suomi](CHANGELOG.fi.md)
 
+## 0.9.2 — 2026-11-02
+
+- **Finsk søk finner flere former.** Andre vanlige pronomen (*kenelle*, *tälle*, *niille*, *jolle*) og endelsene *-lla*, *-lta*
+  og *-ksi* på substantiv, adjektiv og tall (*talolla*, *pöydältä*, *taloksi*) finner nå ordet.
+- **Ingen usikre samiske former.** Finsk *-lla*, *-lta*, *-lle* og *-ksi* svarer ikke til én samisk form: *pöydällä* er
+  *beavddi alde*, ikke *beavddis*. For disse finner appen ordet, men foreslår ikke lenger en form. Dette retter 0.9.1, som for
+  eksempel viste *kolmelle ≈ golbmii*. Former om mennesker beholdes: *minulla = mus*, *kenelle = geasa*.
+- **Posisjonsord på ordkortet:** *på: beavddi alde · under: beavddi vuolde*, for 17 substantiv kontrollert mot eksempler i
+  ordbøkene. Andre substantiv får en generert linje med den eksperimentelle bryteren.
+- **Grunnordet til 37 oppslagsord med klitikum:** *ollugo = ollu + -go*, med lenke til *ollu*.
+- **Hovedformen av genitiv først:** *talon ≈ viesu*, ikke *vieso*. Den andre formen kan fortsatt søkes opp.
+- **Søkeforslag:** en rad *Søker etter former…* mens former slås opp, direkte treff først og forslag fra to bokstaver.
+- **Innstillinger:** innstillingen for stadieveksling er en bryter og skjuler også stadievekslingsboksen. Den eksperimentelle
+  bryteren heter nå *Maskinoversettelser og andre språkforsøk*, og bildesøket heter *Bildesøk*.
+
 ## 0.9.1 — 2026-11-02
 
 - **Finsk søk finner bøyde personlige pronomen.** *minulle*, *minulla*, *minut*, *sinulle*, *hänelle*, *meille* og de
