@@ -10,7 +10,7 @@ Alle versjoner av Sátni FST. Nedlastinger: [GitHub-utgivelser](https://github.c
 - **Ingen usikre samiske former.** Finsk *-lla*, *-lta*, *-lle* og *-ksi* svarer ikke til én samisk form: *pöydällä* er
   *beavddi alde*, ikke *beavddis*. For disse finner appen ordet, men foreslår ikke lenger en form. Dette retter 0.9.1, som for
   eksempel viste *kolmelle ≈ golbmii*. Former om mennesker beholdes: *minulla = mus*, *kenelle = geasa*.
-- **Posisjonsord på ordkortet:** *på: beavddi alde · under: beavddi vuolde*, for 17 substantiv kontrollert mot eksempler i
+- **Posisjonsord på ordkortet:** *på: beavddi alde · under: beavddi vuolde*, for 10 substantiv kontrollert mot eksempler i
   ordbøkene. Bare kontrollerte uttrykk vises, fordi disse ordene ikke passer til alle substantiv.
 - **Grunnordet til 37 oppslagsord med klitikum:** *ollugo = ollu + -go*, med lenke til *ollu*.
 - **Hovedformen av genitiv først:** *talon ≈ viesu*, ikke *vieso*. Den andre formen kan fortsatt søkes opp.

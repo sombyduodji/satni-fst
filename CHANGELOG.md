@@ -10,7 +10,7 @@ All releases of Sátni FST. Downloads: [GitHub releases](https://github.com/somb
 - **No uncertain Sámi forms.** Finnish *-lla*, *-lta*, *-lle* and *-ksi* don't match a single Sámi form: *pöydällä* is
   *beavddi alde*, not *beavddis*. For these the app finds the word but no longer suggests a form. This corrects 0.9.1, which
   showed for example *kolmelle ≈ golbmii*. Forms about people stay: *minulla = mus*, *kenelle = geasa*.
-- **Position words on the word card:** *päällä: beavddi alde · alla: beavddi vuolde*, for 17 nouns checked against dictionary
+- **Position words on the word card:** *päällä: beavddi alde · alla: beavddi vuolde*, for 10 nouns checked against dictionary
   examples. Only checked phrases are shown, because these words don't fit every noun.
 - **The base word of 37 dictionary words with a clitic:** *ollugo = ollu + -go*, with a link to *ollu*.
 - **Main genitive form first:** *talon ≈ viesu*, not *vieso*. The other form stays searchable.

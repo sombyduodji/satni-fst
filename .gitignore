@@ -24,6 +24,7 @@ web/data/
 # GiellaLT-sanakirjat ja kielimallit omina git-repoinaan (haetaan/päivitetään: ./hae_sanakirjat.sh).
 # dict-sme-fin on poikkeus: se on kopioitu tähän repoon tiedostoina.
 /dict-sme/
+/dict-sme-fin-x-vest/
 /dict-sme-nob/
 /dict-sme-eng/
 /dict-sme-smn/
