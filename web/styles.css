@@ -102,6 +102,9 @@ select {
 .primary-btn:disabled { opacity: .5; cursor: default; }
 .link-btn { background: none; border: 0; color: var(--muted); font-size: 13px; cursor: pointer; padding: 4px 0; }
 .link-btn:hover { color: var(--accent); }
+.history-actions { display: flex; align-items: center; margin-top: 8px; }
+.history-actions .link-btn { padding: 10px 0; }
+#clear-history { margin-left: auto; }
 
 /* Haku */
 .searchbar {
@@ -121,6 +124,7 @@ select {
   box-shadow: 0 10px 30px rgba(0, 0, 0, .15); max-height: 340px; overflow-y: auto;
 }
 .suggestions li { padding: 8px 10px; border-radius: 6px; cursor: pointer; display: flex; gap: 8px; align-items: baseline; }
+.suggestions li .sugg-form { color: var(--muted); }
 .suggestions li .pos { color: var(--subtle); font-size: 12px; }
 .suggestions li .trans { color: var(--muted); font-size: 13px; margin-left: auto; text-align: right; }
 .suggestions li.active, .suggestions li:hover { background: var(--select); }
@@ -283,6 +287,10 @@ table.paradigm tr.section td {
 .form:hover { background: var(--select); }
 .form.picked { background: var(--select); outline: 2px solid var(--accent); }
 .pron { color: var(--muted); }
+.form-tr { display: block; color: var(--muted); font-size: 12px; font-style: italic; font-weight: 400; line-height: 1.25; margin-top: 1px; }
+.form-tr-note { margin: 0 0 8px; }
+.menu-end { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.menu-end .about-coffee { margin: 4px 0 0; }
 .sep { color: var(--subtle); }
 .hint { color: var(--subtle); font-size: 13px; margin: 12px 0 0; }
 

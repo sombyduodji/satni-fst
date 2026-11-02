@@ -31,9 +31,6 @@
         <div class="brand-sub" data-i18n="brandSub">Pohjoissaamen avoin sanakirja ja taivutusgeneraattori</div>
       </div>
     </div>
-    <div class="topbar-actions">
-      <button class="chip-btn" id="about-btn" data-i18n="about">Tietoa</button>
-    </div>
   </header>
   <div class="stripe"><span></span><span></span><span></span><span></span></div>
 
@@ -76,7 +73,10 @@
       <section>
         <h3 data-i18n="history">Historia</h3>
         <ul id="history" class="word-list"></ul>
-        <button class="link-btn" id="clear-history" data-i18n="clearHistory">Tyhjennä historia</button>
+        <div class="history-actions">
+          <button class="link-btn" id="history-more" data-i18n="historyMore" hidden>Lisää…</button>
+          <button class="link-btn" id="clear-history" data-i18n="clearHistory">Tyhjennä historia</button>
+        </div>
       </section>
       <section>
         <h3 data-i18n="otherLanguages">Muut kielet</h3>
@@ -99,7 +99,17 @@
               <span class="muted small" data-i18n="expSmsDesc"></span></span>
             <input type="checkbox" class="switch" role="switch" data-exp="sms">
           </label>
+          <label class="switch-row">
+            <span class="switch-text"><span data-i18n="expTableTr">Konekäännökset taulukossa</span>
+              <span class="muted small" data-i18n="expTableTrDesc"></span></span>
+            <input type="checkbox" class="switch" role="switch" data-exp="tableTr">
+          </label>
         </div>
+      </section>
+      <section class="menu-end">
+        <button class="chip-btn" id="about-btn" data-i18n="about">Tietoa</button>
+        <p class="about-coffee" data-i18n="coffeeText"></p>
+        <a class="coffee-btn" href="https://buymeacoffee.com/sombyduodji" target="_blank" rel="noopener"><img src="icons/coffee.svg" alt="">Buy me a coffee</a>
       </section>
     </aside>
 
@@ -177,6 +187,16 @@
   </dialog>
 
   <!-- Kokeellisen ominaisuuden käyttöönotto: mitä se tekee (app.js: bindExperimental) -->
+  <!-- Historian tyhjennys vain vahvistuksen jälkeen -->
+  <dialog id="clear-history-dlg" class="exp-dlg">
+    <h2 data-i18n="clearHistoryTitle">Tyhjennetäänkö historia?</h2>
+    <p data-i18n="clearHistoryBody"></p>
+    <div class="dialog-actions">
+      <button type="button" class="chip-btn" id="clear-history-cancel" data-i18n="cancel">Peruuta</button>
+      <button type="button" class="chip-btn primary" id="clear-history-ok" data-i18n="clearHistoryOk">Tyhjennä</button>
+    </div>
+  </dialog>
+
   <dialog id="exp-dlg" class="exp-dlg">
     <h2 id="exp-dlg-title"></h2>
     <div id="exp-dlg-body"></div>

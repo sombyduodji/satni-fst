@@ -1,6 +1,33 @@
 # Changelog
 
 All releases of Sátni FST. Downloads: [GitHub releases](https://github.com/sombyduodji/satni-fst/releases).
+[Suomi](CHANGELOG.fi.md) · [Norsk](CHANGELOG.nb.md)
+
+## 0.9.1 — 2026-11-02
+
+- **Finnish search finds inflected personal pronouns.** *minulle*, *minulla*, *minut*, *sinulle*, *hänelle*, *meille*
+  and the other case forms find *mun*, *don*, *son* and the other pronouns, and show the Sámi form: *minulle = minä ≈
+  munnje*. Clitics work too: *minulleko* → *munnjego*. All Finnish pronoun forms were checked with the GiellaLT Finnish
+  analyser.
+- **Pronoun forms on the word card:** searching *munnje* shows *minulle / minuun*. The dual is marked with the number 2:
+  *munnuide* shows *meille (2) / meihin (2)*, and in Norwegian *vi (2)* instead of *vi to*.
+- **Numerals in Finnish search:** *kolmelle*, *kuuden* and *sadalle* find *golbma*, *guhtta* and *čuođi* with the
+  matching Sámi form.
+- **Search suggestions include inflected forms.** The list under the search box shows the base word in bold and the
+  Sámi form in italics, for both *mus* and *minulla*: **mun** *mus*. Ordinary suggestions appear at once, and the forms
+  after a short pause in typing, so typing stays smooth. Tested with about 2 500 searches.
+- **Personal pronoun tables show translations:** *munnje* has *minulle / minuun* below it, and the dual is marked with
+  the number 2.
+- **Experimental: machine translations in the inflection table.** Switch them on under *Experimental features* in the
+  ☰ menu, and the forms of other words get a translation below them too: *mun lean – minä olen*, *moai letne – me (2)
+  olemme*. They are generated automatically from the word's first translation, so they aren't always right, and a form
+  with no reliable translation shows nothing.
+- **Menu:** *About* and *Buy me a coffee* moved to the bottom of the ☰ menu. History shows the 10 latest searches, with
+  a *More…* button for the rest, and returns to 10 when the menu is opened again. Clearing the history now asks for
+  confirmation, and its button is further from *More…*.
+- **Corrections:** Finnish potential of *olla* (*lienen, en liene*), and the Norwegian third person singular imperative
+  (*la ham/henne*).
+- Finnish form lookup is faster when you press Enter.
 
 ## 0.9 — 2026-10-31
 
