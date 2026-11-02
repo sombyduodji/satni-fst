@@ -1102,7 +1102,8 @@ function renderTable() {
     for (const tag of tags) for (const v of p.get(tag) || []) if (!seen.has(v)) { seen.add(v); out.push([tag, v]); }
     return out;
   };
-  const translate = settings.exp.tableTr ? formTranslator(w) : null;
+  // Persoonapronominien muodot on tarkistettu, joten ne näkyvät aina; muiden sanojen konekäännökset kokeellisella kytkimellä
+  const translate = settings.exp.tableTr || (w.subtype === "Pers" && PERS_PRONOUNS[w.sme_lemma]) ? formTranslator(w) : null;
   // Muotosolu: pronomini harmaana, muodot asteen värillä; napautus ääntää muodon
   const cell = (items, prefix = "", trTags = null, neg = null) => {
     if (!items.length) return `<td class="pron">-</td>`;
@@ -1166,7 +1167,7 @@ function renderTable() {
 
   $("panel-table").innerHTML =
     (legend ? `<p class="legend">${t("gradeLegend")}</p>` : "") +
-    (translate && html.includes("form-tr") ? `<p class="hint form-tr-note">${esc(t("tableTrNote"))}</p>` : "") +
+    (settings.exp.tableTr && html.includes("form-tr") ? `<p class="hint form-tr-note">${esc(t("tableTrNote"))}</p>` : "") +
     html + `<p class="hint">${esc(t("tapHint"))}</p>`;
 }
 
@@ -1323,6 +1324,7 @@ function renderSidebar() {
   // Historiasta 10 viimeisintä; Lisää… näyttää loput, ja valikon avaaminen palauttaa kymmeneen
   fill("history", historyExpanded ? settings.history : settings.history.slice(0, HISTORY_SHOWN), esc(t("noHistory")));
   $("history-more").hidden = historyExpanded || settings.history.length <= HISTORY_SHOWN;
+  $("clear-history").hidden = !settings.history.length;
 }
 
 // --- Hakuehdotukset ---
@@ -1999,7 +2001,14 @@ function bindEvents() {
   $("drawer-scrim").onclick = closeDrawer;
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrawer(); });
   $("sidebar").addEventListener("click", (e) => { if (e.target.closest("a")) document.body.classList.remove("sidebar-open"); });
-  $("clear-history").onclick = () => { settings.history = []; saveSettings(); renderSidebar(); };
+  $("clear-history").onclick = () => $("clear-history-dlg").showModal();
+  $("clear-history-cancel").onclick = () => $("clear-history-dlg").close();
+  $("clear-history-ok").onclick = () => {
+    $("clear-history-dlg").close();
+    settings.history = [];
+    saveSettings();
+    renderSidebar();
+  };
   $("history-more").onclick = () => { historyExpanded = true; renderSidebar(); };
   window.addEventListener("popstate", routeFromHash);
   window.addEventListener("hashchange", routeFromHash);

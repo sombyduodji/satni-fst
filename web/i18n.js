@@ -33,8 +33,8 @@ const UI_TEXTS = {
       kuvaan. Napauta sanaa, niin näet käännöksen.</p>
       <p>Teksti tunnistetaan puhelimessa Googlen ML Kitillä, eikä kuva lähde laitteelta. ML Kit voi lähettää Googlelle
       nimettömiä käyttötilastoja, kun toimintoa käytetään.</p>`,
-    expTableTr: "Muotojen käännökset taulukossa", expTableTrDesc: "Jokaisen muodon käännös sen alla taivutustaulukossa.",
-    expTableTrInfo: `<p>Taivutustaulukon muotojen alle tulee käännös pienellä: <i>mun lean – minä olen</i>. Duaali merkitään
+    expTableTr: "Konekäännökset taulukossa", expTableTrDesc: "Jokaisen muodon konekäännös sen alla taivutustaulukossa.",
+    expTableTrInfo: `<p>Taivutustaulukon muotojen alle tulee konekäännös pienellä: <i>mun lean – minä olen</i>. Duaali merkitään
       numerolla: <i>moai letne – me (2) olemme</i>.</p>
       <p>Käännökset muodostetaan automaattisesti sanan ensimmäisestä käännöksestä, joten ne eivät ole aina oikein.
       Muodolla, jolle käännöstä ei saada, ei näytetä mitään.</p>`,
@@ -51,8 +51,9 @@ const UI_TEXTS = {
     settings: "Asetukset", otherLanguages: "Muut kielet",
     extraLangsHint: "Valittujen kielten käännökset näkyvät sanakortissa suomennoksen lisäksi.",
     voice: "Ääni",
-    favourites: "★ Suosikit", history: "Historia", clearHistory: "Tyhjennä historia", historyMore: "Lisää…",
-    coffeeText: "Sátni FST on kaikille ilmainen ja pysyy ilmaisena, jotta saamen kieli olisi jokaisen ulottuvilla. Jos haluat olla mukana tukemassa työtä, voit tarjota minulle kahvit. Giitu ❤️",
+    favourites: "★ Suosikit", history: "Historia", clearHistory: "Tyhjennä historia", clearHistoryTitle: "Tyhjennetäänkö historia?",
+    clearHistoryBody: "Kaikki hakuhistoria poistetaan. Suosikit säilyvät.", clearHistoryOk: "Tyhjennä", historyMore: "Lisää…",
+    coffeeText: "Sátni FST on kaikille ilmainen ja pysyy ilmaisena. Jos haluat olla mukana tukemassa työtä, voit tarjota minulle kahvit. Giitu ❤️",
     noFavourites: "Ei vielä suosikkeja", noHistory: "Ei hakuja",
     addFavourite: "Lisää suosikkeihin", removeFavourite: "Poista suosikeista",
     loadingTitle: "Ladataan sanakirjaa…",
@@ -173,8 +174,8 @@ const UI_TEXTS = {
       merket i bildet. Trykk på et ord for å se oversettelsen.</p>
       <p>Teksten gjenkjennes på telefonen med Googles ML Kit, og bildet forlater ikke enheten. ML Kit kan sende anonym
       bruksstatistikk til Google når funksjonen brukes.</p>`,
-    expTableTr: "Oversettelse av formene i tabellen", expTableTrDesc: "Oversettelsen under hver form i bøyingstabellen.",
-    expTableTrInfo: `<p>Under formene i bøyingstabellen vises oversettelsen med liten skrift: <i>mun lean – jeg er</i>. Dualis merkes
+    expTableTr: "Maskinoversettelser i tabellen", expTableTrDesc: "Maskinoversettelsen under hver form i bøyingstabellen.",
+    expTableTrInfo: `<p>Under formene i bøyingstabellen vises maskinoversettelsen med liten skrift: <i>mun lean – jeg er</i>. Dualis merkes
       med tall: <i>moai letne – vi (2) er</i>.</p>
       <p>Oversettelsene lages automatisk fra ordets første oversettelse, så de er ikke alltid riktige.
       Former uten oversettelse viser ingenting.</p>`,
@@ -191,8 +192,9 @@ const UI_TEXTS = {
     settings: "Innstillinger", otherLanguages: "Andre språk",
     extraLangsHint: "Oversettelser på valgte språk vises på ordkortet i tillegg til den norske.",
     voice: "Stemme",
-    favourites: "★ Favoritter", history: "Historikk", clearHistory: "Tøm historikken", historyMore: "Flere…",
-    coffeeText: "Sátni FST er gratis for alle og vil alltid være det, slik at samisk er tilgjengelig for hver og en. Vil du være med og støtte arbeidet, kan du spandere en kaffe på meg. Giitu ❤️",
+    favourites: "★ Favoritter", history: "Historikk", clearHistory: "Tøm historikken", clearHistoryTitle: "Tømme historikken?",
+    clearHistoryBody: "All søkehistorikk slettes. Favorittene beholdes.", clearHistoryOk: "Tøm", historyMore: "Flere…",
+    coffeeText: "Sátni FST er gratis for alle og vil alltid være det. Vil du være med og støtte arbeidet, kan du spandere en kaffe på meg. Giitu ❤️",
     noFavourites: "Ingen favoritter ennå", noHistory: "Ingen søk",
     addFavourite: "Legg til i favoritter", removeFavourite: "Fjern fra favoritter",
     loadingTitle: "Laster ordboken…",
