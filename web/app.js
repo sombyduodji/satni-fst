@@ -408,7 +408,7 @@ function samiTagOfFinCell(cell, pos) {
   return cases[p[1]] ? `${p[0]}+${cases[p[1]]}` : null;
 }
 
-function suggestWords(prefix) {
+function suggestWords(prefix, withForms = true) {
   const q = fold(prefix.trim());
   if (q.length < 2) return [];
   const rows = all(
@@ -426,7 +426,7 @@ function suggestWords(prefix) {
   // Kirjoitettu sana taivutusmuotona (munnje = mun, minulle = mun): perusmuodon jälkeen, jos sana on itse käännetty hakusana
   const col = LANGUAGES[settings.lang].col;
   const exact = rows.filter((r) => fold(r.sme_lemma) === q && r[col]);
-  const forms = formSuggestions(prefix);
+  const forms = withForms ? formSuggestions(prefix) : [];
   // Oma tyhjä hakusana (mus, munnje ilman suomennosta) on turha, kun perusmuoto (mun) näkyy
   const useful = forms.length ? rows.filter((r) => fold(r.sme_lemma) !== q || r[col]) : rows;
   const seen = new Set();
@@ -1327,13 +1327,15 @@ function renderSidebar() {
 
 // --- Hakuehdotukset ---
 
-let suggestTimer = null, suggestions = [], activeSuggestion = -1;
-function updateSuggestions() {
-  suggestions = suggestWords($("search").value);
+// Tavalliset ehdotukset heti, taivutusmuodot vasta kirjoitustauolla: muotohaku on hidas ja pysäyttäisi puhelimella kirjoittamisen
+let suggestTimer = null, formTimer = null, suggestions = [], activeSuggestion = -1;
+const FORM_SUGGEST_PAUSE = 400;
+function updateSuggestions(withForms = true) {
+  suggestions = suggestWords($("search").value, withForms);
   activeSuggestion = -1;
   const list = $("suggestions");
   if (!suggestions.length || (suggestions.length === 1 && !suggestions[0].form && fold(suggestions[0].sme_lemma) === fold($("search").value))) {
-    hideSuggestions();
+    list.hidden = true;  // ei hideSuggestions: odottava muotohaku saa vielä tuoda ehdotuksia (munnje, kolmelle)
     return;
   }
   list.innerHTML = suggestions.map((s, i) =>
@@ -1341,7 +1343,7 @@ function updateSuggestions() {
     `<span class="pos">${esc(s.pos)}</span><span class="trans">${esc(s.form ? s.formNote : translationOf(s, 2))}</span></li>`).join("");
   list.hidden = false;
 }
-function hideSuggestions() { $("suggestions").hidden = true; activeSuggestion = -1; }
+function hideSuggestions() { clearTimeout(suggestTimer); clearTimeout(formTimer); $("suggestions").hidden = true; activeSuggestion = -1; }
 // Ehdotuksesta avataan juuri valittu sana: samannäköisistä (vuostá = vastaan / juusto) muuten avautuisi ensimmäinen
 function pickSuggestion(s) {
   const text = s.form || s.sme_lemma;
@@ -1930,7 +1932,13 @@ function routeFromHash() {
 
 function bindEvents() {
   const input = $("search");
-  input.addEventListener("input", () => { clearTimeout(suggestTimer); suggestTimer = setTimeout(updateSuggestions, 120); });
+  input.addEventListener("input", () => {
+    clearTimeout(suggestTimer);
+    clearTimeout(formTimer);
+    suggestTimer = setTimeout(() => updateSuggestions(false), 120);
+    // Ei kesken nuolinäppäimillä tehdyn valinnan
+    formTimer = setTimeout(() => { if (activeSuggestion < 0) updateSuggestions(true); }, FORM_SUGGEST_PAUSE);
+  });
   input.addEventListener("keydown", (e) => {
     if (e.key === "ArrowDown" && moveSuggestion(1)) e.preventDefault();
     else if (e.key === "ArrowUp" && moveSuggestion(-1)) e.preventDefault();
