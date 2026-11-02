@@ -28,7 +28,7 @@ const UI_TEXTS = {
     ocrNoWords: "Tekstiä löytyi, mutta ei sanakirjan sanoja.",
     experimental: "Kokeelliset ominaisuudet", experimentalOn: "Käytössä", experimentalOff: "Pois käytöstä",
     experimentalHint: "Kokeiluversioita: voivat vielä muuttua tai poistua.",
-    expOcr: "Hae sanaa valokuvasta", expOcrDesc: "📷 hakukentän vieressä: sanakirjan sanat merkitään kuvaan.",
+    expOcr: "Valokuvahaku", expOcrDesc: "Tunnistaa valokuvan tekstistä sanakirjan sanat. Käynnistys 📷-painikkeesta.",
     expOcrInfo: `<p>Hakukentän viereen tulee 📷-painike. Ota kuva tekstistä tai valitse kuva, ja sanakirjan sanat merkitään
       kuvaan. Napauta sanaa, niin näet käännöksen.</p>
       <p>Teksti tunnistetaan puhelimessa Googlen ML Kitillä, eikä kuva lähde laitteelta. ML Kit voi lähettää Googlelle
@@ -172,7 +172,7 @@ const UI_TEXTS = {
     ocrNoWords: "Fant tekst, men ingen ord fra ordboka.",
     experimental: "Eksperimentelle funksjoner", experimentalOn: "På", experimentalOff: "Av",
     experimentalHint: "Prøveversjoner: kan fortsatt endres eller fjernes.",
-    expOcr: "Søk etter ord i et bilde", expOcrDesc: "📷 ved søkefeltet: ordene fra ordboka merkes i bildet.",
+    expOcr: "Bildesøk", expOcrDesc: "Finner ordene fra ordboka i teksten på et bilde. Starter med 📷-knappen.",
     expOcrInfo: `<p>En 📷-knapp vises ved søkefeltet. Ta et bilde av tekst eller velg et bilde, så blir ordene fra ordboka
       merket i bildet. Trykk på et ord for å se oversettelsen.</p>
       <p>Teksten gjenkjennes på telefonen med Googles ML Kit, og bildet forlater ikke enheten. ML Kit kan sende anonym
