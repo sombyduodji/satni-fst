@@ -62,8 +62,8 @@ The inflected forms of the Finnish translations (*talo – talossa – taloon*, 
 are generated with the Finnish analyser and generator from [giellalt/lang-fin](https://github.com/giellalt/lang-fin)
 (GiellaLT / Giellatekno, UiT The Arctic University of Norway; based on the Omorfi lexicon), licensed under the
 [GNU General Public License v3.0](LICENSE). The compiled models come from GiellaLT's nightly
-package `giella-fin` and are downloaded by [`hae_sanakirjat.sh`](hae_sanakirjat.sh); they are not part of
-this repository. [`fin_forms.py`](fin_forms.py) keeps only the forms of words used as translations and drops
+package `giella-fin` (currently `0.2.20120821+g2928~d16e00e3-1~sid1`, lang-fin commit `d16e00e3`) and are downloaded by
+[`hae_sanakirjat.sh`](hae_sanakirjat.sh); they are not part of this repository. [`fin_forms.py`](fin_forms.py) keeps only the forms of words used as translations and drops
 archaic and dialectal variants (*vaattehien*, *taloin*, *kirkko-laissa*).
 
 ## Norwegian inflection — Norsk ordbank, CC BY
@@ -131,8 +131,8 @@ If you modify this Program, or any covered work, by linking or combining it with
 (including ML Kit Text Recognition and the libraries it depends on, or a modified version of them),
 containing parts covered by the terms of the ML Kit Terms of Service, the licensor of this Program
 grants you additional permission to convey the resulting work. Corresponding Source for a non-source
-form of such a combination shall not include the source code for the parts of Google ML Kit used, as
-well as that of the covered work.
+form of such a combination shall include the source code of the covered work, but need not include
+the source code for the parts of Google ML Kit used.
 
 This permission is given by Juha Somby for the parts of Sátni FST he holds the copyright to. It does
 not change the licences of the third-party parts listed above. The Android app uses ML Kit only for

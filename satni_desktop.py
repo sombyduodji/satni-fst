@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 Juha Somby <satni@somby.fi>
+# Lisenssi: GNU GPL, versio 3 (LICENSE). Ks. CREDITS.md.
 """Sátni FST työpöytäsovellus: Qt-ikkuna (PySide6), joka näyttää saman web-käyttöliittymän kuin PWA.
 
 Web-tiedostot (web/) tarjotaan sisäiselle selaimelle omalla satni://app/ -osoitteella, koska
