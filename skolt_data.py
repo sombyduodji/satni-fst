@@ -14,8 +14,9 @@ pisteytetään ja vain vahvat (enintään 3) otetaan mukaan:
   +2  molemmat lähteet antavat saman sanan (dict-*-sms ja dict-sms-mul)
   +1  suorassa sanakirjassa (dict-*-sms)
   +1  koltan sanalla on enintään 3 merkitystä (ei yleissana, jonka merkitys voi olla toinen)
-Tasapisteissä ensin sana, jolla on enemmän merkityksiä: yleiset perussanat (vesi -> čääʹcc) ennen
-erikoissanoja (mueʹles). Tarkistukset (2026-10-31): kaksi suomen lähdettä samaa mieltä 91 %:ssa sanoista.
+Tasapisteissä ensin korpuksessa yleisempi sana (sms_frekvenssit.tsv, vapaat tekstit), sitten sana, jolla on enemmän
+merkityksiä: yleiset perussanat (vesi -> čääʹcc) ennen erikoissanoja (mueʹles).
+Tarkistukset (2026-10-31): kaksi suomen lähdettä samaa mieltä 91 %:ssa sanoista.
 """
 import collections
 import glob
@@ -37,6 +38,15 @@ def _norm(text):
 
 def _pos(p):
     return POS.get((p or "").strip().upper(), (p or "").strip().capitalize())
+
+
+def _frequencies(root):
+    """{sana: esiintymiä} tiedostosta sms_frekvenssit.tsv (sms_frekvenssit.py); puuttuva tiedosto = ei järjestystä."""
+    path = os.path.join(root, "sms_frekvenssit.tsv")
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as f:
+        return {w: int(n) for w, n in (line.rstrip("\n").split("\t") for line in f if not line.startswith("#"))}
 
 
 def _entries(path):
@@ -94,6 +104,7 @@ def rows(root):
     if not os.path.isdir(os.path.join(root, "dict-sms-mul")):
         return []
     info, rev = load(root)
+    freq = _frequencies(root)
     out = []
     for lang, words in rev.items():
         for word, cands in words.items():
@@ -102,10 +113,10 @@ def rows(root):
                 score = _score(marks, info[sms], lang)
                 if score >= MIN_SCORE:
                     n_meanings = len(info[sms]["fin"]) + len(info[sms]["nob"])
-                    by_pos[info[sms]["pos"]].append((-score, -n_meanings, sms))
+                    by_pos[info[sms]["pos"]].append((-score, -freq.get(sms.lower(), 0), -n_meanings, sms))
             for pos, cs in by_pos.items():
                 cs.sort()
-                out.append((lang, word, pos, ", ".join(s for _, _, s in cs[:MAX_WORDS])))
+                out.append((lang, word, pos, ", ".join(c[-1] for c in cs[:MAX_WORDS])))
     return out
 
 
