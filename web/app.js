@@ -492,6 +492,9 @@ function loadWord(id) {
     if (!paradigm.get(r.tag).includes(r.surface)) paradigm.get(r.tag).push(r.surface);
     if (r.grade) grades.set(r.tag + "|" + r.surface, r.grade);
   }
+  // Genetiivin päämuoto ensin: sama kuin akkusatiivi (beavddi ennen rinnakkaismuotoa beavdde, viesu ennen muotoa vieso)
+  const acc = paradigm.get("Sg+Acc") || [];
+  if (paradigm.has("Sg+Gen")) paradigm.get("Sg+Gen").sort((x, y) => acc.includes(y) - acc.includes(x));
   const examples = new Map();
   for (const r of all(`SELECT lang, meaning_nr, sme, translation, source FROM examples WHERE word_id = ? ORDER BY rowid`, [id])) {
     const key = r.lang + r.meaning_nr;
@@ -1408,11 +1411,14 @@ function updateSuggestions(withForms = true) {
   suggestions = suggestWords($("search").value, withForms);
   activeSuggestion = -1;
   const list = $("suggestions");
-  if (!suggestions.length || (suggestions.length === 1 && !suggestions[0].form && fold(suggestions[0].sme_lemma) === fold($("search").value))) {
+  // Muotohaku on vielä tulossa: rivi kertoo sen, ettei lista näytä tyhjältä (minulle löytyy vasta muotohaulla)
+  const value = $("search").value.trim();
+  const pending = !withForms && fold(value).length >= 2 && !value.includes(" ");
+  if (!pending && (!suggestions.length || (suggestions.length === 1 && !suggestions[0].form && fold(suggestions[0].sme_lemma) === fold($("search").value)))) {
     list.hidden = true;  // ei hideSuggestions: odottava muotohaku saa vielä tuoda ehdotuksia (munnje, kolmelle)
     return;
   }
-  list.innerHTML = suggestions.map((s, i) =>
+  list.innerHTML = (pending ? `<li class="sugg-loading" role="status"><span class="sugg-ring"></span>${esc(t("searchingForms"))}</li>` : "") + suggestions.map((s, i) =>
     `<li role="option" data-i="${i}"><b>${esc(s.sme_lemma)}</b>${s.smeForm ? `<i class="sugg-form">${esc(s.smeForm)}</i>` : ""}` +
     `<span class="pos">${esc(s.pos)}</span><span class="trans">${esc(s.form ? s.formNote : translationOf(s, 2))}</span></li>`).join("");
   list.hidden = false;
@@ -1425,7 +1431,7 @@ function pickSuggestion(s) {
   search(text, Math.max(index, 0));
 }
 function moveSuggestion(delta) {
-  const items = $("suggestions").children;
+  const items = $("suggestions").querySelectorAll("li[data-i]");
   if ($("suggestions").hidden || !items.length) return false;
   activeSuggestion = (activeSuggestion + delta + items.length) % items.length;
   [...items].forEach((li, i) => li.classList.toggle("active", i === activeSuggestion));
@@ -2011,7 +2017,10 @@ function bindEvents() {
     clearTimeout(formTimer);
     suggestTimer = setTimeout(() => updateSuggestions(false), 120);
     // Ei kesken nuolinäppäimillä tehdyn valinnan
-    formTimer = setTimeout(() => { if (activeSuggestion < 0) updateSuggestions(true); }, FORM_SUGGEST_PAUSE);
+    formTimer = setTimeout(() => {
+      if (activeSuggestion < 0) updateSuggestions(true);
+      else $("suggestions").querySelector(".sugg-loading")?.remove();
+    }, FORM_SUGGEST_PAUSE);
   });
   input.addEventListener("keydown", (e) => {
     if (e.key === "ArrowDown" && moveSuggestion(1)) e.preventDefault();
@@ -2026,7 +2035,7 @@ function bindEvents() {
   });
   input.addEventListener("blur", () => setTimeout(hideSuggestions, 150));
   $("suggestions").addEventListener("mousedown", (e) => {
-    const li = e.target.closest("li");
+    const li = e.target.closest("li[data-i]");  // ei hakurivi
     if (li) { e.preventDefault(); pickSuggestion(suggestions[li.dataset.i]); input.blur(); }
   });
   $("search-btn").onclick = () => search(input.value);
