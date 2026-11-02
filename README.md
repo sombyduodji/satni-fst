@@ -126,7 +126,7 @@ photo search; see [CREDITS.md](CREDITS.md#additional-permission-under-gnu-gpl-ve
 The dictionaries are © GiellaLT and licensed under CC BY 4.0, the morphology (lang-sme) and the Finnish
 inflection (lang-fin) under GPL-3.0, and the Norwegian inflection (Norsk ordbank, Språkbanken) under CC BY 4.0 —
 see [CREDITS.md](CREDITS.md) for all sources, licences and the changes made to the data.
-Changes in each version: [CHANGELOG.md](CHANGELOG.md).
+Changes in each version: [English](CHANGELOG.md) · [Suomi](CHANGELOG.fi.md) · [Norsk](CHANGELOG.nb.md).
 
 ## Contact
 

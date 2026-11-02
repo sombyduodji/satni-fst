@@ -106,19 +106,20 @@ def read_ordbank():
     return table
 
 
-def translation_words(cursor, lang="nob", column="nob_translation"):
-    """Saamen N/V/A-sanojen yksisanaiset käännökset kielellä lang: {(sana, pos)}. Käyttää myös fin_forms.py."""
+def translation_words(cursor, lang="nob", column="nob_translation", poses=("N", "V", "A")):
+    """Saamen sanojen (oletuksena N/V/A) yksisanaiset käännökset kielellä lang: {(sana, pos)}. Käyttää myös fin_forms.py."""
     words = set()
+    marks = ", ".join("?" * len(poses))
 
     def add(text, pos):
         for w in re.split(r"[,;]", re.sub(r"\(.*?\)", "", text or "")):
             w = w.strip()
             if WORD_RE.fullmatch(w):
                 words.add((w, pos))
-    for pos, text in cursor.execute(f"SELECT pos, {column} FROM dictionary WHERE pos IN ('N', 'V', 'A')").fetchall():
+    for pos, text in cursor.execute(f"SELECT pos, {column} FROM dictionary WHERE pos IN ({marks})", poses).fetchall():
         add(text, pos)
     for pos, text in cursor.execute("SELECT d.pos, m.translations FROM meanings m JOIN dictionary d ON d.id = m.word_id "
-                                    "WHERE m.lang = ? AND d.pos IN ('N', 'V', 'A')", (lang,)).fetchall():
+                                    f"WHERE m.lang = ? AND d.pos IN ({marks})", (lang, *poses)).fetchall():
         add(text, pos)
     return words
 

@@ -11,3 +11,6 @@
 #
 # n_smefin.xml: substantiivilla vihtta oli virheellisesti numeraalin käännös "viisi" (pos="Pcle")
 vihtta	N	vihta, vasta
+
+# Duaalipronomini kuten moai = me kaksi, doai = te kaksi (lähteessä soai = he)
+soai	Pron	he kaksi
