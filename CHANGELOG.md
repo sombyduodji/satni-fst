@@ -2,6 +2,29 @@
 
 All releases of Sátni FST. Downloads: [GitHub releases](https://github.com/sombyduodji/satni-fst/releases).
 
+## 0.9.1 — 2026-11-02
+
+- **Finnish search finds inflected personal pronouns.** *minulle*, *minulla*, *minut*, *sinulle*, *hänelle*, *meille*
+  and the other case forms find *mun*, *don*, *son* and the other pronouns, and show the Sámi form: *minulle = minä ≈
+  munnje*. Clitics work too: *minulleko* → *munnjego*. All Finnish pronoun forms were checked with the GiellaLT Finnish
+  analyser.
+- **Pronoun forms on the word card:** searching *munnje* shows *minulle / minuun*. The dual is marked with the number 2:
+  *munnuide* shows *meille (2) / meihin (2)*, and in Norwegian *vi (2)* instead of *vi to*.
+- **Numerals in Finnish search:** *kolmelle*, *kuuden* and *sadalle* find *golbma*, *guhtta* and *čuođi* with the
+  matching Sámi form.
+- **Search suggestions include inflected forms.** The list under the search box shows the base word in bold and the
+  Sámi form in italics, for both *mus* and *minulla*: **mun** *mus*. Ordinary suggestions appear at once, and the forms
+  after a short pause in typing, so typing stays smooth. Tested with about 2 500 searches.
+- **Experimental: translations in the inflection table.** Switch it on under *Experimental features* in the ☰ menu, and
+  each form gets its translation below it: *mun lean – minä olen*, *moai letne – me (2) olemme*. Translations are
+  generated automatically from the word's first translation, so they aren't always right, and a form with no reliable
+  translation shows nothing.
+- **Menu:** *About* and *Buy me a coffee* moved to the bottom of the ☰ menu. History shows the 10 latest searches, with
+  a *More…* button for the rest, and returns to 10 when the menu is opened again.
+- **Corrections:** Finnish potential of *olla* (*lienen, en liene*), and the Norwegian third person singular imperative
+  (*la ham/henne*).
+- Finnish form lookup is faster when you press Enter.
+
 ## 0.9 — 2026-10-31
 
 Includes the test versions 0.8.2-dev–0.8.5-dev.
