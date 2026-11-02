@@ -22,6 +22,8 @@ combines their work into one offline app.
 | Finnish → Skolt Sámi | Skolt Sámi words (experimental) | [giellalt/dict-fin-sms](https://github.com/giellalt/dict-fin-sms) (CC BY 3.0) |
 | Norwegian → Skolt Sámi | Skolt Sámi words (experimental) | [giellalt/dict-nob-sms](https://github.com/giellalt/dict-nob-sms) |
 
+**Skolt Sámi word frequencies** (`sms_frekvenssit.tsv`): counts of dictionary words in the texts marked free in GiellaLT's [corpus-sms](https://github.com/giellalt/corpus-sms), used only to order words. No corpus text is included.
+
 All are © GiellaLT / Divvun / Giellatekno and their contributors, licensed under
 [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/), except
 `dict-fin-sms`, which is under [CC BY 3.0 Unported](https://creativecommons.org/licenses/by/3.0/).
