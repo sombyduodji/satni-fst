@@ -11,13 +11,12 @@ All releases of Sátni FST. Downloads: [GitHub releases](https://github.com/somb
   *beavddi alde*, not *beavddis*. For these the app finds the word but no longer suggests a form. This corrects 0.9.1, which
   showed for example *kolmelle ≈ golbmii*. Forms about people stay: *minulla = mus*, *kenelle = geasa*.
 - **Position words on the word card:** *päällä: beavddi alde · alla: beavddi vuolde*, for 17 nouns checked against dictionary
-  examples. Other nouns get a generated line under the experimental switch.
+  examples. Only checked phrases are shown, because these words don't fit every noun.
 - **The base word of 37 dictionary words with a clitic:** *ollugo = ollu + -go*, with a link to *ollu*.
 - **Main genitive form first:** *talon ≈ viesu*, not *vieso*. The other form stays searchable.
 - **Search suggestions:** a *Searching for forms…* row while forms are looked up, direct matches first, and suggestions from
   two letters.
-- **Settings:** the gradation setting is a switch and also hides the gradation box. The experimental switch is now
-  *Machine translations and other language trials*, and the photo search setting has a shorter name.
+- **Settings:** the gradation setting is a switch and also hides the gradation box. The photo search setting has a shorter name.
 
 ## 0.9.1 — 2026-11-02
 

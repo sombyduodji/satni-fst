@@ -576,5 +576,4 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
   background: var(--surface-alt); color: var(--text); cursor: pointer;
 }
 .first-run-lang svg { width: 32px; height: 22px; border-radius: 3px; }
-.exp-mark { font-style: italic; }
 .base-link { color: var(--accent); font-weight: 600; }

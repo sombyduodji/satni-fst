@@ -33,14 +33,12 @@ const UI_TEXTS = {
       kuvaan. Napauta sanaa, niin näet käännöksen.</p>
       <p>Teksti tunnistetaan puhelimessa Googlen ML Kitillä, eikä kuva lähde laitteelta. ML Kit voi lähettää Googlelle
       nimettömiä käyttötilastoja, kun toimintoa käytetään.</p>`,
-    expTableTr: "Konekäännökset ja muut kielikokeilut", expTableTrDesc: "Muotojen konekäännökset taulukossa ja asemasanat sanakortissa.",
-    positionOn: "päällä", positionUnder: "alla", positionTrial: "kokeellinen",
+    expTableTr: "Konekäännökset taulukossa", expTableTrDesc: "Jokaisen muodon konekäännös sen alla taivutustaulukossa.",
+    positionOn: "päällä", positionUnder: "alla",
     expTableTrInfo: `<p>Taivutustaulukon muotojen alle tulee konekäännös pienellä: <i>mun lean – minä olen</i>. Duaali merkitään
       numerolla: <i>moai letne – me (2) olemme</i>.</p>
       <p>Käännökset muodostetaan automaattisesti sanan ensimmäisestä käännöksestä, joten ne eivät ole aina oikein.
-      Muodolla, jolle käännöstä ei saada, ei näytetä mitään.</p>
-      <p>Substantiivien sanakorttiin tulee myös muodostettu asemarivi: <i>päällä: viesu alde · alla: viesu vuolde</i>.
-      Kaikki yhdistelmät eivät ole luontevia, koska niitä ei ole tarkistettu.</p>`,
+      Muodolla, jolle käännöstä ei saada, ei näytetä mitään.</p>`,
     tableTrNote: "Käännökset on muodostettu automaattisesti.",
     expSms: "Koltansaame", expSmsDesc: "Koltansaamen sanat sanakortissa.",
     expSmsInfo: `<p>Sanakortissa näytetään koltansaamen sanoja GiellaLT:n koltansaamen sanakirjoista.</p>
@@ -177,14 +175,12 @@ const UI_TEXTS = {
       merket i bildet. Trykk på et ord for å se oversettelsen.</p>
       <p>Teksten gjenkjennes på telefonen med Googles ML Kit, og bildet forlater ikke enheten. ML Kit kan sende anonym
       bruksstatistikk til Google når funksjonen brukes.</p>`,
-    expTableTr: "Maskinoversettelser og andre språkforsøk", expTableTrDesc: "Maskinoversettelser av formene i tabellen og posisjonsord på ordkortet.",
-    positionOn: "på", positionUnder: "under", positionTrial: "eksperimentelt",
+    expTableTr: "Maskinoversettelser i tabellen", expTableTrDesc: "Maskinoversettelsen under hver form i bøyingstabellen.",
+    positionOn: "på", positionUnder: "under",
     expTableTrInfo: `<p>Under formene i bøyingstabellen vises maskinoversettelsen med liten skrift: <i>mun lean – jeg er</i>. Dualis merkes
       med tall: <i>moai letne – vi (2) er</i>.</p>
       <p>Oversettelsene lages automatisk fra ordets første oversettelse, så de er ikke alltid riktige.
-      Former uten oversettelse viser ingenting.</p>
-      <p>Ordkortet til substantiver får også en generert posisjonslinje: <i>på: viesu alde · under: viesu vuolde</i>.
-      Ikke alle kombinasjoner er naturlige, for de er ikke kontrollert.</p>`,
+      Former uten oversettelse viser ingenting.</p>`,
     tableTrNote: "Oversettelsene er laget automatisk.",
     expSms: "Skoltesamisk", expSmsDesc: "Skoltesamiske ord på ordkortet.",
     expSmsInfo: `<p>Ordkortet viser skoltesamiske ord fra GiellaLTs skoltesamiske ordbøker.</p>
