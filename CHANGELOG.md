@@ -1,6 +1,7 @@
 # Changelog
 
 All releases of Sátni FST. Downloads: [GitHub releases](https://github.com/sombyduodji/satni-fst/releases).
+[Suomi](CHANGELOG.fi.md) · [Norsk](CHANGELOG.nb.md)
 
 ## 0.9.1 — 2026-11-02
 

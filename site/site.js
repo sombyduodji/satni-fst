@@ -14,7 +14,7 @@ const TEXTS = {
     w3h: "Kokeiltavaksi: konekäännökset taulukossa", w3: "Persoonapronominien muodoilla on nyt aina käännös. Valikon kokeellisista ominaisuuksista voi kytkeä konekäännöksen muillekin muodoille: mun lean – minä olen. Duaali merkitään numerolla: moai letne – me (2) olemme. Konekäännökset eivät ole aina oikein.",
     w4h: "Muuta uutta", w4: "Tietoa ja kahvipainike ovat nyt valikon lopussa. Historiasta näkyy 10 viimeisintä hakua ja Lisää-painike, ja tyhjennys kysyy vahvistuksen.",
     wcap: "minulla ≈ mun mus",
-    olderLink: "Aiemmat versiot →", olderTitle: "Aiemmat versiot – Sátni FST", backHome: "← Takaisin kotisivulle",
+    changelogLink: "Kaikki muutokset, myös versiot ennen 0.7.3 →", olderLink: "Aiemmat versiot →", olderTitle: "Aiemmat versiot – Sátni FST", backHome: "← Takaisin kotisivulle",
     v090: "Versio 0.9",
     x1h: "Haku liitepartikkelien kanssa", x1: "Sanan voi hakea liitepartikkelin kanssa, saameksi tai suomeksi: boađátgo ja tuletko löytävät sanan boahtit. Sanakortti selittää liitteen (boađátgo = boađát + -go) ja näyttää sen myös suomeksi (≈ tuletko).",
     x2h: "Tarkoititko?", x2: "Jos saamen erikoiskirjaimet jäävät pois, sovellus ehdottaa oikeaa sanaa: boadatgo → boađátgo, cahci → čáhci.",
@@ -79,7 +79,7 @@ const TEXTS = {
     w3h: "Til utprøving: maskinoversettelser i tabellen", w3: "Formene av personlige pronomen har nå alltid oversettelse. Under eksperimentelle funksjoner i menyen kan du slå på maskinoversettelse også for andre former: mun lean – jeg er. Dualis merkes med tall: moai letne – vi (2) er. Maskinoversettelsene er ikke alltid riktige.",
     w4h: "Annet nytt", w4: "Om og kaffeknappen ligger nå nederst i menyen. Historikken viser de 10 siste søkene og en Flere-knapp, og tømming må bekreftes.",
     wcap: "minulla ≈ mun mus",
-    olderLink: "Tidligere versjoner →", olderTitle: "Tidligere versjoner – Sátni FST", backHome: "← Tilbake til hjemmesiden",
+    changelogLink: "Alle endringer, også versjoner før 0.7.3 →", olderLink: "Tidligere versjoner →", olderTitle: "Tidligere versjoner – Sátni FST", backHome: "← Tilbake til hjemmesiden",
     v090: "Versjon 0.9",
     x1h: "Søk med klitikon", x1: "Du kan søke på et ord med klitikon: boađátgo finner boahtit, og ordkortet forklarer klitikonet (boađátgo = boađát + -go, spørrepartikkel).",
     x2h: "Mente du?", x2: "Hvis de samiske bokstavene mangler, foreslår appen riktig ord: boadatgo → boađátgo, cahci → čáhci.",
@@ -144,7 +144,7 @@ const TEXTS = {
     w3h: "To try out: machine translations in the table", w3: "Personal pronoun forms now always have a translation. Under experimental features in the menu you can switch on machine translations for other forms too: mun lean – minä olen. The dual is marked with a number: moai letne – me (2) olemme. Machine translations aren't always right.",
     w4h: "Also new", w4: "About and the coffee button are now at the bottom of the menu. History shows the 10 latest searches with a More button, and clearing it asks for confirmation.",
     wcap: "minulla ≈ mun mus",
-    olderLink: "Earlier versions →", olderTitle: "Earlier versions – Sátni FST", backHome: "← Back to the home page",
+    changelogLink: "All changes, including versions before 0.7.3 →", olderLink: "Earlier versions →", olderTitle: "Earlier versions – Sátni FST", backHome: "← Back to the home page",
     v090: "Version 0.9",
     x1h: "Search with clitics", x1: "Search for a word with a clitic, in Sámi or Finnish: boađátgo and tuletko find boahtit. The word card explains the clitic (boađátgo = boađát + -go) and shows it in Finnish too (≈ tuletko).",
     x2h: "Did you mean?", x2: "If the Sámi letters are missing, the app suggests the right word: boadatgo → boađátgo, cahci → čáhci.",
@@ -215,6 +215,9 @@ function setLang(lang) {
     if (typeof text === "string") el.textContent = text;
   }
   for (const b of document.querySelectorAll(".langs button")) b.setAttribute("aria-pressed", String(b.dataset.lang === lang));
+  // Aiempien versioiden sivulta muutosloki sivun kielellä
+  const log = document.getElementById("changelog-link");
+  if (log) log.href = `https://github.com/sombyduodji/satni-fst/blob/main/CHANGELOG${lang === "en" ? "" : "." + lang}.md`;
   // Norjankielisellä sivulla norjankieliset kuvat
   const hero = document.querySelector(".hero-shot");
   if (hero) hero.querySelector("source").srcset = `screenshots/desktop-dark-${lang === "nb" ? "nb" : "fi"}.png`;
