@@ -12,7 +12,7 @@ OUT="$HOME/.cache/satni-fst-build/pages"
 [ -f web/data/satni-web.db.gz ] || { echo "web/data/satni-web.db.gz puuttuu (aja export_web_data.py)"; exit 1; }
 
 rm -rf "$OUT" && mkdir -p "$OUT/screenshots" || exit 1
-cp site/index.html site/site.css site/site.js site/coffee.svg packaging/icon/satni-icon.svg "$OUT/" || exit 1
+cp site/index.html site/older.html site/site.css site/site.js site/coffee.svg packaging/icon/satni-icon.svg "$OUT/" || exit 1
 cp docs/screenshots/*.png "$OUT/screenshots/" || exit 1
 cp -r web "$OUT/app" || exit 1
 # Selainversion Tietoa-ikkunaan julkaisun numero (RELEASE_VERSION)
@@ -33,8 +33,10 @@ grep -q "satni-data-v[0-9]*-$DATA_HASH" "$OUT/app/sw.js" || { echo "sw.js:n väl
 # tiedostoja välimuistissa 10 min, jolloin uusi sivu saattoi saada vanhan site.js:n (uusien osioiden tekstit tyhjinä).
 for f in site.css site.js; do
     HASH=$(sha256sum "site/$f" | cut -c1-10)
-    sed -i "s|\"$f\"|\"$f?v=$HASH\"|" "$OUT/index.html"
-    grep -q "$f?v=$HASH" "$OUT/index.html" || { echo "$f:n versiointi epäonnistui"; exit 1; }
+    for page in index.html older.html; do
+        sed -i "s|\"$f\"|\"$f?v=$HASH\"|" "$OUT/$page"
+        grep -q "$f?v=$HASH" "$OUT/$page" || { echo "$f:n versiointi epäonnistui ($page)"; exit 1; }
+    done
 done
 
 if [ "$1" = "--vain-kokoa" ]; then
