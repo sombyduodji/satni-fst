@@ -3,11 +3,11 @@
 LÄHDE (ks. CREDITS.md): GiellaLT lang-fin -analysaattori ja -generaattori (UiT, Giellatekno), lisenssi GPL-3.0+.
 Valmiiksi käännetyt mallit haetaan GiellaLT:n nightly-paketista giella-fin (./hae_sanakirjat.sh -> giella-fin/).
 
-Taivutetaan saamen substantiivien, verbien ja adjektiivien yksisanaiset suomenkieliset käännökset
+Taivutetaan saamen substantiivien, verbien, adjektiivien ja numeraalien yksisanaiset suomenkieliset käännökset
 (finnish_translation ja suomenkieliset merkitykset). Käännös analysoidaan ensin, jotta saadaan oikea
 sanaluokka ja yhdyssanan rajat (maan#käyttö#raja), ja muodot generoidaan analyysin perusteella.
 
-Taulu: fin_forms(word, pos, forms), pos = saamen sanaluokka N/V/A ja forms esim.
+Taulu: fin_forms(word, pos, forms), pos = saamen sanaluokka N/V/A/Num ja forms esim.
 "Sg+Nom=talo;Sg+Gen=talon;...;Pl+Ine=taloissa". Vaihtoehtoiset muodot erotetaan /-merkillä, tavallisempi
 ensin; vanhahtavat rinnakkaismuodot pudotetaan (ks. clean_variants).
 
@@ -35,6 +35,7 @@ NOMINAL_CELLS = {f"{n}+{c}": f"{n}+{c}" for n in ("Sg", "Pl") for c in CASES}
 # Solu -> generaattorin tagit perusmuodon ja sanaluokan jälkeen
 CELLS = {
     "N": NOMINAL_CELLS,
+    "Num": NOMINAL_CELLS,
     "A": {**NOMINAL_CELLS, "Comp": "Comp+Sg+Nom", "Superl": "Superl+Sg+Nom"},
     "V": {
         "Inf": "Act+InfA+Sg+Lat",
@@ -49,7 +50,9 @@ CELLS = {
         "Pot+ConNeg": "Act+Pot+ConNeg",
     },
 }
-FIN_POS = {"N": "N", "V": "V", "A": "A"}
+# Likimääräisiä ilmauksia, joiden taivutusmuodot eivät ole luotettavia (ei taivuteta, taulukkoon ei tule käännöstä)
+APPROXIMATE_NUMERALS = {"parisen", "parikymmentä", "parisataa", "parituhatta", "kolmisenkymmentä", "toistakymmentä", "neljäkolmatta"}
+FIN_POS = {"N": "N", "V": "V", "A": "A", "Num": "Num"}
 
 
 def lookup(fst, queries, generate=False):
@@ -67,7 +70,7 @@ def lookup(fst, queries, generate=False):
 
 
 # Perusmuodon analyysin loppu sanaluokittain: sitä edeltävä osa (talo+N, maa+N+CmpNP/None, tehdä+V) on generoinnin alku
-CITATION_TAGS = {"N": "+Sg+Nom", "A": "+Sg+Nom", "V": "+Act+InfA+Sg+Lat"}
+CITATION_TAGS = {"N": "+Sg+Nom", "A": "+Sg+Nom", "Num": "+Sg+Nom", "V": "+Act+InfA+Sg+Lat"}
 
 
 def stems(word, pos, analyses):
@@ -78,7 +81,7 @@ def stems(word, pos, analyses):
     found = []
     for a in analyses:
         last = a.split("#")[-1]
-        m = re.match(r"[^+]+(\+Hom\d+)?\+(N|V|A)\+", last)
+        m = re.match(r"[^+]+(\+Hom\d+)?\+(Num|N|V|A)\+", last)
         if m and m.group(2) == FIN_POS[pos] and a.endswith(CITATION_TAGS[pos]) and a[:-len(CITATION_TAGS[pos])] not in found:
             found.append(a[:-len(CITATION_TAGS[pos])])
     simple = [s for s in found if "#" not in s]
@@ -102,6 +105,10 @@ def clean_variants(forms, cell, pos, word):
         merkityt (Dial, Err/, Use/) pudotetaan jo add_fin_forms-funktiossa
       - verbin vanhahtava -oitse-/-oitsi- (imuroitsee -> imuroi, imuroitsi -> imuroi) ja -ele- (määräelee -> määräilee)
     Verbeissä muuten generaattorin järjestys (on/ompi, palaa/palaja)."""
+    if pos == "Num":
+        # Generaattori antaa myös katkenneita muotoja (puolitoista -> itoista); monikon genetiivi -ien ensin (kuusien, tuhansien)
+        forms = [f for f in forms if f[0] == word[0]] or forms
+        return sorted(forms, key=lambda f: not f.endswith("ien")) if cell == "Pl+Gen" else forms
     if len(forms) < 2:
         return forms
     keep = [f for f in forms if "’" not in f and "'" not in f and ("-" not in f or "-" in word)] or forms
@@ -143,7 +150,8 @@ def add_fin_forms(cursor):
     if not (os.path.exists(ANALYSER) and os.path.exists(GENERATOR)):
         print(f"  lang-fin-malleja ei löydy kansiosta {FST_DIR} (aja ./hae_sanakirjat.sh): fin_forms jää tyhjäksi")
         return
-    words = sorted(translation_words(cursor, "fin", "finnish_translation"))
+    words = sorted(w for w in translation_words(cursor, "fin", "finnish_translation", ("N", "V", "A", "Num"))
+                   if not (w[1] == "Num" and w[0] in APPROXIMATE_NUMERALS))
     analyses = lookup(ANALYSER, sorted({w for w, _ in words}))
     requests = {}
     for word, pos in words:

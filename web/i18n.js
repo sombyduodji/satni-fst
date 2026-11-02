@@ -33,6 +33,12 @@ const UI_TEXTS = {
       kuvaan. Napauta sanaa, niin näet käännöksen.</p>
       <p>Teksti tunnistetaan puhelimessa Googlen ML Kitillä, eikä kuva lähde laitteelta. ML Kit voi lähettää Googlelle
       nimettömiä käyttötilastoja, kun toimintoa käytetään.</p>`,
+    expTableTr: "Muotojen käännökset taulukossa", expTableTrDesc: "Jokaisen muodon käännös sen alla taivutustaulukossa.",
+    expTableTrInfo: `<p>Taivutustaulukon muotojen alle tulee käännös pienellä: <i>mun lean – minä olen</i>. Duaali merkitään
+      numerolla: <i>moai letne – me (2) olemme</i>.</p>
+      <p>Käännökset muodostetaan automaattisesti sanan ensimmäisestä käännöksestä, joten ne eivät ole aina oikein.
+      Muodolla, jolle käännöstä ei saada, ei näytetä mitään.</p>`,
+    tableTrNote: "Käännökset on muodostettu automaattisesti.",
     expSms: "Koltansaame", expSmsDesc: "Koltansaamen sanat sanakortissa.",
     expSmsInfo: `<p>Sanakortissa näytetään koltansaamen sanoja GiellaLT:n koltansaamen sanakirjoista.</p>
       <p>Kun haet suomeksi (esim. talo), koltan sanat ovat hakusanan vastineita suoraan sanakirjasta. Pohjoissaamen ja
@@ -45,7 +51,8 @@ const UI_TEXTS = {
     settings: "Asetukset", otherLanguages: "Muut kielet",
     extraLangsHint: "Valittujen kielten käännökset näkyvät sanakortissa suomennoksen lisäksi.",
     voice: "Ääni",
-    favourites: "★ Suosikit", history: "Historia", clearHistory: "Tyhjennä historia",
+    favourites: "★ Suosikit", history: "Historia", clearHistory: "Tyhjennä historia", historyMore: "Lisää…",
+    coffeeText: "Sátni FST on aina ilmainen. Jos haluat tukea sen ja muiden pohjoissaamen sovellusten kehitystä, voit tarjota minulle kahvit!",
     noFavourites: "Ei vielä suosikkeja", noHistory: "Ei hakuja",
     addFavourite: "Lisää suosikkeihin", removeFavourite: "Poista suosikeista",
     loadingTitle: "Ladataan sanakirjaa…",
@@ -138,9 +145,7 @@ const UI_TEXTS = {
       <p>Jos huomaat ongelman, ota yhteyttä sähköpostitse <a href="mailto:satni@somby.fi">satni@somby.fi</a>
          tai tee ilmoitus GitHubissa: <a href="https://github.com/sombyduodji/satni-fst/issues" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst/issues</a>.
          Palaute ja ehdotukset ovat tervetulleita sähköpostitse.</p>
-      <p>Tekijä: Juha Somby</p>
-      <p class="about-coffee">Sátni FST on ilmainen. Jos siitä on sinulle hyötyä, voit tarjota tekijälle kahvit:
-         <a class="coffee-btn" href="https://buymeacoffee.com/sombyduodji" target="_blank" rel="noopener"><img src="icons/coffee.svg" alt="">Buy me a coffee</a></p>`,
+      <p>Tekijä: Juha Somby</p>`,
     close: "Sulje", licenses: "Lisenssit", licensesTitle: "Lisenssit ja tekijänoikeudet",
   },
 
@@ -168,6 +173,12 @@ const UI_TEXTS = {
       merket i bildet. Trykk på et ord for å se oversettelsen.</p>
       <p>Teksten gjenkjennes på telefonen med Googles ML Kit, og bildet forlater ikke enheten. ML Kit kan sende anonym
       bruksstatistikk til Google når funksjonen brukes.</p>`,
+    expTableTr: "Oversettelse av formene i tabellen", expTableTrDesc: "Oversettelsen under hver form i bøyingstabellen.",
+    expTableTrInfo: `<p>Under formene i bøyingstabellen vises oversettelsen med liten skrift: <i>mun lean – jeg er</i>. Dualis merkes
+      med tall: <i>moai letne – vi (2) er</i>.</p>
+      <p>Oversettelsene lages automatisk fra ordets første oversettelse, så de er ikke alltid riktige.
+      Former uten oversettelse viser ingenting.</p>`,
+    tableTrNote: "Oversettelsene er laget automatisk.",
     expSms: "Skoltesamisk", expSmsDesc: "Skoltesamiske ord på ordkortet.",
     expSmsInfo: `<p>Ordkortet viser skoltesamiske ord fra GiellaLTs skoltesamiske ordbøker.</p>
       <p>Når du søker på norsk (f.eks. hus), er de skoltesamiske ordene oversettelser av søkeordet rett fra ordboka. Det
@@ -180,7 +191,8 @@ const UI_TEXTS = {
     settings: "Innstillinger", otherLanguages: "Andre språk",
     extraLangsHint: "Oversettelser på valgte språk vises på ordkortet i tillegg til den norske.",
     voice: "Stemme",
-    favourites: "★ Favoritter", history: "Historikk", clearHistory: "Tøm historikken",
+    favourites: "★ Favoritter", history: "Historikk", clearHistory: "Tøm historikken", historyMore: "Flere…",
+    coffeeText: "Sátni FST er alltid gratis. Vil du støtte utviklingen av den og andre nordsamiske apper, kan du spandere en kaffe på meg!",
     noFavourites: "Ingen favoritter ennå", noHistory: "Ingen søk",
     addFavourite: "Legg til i favoritter", removeFavourite: "Fjern fra favoritter",
     loadingTitle: "Laster ordboken…",
@@ -271,9 +283,7 @@ const UI_TEXTS = {
       <p>Hvis du finner et problem, ta kontakt på e-post <a href="mailto:satni@somby.fi">satni@somby.fi</a>
          eller meld det på GitHub: <a href="https://github.com/sombyduodji/satni-fst/issues" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst/issues</a>.
          Tilbakemeldinger og forslag tas gjerne imot på e-post.</p>
-      <p>Laget av: Juha Somby</p>
-      <p class="about-coffee">Sátni FST er gratis. Har du nytte av den, kan du spandere en kaffe på utvikleren:
-         <a class="coffee-btn" href="https://buymeacoffee.com/sombyduodji" target="_blank" rel="noopener"><img src="icons/coffee.svg" alt="">Buy me a coffee</a></p>`,
+      <p>Laget av: Juha Somby</p>`,
     close: "Lukk", licenses: "Lisenser", licensesTitle: "Lisenser og opphavsrett",
   },
 };

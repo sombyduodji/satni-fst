@@ -31,9 +31,6 @@
         <div class="brand-sub" data-i18n="brandSub">Pohjoissaamen avoin sanakirja ja taivutusgeneraattori</div>
       </div>
     </div>
-    <div class="topbar-actions">
-      <button class="chip-btn" id="about-btn" data-i18n="about">Tietoa</button>
-    </div>
   </header>
   <div class="stripe"><span></span><span></span><span></span><span></span></div>
 
@@ -76,6 +73,7 @@
       <section>
         <h3 data-i18n="history">Historia</h3>
         <ul id="history" class="word-list"></ul>
+        <button class="link-btn" id="history-more" data-i18n="historyMore" hidden>Lisää…</button>
         <button class="link-btn" id="clear-history" data-i18n="clearHistory">Tyhjennä historia</button>
       </section>
       <section>
@@ -99,7 +97,17 @@
               <span class="muted small" data-i18n="expSmsDesc"></span></span>
             <input type="checkbox" class="switch" role="switch" data-exp="sms">
           </label>
+          <label class="switch-row">
+            <span class="switch-text"><span data-i18n="expTableTr">Muotojen käännökset taulukossa</span>
+              <span class="muted small" data-i18n="expTableTrDesc"></span></span>
+            <input type="checkbox" class="switch" role="switch" data-exp="tableTr">
+          </label>
         </div>
+      </section>
+      <section class="menu-end">
+        <button class="chip-btn" id="about-btn" data-i18n="about">Tietoa</button>
+        <p class="about-coffee" data-i18n="coffeeText"></p>
+        <a class="coffee-btn" href="https://buymeacoffee.com/sombyduodji" target="_blank" rel="noopener"><img src="icons/coffee.svg" alt="">Buy me a coffee</a>
       </section>
     </aside>
 
