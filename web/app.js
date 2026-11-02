@@ -366,7 +366,7 @@ const CLITICS = ["gen", "ges", "gis", "nai", "son", "han", "hal", "bai", "bat", 
 const SAMI_HIT_RANKS = [1, 1.2, 5, 5.5, 6];
 
 // Taivutettu suomen- tai norjankielinen sana -> [{base, cell, pos}] (juon -> juoda, Prs+Sg1, V). forms-sarake on
-// muotoa "Prs+Sg1=juon;Prs+Sg2=juot;..." ja vaihtoehdot /-merkillä (husene/husa), joten haku rajataan erottimin.
+// muotoa "Prs+Sg1=juon;Prs+Sg2=juot;..." ja vaihtoehdot /-merkillä (husene/husa). SQL rajaa rivit nopeasti, tarkka osuma alla.
 function translationFormsOf(word, lang) {
   if (!word || word.includes(" ") || !FORM_PHRASES[lang]) return [];
   const out = [];
@@ -379,9 +379,7 @@ function translationFormsOf(word, lang) {
   }
   try {
     for (const r of all(
-      `SELECT word, pos, forms FROM ${lang}_forms WHERE ';' || forms || ';' LIKE ? OR ';' || forms || ';' LIKE ?
-         OR ';' || forms || ';' LIKE ? OR ';' || forms || ';' LIKE ?`,
-      [`%=${word};%`, `%=${word}/%`, `%/${word};%`, `%/${word}/%`]
+      `SELECT word, pos, forms FROM ${lang}_forms WHERE instr(forms, ?)`, [word]
     )) {
       for (const cell of r.forms.split(";")) {
         const [c, v] = cell.split("=");
@@ -425,8 +423,35 @@ function suggestWords(prefix) {
       [settings.lang, `${q}%`, `%, ${q}%`]
     ));
   }
+  // Kirjoitettu sana taivutusmuotona (munnje = mun, minulle = mun): perusmuodon jälkeen, jos sana on itse käännetty hakusana
+  const col = LANGUAGES[settings.lang].col;
+  const exact = rows.filter((r) => fold(r.sme_lemma) === q && r[col]);
+  const forms = formSuggestions(prefix);
+  // Oma tyhjä hakusana (mus, munnje ilman suomennosta) on turha, kun perusmuoto (mun) näkyy
+  const useful = forms.length ? rows.filter((r) => fold(r.sme_lemma) !== q || r[col]) : rows;
   const seen = new Set();
-  return rows.filter((r) => !seen.has(r.sme_lemma + r.pos) && seen.add(r.sme_lemma + r.pos)).slice(0, 8);
+  return [...exact, ...forms, ...useful]
+    .filter((r) => !seen.has(r.sme_lemma + r.pos) && seen.add(r.sme_lemma + r.pos)).slice(0, 8);
+}
+
+// Koko sanan osumat taivutusmuotona tai liitepartikkelin kanssa samalla haulla kuin Enter (queryDatabase); form = kirjoitettu sana
+function formSuggestions(text) {
+  const typed = text.trim();
+  if (fold(typed).length < 3 || typed.includes(" ")) return [];
+  const col = LANGUAGES[settings.lang].col;
+  const hits = queryDatabase(typed).filter((r) => r.via || r.clitics || r.finClitic || r.rank === 1.2 || r.rank === 5);
+  // Ilman käännöstä oleva rinnakkaismuoto (mon = mun) vain, jos muuta ei ole
+  const shown = hits.some((r) => r[col]) ? hits.filter((r) => r[col]) : hits;
+  return shown.slice(0, 3).map((r) => {
+    const translated = r.via || r.finClitic;
+    // Saamen muoto kursiivilla perusmuodon perässä: mus -> mun mus, minulla -> mun mus (ja oikealla haettu suomen sana)
+    let smeForm = translated ? null : typed;
+    if (r.via) {
+      const tag = settings.lang === "fin" ? samiTagOfFinCell(r.via.cell, r.pos.toUpperCase()) : null;
+      smeForm = tag ? (loadWord(r.id).paradigm.get(tag) || [])[0] || null : null;
+    }
+    return { ...r, form: typed, smeForm, formNote: translated ? typed : translationOf(r, 2) };
+  });
 }
 
 function loadWord(id) {
@@ -1307,20 +1332,21 @@ function updateSuggestions() {
   suggestions = suggestWords($("search").value);
   activeSuggestion = -1;
   const list = $("suggestions");
-  if (!suggestions.length || (suggestions.length === 1 && fold(suggestions[0].sme_lemma) === fold($("search").value))) {
+  if (!suggestions.length || (suggestions.length === 1 && !suggestions[0].form && fold(suggestions[0].sme_lemma) === fold($("search").value))) {
     hideSuggestions();
     return;
   }
   list.innerHTML = suggestions.map((s, i) =>
-    `<li role="option" data-i="${i}"><b>${esc(s.sme_lemma)}</b><span class="pos">${esc(s.pos)}</span>` +
-    `<span class="trans">${esc(translationOf(s, 2))}</span></li>`).join("");
+    `<li role="option" data-i="${i}"><b>${esc(s.sme_lemma)}</b>${s.smeForm ? `<i class="sugg-form">${esc(s.smeForm)}</i>` : ""}` +
+    `<span class="pos">${esc(s.pos)}</span><span class="trans">${esc(s.form ? s.formNote : translationOf(s, 2))}</span></li>`).join("");
   list.hidden = false;
 }
 function hideSuggestions() { $("suggestions").hidden = true; activeSuggestion = -1; }
 // Ehdotuksesta avataan juuri valittu sana: samannäköisistä (vuostá = vastaan / juusto) muuten avautuisi ensimmäinen
 function pickSuggestion(s) {
-  const index = queryDatabase(s.sme_lemma).findIndex((r) => r.id === s.id);
-  search(s.sme_lemma, Math.max(index, 0));
+  const text = s.form || s.sme_lemma;
+  const index = queryDatabase(text).findIndex((r) => r.id === s.id);
+  search(text, Math.max(index, 0));
 }
 function moveSuggestion(delta) {
   const items = $("suggestions").children;

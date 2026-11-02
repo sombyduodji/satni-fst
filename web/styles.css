@@ -121,6 +121,7 @@ select {
   box-shadow: 0 10px 30px rgba(0, 0, 0, .15); max-height: 340px; overflow-y: auto;
 }
 .suggestions li { padding: 8px 10px; border-radius: 6px; cursor: pointer; display: flex; gap: 8px; align-items: baseline; }
+.suggestions li .sugg-form { color: var(--muted); }
 .suggestions li .pos { color: var(--subtle); font-size: 12px; }
 .suggestions li .trans { color: var(--muted); font-size: 13px; margin-left: auto; text-align: right; }
 .suggestions li.active, .suggestions li:hover { background: var(--select); }
