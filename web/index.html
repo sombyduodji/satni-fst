@@ -24,13 +24,14 @@
 <body class="drawer-layout">
   <header class="topbar">
     <button class="icon-btn" id="sidebar-toggle" data-i18n-aria="sidebar" data-i18n-title="sidebar">☰</button>
-    <div class="brand">
+    <!-- Logo ja nimi vievät aloitussivulle (app.js: goHome) -->
+    <a class="brand home-link" href="./" data-i18n-title="home">
       <img src="icons/icon-192.png" alt="" class="brand-icon">
       <div>
         <div class="brand-name">Sátni FST</div>
         <div class="brand-sub" data-i18n="brandSub">Pohjoissaamen avoin sanakirja ja taivutusgeneraattori</div>
       </div>
-    </div>
+    </a>
   </header>
   <div class="stripe"><span></span><span></span><span></span><span></span></div>
 
@@ -49,24 +50,16 @@
   <div id="drawer-scrim" class="drawer-scrim"></div>
   <div class="layout">
     <aside id="sidebar" class="sidebar">
-      <!-- ☰-valikko: asetukset, suosikit, historia ja muut kielet. Käännökset ovat aina käyttöliittymän
-           kielellä (suomi/norja); Muut kielet -asetuksella valittujen kielten käännökset näkyvät lisäksi
-           sanakortissa, ja kaikki kielet Merkitykset-välilehdellä. -->
-      <section id="settings-section" class="settings-section">
-        <h3 data-i18n="settings">Asetukset</h3>
-        <div class="setting-row stack"><span data-i18n="language">Kieli</span>
-          <div id="drawer-lang" class="lang-switch" role="radiogroup" data-i18n-aria="uiLanguage"></div></div>
-        <div class="setting-row" id="theme-row"><span data-i18n="theme">Teema</span>
-          <select id="theme-select" data-i18n-aria="theme">
-            <option value="auto" data-i18n="themeAuto">Automaattinen</option>
-            <option value="light" data-i18n="themeLight">Vaalea</option>
-            <option value="dark" data-i18n="themeDark">Tumma</option>
-          </select></div>
-        <label class="switch-row" id="grade-option"><span data-i18n="showGrade">Näytä astevaihtelu</span>
-          <input type="checkbox" class="switch" role="switch" id="grade-toggle" checked></label>
-        <div class="setting-row voice-head"><span data-i18n="voice">Ääni</span></div>
-        <div id="voice-list" class="voice-list" role="radiogroup" data-i18n-aria="voice"></div>
-      </section>
+      <!-- ☰-valikko: sovelluksen nimi ja tekijä, suosikit ja historia, asetukset avattavana ja lopuksi tiedot.
+           Käännökset ovat aina käyttöliittymän kielellä (suomi/norja); Muut kielet -asetuksella valittujen kielten
+           käännökset näkyvät lisäksi sanakortissa, ja kaikki kielet Merkitykset-välilehdellä. -->
+      <div class="menu-head">
+        <a class="home-link" href="./" data-i18n-title="home"><img src="icons/icon-192.png" alt="" class="menu-logo"></a>
+        <div>
+          <a class="home-link menu-name" href="./" data-i18n-title="home">Sátni FST</a>
+          <button class="menu-author" id="author-btn"><span data-i18n="madeBy">Tekijä</span> Juha Somby</button>
+        </div>
+      </div>
       <section>
         <h3 data-i18n="favourites">★ Suosikit</h3>
         <ul id="favourites" class="word-list"></ul>
@@ -79,39 +72,57 @@
           <button class="link-btn" id="clear-history" data-i18n="clearHistory">Tyhjennä historia</button>
         </div>
       </section>
-      <section>
-        <h3 data-i18n="otherLanguages">Muut kielet</h3>
-        <p class="muted small" data-i18n="extraLangsHint"></p>
-        <div id="extra-langs" class="extra-langs"></div>
-      </section>
-      <!-- Kokeelliset ominaisuudet, kukin oma kytkimensä (oletuksena pois). Päälle kytkettäessä ikkuna kertoo, mitä
-           ominaisuus tekee (app.js: bindExperimental). Kuvasta haku vain Android-sovelluksessa. -->
-      <section id="experimental-section" class="experimental">
-        <h3 data-i18n="experimental">Kokeelliset ominaisuudet</h3>
-        <p class="muted small" data-i18n="experimentalHint"></p>
-        <div class="toggle-list">
-          <label class="switch-row" id="exp-ocr-row" hidden>
-            <span class="switch-text"><span data-i18n="expOcr">Valokuvahaku</span>
-              <span class="muted small" data-i18n="expOcrDesc"></span></span>
-            <input type="checkbox" class="switch" role="switch" data-exp="ocr">
-          </label>
-          <label class="switch-row">
-            <span class="switch-text"><span data-i18n="expSms">Koltansaame</span>
-              <span class="muted small" data-i18n="expSmsDesc"></span></span>
-            <input type="checkbox" class="switch" role="switch" data-exp="sms">
-          </label>
-          <label class="switch-row">
-            <span class="switch-text"><span data-i18n="expTableTr">Konekäännökset taulukossa</span>
-              <span class="muted small" data-i18n="expTableTrDesc"></span></span>
-            <input type="checkbox" class="switch" role="switch" data-exp="tableTr">
-          </label>
-        </div>
-      </section>
-      <section class="menu-end">
-        <button class="chip-btn" id="about-btn" data-i18n="about">Tietoa</button>
-        <p class="about-coffee" data-i18n="coffeeText"></p>
-        <a class="coffee-btn" href="https://buymeacoffee.com/sombyduodji" target="_blank" rel="noopener"><img src="icons/coffee.svg" alt="">Buy me a coffee</a>
-      </section>
+      <details class="menu-settings">
+        <summary data-i18n="settings">Asetukset</summary>
+        <section id="settings-section" class="settings-section">
+          <div class="setting-row stack"><span data-i18n="language">Kieli</span>
+            <div id="drawer-lang" class="lang-switch" role="radiogroup" data-i18n-aria="uiLanguage"></div></div>
+          <div class="setting-row" id="theme-row"><span data-i18n="theme">Teema</span>
+            <select id="theme-select" data-i18n-aria="theme">
+              <option value="auto" data-i18n="themeAuto">Automaattinen</option>
+              <option value="light" data-i18n="themeLight">Vaalea</option>
+              <option value="dark" data-i18n="themeDark">Tumma</option>
+            </select></div>
+          <label class="switch-row" id="grade-option"><span data-i18n="showGrade">Näytä astevaihtelu</span>
+            <input type="checkbox" class="switch" role="switch" id="grade-toggle" checked></label>
+          <div class="setting-row voice-head"><span data-i18n="voice">Ääni</span></div>
+          <div id="voice-list" class="voice-list" role="radiogroup" data-i18n-aria="voice"></div>
+        </section>
+        <section>
+          <h3 data-i18n="otherLanguages">Muut kielet</h3>
+          <p class="muted small" data-i18n="extraLangsHint"></p>
+          <div id="extra-langs" class="extra-langs"></div>
+        </section>
+        <!-- Kokeelliset ominaisuudet, kukin oma kytkimensä (oletuksena pois). Päälle kytkettäessä ikkuna kertoo, mitä
+             ominaisuus tekee (app.js: bindExperimental). Kuvasta haku vain Android-sovelluksessa. -->
+        <section id="experimental-section" class="experimental">
+          <h3 data-i18n="experimental">Kokeelliset ominaisuudet</h3>
+          <p class="muted small" data-i18n="experimentalHint"></p>
+          <div class="toggle-list">
+            <label class="switch-row" id="exp-ocr-row" hidden>
+              <span class="switch-text"><span data-i18n="expOcr">Valokuvahaku</span>
+                <span class="muted small" data-i18n="expOcrDesc"></span></span>
+              <input type="checkbox" class="switch" role="switch" data-exp="ocr">
+            </label>
+            <label class="switch-row">
+              <span class="switch-text"><span data-i18n="expSms">Koltansaame</span>
+                <span class="muted small" data-i18n="expSmsDesc"></span></span>
+              <input type="checkbox" class="switch" role="switch" data-exp="sms">
+            </label>
+            <label class="switch-row">
+              <span class="switch-text"><span data-i18n="expTableTr">Konekäännökset taulukossa</span>
+                <span class="muted small" data-i18n="expTableTrDesc"></span></span>
+              <input type="checkbox" class="switch" role="switch" data-exp="tableTr">
+            </label>
+          </div>
+        </section>
+      </details>
+      <nav class="menu-links">
+        <button id="about-btn" data-i18n="about">Tietoa</button>
+        <button id="feedback-btn" data-i18n="sendFeedback">Lähetä palautetta</button>
+        <button id="support-btn" data-i18n="support">Osallistu ja tue</button>
+        <p class="muted small" id="menu-version"></p>
+      </nav>
     </aside>
 
     <main id="main">
@@ -179,11 +190,50 @@
   </dialog>
 
   <dialog id="about">
-    <h2>Sátni FST</h2>
-    <p class="muted small" id="about-version"></p>
-    <div data-i18n-html="aboutBody"></div>
+    <div class="about-head">
+      <img src="icons/icon-192.png" alt="" class="about-logo">
+      <h2>Sátni FST</h2>
+      <p class="muted small" id="about-version"></p>
+    </div>
+    <div class="about-body" data-i18n-html="aboutBody"></div>
     <form method="dialog" class="dialog-actions">
       <button type="button" class="chip-btn" id="licenses-btn" data-i18n="licenses">Lisenssit</button>
+      <button class="chip-btn" data-i18n="close">Sulje</button>
+    </form>
+  </dialog>
+
+  <!-- Palaute: osoite näkyy ja kopioituu, koska sähköpostilinkki ei tee mitään koneella, jolla ei ole sähköpostiohjelmaa -->
+  <dialog id="feedback-dlg" class="feedback-dlg">
+    <h2 data-i18n="sendFeedback">Lähetä palautetta</h2>
+    <p data-i18n="feedbackIntro"></p>
+    <div class="feedback-address">
+      <strong>satni@somby.fi</strong>
+      <button class="chip-btn" id="feedback-copy" data-i18n="copy">Kopioi</button>
+    </div>
+    <p class="support-actions">
+      <a class="chip-btn" id="feedback-mail" href="mailto:satni@somby.fi" data-i18n="feedbackOpenMail">Avaa sähköposti</a>
+      <a class="chip-btn" href="https://github.com/sombyduodji/satni-fst/issues" target="_blank" rel="noopener" data-i18n="feedbackGithub">Tee ilmoitus GitHubissa</a>
+    </p>
+    <form method="dialog" class="dialog-actions">
+      <button class="chip-btn" data-i18n="close">Sulje</button>
+    </form>
+  </dialog>
+
+  <dialog id="support-dlg" class="support-dlg">
+    <h2 data-i18n="support">Osallistu ja tue</h2>
+    <div data-i18n-html="supportStory"></div>
+    <h3 data-i18n="supportHelpTitle">Näin voit auttaa</h3>
+    <ul class="support-ways" data-i18n-html="supportWays"></ul>
+    <p class="support-actions">
+      <button class="chip-btn" id="support-feedback" data-i18n="sendFeedback">Lähetä palautetta</button>
+      <a class="chip-btn" href="https://github.com/sombyduodji/satni-fst" target="_blank" rel="noopener">GitHub</a>
+    </p>
+    <h3 data-i18n="supportCoffeeTitle">Miksi tukea?</h3>
+    <div data-i18n-html="supportCoffee"></div>
+    <a class="coffee-btn" href="https://buymeacoffee.com/sombyduodji" target="_blank" rel="noopener"><img src="icons/coffee.svg" alt="">Buy me a coffee</a>
+    <p class="muted small" data-i18n="supportNote"></p>
+    <p data-i18n="supportThanks"></p>
+    <form method="dialog" class="dialog-actions">
       <button class="chip-btn" data-i18n="close">Sulje</button>
     </form>
   </dialog>

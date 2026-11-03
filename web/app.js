@@ -95,6 +95,10 @@ function applyStaticTexts() {
   const version = window.SATNI_VERSION;
   $("about-version").textContent = !version ? t("aboutWeb", window.SATNI_WEB_VERSION)
     : window.SATNI_PLATFORM === "android" ? t("aboutAndroid", version) : t("aboutDesktop", version);
+  $("menu-version").textContent = $("about-version").textContent;
+  // Sähköpostin aiheessa versio, jotta palautteesta näkee, mitä versiota se koskee
+  $("feedback-mail").href = "mailto:satni@somby.fi?subject=" +
+    encodeURIComponent(`${t("feedbackSubject")} (${$("about-version").textContent})`);
   $("random-btn").textContent = t("randomWord");
   renderExtraLangs();
 
@@ -1084,7 +1088,7 @@ function renderGradation() {
     else if (value === w.hd_cluster) cls = "hd";
     return `<span class="${cls}">${esc(value)} <small>${esc(q2 || "")}</small></span>`;
   }).join('<span class="sep"> · </span>');
-  // Omat solut: esimerkkimuodot, konsonantit, asteet ja Oahpan ryhmä; solu rivittyy kokonaisena
+  // Omat solut: esimerkkimuodot, konsonantit, asteet ja astevaihteluryhmä; solu rivittyy kokonaisena
   const cell = (cap, val, cls = "") => `<div class="grad-cell ${cls}"><span class="gc-cap">${esc(cap)}</span><span class="gc-val">${val}</span></div>`;
   const arrow = '<span class="arrow">→</span>';
   el.innerHTML = `<div class="grad-head">${esc(t("gradation"))}</div><div class="grad-cells">`
@@ -1996,7 +2000,17 @@ function openShared(text) {
 function routeFromHash() {
   const m = location.hash.match(/^#\/sana\/([^/]+)(?:\/(\d+))?/);
   if (m) search(decodeURIComponent(m[1]), Number(m[2] || 0));
-  else { showOnly("welcome"); $("search").value = ""; }
+  else { showOnly("welcome"); $("search").value = ""; $("did-you-mean").hidden = true; }
+}
+
+// Logo ja nimi: takaisin aloitussivulle. Sivua ei ladata uudelleen, koska sanakirja on jo muistissa.
+function goHome(e) {
+  e.preventDefault();
+  closeDrawer();
+  hideSuggestions();
+  if (location.hash) history.pushState(null, "", location.pathname + location.search);
+  routeFromHash();
+  window.scrollTo(0, 0);
 }
 
 // --- Käynnistys ---
@@ -2060,6 +2074,12 @@ function bindEvents() {
   $("fav-btn").onclick = toggleFavourite;
   bindFormPop();
   $("about-btn").onclick = () => $("about").showModal();
+  $("author-btn").onclick = () => $("about").showModal();
+  $("support-btn").onclick = () => $("support-dlg").showModal();
+  $("feedback-btn").onclick = () => $("feedback-dlg").showModal();
+  $("support-feedback").onclick = () => { $("support-dlg").close(); $("feedback-dlg").showModal(); };
+  $("feedback-copy").onclick = async () => { await copyText("satni@somby.fi"); toast(t("copied", "satni@somby.fi"), 1800); };
+  for (const a of document.querySelectorAll(".home-link")) a.onclick = goHome;
   $("licenses-btn").onclick = showLicenses;
   $("did-you-mean").onclick = (e) => { const b = e.target.closest("[data-q]"); if (b) search(b.dataset.q); };
   $("lic-select").onchange = (e) => showLicenseFile(e.target.value);
