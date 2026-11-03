@@ -1,0 +1,306 @@
+// Kotisivun tekstit kolmella kielellä ja uusimman julkaisun lataukset GitHubin rajapinnasta.
+const TEXTS = {
+  fi: {
+    tagline: "Pohjoissaamen sanakirja ja taivutin",
+    title: "Pohjoissaamen sanakirja, joka taivuttaa jokaisen sanan",
+    lead: "Noin 80 000 sanaa käännöksineen ja täydet taivutustaulukot. Toimii ilman verkkoyhteyttä tietokoneella, puhelimessa ja selaimessa.",
+    open: "Avaa sanakirja selaimessa",
+    download: "Lataa sovellus",
+    openNote: "Selainversio lataa sanakirjan (40 Mt) ensimmäisellä kerralla ja toimii sen jälkeen myös ilman verkkoa.",
+    newH: "Uutta versiossa 0.9.3",
+    privacyLink: "Tietosuoja",
+    v093: "Versio 0.9.3",
+    w1h: "Astevaihtelu korjattu", w1: "Vahva ja heikko aste olivat väärin päin noin 340 sanalla, joukossa yleisiä sanoja kuten dilli, gilli, sivva, nisu ja biras. Sanakortti ja taivutustaulukon värit ovat nyt oikein.",
+    w2h: "Selkeämpi asterivi", w2: "Kun asteet III ja II kirjoitetaan samoin, rivi merkitsee asteen, jota sana todella käyttää: mannat näyttää nn II ja suolu ll III.",
+    w3h: "Valikko ja haku", w3: "Kertavihje kertoo, että kieli ja asetukset löytyvät valikosta, ja aloitussivulla on Valikko-rivi. Hakuehdotus näkyy nyt myös, kun kirjoitettu sana on ainoa osuma.",
+    w4h: "Kokeellinen: Apertium-käännökset", w4: "Uusi kytkin näyttää norjan käännöksen noin 4 600 sanalle, joilla sitä ei ole sanakirjoissa. Käännökset on merkitty tarkistamattomiksi, eivätkä ne vaikuta hakuun.",
+    wcap: "dilli → dili",
+    v092: "Versio 0.9.2",
+    v0922: "Pieni päivitys 0.9.2.3: siistimpi valikko, selkeämpi Tietoa-ikkuna, uusi palauteikkuna ja tarkemmat lisenssitiedot.",
+    z1h: "Lisää muotoja hakuun", z1: "Haku löytää nyt myös kenelle, tälle ja niille sekä muodot kuten talolla, pöydältä ja taloksi.",
+    z2h: "Vain varmat saamen muodot", z2: "Suomen pääte ei aina vastaa yhtä saamen muotoa: pöydällä on beavddi alde, ei beavddis. Epävarmoissa tapauksissa sovellus löytää sanan, mutta ei ehdota muotoa.",
+    z3h: "Asemasanat sanakortissa", z3: "Tarkistetuille sanoille sanakortissa näkyy päällä: beavddi alde ja alla: beavddi vuolde. Vain tarkistetut ilmaukset näytetään.",
+    z4h: "Muuta uutta", z4: "Genetiivin päämuoto ensin (viesu), perussana liitepartikkelillisille hakusanoille (ollugo = ollu + -go), rivi Haetaan muotoja… hakuehdotuksissa ja astevaihtelun piilotus yhdellä kytkimellä.",
+    zcap: "pöydällä → beavddi alde",
+    v091: "Versio 0.9.1",
+    y1h: "Haku näyttää taivutusmuodot", y1: "Kun kirjoitat hakukenttään mus tai minulla, ehdotuksissa näkyy perusmuoto mun ja sen taivutusmuoto mus.",
+    y2h: "Persoonapronominit ja numeraalit suomeksi", y2: "Haku löytää nyt myös minulle, minulla, hänelle, meille ja kolmelle, ja näyttää saamen muodon: minulle ≈ munnje, kolmelle ≈ golbmii. Myös liitepartikkeli toimii: minulleko ≈ munnjego.",
+    y3h: "Kokeiltavaksi: konekäännökset taulukossa", y3: "Persoonapronominien muodoilla on nyt aina käännös. Valikon kokeellisista ominaisuuksista voi kytkeä konekäännöksen muillekin muodoille: mun lean – minä olen. Duaali merkitään numerolla: moai letne – me (2) olemme. Konekäännökset eivät ole aina oikein.",
+    y4h: "Muuta uutta", y4: "Tietoa ja kahvipainike ovat nyt valikon lopussa. Historiasta näkyy 10 viimeisintä hakua ja Lisää-painike, ja tyhjennys kysyy vahvistuksen.",
+    ycap: "minulla → mun (mus)",
+    changelogLink: "Kaikki muutokset, myös versiot ennen 0.7.3 →", olderLink: "Aiemmat versiot →", olderTitle: "Aiemmat versiot – Sátni FST", backHome: "← Takaisin kotisivulle",
+    v090: "Versio 0.9",
+    x1h: "Haku liitepartikkelien kanssa", x1: "Sanan voi hakea liitepartikkelin kanssa, saameksi tai suomeksi: boađátgo ja tuletko löytävät sanan boahtit. Sanakortti selittää liitteen (boađátgo = boađát + -go) ja näyttää sen myös suomeksi (≈ tuletko).",
+    x2h: "Tarkoititko?", x2: "Jos saamen erikoiskirjaimet jäävät pois, sovellus ehdottaa oikeaa sanaa: boadatgo → boađátgo, cahci → čáhci.",
+    x3h: "Kokeiltavaksi: koltansaame", x3: "Valikon kokeellisista ominaisuuksista voi kytkeä päälle koltansaamen sanat sanakorttiin (talo → tääll, põrtt). Koltansaamen osaaja ei ole vielä tarkistanut aineistoa.",
+    x4h: "Muuta uutta", x4: "Neahttadigisánit-sanakirja yhdellä napautuksella, valikon kielet kytkiminä, ja hakuehdotuksesta avautuu juuri valittu sana (vuostá = juusto tai vastaan).",
+    xcap: "boađátgo ≈ tuletko",
+    v081: "Versio 0.8.1", u1h: "Kuvahaku ei enää näytä jumittuvan",
+    u1: "Kuvan päällä pyörii latauskehä, kun tekstiä tunnistetaan ja sanoja haetaan – myös kun suuntaa vaihdetaan kuvan ollessa auki. Tietoa-ikkunan lopussa on nyt Buy me a coffee -linkki.", olderH: "Aiemmat versiot", r2: "Napauta muotoa: kuuntele tai kopioi",
+    v080: "Versio 0.8", r1h: "Uudistettu sanakortti",
+    r1: "Napauta mitä tahansa taivutusmuotoa: kuplasta voit kuunnella tai kopioida sen. Astevaihtelu näkyy selkeinä soluina (vahva → heikko aste, konsonantit, asteet), ja Giellateknon ja sátni.orgin napit ovat kohdassa Sanasta muualla. ChatGPT-nappi on poistettu. Kuvahaun merkinnät ovat saamelaislipun väreissä.",
+    v076: "Versio 0.7.6.1", o1h: "Kokeiltavaksi: hae sanaa valokuvasta",
+    o1: "Androidilla: ota kuva tekstistä tai valitse kuva, ja sanakirjan sanat merkitään kuvaan. Napauta sanaa: kuplassa on käännös ja 🔈-kuuntelu, ja kuplasta pääset sanakirjaan. Toimii saamesta suomeen ja suomesta saameen (myös taivutetuilla sanoilla: talossa → viessu), ja merkinnän tavan (kehys tai alleviivaus) ja värin voi valita. Teksti tunnistetaan puhelimessa, eikä kuva lähde laitteelta (Googlen ML Kit voi lähettää nimettömiä käyttötilastoja). Kytke päälle valikon lopusta: Kokeelliset ominaisuudet.",
+    q1: "1. Ota tai valitse kuva", q2: "2. Napauta sanaa", q3: "3. Sanakirjassa",
+    v075: "Versio 0.7.5", v074: "Versio 0.7.4", v073: "Versio 0.7.3",
+    k1h: "Hae taivutetulla suomen sanalla", k1: "Perusmuotoa ei tarvita: juon löytää sanan juhkat ja taloon sanan viessu. Sanakortti näyttää myös saamen sanan samassa muodossa: juon = juoda ≈ jugan.",
+    m1h: "Käännös haetussa muodossa", m1: "Taivutetulla sanalla haettaessa näet käännöksen samassa muodossa: viesus ≈ talossa / talosta, dagan ≈ teen.",
+    m2h: "Parempi haku", m2: "Yleisimmät sanat löytyvät ensin (lea, lei, mus), ja haku toimii saameksi ja suomeksi. Sanakirjasta on siivottu kaksoissanat.",
+    m3h: "Uusi valikko ja ääninäytteet", m3: "☰-valikossa ovat kieli, teema, aste, suosikit ja historia. Kuuntele äänet Biret, Máhtte ja Sunná ennen valintaa – näytteet toimivat ilman verkkoa. Englannin, inarin-, luulajan- ja eteläsaamen käännökset saa näkyviin valikosta.",
+    n1h: "Jaa sana suoraan sovellukseen", n1: "Androidilla: valitse sana mistä tahansa sovelluksesta – selaimesta, sähköpostista tai viestistä – ja valitse Jaa → Sátni FST. Sana ja sen käännös avautuvat heti, myös taivutettuna (eamiálbmogiid → eamiálbmot).",
+    n2h: "Hae myös muualta", n2: "Sanakortin napeista sana haetaan suoraan sátni.orgista tai kysytään ChatGPT:ltä valmiilla kysymyksellä – avuksi, kun sanakirjassa ei ole suomennosta.",
+    n3h: "Lähes 1 300 suomennosta lisää", n3: "Suomi–saame-sanakirjasta haetaan käännös sanoille, joilta se puuttui (mas = jossa). Lisäksi pois satoja kaksoissanoja.",
+    s1: "1. Valitse sana", s2: "2. Jaa → Sátni FST", s3: "3. Käännös heti",
+    f1h: "80 000 sanaa", f1: "Käännökset suomeksi ja norjaksi, osalle sanoista myös englanniksi, inarin-, luulajan- ja eteläsaameksi.",
+    f2h: "Täydet taivutukset", f2: "Verbien kaikki tapaluokat, nominien sijamuodot yksikössä ja monikossa – noin 74 000 sanalle.",
+    f3h: "Hae millä tahansa muodolla", f3: "Taivutettu muoto löytää perusmuodon (dagan → dahkat). Hae myös suomeksi, taivutetullakin sanalla (juon → juhkat).",
+    f4h: "Astevaihtelu näkyvissä", f4: "Vahva aste (GD) vihreällä, heikko aste (HD) oranssilla – taulukoissa ja sanakortissa.",
+    f5h: "Ääntäminen", f5: "Kuuntele sanat ja taivutusmuodot Divvunin puhesynteesillä (äänet Biret, Máhtte ja Sunná).",
+    f6h: "Suomeksi tai norjaksi", f6: "Käyttöliittymä suomeksi tai norjaksi, vaalea ja tumma teema, historia ja suosikit.",
+    phonesH: "Puhelimessa",
+    p1: "Sanakortti", p2: "Taivutustaulukko", p3: "Norjaksi, tumma teema", p4: "Merkitykset",
+    downloadH: "Lataa",
+    releaseLoading: "Haetaan uusinta versiota…",
+    release: (v, d) => `Uusin versio ${v} (${d}). Ilmainen ja avoin, ei virallista tukea.`,
+    releaseFail: "Uusimman version tietoja ei saatu – lataukset löytyvät GitHubista.",
+    win: "Windows 10 ja 11. Pura zip ja käynnistä satni-fst.exe.",
+    linux: "AppImage: salli suoritus ja käynnistä kaksoisnapsautuksella.",
+    android: "Android 7.0+. Avaa tiedosto puhelimessa ja salli asennus.",
+    webH: "Selaimessa", web: "Ei asennusta. Toimii nykyaikaisissa selaimissa myös puhelimessa.",
+    allReleases: "Kaikki versiot ja muutokset:",
+    madeH: "Näin se tehtiin",
+    made: "Pohjoissaame oli äitini äidinkieli, ja Sátni FST alkoi omana apuvälineenäni, kun lähdin opettelemaan sitä – palaamaan juurilleni. Idea, suunta ja testaus ovat minun, koodin on kirjoittanut tekoäly (Claude, Anthropic) minun ohjauksessani. Itse kielitieto on saamen kieliteknologian asiantuntijoiden työtä (GiellaLT, Divvun, Giellatekno).",
+    creditsH: "Kiitokset",
+    credits: "Kaikki kielitieto on saamen kieliteknologiayhteisön työtä. Sátni FST kokoaa sen yhteen sovellukseen.",
+    c1: "sanakirjat (dict-sme-fin, dict-sme-nob ym., CC BY 4.0) ja morfologia (lang-sme ja suomen taivutus lang-fin, GPL-3.0)",
+    c2: "puhesynteesi (UiT Norjan arktinen yliopisto)",
+    c3: "astevaihtelutaulukko", c4: "norjan taivutus: Norsk ordbank (CC BY 4.0)",
+    license: "Sátni FST on vapaata ohjelmistoa (GPL-3.0). Kaikki lähteet ja lisenssit:",
+    feedback: "Palaute:",
+    supportText: "Sátni FST on ilmainen ja pysyy ilmaisena. Jos siitä on sinulle hyötyä, voit tarjota tekijälle kahvit.",
+  },
+  nb: {
+    tagline: "Nordsamisk ordbok og bøyingsverktøy",
+    title: "Nordsamisk ordbok som bøyer hvert ord",
+    lead: "Om lag 80 000 ord med oversettelser og fullstendige bøyingstabeller. Virker uten nett på datamaskin, mobil og i nettleseren.",
+    open: "Åpne ordboka i nettleseren",
+    download: "Last ned appen",
+    openNote: "Nettversjonen laster ned ordboka (40 MB) første gang og virker deretter også uten nett.",
+    newH: "Nytt i versjon 0.9.3",
+    privacyLink: "Personvern",
+    v093: "Versjon 0.9.3",
+    w1h: "Stadieveksling rettet", w1: "Sterkt og svakt stadium var byttet om på omtrent 340 ord, blant dem vanlige ord som dilli, gilli, sivva, nisu og biras. Ordkortet og fargene i bøyingstabellen er nå riktige.",
+    w2h: "Tydeligere graderad", w2: "Når grad III og II skrives likt, markerer raden graden ordet faktisk bruker: mannat viser nn II og suolu ll III.",
+    w3h: "Meny og søk", w3: "Et engangstips forteller at språk og innstillinger ligger i menyen, og velkomstsiden har en Meny-rad. Søkeforslag vises nå også når ordet du skrev er eneste treff.",
+    w4h: "Eksperimentelt: Apertium-oversettelser", w4: "En ny bryter viser en norsk oversettelse for omtrent 4 600 ord som ikke har det i ordbøkene. Oversettelsene er merket som ikke kontrollert og påvirker ikke søket.",
+    wcap: "dilli → dili",
+    v092: "Versjon 0.9.2",
+    v0922: "Liten oppdatering 0.9.2.3: ryddigere meny, klarere Om-vindu, nytt tilbakemeldingsvindu og mer presise lisensopplysninger.",
+    z1h: "Flere former i søket", z1: "Finsk søk finner nå også kenelle, tälle og niille og former som talolla, pöydältä og taloksi.",
+    z2h: "Bare sikre samiske former", z2: "En finsk endelse svarer ikke alltid til én samisk form: pöydällä er beavddi alde, ikke beavddis. I usikre tilfeller finner appen ordet, men foreslår ikke en form.",
+    z3h: "Posisjonsord på ordkortet", z3: "Kontrollerte ord viser på: beavddi alde og under: beavddi vuolde på ordkortet. Bare kontrollerte uttrykk vises.",
+    z4h: "Annet nytt", z4: "Hovedformen av genitiv først (viesu), grunnord for oppslagsord med klitikum (ollugo = ollu + -go), raden Søker etter former… i søkeforslagene, og stadieveksling skjules med én bryter.",
+    zcap: "pöydällä → beavddi alde",
+    v091: "Versjon 0.9.1",
+    y1h: "Søket viser bøyde former", y1: "Når du skriver mus eller finsk minulla i søkefeltet, viser forslagene grunnformen mun og den bøyde formen mus.",
+    y2h: "Personlige pronomen og tall på finsk", y2: "Finsk søk finner nå også minulle, minulla, hänelle, meille og kolmelle, og viser den samiske formen: minulle ≈ munnje, kolmelle ≈ golbmii. På ordkortet vises dualis med tall: vi (2).",
+    y3h: "Til utprøving: maskinoversettelser i tabellen", y3: "Formene av personlige pronomen har nå alltid oversettelse. Under eksperimentelle funksjoner i menyen kan du slå på maskinoversettelse også for andre former: mun lean – jeg er. Dualis merkes med tall: moai letne – vi (2) er. Maskinoversettelsene er ikke alltid riktige.",
+    y4h: "Annet nytt", y4: "Om og kaffeknappen ligger nå nederst i menyen. Historikken viser de 10 siste søkene og en Flere-knapp, og tømming må bekreftes.",
+    ycap: "minulla → mun (mus)",
+    changelogLink: "Alle endringer, også versjoner før 0.7.3 →", olderLink: "Tidligere versjoner →", olderTitle: "Tidligere versjoner – Sátni FST", backHome: "← Tilbake til hjemmesiden",
+    v090: "Versjon 0.9",
+    x1h: "Søk med klitikon", x1: "Du kan søke på et ord med klitikon: boađátgo finner boahtit, og ordkortet forklarer klitikonet (boađátgo = boađát + -go, spørrepartikkel).",
+    x2h: "Mente du?", x2: "Hvis de samiske bokstavene mangler, foreslår appen riktig ord: boadatgo → boađátgo, cahci → čáhci.",
+    x3h: "Til utprøving: skoltesamisk", x3: "Under eksperimentelle funksjoner i menyen kan du slå på skoltesamiske ord på ordkortet (hus → põrtt). Materialet er ennå ikke kontrollert av noen som kan skoltesamisk.",
+    x4h: "Annet nytt", x4: "Ordboka Neahttadigisánit med ett trykk, språkene i menyen som brytere, og forslaget du velger i søkefeltet åpner akkurat det ordet (vuostá = ost eller mot).",
+    xcap: "boađátgo = boađát + -go",
+    v081: "Versjon 0.8.1", u1h: "Bildesøket ser ikke lenger ut til å henge",
+    u1: "En lastering snurrer over bildet mens teksten gjenkjennes og ordene søkes opp – også når du bytter retning med bildet åpent. Nederst i Om-vinduet er det nå en Buy me a coffee-lenke.", olderH: "Tidligere versjoner", r2: "Trykk på en form: lytt eller kopier",
+    v080: "Versjon 0.8", r1h: "Fornyet ordkort",
+    r1: "Trykk på en hvilken som helst bøyningsform: i boblen kan du lytte til eller kopiere den. Stadievekslingen vises i oversiktlige felt (sterkt → svakt stadium, konsonanter, stadier), og knappene til Giellatekno og sátni.org ligger under Ordet andre steder. ChatGPT-knappen er fjernet. Markeringene i bildesøket har fargene fra det samiske flagget.",
+    v076: "Versjon 0.7.6.1", o1h: "Til utprøving: søk etter ord i et bilde",
+    o1: "På Android: ta et bilde av tekst eller velg et bilde, så blir ordene fra ordboka merket i bildet. Trykk på et ord: boblen viser oversettelsen og 🔈 for uttale, og fra boblen kommer du til ordboka. Virker fra samisk til norsk og fra norsk til samisk (også med bøyde ord: huset → viessu), og du kan velge merking (ramme eller understreking) og farge. Teksten gjenkjennes på telefonen, og bildet forlater ikke enheten (Googles ML Kit kan sende anonym bruksstatistikk). Slås på nederst i menyen: Eksperimentelle funksjoner.",
+    q1: "1. Ta eller velg et bilde", q2: "2. Trykk på et ord", q3: "3. I ordboka",
+    v075: "Versjon 0.7.5", v074: "Versjon 0.7.4", v073: "Versjon 0.7.3",
+    k1h: "Søk med bøyde norske ord", k1: "Du trenger ikke grunnformen: husene finner dállu og viessu, og drakk finner juhkat.",
+    m1h: "Oversettelsen i den søkte formen", m1: "Når du søker med en bøyd form, viser ordkortet oversettelsen i samme form: viesus ≈ i huset / fra huset, dagan ≈ jeg lager.",
+    m2h: "Bedre søk", m2: "De vanligste ordene kommer først (lea, lei, mus), og søket virker på samisk og norsk. Doble oppslagsord er ryddet bort.",
+    m3h: "Ny meny og stemmeprøver", m3: "☰-menyen har språk, tema, stadium, favoritter og historikk. Hør stemmene Biret, Máhtte og Sunná før du velger – prøvene virker uten nett. Oversettelser til engelsk, enaresamisk, lulesamisk og sørsamisk kan slås på i menyen.",
+    n1h: "Del et ord rett til appen", n1: "På Android: marker et ord i hvilken som helst app – nettleser, e-post eller melding – og velg Del → Sátni FST. Ordet og oversettelsen åpnes med en gang, også i bøyd form (eamiálbmogiid → eamiálbmot).",
+    n2h: "Søk også andre steder", n2: "Knappene på ordkortet søker etter ordet direkte på sátni.org eller spør ChatGPT med et ferdig spørsmål – til hjelp når ordboka mangler en oversettelse.",
+    n3h: "Flere oversettelser", n3: "Ord som manglet oversettelse får den nå fra finsk–samisk og norsk–samisk ordbok. I tillegg er flere hundre doble ord fjernet.",
+    s1: "1. Marker ordet", s2: "2. Del → Sátni FST", s3: "3. Oversettelsen med en gang",
+    f1h: "80 000 ord", f1: "Oversettelser til norsk og finsk, for noen ord også engelsk, enaresamisk, lulesamisk og sørsamisk.",
+    f2h: "Fullstendig bøying", f2: "Alle modi for verb, kasus i entall og flertall for nomen – for om lag 74 000 ord.",
+    f3h: "Søk med hvilken som helst form", f3: "En bøyd form finner grunnformen (dagan → dahkat). Søk også på norsk, også med bøyde ord (husene → viessu).",
+    f4h: "Stadieveksling synlig", f4: "Sterkt stadium (GD) i grønt, svakt stadium (HD) i oransje – i tabellene og på ordkortet.",
+    f5h: "Uttale", f5: "Lytt til ord og bøyingsformer med Divvuns talesyntese (stemmene Biret, Máhtte og Sunná).",
+    f6h: "På norsk eller finsk", f6: "Brukergrensesnitt på norsk eller finsk, lyst og mørkt tema, historikk og favoritter.",
+    phonesH: "På mobilen",
+    p1: "Ordkort", p2: "Bøyingstabell", p3: "Norsk, mørkt tema", p4: "Betydninger",
+    downloadH: "Last ned",
+    releaseLoading: "Henter nyeste versjon…",
+    release: (v, d) => `Nyeste versjon ${v} (${d}). Gratis og åpen, uten offisiell støtte.`,
+    releaseFail: "Kunne ikke hente nyeste versjon – nedlastingene finnes på GitHub.",
+    win: "Windows 10 og 11. Pakk ut zip-fila og start satni-fst.exe.",
+    linux: "AppImage: tillat kjøring og start med dobbeltklikk.",
+    android: "Android 7.0+. Åpne fila på mobilen og tillat installering.",
+    webH: "I nettleseren", web: "Ingen installering. Virker i moderne nettlesere, også på mobilen.",
+    allReleases: "Alle versjoner og endringer:",
+    madeH: "Slik ble den laget",
+    made: "Nordsamisk var min mors morsmål, og Sátni FST begynte som et hjelpemiddel for meg selv da jeg begynte å lære det – å vende tilbake til røttene mine. Idéen, retningen og testingen er mine, mens koden er skrevet av kunstig intelligens (Claude, Anthropic) under min veiledning. Selve språkdataene er arbeidet til eksperter på samisk språkteknologi (GiellaLT, Divvun, Giellatekno).",
+    creditsH: "Takk",
+    credits: "All språkdata er arbeidet til det samiske språkteknologimiljøet. Sátni FST samler det i én app.",
+    c1: "ordbøker (dict-sme-fin, dict-sme-nob m.fl., CC BY 4.0) og morfologi (lang-sme og finsk bøying lang-fin, GPL-3.0)",
+    c2: "talesyntese (UiT Norges arktiske universitet)",
+    c3: "tabell over stadieveksling", c4: "norsk bøying: Norsk ordbank (CC BY 4.0)",
+    license: "Sátni FST er fri programvare (GPL-3.0). Alle kilder og lisenser:",
+    feedback: "Tilbakemelding:",
+    supportText: "Sátni FST er gratis og forblir gratis. Har du nytte av den, kan du spandere en kaffe på utvikleren.",
+  },
+  en: {
+    tagline: "North Sámi dictionary and inflection",
+    title: "A North Sámi dictionary that inflects every word",
+    lead: "About 80 000 words with translations and full inflection tables. Works offline on your computer, your phone and in the browser.",
+    open: "Open the dictionary in your browser",
+    download: "Download the app",
+    openNote: "The web version downloads the dictionary (40 MB) the first time and then works offline too.",
+    newH: "New in version 0.9.3",
+    privacyLink: "Privacy",
+    v093: "Version 0.9.3",
+    w1h: "Gradation corrected", w1: "Strong and weak grade were the wrong way round on about 340 words, including common ones such as dilli, gilli, sivva, nisu and biras. The word card and the colours in the inflection table are now right.",
+    w2h: "Clearer gradation row", w2: "When grades III and II are spelled alike, the row marks the grade the word really uses: mannat shows nn II and suolu ll III.",
+    w3h: "Menu and search", w3: "A one-time tip says that language and settings are in the menu, and the welcome page has a Menu row. Search suggestions now also appear when the word you typed is the only match.",
+    w4h: "Experimental: Apertium translations", w4: "A new switch shows a Norwegian translation for about 4,600 words that have none in the dictionaries. They are marked as unchecked and do not affect search.",
+    wcap: "dilli → dili",
+    v092: "Version 0.9.2",
+    v0922: "Small update 0.9.2.3: a tidier menu, a clearer About window, a new feedback window and more precise licence information.",
+    z1h: "More forms in search", z1: "Finnish search now also finds kenelle, tälle and niille, and forms such as talolla, pöydältä and taloksi.",
+    z2h: "Only certain Sámi forms", z2: "A Finnish ending doesn't always match one Sámi form: pöydällä is beavddi alde, not beavddis. In uncertain cases the app finds the word but doesn't suggest a form.",
+    z3h: "Position words on the word card", z3: "Checked words show on top: beavddi alde and under: beavddi vuolde. Only checked phrases are shown.",
+    z4h: "Also new", z4: "Main genitive form first (viesu), the base word for dictionary words with a clitic (ollugo = ollu + -go), a Searching for forms… row in suggestions, and one switch to hide gradation.",
+    zcap: "pöydällä → beavddi alde",
+    v091: "Version 0.9.1",
+    y1h: "Search shows inflected forms", y1: "When you type mus or Finnish minulla in the search box, the suggestions show the base word mun and its inflected form mus.",
+    y2h: "Personal pronouns and numerals in Finnish", y2: "Finnish search now also finds minulle, minulla, hänelle, meille and kolmelle, and shows the Sámi form: minulle ≈ munnje, kolmelle ≈ golbmii. Clitics work too: minulleko ≈ munnjego.",
+    y3h: "To try out: machine translations in the table", y3: "Personal pronoun forms now always have a translation. Under experimental features in the menu you can switch on machine translations for other forms too: mun lean – minä olen. The dual is marked with a number: moai letne – me (2) olemme. Machine translations aren't always right.",
+    y4h: "Also new", y4: "About and the coffee button are now at the bottom of the menu. History shows the 10 latest searches with a More button, and clearing it asks for confirmation.",
+    ycap: "minulla → mun (mus)",
+    changelogLink: "All changes, including versions before 0.7.3 →", olderLink: "Earlier versions →", olderTitle: "Earlier versions – Sátni FST", backHome: "← Back to the home page",
+    v090: "Version 0.9",
+    x1h: "Search with clitics", x1: "Search for a word with a clitic, in Sámi or Finnish: boađátgo and tuletko find boahtit. The word card explains the clitic (boađátgo = boađát + -go) and shows it in Finnish too (≈ tuletko).",
+    x2h: "Did you mean?", x2: "If the Sámi letters are missing, the app suggests the right word: boadatgo → boađátgo, cahci → čáhci.",
+    x3h: "To try out: Skolt Sámi", x3: "Under Experimental features in the menu you can switch on Skolt Sámi words on the word card (talo → tääll, põrtt). The data has not yet been checked by a Skolt Sámi speaker.",
+    x4h: "Also new", x4: "The Neahttadigisánit dictionary one tap away, the menu's languages as switches, and the suggestion you pick in the search box opens exactly that word (vuostá = cheese or against).",
+    xcap: "boađátgo ≈ tuletko (Finnish)",
+    v081: "Version 0.8.1", u1h: "The photo search no longer looks frozen",
+    u1: "A loading ring spins over the photo while the text is recognised and the words are looked up – also when you switch the direction with a photo open. The About window now ends with a Buy me a coffee link.", olderH: "Earlier versions", r2: "Tap a form: listen or copy",
+    v080: "Version 0.8", r1h: "A redesigned word card",
+    r1: "Tap any inflected form: a bubble lets you listen to it or copy it. Consonant gradation is shown in clear cells (strong → weak grade, consonants, grades), and the Giellatekno and sátni.org buttons sit under Word elsewhere. The ChatGPT button has been removed. Photo search marks come in the colours of the Sámi flag.",
+    v076: "Version 0.7.6.1", o1h: "To try out: look up words from a photo",
+    o1: "On Android: take a photo of text or pick one, and the words found in the dictionary are marked in the photo. Tap a word: the bubble shows the translation and 🔈 to listen, and takes you to the dictionary. Works from Sámi to Finnish or Norwegian and back (also with inflected words: talossa → viessu), and you can choose the marking (frame or underline) and its colour. The text is recognised on the phone, and the photo never leaves the device (Google ML Kit may send anonymous usage statistics). Switch it on at the bottom of the menu: Experimental features.",
+    q1: "1. Take or pick a photo", q2: "2. Tap a word", q3: "3. In the dictionary",
+    v075: "Version 0.7.5", v074: "Version 0.7.4", v073: "Version 0.7.3",
+    k1h: "Search with inflected Finnish and Norwegian words", k1: "No need for the base form: juon finds juhkat, taloon finds viessu and husene finds dállu. For Finnish words the card also shows the Sámi word in the same form: juon = juoda ≈ jugan.",
+    m1h: "Translation in the searched form", m1: "Search with an inflected word and the card shows the translation in the same form: viesus ≈ talossa / talosta in Finnish, i huset / fra huset in Norwegian.",
+    m2h: "Better search", m2: "The most common words come first (lea, lei, mus), and the search works in Sámi and in the language of the user interface. Duplicate entries have been cleaned up.",
+    m3h: "New menu and voice samples", m3: "The ☰ menu holds language, theme, gradation, favourites and history. Listen to the voices Biret, Máhtte and Sunná before choosing – the samples work offline. English, Inari, Lule and Southern Sámi translations can be switched on in the menu.",
+    n1h: "Share a word straight to the app", n1: "On Android: select a word in any app – a browser, email or a message – and choose Share → Sátni FST. The word and its translation open right away, even in an inflected form (eamiálbmogiid → eamiálbmot).",
+    n2h: "Search elsewhere too", n2: "Buttons on the word card search for the word directly on sátni.org or ask ChatGPT with a ready-made question – handy when the dictionary has no translation.",
+    n3h: "More translations", n3: "Words that had no Finnish or Norwegian translation now get one from the Finnish–Sámi and Norwegian–Sámi dictionaries. Several hundred duplicate words are gone, too.",
+    s1: "1. Select the word", s2: "2. Share → Sátni FST", s3: "3. The translation, right away",
+    f1h: "80 000 words", f1: "Translations into Finnish and Norwegian, and for some words English, Inari, Lule and Southern Sámi.",
+    f2h: "Full inflection", f2: "All moods for verbs, cases in singular and plural for nominals – for about 74 000 words.",
+    f3h: "Search with any form", f3: "An inflected form finds its base form (dagan → dahkat). You can also search in Finnish or Norwegian, inflected words too (juon → juhkat).",
+    f4h: "Consonant gradation shown", f4: "Strong grade (GD) in green, weak grade (HD) in orange – in the tables and on the word card.",
+    f5h: "Pronunciation", f5: "Listen to words and inflected forms with Divvun's speech synthesis (voices Biret, Máhtte and Sunná).",
+    f6h: "Finnish or Norwegian", f6: "User interface in Finnish or Norwegian, light and dark theme, history and favourites.",
+    phonesH: "On your phone",
+    p1: "Word card", p2: "Inflection table", p3: "Norwegian, dark theme", p4: "Meanings",
+    downloadH: "Download",
+    releaseLoading: "Looking up the latest version…",
+    release: (v, d) => `Latest version ${v} (${d}). Free and open source, no official support.`,
+    releaseFail: "Couldn't look up the latest version – the downloads are on GitHub.",
+    win: "Windows 10 and 11. Unzip and run satni-fst.exe.",
+    linux: "AppImage: allow running it, then double-click.",
+    android: "Android 7.0+. Open the file on the phone and allow installing.",
+    webH: "In the browser", web: "Nothing to install. Works in modern browsers, on phones too.",
+    allReleases: "All versions and changes:",
+    madeH: "How it was made",
+    made: "North Sámi was my mother's native language, and Sátni FST started as a tool for myself when I set out to learn it – a way back to my roots. The idea, direction and testing are mine; the code was written by AI (Claude, by Anthropic) under my guidance. The language data itself is the work of Sámi language technology experts (GiellaLT, Divvun, Giellatekno).",
+    creditsH: "Credits",
+    credits: "All language data is the work of the Sámi language technology community. Sátni FST brings it together in one app.",
+    c1: "dictionaries (dict-sme-fin, dict-sme-nob and others, CC BY 4.0) and morphology (lang-sme and Finnish inflection lang-fin, GPL-3.0)",
+    c2: "speech synthesis (UiT The Arctic University of Norway)",
+    c3: "consonant gradation table", c4: "Norwegian inflection: Norsk ordbank (CC BY 4.0)",
+    license: "Sátni FST is free software (GPL-3.0). All sources and licences:",
+    feedback: "Feedback:",
+    supportText: "Sátni FST is free and will stay free. If you find it useful, you can buy the developer a coffee.",
+  },
+};
+const TITLES = {
+  fi: "Sátni FST – pohjoissaamen sanakirja ja taivutin",
+  nb: "Sátni FST – nordsamisk ordbok og bøyingsverktøy",
+  en: "Sátni FST – North Sámi dictionary and inflection",
+};
+
+let release = null;  // null = haetaan, false = haku epäonnistui
+
+function setLang(lang) {
+  if (!TEXTS[lang]) lang = "fi";
+  const t = TEXTS[lang];
+  document.documentElement.lang = lang;
+  // Aiempien versioiden sivulla oma otsikko (body data-title)
+  document.title = t[document.body.dataset.title] || TITLES[lang];
+  for (const el of document.querySelectorAll("[data-t]")) {
+    const text = t[el.dataset.t];
+    if (typeof text === "string") el.textContent = text;
+  }
+  for (const b of document.querySelectorAll(".langs button")) b.setAttribute("aria-pressed", String(b.dataset.lang === lang));
+  // Aiempien versioiden sivulta muutosloki sivun kielellä
+  const log = document.getElementById("changelog-link");
+  if (log) log.href = `https://github.com/sombyduodji/satni-fst/blob/main/CHANGELOG${lang === "en" ? "" : "." + lang}.md`;
+  // Norjankielisellä sivulla norjankieliset kuvat
+  const hero = document.querySelector(".hero-shot");
+  if (hero) hero.querySelector("source").srcset = `screenshots/desktop-dark-${lang === "nb" ? "nb" : "fi"}.png`;
+  if (hero) hero.querySelector("img").src = `screenshots/desktop-light-${lang === "nb" ? "nb" : "fi"}.png`;
+  showRelease();
+}
+
+function showRelease() {
+  const t = TEXTS[document.documentElement.lang] || TEXTS.fi;
+  const info = document.getElementById("release-info");
+  if (release === null || !info) return;
+  if (release === false) { info.textContent = t.releaseFail; return; }
+  const date = new Date(release.published_at).toLocaleDateString(document.documentElement.lang === "en" ? "en-GB" : document.documentElement.lang);
+  info.textContent = t.release(release.tag_name, date);
+}
+
+// Uusin vakaa julkaisu: esijulkaisut (testiversiot, esim. v0.8.2-dev) ja luonnokset ohitetaan
+async function loadRelease() {
+  try {
+    const res = await fetch("https://api.github.com/repos/sombyduodji/satni-fst/releases?per_page=10");
+    if (!res.ok) throw new Error(res.status);
+    release = (await res.json()).find((r) => !r.draft && !r.prerelease) || false;
+  } catch (e) {
+    release = false;
+  }
+  if (release) {
+    for (const card of document.querySelectorAll(".card[data-file]")) {
+      const asset = release.assets.find((a) => a.name === card.dataset.file);
+      if (!asset) continue;
+      card.href = asset.browser_download_url;
+      card.querySelector(".size").textContent = `${asset.name} · ${Math.round(asset.size / 1e6)} MB`;
+    }
+  }
+  showRelease();
+}
+
+for (const b of document.querySelectorAll(".langs button")) {
+  b.onclick = () => {
+    try { localStorage.setItem("satni-site-lang", b.dataset.lang); } catch (e) {}
+    setLang(b.dataset.lang);
+  };
+}
+setLang(document.documentElement.lang);
+if (document.getElementById("release-info")) loadRelease();
