@@ -17,8 +17,7 @@ En liten oppdatering: ryddigere meny og mer presise lisensopplysninger.
 - **Ny etikett.** *Oahpa-gruppe* på ordkortet heter nå *Stadievekslingsgruppe*. Oahpa er fortsatt oppgitt som kilde til tabellen.
 - **Lisensopplysninger.** Tilleggstillatelsen for Google ML Kit sier nå at kildekoden skal omfatte det dekkede verket, men ikke
   ML Kits egen kildekode. De nordsamiske språkmodellene bygges nå fra registrerte GiellaLT-commits med `rakenna_fst.sh`.
-- **Ordboken er bygd på nytt med disse modellene.** Ordene, oversettelsene og eksemplene er uendret. Omtrent 50 akronymer og
-  forkortelser, som *NATO* og *CD*, har nå bøyingstabell (*NATO:s*, *CD:t*), og formene er søkbare. Ett ord endret seg motsatt vei:
+- **Ordboken er bygd på nytt med disse modellene.** Ordene, oversettelsene og eksemplene er uendret. Ett ord er endret:
   *unnajuovllat* viser ikke lenger stadieveksling eller varianten *unajuovllat*.
 
 ## 0.9.2.1 — 2026-11-02

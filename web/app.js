@@ -292,13 +292,10 @@ function queryDatabase(query) {
   }
   // 5 = taivutusmuoto (manan -> mannat); hyvin yleisen sanan muoto 1.2 eli käännösten edelle
   // (lei = leahkit eikä norjan "lei", mus = mun eikä norjan "mus")
-  // Lisäksi haku sellaisena kuin se kirjoitettiin ja lyhenteen vartalo isolla (nato:s -> NATO:s), koska q on pienaakkosin
-  const colon = q.indexOf(":");
-  const acronymForm = colon > 0 ? q.slice(0, colon).toUpperCase() + q.slice(colon) : q;
-  const forms = [q, capitalize(q), nordic(q), capitalize(nordic(q)), query.trim(), acronymForm];
+  const forms = [q, capitalize(q), nordic(q), capitalize(nordic(q))];
   for (const r of all(
     `SELECT DISTINCT d.${cols.split(", ").join(", d.")}
-     FROM paradigms p JOIN dictionary d ON d.id = p.word_id WHERE p.surface IN (?, ?, ?, ?, ?, ?)`, forms
+     FROM paradigms p JOIN dictionary d ON d.id = p.word_id WHERE p.surface IN (?, ?, ?, ?)`, forms
   )) add(r, r.freq >= COMMON_WORD ? 1.2 : 5);
   // 4.5–4.9 = taivutettu suomen- tai norjankielinen sana (juon, taloon, husene): sen perusmuodon (juoda, talo, hus)
   // saamennokset perusmuodon omassa järjestyksessä, kaikkien suorien käännösosumien jälkeen. Muodot ovat taulussa
