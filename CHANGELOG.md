@@ -3,6 +3,33 @@
 All releases of Sátni FST. Downloads: [GitHub releases](https://github.com/sombyduodji/satni-fst/releases).
 [Suomi](CHANGELOG.fi.md) · [Norsk](CHANGELOG.nb.md)
 
+## 0.9.2.2 — 2026-11-03
+
+A small update: a tidier menu and more precise licence information.
+
+- **Tidier menu.** The app name and developer are at the top, favourites and history come next, and settings, other
+  languages and experimental features are in one Settings section that opens when needed.
+- **The logo goes home.** The logo and app name return to the welcome page.
+- **Clearer About window.** The developer, language data and feedback come first; sources, licences and privacy are in
+  a section that opens.
+- **New windows for feedback and support.** Feedback shows the address with a copy button, and has email and GitHub
+  links. *Contribute and support* lists ways to help, such as correcting translations, ideas and accessibility.
+- **Label renamed.** The word card's *Oahpa group* is now *Gradation group*. Oahpa stays credited as the source of the table.
+- **Licence information.** The additional permission for Google ML Kit now says that the Corresponding Source must
+  include the covered work but not ML Kit's own source code. The North Sámi language models are now built from recorded GiellaLT
+  commits with `rakenna_fst.sh`.
+- **Dictionary rebuilt with those models.** The words, translations and examples are unchanged. About 50 acronyms and
+  abbreviations such as *NATO* and *CD* now have inflection tables (*NATO:s*, *CD:t*), and their forms can be searched. One
+  word changed the other way: *unnajuovllat* no longer shows gradation or the variant *unajuovllat*.
+
+## 0.9.2.1 — 2026-11-02
+
+A small corrections update.
+
+- **Dual pronouns:** *moai*, *doai* and *soai* now read *me (2)*, *te (2)* and *he (2)*.
+- **Reviewed Finnish translations:** *nubbi*, *galle*, *ihtin*, *eisseváldi*, *earenomáš*, *maiddai*, *máid* and *ovtta oaivilis*.
+- **Experimental Skolt Sámi:** common words come first when words have the same score.
+
 ## 0.9.2 — 2026-11-02
 
 - **Finnish search finds more forms.** Other common pronouns (*kenelle*, *tälle*, *niille*, *jolle*) and the endings *-lla*,

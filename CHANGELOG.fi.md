@@ -3,6 +3,32 @@
 Sátni FST:n kaikki versiot. Lataukset: [GitHub-julkaisut](https://github.com/sombyduodji/satni-fst/releases).
 [English](CHANGELOG.md) · [Norsk](CHANGELOG.nb.md)
 
+## 0.9.2.2 — 2026-11-03
+
+Pieni päivitys: siistimpi valikko ja tarkemmat lisenssitiedot.
+
+- **Siistimpi valikko.** Ylimpänä ovat sovelluksen nimi ja tekijä, sitten suosikit ja historia. Asetukset, muut kielet
+  ja kokeelliset ominaisuudet ovat yhdessä Asetukset-osiossa, joka avataan tarvittaessa.
+- **Logo vie alkuun.** Logo ja sovelluksen nimi vievät takaisin aloitussivulle.
+- **Selkeämpi Tietoa-ikkuna.** Ensin kerrotaan tekijä, kielidata ja palaute; lähteet, lisenssit ja tietosuoja ovat
+  avattavassa osiossa.
+- **Uudet palaute- ja tukikkunat.** Palauteikkunassa osoitteen voi kopioida, ja siinä on sähköposti- ja GitHub-linkit.
+  *Osallistu ja tue* kertoo, miten voi auttaa: esimerkiksi käännösten korjaukset, ideat ja saavutettavuus.
+- **Nimike vaihtui.** Sanakortin *Oahpa-ryhmä* on nyt *Astevaihteluryhmä*. Oahpa mainitaan edelleen taulukon lähteenä.
+- **Lisenssitiedot.** Google ML Kitin lisäluvassa sanotaan nyt, että lähdekoodiin kuuluu kattava teos mutta ei ML Kitin
+  omaa lähdekoodia. Pohjoissaamen kielimallit rakennetaan nyt kirjatuista GiellaLT-commiteista skriptillä `rakenna_fst.sh`.
+- **Sanakirja rakennettu uudelleen näillä malleilla.** Sanat, käännökset ja esimerkit eivät muuttuneet. Noin 50 lyhenteellä,
+  kuten *NATO* ja *CD*, on nyt taivutustaulukko (*NATO:s*, *CD:t*), ja muodoilla voi hakea. Yksi sana muuttui toiseen suuntaan:
+  *unnajuovllat* ei enää näytä astevaihtelua eikä muotoa *unajuovllat*.
+
+## 0.9.2.1 — 2026-11-02
+
+Pieni korjauspäivitys.
+
+- **Duaalipronominit:** *moai*, *doai* ja *soai* ovat nyt *me (2)*, *te (2)* ja *he (2)*.
+- **Tarkistetut suomennokset:** *nubbi*, *galle*, *ihtin*, *eisseváldi*, *earenomáš*, *maiddai*, *máid* ja *ovtta oaivilis*.
+- **Kokeellinen koltansaame:** yleiset sanat tulevat ensin, kun sanoilla on sama pistemäärä.
+
 ## 0.9.2 — 2026-11-02
 
 - **Suomenkielinen haku löytää enemmän muotoja.** Muut yleiset pronominit (*kenelle*, *tälle*, *niille*, *jolle*) sekä
