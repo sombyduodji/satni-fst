@@ -7,6 +7,7 @@ Alle versjoner av Sátni FST. Nedlastinger: [GitHub-utgivelser](https://github.c
 
 - **Øst og vest.** Ord og oversettelser som varierer etter område er merket (ø) og (v). To skrivemåter av samme ord, som *girku* og *kirku*, deler ett kort som begge finner. Ulike ord, som *gánda* og *lunta*, har lenke til hverandre.
 - **Søk.** Oversettelser med områdemerke, som *patja*, blir nå funnet.
+- **Uttale.** Et nytt trykk stopper lyden som spilles og avbryter en forespørsel som pågår, så lyder ikke lenger spilles oppå hverandre eller etter hverandre.
 
 ## 0.9.3 — 2026-11-03
 

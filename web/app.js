@@ -117,11 +117,13 @@ function applyStaticTexts() {
 const VOICE_SAMPLE = "Bures boahtin Sápmái";
 async function playVoiceSample(name, button) {
   try {
-    const res = await fetch(`voices/${VOICES[name]}.wav`);
+    const signal = startTtsRequest();
+    const res = await fetch(`voices/${VOICES[name]}.wav`, { signal });
     if (!res.ok) throw new Error(res.status);
-    await new Audio(URL.createObjectURL(await res.blob())).play();
+    const blob = await res.blob();
+    if (!signal.aborted) await playTtsBlob(blob);
   } catch (e) {
-    await speak(VOICE_SAMPLE, button, name);
+    if (e.name !== "AbortError") await speak(VOICE_SAMPLE, button, name);
   }
 }
 function renderVoiceList() {
@@ -1412,7 +1414,24 @@ function unlockTtsAudio() {
   ttsAudio.play().then(() => { ttsUnlocked = true; }).catch(() => {});
 }
 
+// Vain viimeksi napautettu ääni: uusi napautus pysäyttää soivan äänen ja peruu kesken olevan haun, jotta äänet eivät
+// soi päällekkäin eivätkä peräkkäin sitä mukaa kuin haut valmistuvat.
+let ttsRequest = null;
+function startTtsRequest() {
+  if (ttsRequest) ttsRequest.abort();
+  ttsRequest = new AbortController();
+  if (ttsAudio) ttsAudio.pause();
+  return ttsRequest.signal;
+}
+async function playTtsBlob(blob) {
+  const audio = ttsAudio || new Audio();
+  if (audio.src.startsWith("blob:")) URL.revokeObjectURL(audio.src);
+  audio.src = URL.createObjectURL(blob);
+  await audio.play();
+}
+
 async function speak(text, button, voiceName = settings.voice) {
+  const signal = startTtsRequest();
   unlockTtsAudio();  // ennen ensimmäistä awaitia: vielä napautuksen sisällä
   const voice = VOICES[voiceName] || "biret";
   const key = `tts-cache/${voice}/${encodeURIComponent(text)}`;
@@ -1426,15 +1445,17 @@ async function speak(text, button, voiceName = settings.voice) {
       const hit = await cache.match(key);
       if (hit) blob = await hit.blob();
     }
+    if (signal.aborted) return;
     if (!blob) {
       let res;
       try {
         res = IS_DESKTOP
-          ? await fetch(`tts/${voice}?text=${encodeURIComponent(text)}`)
+          ? await fetch(`tts/${voice}?text=${encodeURIComponent(text)}`, { signal })
           : await fetch(TTS_URL + voice, {
-              method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }),
+              method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }), signal,
             });
       } catch (e) {
+        if (e.name === "AbortError") return;
         throw new Error(t("ttsOffline"));
       }
       if (!res.ok) throw new Error(IS_DESKTOP ? t("ttsOffline") : t("ttsStatus", res.status));
@@ -1442,11 +1463,9 @@ async function speak(text, button, voiceName = settings.voice) {
       if (cache) cache.put(key, new Response(blob, { headers: { "Content-Type": "audio/wav" } })).catch(() => {});
     }
     memoryCache.set(key, blob);
-    const audio = ttsAudio || new Audio();
-    if (audio.src.startsWith("blob:")) URL.revokeObjectURL(audio.src);
-    audio.src = URL.createObjectURL(blob);
+    if (signal.aborted) return;
     try {
-      await audio.play();
+      await playTtsBlob(blob);
     } catch (e) {
       // Selain esti soiton (napautuksesta ehti kulua liian kauan): ääni on jo muistissa, joten seuraava napautus soittaa
       // sen heti. Ei virheilmoitusta, vaan ohje.
@@ -1454,6 +1473,8 @@ async function speak(text, button, voiceName = settings.voice) {
       throw e;
     }
   } catch (e) {
+    // Uusi napautus perui tämän äänen, eikä se ole virhe
+    if (signal.aborted || e.name === "AbortError") return;
     toast(t("ttsFailed", e.message));
   } finally {
     if (button) { button.disabled = false; button.classList.remove("loading"); }
