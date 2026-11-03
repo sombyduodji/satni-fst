@@ -311,7 +311,7 @@ function queryDatabase(query) {
   // Perusmuoto ilman käännöstä valitulla kielellä 5.5: ensin sana, jonka taivutusmuoto haku on
   // (mas: vain dict-sme-nob:ssa omana sananaan, suomeksi ensin mii "mikä", jonka paikallissija mas on)
   const col = LANGUAGES[settings.lang].col;
-  for (const r of all(`SELECT ${cols} FROM dictionary WHERE lemma_fold = ?`, [q])) {
+  for (const r of all(`SELECT ${cols}, dial_same FROM dictionary WHERE lemma_fold = ? OR variant_fold = ?`, [q, q])) {
     const first = r.sme_lemma.charAt(0);
     add(r, r.sme_lemma !== query.trim() && first !== first.toLowerCase() ? 6 : r[col] ? 1 : 5.5);
   }
@@ -475,7 +475,8 @@ function suggestWords(prefix, withForms = true) {
   if (q.length < 2) return [];
   const rows = all(
     `SELECT id, sme_lemma, pos, ${TRANS_COLS} FROM dictionary
-     WHERE lemma_fold >= ? AND lemma_fold < ? ORDER BY length(sme_lemma), sme_lemma LIMIT 8`, [q, q + "￿"]
+     WHERE (lemma_fold >= ? AND lemma_fold < ?) OR (variant_fold >= ? AND variant_fold < ?)
+     ORDER BY length(sme_lemma), sme_lemma LIMIT 8`, [q, q + "￿", q, q + "￿"]
   );
   if (rows.length < 8) {
     rows.push(...all(
@@ -663,7 +664,7 @@ function renderResults() {
     const b = document.createElement("button");
     const trans = translationOf(r, 2);
     const pos = r.subtype ? `${r.pos} ${r.subtype}` : r.pos;
-    b.innerHTML = `${esc(r.sme_lemma)} <span class="trans">(${esc(pos)})${trans ? " – " + esc(trans) : ""}</span>`;
+    b.innerHTML = `${esc(shownLemma(r))} <span class="trans">(${esc(pos)})${trans ? " – " + esc(trans) : ""}</span>`;
     b.dataset.i = i;
     b.onclick = () => selectResult(i);
     box.appendChild(b);
@@ -708,7 +709,7 @@ function selectResult(i, pushHistory = true) {
   showOnly("word");
 
   const w = data.word;
-  $("lemma").textContent = w.sme_lemma;
+  $("lemma").textContent = shownLemma(w);
   $("pos-badge").hidden = false;
   $("pos-badge").textContent = wordClassLabel(w.pos, w.subtype);
   $("fav-btn").hidden = false;
@@ -739,6 +740,7 @@ function selectResult(i, pushHistory = true) {
   renderGradation();
   renderInfo(w);
   renderPositions(w);
+  renderDialect(w, meanings);
   renderTable();
   renderMeanings(meanings);
   renderRaw();
@@ -764,6 +766,32 @@ const ATTESTED_POSITIONS = {
   eana: { alde: "eatnama" }, seaŋga: { vuolde: "seaŋgga" }, soffá: { vuolde: "soffá" }, šaldi: { vuolde: "šalddi" },
   govččas: { vuolde: "gokčasa" }, muorralátna: { vuolde: "muorralána" },
 };
+
+// Saman sanan toinen kirjoitusasu (dialects.py, kirku / girku): näytetään haettu asu otsikkona
+function shownLemma(w) {
+  return w.dial_same && fold(state.query) === fold(w.dial_same) ? w.dial_same : w.sme_lemma;
+}
+
+// Itä- ja länsisaamen merkintä (dialects.py): sanan oma alue ja toisen alueen sana sekä selite käännösten merkinnöille
+function renderDialect(w, meanings) {
+  const el = $("dialect-line");
+  const side = (dial) => t(dial === "east" ? "dialEast" : "dialWest");
+  const opposite = w.dialect === "east" ? "west" : "east";
+  const parts = [];
+  if (w.dial_same) {
+    const shown = shownLemma(w);
+    const own = shown === w.sme_lemma ? w.dialect : opposite;
+    const other = shown === w.sme_lemma ? w.dial_same : w.sme_lemma;
+    parts.push(`<b>${esc(shown)}</b> (${esc(side(own))}), ${esc(t("dialAlso"))} <b>${esc(other)}</b> (${esc(side(own === "east" ? "west" : "east"))})`);
+  } else if (w.dial_other) {
+    const links = splitList(w.dial_other).map((o) => `<a class="base-link" href="#/sana/${encodeURIComponent(o)}">${esc(o)}</a>`);
+    parts.push(`<b>${esc(w.sme_lemma)}</b> (${esc(side(w.dialect))}), ${esc(t("dialCompare"))} ${links.join(", ")} (${esc(side(opposite))})`);
+  }
+  const marked = meanings.some((m) => /\((it|lä|ø|v)\)/.test(m.translations || ""));
+  if (parts.length || marked) parts.push(esc(t("dialLegend")));
+  el.innerHTML = parts.join("  ·  ");
+  el.hidden = !parts.length;
+}
 
 function renderPositions(w) {
   const el = $("position-line");
@@ -860,7 +888,7 @@ function renderInfo(w) {
   const finClitics = state.clitic && settings.lang === "fin" && state.clitic.clitics.every((c) => FIN_CLITICS[c])
     ? state.clitic.clitics : null;
   const formLabel = state.clitic && !finClitics ? state.clitic.stem : state.query;
-  if (matches.length && q !== fold(w.sme_lemma)) {
+  if (matches.length && q !== fold(w.sme_lemma) && q !== fold(w.dial_same || "")) {
     info.push(t("searchedForm", state.clitic ? state.clitic.stem : state.query, [...new Set(matches)].join(", ")));
     if (FORM_PHRASES[settings.lang]) formTrans = translationOfForm(w, matches.map((m) => m.split(" ")[0]), finClitics);
   }
@@ -2135,7 +2163,7 @@ function bindEvents() {
 
   $("tabs").onclick = (e) => { if (e.target.dataset.tab) setTab(e.target.dataset.tab); };
   $("more-meanings").onclick = (e) => { e.preventDefault(); setTab("meanings"); };
-  $("speak-btn").onclick = () => speak(state.word.sme_lemma, $("speak-btn"));
+  $("speak-btn").onclick = () => speak(shownLemma(state.word), $("speak-btn"));
   $("fav-btn").onclick = toggleFavourite;
   bindFormPop();
   $("about-btn").onclick = () => $("about").showModal();
