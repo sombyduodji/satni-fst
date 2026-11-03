@@ -11,8 +11,9 @@ const APP_SHELL = [
 ];
 const DATA = "data/satni-web.db.gz";
 // Sanakirjalla on oma välimuistinsa, jottei 21 Mt ladata uudelleen joka sovelluspäivityksessä.
-// Kasvata numeroa, kun tietokannan rakenne muuttuu (v2: käännökset kielittäin, v3: käänteiset sanakirjat)
-const DATA_CACHE = "satni-data-v4";
+// Kasvata numeroa, kun tietokannan sisältö tai rakenne muuttuu (v2: käännökset kielittäin, v3: käänteiset sanakirjat,
+// v5: astevaihtelun korjaus, dilli ll ~ l)
+const DATA_CACHE = "satni-data-v5";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(VERSION).then((cache) => cache.addAll(APP_SHELL)));
