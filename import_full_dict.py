@@ -17,6 +17,7 @@ import sys
 import threading
 import xml.etree.ElementTree as ET
 
+import dialects
 import gradation
 import fin_forms
 import nob_forms
@@ -666,6 +667,7 @@ def add_gradation(cursor):
     """Päättelee astevaihtelun (GD/HD) jokaiselle sanalle ja muodolle, ks. gradation.py."""
     print("Päätellään astevaihtelu (GD/HD)...")
     cols = [r[1] for r in cursor.execute("PRAGMA table_info(dictionary)")]
+    cols_dict_has_dial = "dial_same" in cols
     for col in ("gradation", "gd_cluster", "hd_cluster", "gradation_group", "gradation_row"):
         if col not in cols:
             cursor.execute(f"ALTER TABLE dictionary ADD COLUMN {col} TEXT")
@@ -678,9 +680,11 @@ def add_gradation(cursor):
         forms.setdefault(word_id, []).append((rowid, tag, surface))
 
     word_updates, form_updates = [], []
+    # Yhdistetyillä kirjoitusasuilla (dialects.py) on kummankin omat asteet, joita ei voi päätellä yhdessä
+    merged = cols_dict_has_dial and {r[0] for r in cursor.execute("SELECT id FROM dictionary WHERE dial_same IS NOT NULL")}
     for word_id, lemma in cursor.execute("SELECT id, sme_lemma FROM dictionary").fetchall():
         rows = forms.get(word_id)
-        if not rows:
+        if not rows or (merged and word_id in merged):
             continue
         info, grades = gradation.analyse(lemma, [(tag, surf) for _, tag, surf in rows])
         info = info or {}
@@ -847,6 +851,7 @@ def main():
             s[1] += 1
 
     add_gradation(cursor)
+    dialects.apply(cursor)
     nob_forms.add_nob_forms(cursor)
     fin_forms.add_fin_forms(cursor)
 
@@ -874,6 +879,12 @@ if __name__ == "__main__":
         # Päivittää vain astevaihtelutiedot olemassa olevaan tietokantaan (nopea, ei FST-ajoa)
         conn = sqlite3.connect(DB_FILE)
         add_gradation(conn.cursor())
+        conn.commit()
+        conn.close()
+    elif "--vain-suoman" in sys.argv:
+        # Päivittää vain itä- ja länsisaamen merkinnät olemassa olevaan tietokantaan (nopea, ei FST-ajoa)
+        conn = sqlite3.connect(DB_FILE)
+        dialects.apply(conn.cursor())
         conn.commit()
         conn.close()
     else:

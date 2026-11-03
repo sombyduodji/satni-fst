@@ -23,6 +23,9 @@ SOURCE_DB = os.path.join(SCRIPT_DIR, "satni.db")
 OUT_DIR = os.path.join(SCRIPT_DIR, "web", "data")
 OUT_DB = os.path.join(OUT_DIR, "satni-web.db")
 
+# Käännöksen aluemerkintä (patja (it)) ei kuulu haettavaan sanaan
+DIALECT_MARK = re.compile(r" \((?:it|lä|ø|v|torne)\)")
+
 # Sama haun normalisointi kuin gui.py:ssä: ä = æ, ö = ø
 SEARCH_FOLD = str.maketrans({"æ": "ä", "ø": "ö"})
 
@@ -88,7 +91,9 @@ def main():
             nob_translation TEXT, eng_translation TEXT, smn_translation TEXT, smj_translation TEXT,
             sma_translation TEXT, notes TEXT, gradation TEXT, gd_cluster TEXT, hd_cluster TEXT,
             -- freq: korpusfrekvenssi (GiellaLT), haun tasatilanteisiin (web/app.js: queryDatabase)
-            gradation_group TEXT, gradation_row TEXT, freq INTEGER, lemma_fold TEXT
+            gradation_group TEXT, gradation_row TEXT, freq INTEGER, dialect TEXT, dial_same TEXT, dial_other TEXT,
+            -- dial_same: saman sanan toinen kirjoitusasu (dialects.py), jolla sanakin löytyy
+            lemma_fold TEXT, variant_fold TEXT
         );
         -- nr: käänteisen sanakirjan (dict-fin-sme, dict-nob-sme) järjestys, 0 = ensisijainen saamennos;
         -- NULL = sanan oma käännös (dict-sme-*)
@@ -114,12 +119,12 @@ def main():
     trans_cols = ", ".join(TRANSLATION_COLUMNS.values())
     rows = src.execute(
         f"SELECT id, sme_lemma, pos, subtype, {trans_cols}, notes, gradation, gd_cluster, hd_cluster, "
-        "gradation_group, gradation_row, freq FROM dictionary"
+        "gradation_group, gradation_row, freq, dialect, dial_same, dial_other FROM dictionary"
     ).fetchall()
-    dst.executemany(f"INSERT INTO dictionary VALUES ({', '.join('?' * (len(rows[0]) + 1))})",
-                    [r + (fold(r[1]),) for r in rows])
+    dst.executemany(f"INSERT INTO dictionary VALUES ({', '.join('?' * (len(rows[0]) + 2))})",
+                    [r + (fold(r[1]), fold(r[-2]) if r[-2] else None) for r in rows])
     dst.executemany("INSERT INTO trans_search VALUES (?, ?, ?, NULL)", [
-        (r[0], lang, fold(r[4 + i])) for r in rows for i, lang in enumerate(TRANSLATION_COLUMNS) if r[4 + i]
+        (r[0], lang, fold(DIALECT_MARK.sub("", r[4 + i]))) for r in rows for i, lang in enumerate(TRANSLATION_COLUMNS) if r[4 + i]
     ])
     dst.executemany("INSERT INTO trans_search VALUES (?, ?, ?, ?)", (
         (w, lang, fold(head), nr) for w, lang, head, nr in
@@ -159,6 +164,7 @@ def main():
 
     dst.executescript("""
         CREATE INDEX idx_lemma_fold ON dictionary(lemma_fold);
+        CREATE INDEX idx_variant_fold ON dictionary(variant_fold);
         CREATE INDEX idx_paradigms_word ON paradigms(word_id);
         CREATE INDEX idx_paradigms_surface ON paradigms(surface);
         CREATE INDEX idx_meanings_word ON meanings(word_id);

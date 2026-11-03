@@ -3,6 +3,11 @@
 Alle versjoner av Sátni FST. Nedlastinger: [GitHub-utgivelser](https://github.com/sombyduodji/satni-fst/releases).
 [English](CHANGELOG.md) · [Suomi](CHANGELOG.fi.md)
 
+## Neste versjon (ikke utgitt)
+
+- **Øst og vest.** Ord og oversettelser som varierer etter område er merket (ø) og (v). To skrivemåter av samme ord, som *girku* og *kirku*, deler ett kort som begge finner. Ulike ord, som *gánda* og *lunta*, har lenke til hverandre.
+- **Søk.** Oversettelser med områdemerke, som *patja*, blir nå funnet.
+
 ## 0.9.3 — 2026-11-03
 
 - **Stadieveksling rettet.** Sterkt og svakt stadium var byttet om på omtrent 340 ord, blant dem vanlige ord som *dilli*, *gilli*, *sivva*, *nisu* og *biras*. Ordkortet og fargene i bøyingstabellen er nå riktige. Gruppenavnet er også rettet på omtrent 450 ord, for eksempel *listu*.

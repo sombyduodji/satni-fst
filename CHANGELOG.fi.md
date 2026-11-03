@@ -3,6 +3,11 @@
 Sátni FST:n kaikki versiot. Lataukset: [GitHub-julkaisut](https://github.com/sombyduodji/satni-fst/releases).
 [English](CHANGELOG.md) · [Norsk](CHANGELOG.nb.md)
 
+## Seuraava versio (ei julkaistu)
+
+- **Itä ja länsi.** Alueittain vaihtelevat sanat ja käännökset on merkitty (it) ja (lä). Saman sanan kaksi kirjoitusasua, kuten *girku* ja *kirku*, ovat samalla kortilla, jonka löytää kummallakin. Eri sanoista, kuten *gánda* ja *lunta*, on linkki toiseen.
+- **Haku.** Aluemerkityt käännökset, kuten *patja*, löytyvät nyt.
+
 ## 0.9.3 — 2026-11-03
 
 - **Astevaihtelu korjattu.** Vahva ja heikko aste olivat väärin päin noin 340 sanalla, joukossa yleisiä sanoja kuten *dilli*, *gilli*, *sivva*, *nisu* ja *biras*. Sanakortti ja taivutustaulukon värit ovat nyt oikein. Myös ryhmän nimi korjattiin noin 450 sanalta, esimerkiksi *listu*.

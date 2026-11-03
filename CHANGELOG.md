@@ -3,6 +3,11 @@
 All releases of Sátni FST. Downloads: [GitHub releases](https://github.com/sombyduodji/satni-fst/releases).
 [Suomi](CHANGELOG.fi.md) · [Norsk](CHANGELOG.nb.md)
 
+## Next version (not released)
+
+- **East and west.** Words and translations that differ by area are marked (it)/(lä) in Finnish and (ø)/(v) in Norwegian. Two spellings of the same word, such as *girku* and *kirku*, share one card that either spelling finds. Different words get a link to each other, such as *gánda* and *lunta*.
+- **Search.** Translations with an area mark, such as *patja*, are now found.
+
 ## 0.9.3 — 2026-11-03
 
 - **Gradation corrected.** Strong and weak grade were the wrong way round on about 340 words, including common ones such as *dilli*, *gilli*, *sivva*, *nisu* and *biras*. The word card and the colours in the inflection table are now right. The group name was also corrected on about 450 words, such as *listu*.
