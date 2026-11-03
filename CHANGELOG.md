@@ -7,6 +7,7 @@ All releases of Sátni FST. Downloads: [GitHub releases](https://github.com/somb
 
 - **East and west.** Words and translations that differ by area are marked (it)/(lä) in Finnish and (ø)/(v) in Norwegian. Two spellings of the same word, such as *girku* and *kirku*, share one card that either spelling finds. Different words get a link to each other, such as *gánda* and *lunta*.
 - **Search.** Translations with an area mark, such as *patja*, are now found.
+- **Pronunciation.** A new tap stops the sound that is playing and cancels any request still on its way, so sounds no longer overlap or play one after another.
 
 ## 0.9.3 — 2026-11-03
 
