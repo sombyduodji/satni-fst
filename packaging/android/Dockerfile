@@ -13,9 +13,9 @@ RUN mkdir -p $ANDROID_HOME/cmdline-tools \
     && mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest \
     && rm /tmp/tools.zip
 RUN yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null \
-    && $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools" >/dev/null
+    && $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools" >/dev/null
 
-ARG GRADLE=8.10.2
+ARG GRADLE=8.13
 RUN curl -sSL -o /tmp/gradle.zip https://services.gradle.org/distributions/gradle-$GRADLE-bin.zip \
     && unzip -q /tmp/gradle.zip -d /opt && ln -s /opt/gradle-$GRADLE/bin/gradle /usr/local/bin/gradle \
     && rm /tmp/gradle.zip

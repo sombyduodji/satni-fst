@@ -8,19 +8,29 @@
 # --debug: testiversio debug-avaimella (WebView-vianetsintä päällä) emulaattorin dev-laitteelle (x86_64 ja arm64).
 # --testi: julkaisuavaimella allekirjoitettu testiversio välimuistikansioon (ei dist-kansioon, jossa on julkaistu
 #          versio): emulaattorin main-laitteella voi kokeilla päivitystä käyttäjien version päälle.
+# --play: Google Play -versio, App Bundle julkaisuavaimella: dist/satni-fst-play.aab (ei tukilinkkiä).
+# --play-testi: Play-versio APK:na välimuistikansioon, emulaattorin play-laitteelle (Android 16) kokeiltavaksi.
 cd "$(dirname "$0")" || exit 1
 
 SIGNING_DIR="${SATNI_SIGNING_DIR:-$HOME/.config/satni-fst-signing}"
 mkdir -p "$SIGNING_DIR" && chmod 700 "$SIGNING_DIR" || exit 1  # muuten Docker loisi sen root-käyttäjänä
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/satni-fst-build/android"
 if [ "$1" = "--debug" ]; then
-    TASK=assembleDebug; APK=debug/app-debug.apk; OUT=dist/satni-fst-debug.apk
+    TASK=assembleGithubDebug; APK=apk/github/debug/app-github-debug.apk; OUT=dist/satni-fst-debug.apk
     ABIS=x86_64,arm64-v8a  # emulaattori ja 64-bittinen puhelin (tekstintunnistuksen natiivikirjasto)
 else
     [ -f "$SIGNING_DIR/keystore.properties" ] && [ -f "$SIGNING_DIR/satni-fst-release.jks" ] || {
         echo "Julkaisuavainta ei löydy kansiosta $SIGNING_DIR (luo: packaging/android/luo_allekirjoitusavain.sh)"; exit 1; }
-    TASK=assembleRelease; APK=release/app-release.apk; OUT=dist/satni-fst.apk
-    [ "$1" = "--testi" ] && OUT="$CACHE_DIR/satni-fst-testi.apk"
+    TASK=assembleGithubRelease; APK=apk/github/release/app-github-release.apk; OUT=dist/satni-fst.apk
+    case "$1" in
+        --testi) OUT="$CACHE_DIR/satni-fst-testi.apk" ;;
+        --play)  # Play jakaa paketin suoritintyypeittäin, joten x86_64 ei kasvata puhelimien latausta
+            TASK=bundlePlayRelease; APK=bundle/playRelease/app-play-release.aab; OUT=dist/satni-fst-play.aab
+            ABIS=arm64-v8a,armeabi-v7a,x86_64 ;;
+        --play-testi)
+            TASK=assemblePlayRelease; APK=apk/play/release/app-play-release.apk; OUT="$CACHE_DIR/satni-fst-play-testi.apk"
+            ABIS=arm64-v8a,x86_64 ;;
+    esac
 fi
 
 [ -f web/data/satni-web.db.gz ] || python3 export_web_data.py || exit 1
@@ -46,6 +56,6 @@ docker run --rm \
         -PsatniVersionName="$VERSION" -PsatniVersionCode="$VERSION_CODE" ${ABIS:+-PsatniAbis=$ABIS} "$TASK" || exit 1
 
 mkdir -p "$(dirname "$OUT")"
-cp "$CACHE_DIR/build/app/outputs/apk/$APK" "$OUT" || exit 1
+cp "$CACHE_DIR/build/app/outputs/$APK" "$OUT" || exit 1
 echo "$OUT: versio $VERSION ($VERSION_CODE)"
 ls -la "$OUT"

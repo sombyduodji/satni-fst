@@ -66,6 +66,7 @@ const UI_TEXTS = {
          jäsentimet (FST), sanakirjat ja oppimisvälineet, ovat tärkeitä, jotta kieli pysyy elävänä nykyajan arjessa.</p>
       <p>Teen maksuttomia ja avoimen lähdekoodin sovelluksia ja työkaluja pohjoissaamelle ja muille saamen kielille.</p>`,
     supportHelpTitle: "Näin voit auttaa",
+    supportPlay: "Osallistu",
     supportCoffeeTitle: "Miksi tukea?",
     supportCoffee: `<p>Avoimen kieliteknologian kehittäminen ja ylläpito vie aikaa ja vaatii aineiston ja koodin jatkuvaa hoitoa.
          Tarjoamalla kahvit tuet suoraan tätä työtä:</p>
@@ -184,6 +185,7 @@ const UI_TEXTS = {
          tekstintunnistus: Google ML Kit (Googlen käyttöehdot). Kuva käsitellään puhelimessa eikä lähde laitteelta;
          ML Kit voi lähettää Googlelle nimettömiä käyttötilastoja, kun tekstintunnistusta käytetään. Sátni FST on vapaa ohjelma (GPL-3.0).
          Astevaihtelun ryhmät: Oahpa (Giellatekno). Kaikki lähteet, lisenssit ja tehdyt muutokset: Lisenssit-painike alla.
+         <a href="https://sombyduodji.github.io/satni-fst/privacy.html" target="_blank" rel="noopener">Tietosuojaseloste</a>.
          Lähdekoodi: <a href="https://github.com/sombyduodji/satni-fst" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst</a>.</p>
       </details>`,
     close: "Sulje", licenses: "Lisenssit", licensesTitle: "Lisenssit ja tekijänoikeudet",
@@ -246,6 +248,7 @@ const UI_TEXTS = {
          ordbøker og læremidler, viktige for at språket skal holde seg levende i dagens hverdag.</p>
       <p>Jeg lager gratis programvare og verktøy med åpen kildekode for nordsamisk og andre samiske språk.</p>`,
     supportHelpTitle: "Slik kan du hjelpe",
+    supportPlay: "Bidra",
     supportCoffeeTitle: "Hvorfor støtte?",
     supportCoffee: `<p>Å utvikle og vedlikeholde åpen språkteknologi tar tid og krever løpende arbeid med data og kode.
          Ved å spandere en kaffe støtter du dette arbeidet direkte:</p>
@@ -362,6 +365,7 @@ const UI_TEXTS = {
          Android-appen: Google ML Kit (Googles vilkår). Bildet behandles på telefonen og forlater ikke enheten;
          ML Kit kan sende anonym bruksstatistikk til Google når tekstgjenkjenningen brukes. Sátni FST er fri programvare (GPL-3.0).
          Stadievekslingsgrupper: Oahpa (Giellatekno). Alle kilder, lisenser og endringer: Lisenser-knappen nedenfor.
+         <a href="https://sombyduodji.github.io/satni-fst/privacy.html" target="_blank" rel="noopener">Personvernerklæring</a>.
          Kildekode: <a href="https://github.com/sombyduodji/satni-fst" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst</a>.</p>
       </details>`,
     close: "Lukk", licenses: "Lisenser", licensesTitle: "Lisenser og opphavsrett",
