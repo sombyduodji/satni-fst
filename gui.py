@@ -1020,10 +1020,27 @@ class SatniGUI:
 
         # "hkk (III) · hk (II) · g (I)" -> [("hkk", "III"), ("hk", "II"), ("g", "I")]
         row = [tuple(part.rstrip(")").split(" (")) for part in gradation["row"].split(" · ")]
+
+        # Sama kirjoitusasu voi esiintyä kahdessa asteessa (nn III, nn II). Yleensä vaihtelu on II ~ I (mannat ~ manan),
+        # mutta kontrahoituvassa sanassa heikosta perusmuodosta tullaan asteeseen III (suolu ~ sullo, boazu ~ bohcco).
+        def form(*form_tags):
+            for tag in form_tags:
+                for surface in paradigm.get(tag, []):
+                    return surface, self.grades.get((tag, surface))
+            return "", None
+
+        def syllables(word):
+            return len(re.findall("[aáeiouyäöâ]+", word.lower()))
+
+        base, base_grade = form("Sg+Nom", "Nom")
+        gen, gen_grade = form("Sg+Gen", "Gen")
+        contracted = base_grade == "HD" and gen_grade == "GD" and syllables(base) == syllables(gen)
+        strong_rows = [i for i, (value, _) in enumerate(row) if value == gradation["strong"]]
         return {
             "gd": examples.get("GD", "-"), "hd": examples.get("HD", "-"),
             "strong": gradation["strong"], "weak": gradation["weak"],
             "group": gradation["group"], "row": row,
+            "strong_i": (strong_rows[0] if contracted else strong_rows[-1]) if strong_rows else -1,
         }
 
     def render_gradation(self, view):
@@ -1056,11 +1073,8 @@ class SatniGUI:
 
         text("ryhmä:", fg=c["subtle"], font=self.F(9), padx=(0, 4))
         text(view["group"], fg=c["muted"], font=self.F(9), padx=(0, 8))
-        # Sama kirjoitusasu voi esiintyä kahdessa asteessa (ss III, ss II); korostetaan vain ensimmäinen
-        strong_done = False
-        for value, quantity in view["row"]:
-            if value == view["strong"] and not strong_done:
-                strong_done = True
+        for i, (value, quantity) in enumerate(view["row"]):
+            if i == view["strong_i"]:
                 chip(f"{value} {quantity}", c["gd_bg"], c["gd_fg"], font=self.F(9, "bold"), padx=(0, 3))
             elif value == view["weak"]:
                 chip(f"{value} {quantity}", c["hd_bg"], c["hd_fg"], font=self.F(9, "bold"), padx=(0, 3))
