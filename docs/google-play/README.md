@@ -12,8 +12,9 @@ The Play version comes from the same code as the GitHub APK. The `play` build fl
 
 1. Create the app with the default language Finnish, as an app, free, and accept the declarations.
 2. **App signing: choose to use your own key** (`~/.config/satni-fst-signing/satni-fst-release.jks`, follow Play Console's upload steps). Do this before the first upload: it is what lets people with the GitHub APK update from Play without losing favourites. Google's generated key would prevent that.
-3. Upload `dist/satni-fst-play.aab` to a closed test and add at least 12 testers.
-4. If the account needs it, testers must stay opted in for 14 days in a row, then apply for production.
+3. Turn off **automatic protection** under Pricing. It adds an installer check to the code Play delivers, and the app is meant to be shared freely under the GPL.
+4. Upload `dist/satni-fst-play.aab` to a closed test and add at least 12 testers.
+5. If the account needs it, testers must stay opted in for 14 days in a row, then apply for production.
 
 ## Store listing drafts
 
