@@ -3,6 +3,11 @@
 All releases of Sátni FST. Downloads: [GitHub releases](https://github.com/sombyduodji/satni-fst/releases).
 [Suomi](CHANGELOG.fi.md) · [Norsk](CHANGELOG.nb.md)
 
+## 0.9.2.3 — 2026-11-03
+
+- **Gradation boxes on phones.** Words no longer run out of their box on narrow screens. This corrects 0.9.2.2. The word pair
+  and the gradation group now have their own rows.
+
 ## 0.9.2.2 — 2026-11-03
 
 A small update: a tidier menu and more precise licence information.
