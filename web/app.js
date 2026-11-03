@@ -790,7 +790,7 @@ function renderDialect(w, meanings) {
     const shown = shownLemma(w);
     const own = shown === w.sme_lemma ? w.dialect : opposite;
     const other = shown === w.sme_lemma ? w.dial_same : w.sme_lemma;
-    parts.push(`<b>${esc(shown)}</b> (${esc(side(own))}), ${esc(t("dialAlso"))} <b>${esc(other)}</b> (${esc(side(own === "east" ? "west" : "east"))})`);
+    parts.push(`<b>${esc(shown)}</b> (${esc(side(own))}), <b>${esc(other)}</b> (${esc(side(own === "east" ? "west" : "east"))})`);
   } else if (w.dial_other) {
     const links = splitList(w.dial_other).map((o) => `<a class="base-link" href="#/sana/${encodeURIComponent(o)}">${esc(o)}</a>`);
     parts.push(`<b>${esc(w.sme_lemma)}</b> (${esc(side(w.dialect))}), ${esc(t("dialCompare"))} ${links.join(", ")} (${esc(side(opposite))})`);
