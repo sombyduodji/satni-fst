@@ -17,8 +17,7 @@ Pieni päivitys: siistimpi valikko ja tarkemmat lisenssitiedot.
 - **Nimike vaihtui.** Sanakortin *Oahpa-ryhmä* on nyt *Astevaihteluryhmä*. Oahpa mainitaan edelleen taulukon lähteenä.
 - **Lisenssitiedot.** Google ML Kitin lisäluvassa sanotaan nyt, että lähdekoodiin kuuluu kattava teos mutta ei ML Kitin
   omaa lähdekoodia. Pohjoissaamen kielimallit rakennetaan nyt kirjatuista GiellaLT-commiteista skriptillä `rakenna_fst.sh`.
-- **Sanakirja rakennettu uudelleen näillä malleilla.** Sanat, käännökset ja esimerkit eivät muuttuneet. Noin 50 lyhenteellä,
-  kuten *NATO* ja *CD*, on nyt taivutustaulukko (*NATO:s*, *CD:t*), ja muodoilla voi hakea. Yksi sana muuttui toiseen suuntaan:
+- **Sanakirja rakennettu uudelleen näillä malleilla.** Sanat, käännökset ja esimerkit eivät muuttuneet. Yksi sana muuttui:
   *unnajuovllat* ei enää näytä astevaihtelua eikä muotoa *unajuovllat*.
 
 ## 0.9.2.1 — 2026-11-02

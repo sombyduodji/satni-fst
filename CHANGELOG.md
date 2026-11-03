@@ -18,9 +18,8 @@ A small update: a tidier menu and more precise licence information.
 - **Licence information.** The additional permission for Google ML Kit now says that the Corresponding Source must
   include the covered work but not ML Kit's own source code. The North Sámi language models are now built from recorded GiellaLT
   commits with `rakenna_fst.sh`.
-- **Dictionary rebuilt with those models.** The words, translations and examples are unchanged. About 50 acronyms and
-  abbreviations such as *NATO* and *CD* now have inflection tables (*NATO:s*, *CD:t*), and their forms can be searched. One
-  word changed the other way: *unnajuovllat* no longer shows gradation or the variant *unajuovllat*.
+- **Dictionary rebuilt with those models.** The words, translations and examples are unchanged. One word changed: *unnajuovllat*
+  no longer shows gradation or the variant *unajuovllat*.
 
 ## 0.9.2.1 — 2026-11-02
 
