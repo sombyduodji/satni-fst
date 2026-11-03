@@ -4,10 +4,11 @@
 # (Android ei asenna toisella avaimella allekirjoitettua versiota vanhan päälle):
 #   dev   kehitysversiot debug-avaimella: ./build_apk.sh --debug -> dist/satni-fst-debug.apk
 #   main  julkaisuversiot julkaisuavaimella: dist/satni-fst.apk (käyttäjien versio) ja päivitystesti
+#   play  Google Play -version testi Android 16:lla: ./build_apk.sh --play-testi -> ./emulaattori.sh asenna play
 #         ./build_apk.sh --testi -> ~/.cache/satni-fst-build/android/satni-fst-testi.apk (ei dist-kansioon)
 #
 # Käyttö:
-#   ./emulaattori.sh kaynnista dev|main       käynnistää laitteen (luo sen ensimmäisellä kerralla) ja odottaa
+#   ./emulaattori.sh kaynnista dev|main|play       käynnistää laitteen (luo sen ensimmäisellä kerralla) ja odottaa
 #   ./emulaattori.sh asenna dev|main [APK]    asentaa APK:n; oletus dev: debug-APK, main: dist/satni-fst.apk,
 #                                             main testi: julkaisuavaimella tehty testiversio
 #   ./emulaattori.sh jaa dev|main TEKSTI      jakaa tekstin sovellukselle kuten Androidin jakovalikko
@@ -28,8 +29,8 @@ usage() { sed -n '/^# Käyttö:/,/^#$/p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
 
 device() {  # dev|main -> säiliön nimi
     case "$1" in
-        dev|main) echo "satni-emu-$1" ;;
-        *) echo "Laite on dev tai main" >&2; exit 1 ;;
+        dev|main|play) echo "satni-emu-$1" ;;
+        *) echo "Laite on dev, main tai play" >&2; exit 1 ;;
     esac
 }
 
@@ -55,14 +56,17 @@ in_image() {
 
 setup() {  # emulaattori, järjestelmäkuva ja laite tarvittaessa
     mkdir -p "$WORK/emu/avd" "$WORK/home" || exit 1
-    if [ ! -x "$WORK/emu/sdk/emulator/emulator" ] || [ ! -d "$WORK/emu/sdk/system-images/android-35" ]; then
+    api=35
+    [ "$1" = play ] && api=36  # Google Playn vaatima kohdetaso
+    SYSTEM_IMAGE="system-images;android-$api;google_apis;x86_64"
+    if [ ! -x "$WORK/emu/sdk/emulator/emulator" ] || [ ! -d "$WORK/emu/sdk/system-images/android-$api" ]; then
         echo "Asennetaan emulaattori ja järjestelmäkuva (kerran, ~5 Gt)..."
         in_image sh -c "yes | /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=/work/emu/sdk --licenses >/dev/null &&
             /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=/work/emu/sdk \
                 emulator platform-tools 'cmdline-tools;latest' '$SYSTEM_IMAGE' >/dev/null" || exit 1
     fi
     if [ ! -f "$WORK/emu/avd/satni-$1.ini" ]; then
-        echo "Luodaan virtuaalilaite satni-$1 (Pixel 6, Android 15)..."
+        echo "Luodaan virtuaalilaite satni-$1 (Pixel 6, API $api)..."
         in_image sh -c "echo no | /work/emu/sdk/cmdline-tools/latest/bin/avdmanager -s create avd \
             -n satni-$1 -k '$SYSTEM_IMAGE' -d pixel_6 >/dev/null" || exit 1
     fi
@@ -76,7 +80,7 @@ start() {
     # Kaatuneen ajon lukot estäisivät käynnistyksen ("Running multiple emulators with the same AVD")
     rm -f "$WORK/emu/avd/satni-$1.avd/"*.lock
     mkdir -p "$WORK/emu/home-$1"
-    docker run -d --name "$(device "$1")" --device /dev/kvm --user "$(id -u):$(id -g)" --entrypoint "" \
+    docker run -d --name "$(device "$1")" --device /dev/kvm --group-add "$(stat -c %g /dev/kvm)" --user "$(id -u):$(id -g)" --entrypoint "" \
         -e HOME="/work/emu/home-$1" -e ANDROID_HOME=/work/emu/sdk -e ANDROID_SDK_ROOT=/work/emu/sdk \
         -e ANDROID_AVD_HOME=/work/emu/avd \
         -v "$WORK":/work satni-fst-android-emu \
@@ -98,7 +102,11 @@ start() {
 install_apk() {
     name=$1; apk=$2
     if [ -z "$apk" ]; then
-        [ "$name" = dev ] && apk=dist/satni-fst-debug.apk || apk=dist/satni-fst.apk
+        case "$name" in
+            dev) apk=dist/satni-fst-debug.apk ;;
+            play) apk="$WORK/satni-fst-play-testi.apk" ;;
+            *) apk=dist/satni-fst.apk ;;
+        esac
     elif [ "$apk" = testi ]; then
         apk="$WORK/satni-fst-testi.apk"
     fi

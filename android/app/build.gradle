@@ -4,19 +4,27 @@ plugins {
 
 android {
     namespace "fi.somby.satnifst"
-    compileSdk 35
-    buildToolsVersion "35.0.0"  // sama kuin packaging/android/Dockerfile
+    compileSdk 36
+    buildToolsVersion "36.0.0"  // sama kuin packaging/android/Dockerfile
 
     defaultConfig {
         applicationId "fi.somby.satnifst"
         minSdk 24
-        targetSdk 35
+        targetSdk 36
         // build_apk.sh antaa nämä version.py:stä (0.7.3.20261030.6 -> 2026103006)
         versionCode((project.findProperty("satniVersionCode") ?: "1") as int)
         versionName(project.findProperty("satniVersionName") ?: "dev")
         // Tekstintunnistuksen natiivikirjasto on ~11 Mt suoritintyyppiä kohden: APK:hon vain puhelimien ARM-versiot.
         // Debug-versioon (emulaattori) build_apk.sh --debug lisää x86_64:n: -PsatniAbis=x86_64,arm64-v8a.
         ndk { abiFilters.addAll((project.findProperty("satniAbis") ?: "arm64-v8a,armeabi-v7a").split(",")) }
+    }
+    // Kaksi versiota samasta koodista: github = APK GitHub-julkaisuun, play = Google Play (ei tukilinkkiä, ks. app.js:
+    // applyPlayBuild). Sama applicationId ja allekirjoitusavain, joten Play-versio päivittyy APK:n päälle ja päinvastoin.
+    buildFeatures { buildConfig true }
+    flavorDimensions "store"
+    productFlavors {
+        github { dimension "store" }
+        play { dimension "store" }
     }
     // Natiivikirjastot pakattuina: APK on pienempi ladata, Android purkaa kirjaston asennettaessa
     packaging {
