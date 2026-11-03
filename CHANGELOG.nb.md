@@ -3,6 +3,11 @@
 Alle versjoner av Sátni FST. Nedlastinger: [GitHub-utgivelser](https://github.com/sombyduodji/satni-fst/releases).
 [English](CHANGELOG.md) · [Suomi](CHANGELOG.fi.md)
 
+## 0.9.2.3 — 2026-11-03
+
+- **Stadievekslingsbokser på telefon.** Ordene går ikke lenger utenfor boksen på smale skjermer. Dette retter versjon 0.9.2.2. Ordparet
+  og stadievekslingsgruppen har nå egne rader.
+
 ## 0.9.2.2 — 2026-11-03
 
 En liten oppdatering: ryddigere meny og mer presise lisensopplysninger.
