@@ -3,6 +3,11 @@
 Sátni FST:n kaikki versiot. Lataukset: [GitHub-julkaisut](https://github.com/sombyduodji/satni-fst/releases).
 [English](CHANGELOG.md) · [Norsk](CHANGELOG.nb.md)
 
+## 0.9.2.3 — 2026-11-03
+
+- **Astevaihtelulaatikot puhelimessa.** Sanat eivät enää mene laatikon yli kapealla näytöllä. Tämä korjaa version 0.9.2.2. Sanaparilla
+  ja astevaihteluryhmällä on nyt omat rivinsä.
+
 ## 0.9.2.2 — 2026-11-03
 
 Pieni päivitys: siistimpi valikko ja tarkemmat lisenssitiedot.
