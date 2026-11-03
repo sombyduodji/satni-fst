@@ -256,12 +256,12 @@ main > * + * { margin-top: 12px; }
 .grad-cell.group .gc-val { font-size: 14px; font-weight: 600; }
 .gc-val .nw { white-space: nowrap; }
 .gradation .arrow { color: var(--subtle); font-weight: 400; margin: 0 2px; }
-/* Puhelimessa tasainen 2 × 2 -ruudukko */
+/* Puhelimessa sanapari ja ryhmä omille riveilleen, koska pitkät sanat eivät mahdu puolikkaaseen; väliin konsonantit ja asteet */
 @media (max-width: 480px) {
   .grad-cells { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .grad-cell { min-width: 0; padding-inline: 10px; }
-  .grad-cell.group .gc-val { white-space: normal; font-size: 12px; overflow-wrap: anywhere; }
-  .grad-cell.group .gc-val .nw { white-space: normal; }
+  .grad-cell.forms, .grad-cell.group { grid-column: 1 / -1; }
+  .gc-val { white-space: normal; overflow-wrap: anywhere; }
 }
 #word-info:empty { display: none; }
 #word-info { margin: 8px 0 0; }
