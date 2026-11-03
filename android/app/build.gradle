@@ -18,9 +18,9 @@ android {
         // Debug-versioon (emulaattori) build_apk.sh --debug lisää x86_64:n: -PsatniAbis=x86_64,arm64-v8a.
         ndk { abiFilters.addAll((project.findProperty("satniAbis") ?: "arm64-v8a,armeabi-v7a").split(",")) }
     }
-    // Kaksi versiota samasta koodista: github = APK GitHub-julkaisuun, play = Google Play (ei tukilinkkiä, ks. app.js:
-    // applyPlayBuild). Sama applicationId ja allekirjoitusavain, joten Play-versio päivittyy APK:n päälle ja päinvastoin.
-    buildFeatures { buildConfig true }
+    // Kaksi versiota samasta koodista: github = APK GitHub-julkaisuun, play = Google Play (tiedostoista poistetaan
+    // rahalliseen tukeen liittyvä, ks. PlayAssets). Sama applicationId ja allekirjoitusavain, joten Play-versio
+    // päivittyy APK:n päälle ja päinvastoin.
     flavorDimensions "store"
     productFlavors {
         github { dimension "store" }
@@ -79,4 +79,49 @@ dependencies {
     implementation "androidx.core:core:1.13.1"
     // Riippuvuudet tuovat Kotlinin peruskirjastosta eri versioita: yksi versio kaikille
     implementation platform("org.jetbrains.kotlin:kotlin-bom:1.8.22")
+}
+
+// Google Play -version web-tiedostot: rahalliseen tukeen liittyvä pois jo paketista, ei vain näkyvistä.
+// Muut tukemisen tavat (virheet, ideat, saavutettavuus, kehitys) jäävät. Muutokset ohittavat web/-kansion samat tiedostot.
+// Käännös epäonnistuu, jos jotain jää: näin web/-tiedostojen muutos ei voi tuoda linkkiä takaisin huomaamatta.
+abstract class PlayAssets extends DefaultTask {
+    @InputFiles @PathSensitive(PathSensitivity.RELATIVE) abstract ConfigurableFileCollection getSources()
+    @OutputDirectory abstract DirectoryProperty getOutputDir()
+
+    @TaskAction
+    void run() {
+        def edits = [
+            "index.html": { it.replaceAll(/(?s)\s*<h3 data-i18n="supportCoffeeTitle".*?data-i18n="supportThanks"><\/p>/, "")
+                              .replace("Osallistu ja tue", "Osallistu") },
+            "i18n.js": { it.replaceAll(/(?s)\n\s*supportCoffeeTitle: ".*?",/, "")
+                           .replaceAll(/(?s)\n\s*supportCoffee: `.*?`,/, "")
+                           .replaceAll(/(?s)\n\s*supportNote: `.*?`,/, "")
+                           .replaceAll(/\n\s*supportThanks: ".*?",/, "")
+                           .replace('support: "Osallistu ja tue"', 'support: "Osallistu"')
+                           .replace('support: "Bidra og støtt"', 'support: "Bidra"') },
+            "sw.js": { it.replace(' "icons/coffee.svg",', "") },
+            "styles.css": { it.replaceAll(/(?m)^\/\*[^\n]*coffee[^\n]*\n/, "")
+                              .replaceAll(/(?m)^[^\n{]*coffee[^\n{]*\{[^}]*\}\n/, "") },
+        ]
+        def out = outputDir.get().asFile
+        out.mkdirs()
+        sources.files.each { file ->
+            def text = edits[file.name](file.getText("UTF-8"))
+            def left = (text =~ /(?i)coffee|kahvi|kaffe|supportNote|supportThanks|ja tue|og støtt/)
+            if (left.find()) throw new GradleException("Play-versioon jäi tukilinkin tekstiä (${file.name}): ${left.group()}")
+            new File(out, file.name).setText(text, "UTF-8")
+        }
+    }
+}
+
+def playAssets = tasks.register("playAssets", PlayAssets) {
+    sources.from(["index.html", "i18n.js", "sw.js", "styles.css"].collect { "../../web/${it}" })
+    outputDir = layout.buildDirectory.dir("generated/playAssets")
+}
+
+androidComponents {
+    onVariants(selector().withFlavor("store", "play")) { variant ->
+        variant.sources.assets.addGeneratedSourceDirectory(playAssets, { it.outputDir })
+        variant.androidResources.ignoreAssetsPatterns.add("coffee.svg")
+    }
 }
