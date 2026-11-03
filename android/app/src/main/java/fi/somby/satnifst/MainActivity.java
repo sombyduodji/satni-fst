@@ -88,10 +88,6 @@ public class MainActivity extends Activity {
         // Vain sovelluksen omat sivut latautuvat WebViewiin (ulkoiset linkit avataan muissa sovelluksissa)
         ocr = new Ocr(this, web);
         web.addJavascriptInterface(ocr, "SatniOcr");
-        web.addJavascriptInterface(new Object() {
-            @android.webkit.JavascriptInterface
-            public boolean isPlay() { return "play".equals(BuildConfig.FLAVOR); }
-        }, "SatniBuild");
         // Android 13+: takaisin-ele tulee tätä kautta (onBackPressed ei aina tule kutsutuksi)
         if (Build.VERSION.SDK_INT >= 33) {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(

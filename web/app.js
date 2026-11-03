@@ -145,15 +145,6 @@ function showFirstRun() {
   $("first-run").showModal();
 }
 
-// Google Play -versio (android/app/build.gradle, flavor play): ei tukilinkkiä eikä siihen liittyviä tekstejä.
-function applyPlayBuild() {
-  if (!window.SatniBuild || !window.SatniBuild.isPlay()) return;
-  const dlg = $("support-dlg");
-  dlg.querySelectorAll('[data-i18n="supportCoffeeTitle"], [data-i18n-html="supportCoffee"], .coffee-btn, ' +
-    '[data-i18n="supportNote"], [data-i18n="supportThanks"]').forEach((e) => e.remove());
-  for (const e of [$("support-btn"), dlg.querySelector("h2")]) e.dataset.i18n = "supportPlay";
-}
-
 // Kertavihje valikosta uusille ja päivittäville käyttäjille. Sulkeutuu napautuksesta, näppäilystä tai 10 sekunnissa.
 // Lasketaan nähdyksi vasta, kun se on ollut näkyvissä 3 sekuntia; muuten se näytetään uudelleen seuraavalla kerralla.
 function showMenuTip() {
@@ -2223,7 +2214,6 @@ async function main() {
     if (r) search(r.sme_lemma);
   };
   ex.appendChild(rnd);
-  applyPlayBuild();
   applyStaticTexts();
   bindEvents();
   bindExperimental();

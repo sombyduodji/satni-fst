@@ -1,6 +1,6 @@
 # Google Play
 
-The Play version comes from the same code as the GitHub APK. The `play` build flavor removes the support link and its texts.
+The Play version comes from the same code as the GitHub APK. The `play` build flavor removes everything about financial support from the bundle at build time (`PlayAssets` in `android/app/build.gradle`), and the build fails if any of it remains. Other ways to help stay. The GitHub APK, web and desktop versions keep the coffee link.
 
 - Build: `./build_apk.sh --play` writes `dist/satni-fst-play.aab`.
 - Test: `./build_apk.sh --play-testi`, then `./emulaattori.sh kaynnista play` and `./emulaattori.sh asenna play` (Android 16).
