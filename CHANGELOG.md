@@ -3,6 +3,14 @@
 All releases of Sátni FST. Downloads: [GitHub releases](https://github.com/sombyduodji/satni-fst/releases).
 [Suomi](CHANGELOG.fi.md) · [Norsk](CHANGELOG.nb.md)
 
+## 0.9.3 — 2026-11-03
+
+- **Gradation corrected.** Strong and weak grade were the wrong way round on about 340 words, including common ones such as *dilli*, *gilli*, *sivva*, *nisu* and *biras*. The word card and the colours in the inflection table are now right. The group name was also corrected on about 450 words, such as *listu*.
+- **Clearer gradation row.** When grades III and II are spelled alike, the row now marks the grade the word really uses: *mannat* shows *nn* II, and contracted words such as *suolu* show *ll* III.
+- **More labelled forms.** Grade III forms of some verbs, such as *viehkki* from *viehkat*, are now marked as strong grade.
+- **Experimental: Apertium translations.** A new switch, off by default, shows a Norwegian translation for about 4,600 words that have none in the dictionaries. They come from the apertium-sme-nob machine translation dictionary, are marked as unchecked and do not affect search.
+- **Web version.** Installed browser versions download the updated dictionary once, about 45 MB.
+
 ## 0.9.2.3 — 2026-11-03
 
 - **Gradation boxes on phones.** Words no longer run out of their box on narrow screens. This corrects 0.9.2.2. The word pair
