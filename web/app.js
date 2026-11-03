@@ -145,6 +145,41 @@ function showFirstRun() {
   $("first-run").showModal();
 }
 
+// Kertavihje valikosta uusille ja päivittäville käyttäjille. Sulkeutuu napautuksesta, näppäilystä tai 10 sekunnissa.
+// Lasketaan nähdyksi vasta, kun se on ollut näkyvissä 3 sekuntia; muuten se näytetään uudelleen seuraavalla kerralla.
+function showMenuTip() {
+  try {
+    if (localStorage.getItem("satni-menu-tip")) return;
+  } catch (e) {
+    return;  // yksityinen tila: ei näytetä joka käynnistyksellä
+  }
+  if ($("first-run").open) {  // ensin kielen valinta, jotta vihje on oikealla kielellä
+    $("first-run").addEventListener("close", showMenuTip, { once: true });
+    return;
+  }
+  const btn = $("sidebar-toggle");
+  const tip = $("menu-tip");
+  const r = btn.getBoundingClientRect();
+  tip.textContent = t("menuTip");
+  tip.style.top = `${r.bottom + 10}px`;
+  tip.style.left = `${r.left}px`;
+  tip.hidden = false;
+  btn.classList.add("menu-tip-target");
+  const seen = setTimeout(() => {
+    try { localStorage.setItem("satni-menu-tip", "1"); } catch (e) { /* yksityinen tila */ }
+  }, 3000);
+  const close = () => {
+    clearTimeout(seen);
+    clearTimeout(timeout);
+    tip.hidden = true;
+    btn.classList.remove("menu-tip-target");
+    for (const type of ["pointerdown", "keydown", "input"]) document.removeEventListener(type, onUse, true);
+  };
+  const timeout = setTimeout(close, 10000);
+  const onUse = () => close();
+  for (const type of ["pointerdown", "keydown", "input"]) document.addEventListener(type, onUse, true);
+}
+
 // Valikon sulkeminen: taustan napautus, Esc tai Android-sovelluksen takaisin-ele (MainActivity.goBackOrFinish)
 function closeDrawer() {
   const open = document.body.classList.contains("sidebar-open");
@@ -1438,7 +1473,7 @@ function updateSuggestions(withForms = true) {
   // Muotohaku on vielä tulossa: rivi kertoo sen, ettei lista näytä tyhjältä (minulle löytyy vasta muotohaulla)
   const value = $("search").value.trim();
   const pending = !withForms && fold(value).length >= 2 && !value.includes(" ");
-  if (!pending && (!suggestions.length || (suggestions.length === 1 && !suggestions[0].form && fold(suggestions[0].sme_lemma) === fold($("search").value)))) {
+  if (!pending && !suggestions.length) {
     list.hidden = true;  // ei hideSuggestions: odottava muotohaku saa vielä tuoda ehdotuksia (munnje, kolmelle)
     return;
   }
@@ -2199,6 +2234,7 @@ async function main() {
   if (pendingShared) openShared(pendingShared);
   else routeFromHash();
   if (!location.hash) $("search").focus();
+  showMenuTip();
 }
 
 main();

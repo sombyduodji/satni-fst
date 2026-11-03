@@ -9,6 +9,8 @@ Alle versjoner av Sátni FST. Nedlastinger: [GitHub-utgivelser](https://github.c
 - **Tydeligere graderad.** Når grad III og II skrives likt, markerer raden nå graden ordet faktisk bruker: *mannat* viser *nn* II, og kontrakte ord som *suolu* viser *ll* III.
 - **Flere merkede former.** Grad III-former av noen verb, som *viehkki* av *viehkat*, er nå merket som sterkt stadium.
 - **Eksperimentelt: Apertium-oversettelser.** En ny bryter, av som standard, viser en norsk oversettelse for omtrent 4 600 ord som ikke har det i ordbøkene. De kommer fra maskinoversettelsesordlisten apertium-sme-nob, er merket som ikke kontrollert og påvirker ikke søket.
+- **Finn menyen.** Et engangstips på ☰-knappen forteller at språk og innstillinger ligger i menyen, og velkomstsiden har en ny Meny-rad.
+- **Søkeforslag.** Listen vises nå også når ordet du skrev er eneste treff, så det ser ikke lenger ut som om ingenting ble funnet før du trykker Enter.
 - **Nettversjonen.** Installerte nettleserversjoner laster ned den oppdaterte ordboken én gang, omtrent 45 MB.
 
 ## 0.9.2.3 — 2026-11-03
