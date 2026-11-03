@@ -40,6 +40,8 @@ GRADATION_TABLE = [
         ("ic", "icc", ""), ("id", "idd", ""), ("if", "iff", ""), ("ig", "igg", ""), ("ik", "ikk", ""),
         ("il", "ill", ""), ("ihl", "ihll", ""), ("ihm", "ihmm", ""), ("ihn", "ihnn", ""), ("ip", "ipp", ""),
         ("ir", "irr", ""), ("is", "iss", ""), ("it", "itt", ""), ("iv", "ivv", ""), ("iz", "izz", ""),
+        # Eivät ole oahpa.no:n taulukossa, mutta lang-sme taivuttaa näin: maritiima ~ maritiimma, Áiná ~ Áinná
+        ("im", "imm", ""), ("in", "inn", ""),
         ("lb", "lbb", ""), ("lc", "lcc", ""), ("ld", "ldd", ""), ("lf", "lff", ""), ("lg", "lgg", ""),
         ("lk", "lkk", ""), ("lj", "ljj", ""), ("lp", "lpp", ""), ("ls", "lss", ""), ("lš", "lšš", ""),
         ("lt", "ltt", ""), ("lv", "lvv", ""), ("lž", "lžž", ""), ("mb", "mbb", ""), ("mp", "mpp", ""),
@@ -94,8 +96,9 @@ def _clusters(word):
 
 def _keys(cluster, prev_vowels):
     """Taulukkoavain sellaisenaan sekä i-čoahkit-muodossa (ig ~ igg), jossa i kuuluu edeltävään
-    vokaaliryhmään. Kumpaa käytetään, ratkeaa sanakohtaisesti taulukon perusteella."""
-    return cluster, ("i" + cluster if prev_vowels.endswith("i") else None)
+    vokaaliryhmään. Kumpaa käytetään, ratkeaa sanakohtaisesti taulukon perusteella. Pelkkä lyhyt i on
+    vokaali eikä čoahkin osa: dilli on ll ~ l, ei il ~ ill (biila, báiki ovat i-čoahkkeja)."""
+    return cluster, ("i" + cluster if prev_vowels.endswith("i") and prev_vowels != "i" else None)
 
 
 def _find_row(keys):
@@ -112,6 +115,17 @@ def _find_row(keys):
                     group = f"Joavku 6: {GROUP_6_NAMES.get(row[0][0], '')}".rstrip(": ")
                 return ranks, group, row
     return None, None, None
+
+
+def _weak_illative(form_clusters, position, strong, weak):
+    """Ovatko perusmuoto ja illatiivi vain heikkoa astetta, kun genetiivissä on vahva aste?"""
+    def found(tags):
+        keys = set()
+        for tag, _, clusters in form_clusters:
+            if tag in tags and position in clusters:
+                keys.update(k for k in (strong, weak) if k in _keys(*clusters[position]))
+        return keys
+    return found(("Sg+Nom", "Nom")) == {weak} and found(("Sg+Ill",)) == {weak} and strong in found(("Sg+Gen", "Gen"))
 
 
 def analyse(lemma, forms):
@@ -144,6 +158,10 @@ def analyse(lemma, forms):
             # Kaksi yleisintä muodostavat pääparin; sen pitää löytyä taulukon samalta riviltä
             main_pair = candidates[:2]
             ranks, group, row = _find_row(main_pair)
+            # Illatiivi on aina vahva-asteinen: jos i-čoahkki tekisi siitä heikon, kyse on kaksoiskonsonantista
+            # (gáivvo ~ gáivo on vv ~ v, ei iv ~ ivv)
+            if ranks and use_i and _weak_illative(form_clusters, position, *sorted(main_pair, key=lambda k: -ranks[k])):
+                ranks = None
             if ranks:
                 break
         if not ranks:
