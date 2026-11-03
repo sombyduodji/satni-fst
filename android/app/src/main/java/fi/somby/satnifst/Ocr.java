@@ -1,3 +1,5 @@
+// Copyright (C) 2026 Juha Somby <satni@somby.fi>
+// Lisenssi: GNU GPL, versio 3 (LICENSE) ja lisälupa Google ML Kitille. Ks. CREDITS.md.
 package fi.somby.satnifst;
 
 import android.app.Activity;

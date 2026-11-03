@@ -64,6 +64,8 @@ b.hd, .hd { color: var(--hd); }
 .brand { display: flex; align-items: center; gap: 12px; min-width: 0; overflow: hidden; }
 .brand > div { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .brand-icon { width: 36px; height: 36px; border-radius: 8px; }
+a.brand { color: inherit; text-decoration: none; }
+body.drawer-layout .topbar a.brand { flex: 0 1 auto; }
 .brand-name { font-weight: 700; font-size: 20px; }
 .brand-sub { color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .topbar-actions { display: flex; gap: 8px; align-items: center; }
@@ -256,8 +258,10 @@ main > * + * { margin-top: 12px; }
 .gradation .arrow { color: var(--subtle); font-weight: 400; margin: 0 2px; }
 /* Puhelimessa tasainen 2 × 2 -ruudukko */
 @media (max-width: 480px) {
-  .grad-cells { display: grid; grid-template-columns: 1fr 1fr; }
-  .grad-cell.group .gc-val { white-space: normal; }
+  .grad-cells { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .grad-cell { min-width: 0; padding-inline: 10px; }
+  .grad-cell.group .gc-val { white-space: normal; font-size: 12px; overflow-wrap: anywhere; }
+  .grad-cell.group .gc-val .nw { white-space: normal; }
 }
 #word-info:empty { display: none; }
 #word-info { margin: 8px 0 0; }
@@ -291,8 +295,51 @@ table.paradigm tr.section td {
 .pron { color: var(--muted); }
 .form-tr { display: block; color: var(--muted); font-size: 12px; font-style: italic; font-weight: 400; line-height: 1.25; margin-top: 1px; }
 .form-tr-note { margin: 0 0 8px; }
-.menu-end { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
-.menu-end .about-coffee { margin: 4px 0 0; }
+/* ☰-valikon otsikko: logo, nimi ja tekijä */
+.menu-head { display: flex; align-items: center; gap: 12px; padding: 0 0 14px; margin-bottom: 14px; border-bottom: 1px solid var(--border); }
+.menu-head > div { min-width: 0; }
+.menu-logo { display: block; width: 44px; height: 44px; border-radius: 10px; }
+.menu-name { display: block; color: var(--text); font-size: 18px; font-weight: 700; line-height: 1.2; text-decoration: none; }
+.menu-author { background: none; border: 0; padding: 2px 0 0; color: var(--muted); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.menu-author:hover { color: var(--accent); }
+/* Asetukset avattavana ryhmänä */
+.menu-settings { margin-top: 14px; border-top: 1px solid var(--border); }
+.menu-settings > summary {
+  padding: 12px 8px; font-size: 15px; font-weight: 600; cursor: pointer; list-style: none;
+  display: flex; align-items: center; justify-content: space-between; border-radius: 8px;
+}
+.menu-settings > summary::-webkit-details-marker { display: none; }
+.menu-settings > summary::after { content: "›"; color: var(--muted); font-size: 20px; line-height: 1; transition: transform .15s; }
+.menu-settings[open] > summary::after { transform: rotate(90deg); }
+.menu-settings > summary:hover { background: var(--chip); }
+.menu-settings > section { padding-bottom: 6px; }
+/* Valikon lopun linkit */
+.menu-links { display: flex; flex-direction: column; margin-top: 2px; padding-top: 6px; border-top: 1px solid var(--border); }
+.menu-links > a, .menu-links > button {
+  display: block; width: 100%; padding: 10px 8px; background: none; border: 0; border-radius: 8px;
+  color: var(--text); font: inherit; font-size: 15px; text-align: left; text-decoration: none; cursor: pointer;
+}
+.menu-links > a:hover, .menu-links > button:hover { background: var(--chip); }
+.menu-links > p { margin: 10px 8px 0; }
+/* Tietoa-ikkuna */
+.about-head { text-align: center; margin-bottom: 14px; }
+.about-head h2 { margin: 8px 0 2px; }
+.about-head p { margin: 0; }
+.about-logo { width: 64px; height: 64px; border-radius: 14px; }
+.about-body .about-tagline { text-align: center; margin: 0 0 16px; }
+.about-body h3 { margin: 16px 0 4px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.about-body h3 + p { margin-top: 0; }
+.about-body details { margin: 16px 0; padding-top: 10px; border-top: 1px solid var(--border); font-size: 14px; }
+.about-body summary { cursor: pointer; font-weight: 600; }
+.support-dlg h3 { margin: 16px 0 6px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.support-dlg .coffee-btn { margin-bottom: 12px; }
+.feedback-address { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; margin: 0 0 12px; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 8px; }
+.feedback-address strong { overflow-wrap: anywhere; }
+.support-ways { margin: 0 0 14px; padding-left: 20px; font-size: 14px; }
+.support-ways li { margin-bottom: 6px; }
+.support-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+.support-actions a { text-decoration: none; display: inline-block; }
+.feedback-dlg { width: min(460px, calc(100vw - 32px)); }
 .sep { color: var(--subtle); }
 .hint { color: var(--subtle); font-size: 13px; margin: 12px 0 0; }
 
@@ -317,8 +364,7 @@ dialog {
 }
 dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
-/* Tietoa-ikkunan lopussa: Buy me a coffee (pyöreä kahvikuppilogo + teksti), sama ulkoasu kuin kotisivulla */
-.about-coffee { color: var(--muted); font-size: 14px; }
+/* Osallistu ja tue -ikkunassa: Buy me a coffee (pyöreä kahvikuppilogo + teksti), sama ulkoasu kuin kotisivulla */
 .coffee-btn {
   display: inline-flex; align-items: center; gap: 8px; margin-top: 6px; padding: 4px 14px 4px 4px; border-radius: 999px;
   background: #fbf1e1; color: #3b2a20; border: 1px solid #ead9bf; font-weight: 700; font-size: 14px;

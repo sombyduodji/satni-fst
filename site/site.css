@@ -130,3 +130,4 @@ footer { text-align: center; padding: 28px 16px 40px; color: var(--muted); font-
   list-style: none; background: var(--chip); color: var(--text); font-weight: 600; user-select: none;
 }
 .older-link { margin-top: 20px; font-weight: 600; }
+.new-note { margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--border, #e2e8f0); font-size: 14px; opacity: .8; }

@@ -3,6 +3,31 @@
 Alle versjoner av Sátni FST. Nedlastinger: [GitHub-utgivelser](https://github.com/sombyduodji/satni-fst/releases).
 [English](CHANGELOG.md) · [Suomi](CHANGELOG.fi.md)
 
+## 0.9.2.2 — 2026-11-03
+
+En liten oppdatering: ryddigere meny og mer presise lisensopplysninger.
+
+- **Ryddigere meny.** Øverst står appens navn og utvikleren, deretter favoritter og historikk. Innstillinger, andre språk
+  og eksperimentelle funksjoner ligger samlet i Innstillinger, som åpnes ved behov.
+- **Logoen går til start.** Logoen og appens navn fører tilbake til startsiden.
+- **Klarere Om-vindu.** Først kommer utvikleren, språkdata og tilbakemelding; kilder, lisenser og personvern ligger i en
+  del som kan åpnes.
+- **Nye vinduer for tilbakemelding og støtte.** I tilbakemeldingsvinduet kan adressen kopieres, og det har lenker til e-post og
+  GitHub. *Bidra og støtt* viser hvordan man kan hjelpe, for eksempel med oversettelser, ideer og tilgjengelighet.
+- **Ny etikett.** *Oahpa-gruppe* på ordkortet heter nå *Stadievekslingsgruppe*. Oahpa er fortsatt oppgitt som kilde til tabellen.
+- **Lisensopplysninger.** Tilleggstillatelsen for Google ML Kit sier nå at kildekoden skal omfatte det dekkede verket, men ikke
+  ML Kits egen kildekode. De nordsamiske språkmodellene bygges nå fra registrerte GiellaLT-commits med `rakenna_fst.sh`.
+- **Ordboken er bygd på nytt med disse modellene.** Ordene, oversettelsene og eksemplene er uendret. Ett ord er endret:
+  *unnajuovllat* viser ikke lenger stadieveksling eller varianten *unajuovllat*.
+
+## 0.9.2.1 — 2026-11-02
+
+En liten rettelsesoppdatering.
+
+- **Dualpronomen:** *moai*, *doai* og *soai* er nå *me (2)*, *te (2)* og *he (2)*.
+- **Gjennomgåtte finske oversettelser:** *nubbi*, *galle*, *ihtin*, *eisseváldi*, *earenomáš*, *maiddai*, *máid* og *ovtta oaivilis*.
+- **Eksperimentelt skoltesamisk:** vanlige ord kommer først når ord har samme poengsum.
+
 ## 0.9.2 — 2026-11-02
 
 - **Finsk søk finner flere former.** Andre vanlige pronomen (*kenelle*, *tälle*, *niille*, *jolle*) og endelsene *-lla*, *-lta*
