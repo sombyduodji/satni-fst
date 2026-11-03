@@ -1080,11 +1080,22 @@ function renderGradation() {
     }
   }
   // "hkk (III) · hk (II) · g (I)" -> asteet; vahva vihreä, heikko oranssi, muut harmaina
-  let strongDone = false;
-  const grades = (w.gradation_row || "").split(" · ").filter(Boolean).map((part) => {
-    const [value, q2] = part.replace(/\)$/, "").split(" (");
+  const parts = (w.gradation_row || "").split(" · ").filter(Boolean).map((part) => part.replace(/\)$/, "").split(" ("));
+  // Sama kirjoitusasu voi esiintyä kahdessa asteessa (nn III, nn II). Yleensä vaihtelu on II ~ I (mannat ~ manan),
+  // mutta kontrahoituvassa sanassa heikosta perusmuodosta tullaan asteeseen III (suolu ~ sullo, boazu ~ bohcco).
+  const form = (...formTags) => {
+    const tag = formTags.find((x) => state.paradigm.get(x)?.length);
+    return tag ? [state.paradigm.get(tag)[0], state.grades.get(tag + "|" + state.paradigm.get(tag)[0])] : [];
+  };
+  const syllables = (s) => (s.toLowerCase().match(/[aáeiouyäöâ]+/g) || []).length;
+  const [baseForm, baseGrade] = form("Sg+Nom", "Nom");
+  const [genForm, genGrade] = form("Sg+Gen", "Gen");
+  const contracted = baseGrade === "HD" && genGrade === "GD" && syllables(baseForm) === syllables(genForm);
+  const values = parts.map(([value]) => value);
+  const strongIdx = contracted ? values.indexOf(w.gd_cluster) : values.lastIndexOf(w.gd_cluster);
+  const grades = parts.map(([value, q2], i) => {
     let cls = "other";
-    if (value === w.gd_cluster && !strongDone) { cls = "gd"; strongDone = true; }
+    if (i === strongIdx) cls = "gd";
     else if (value === w.hd_cluster) cls = "hd";
     return `<span class="${cls}">${esc(value)} <small>${esc(q2 || "")}</small></span>`;
   }).join('<span class="sep"> · </span>');
