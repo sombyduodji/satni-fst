@@ -46,6 +46,12 @@ const UI_TEXTS = {
       koltansaamen välillä ei ole sanakirjaa, joten saamen sanalle ne haetaan sen suomennosten kautta ja merkitään
       ”suomen kautta”. Ne voivat silloin kuulua sanan toiseen merkitykseen.</p>
       <p>Koltansaamen osaaja ei ole vielä tarkistanut aineistoa.</p>`,
+    expApertium: "Apertium-käännökset", expApertiumDesc: "Norjan käännös sanoille, joilla sitä ei ole sanakirjoissa.",
+    expApertiumInfo: `<p>Kun käännöskielenä on norja ja sanalta puuttuu käännös, sanakortissa näytetään käännös
+      Apertium-konekääntimen sanastosta (apertium-sme-nob).</p>
+      <p>Sanasto on tehty konekääntämistä varten, ei sanakirjaksi. Käännös voi olla karkea tai väärä, eikä sitä ole
+      tarkistettu. Nämä käännökset eivät vaikuta hakuun.</p>`,
+    apertiumNote: "Apertium, tarkistamaton",
     expEnable: "Ota käyttöön", cancel: "Peruuta", smsVia: "suomen kautta",
     ocrError: "Kuvan käsittely ei onnistunut.", ocrNoApp: "Kamerasovellusta ei löytynyt.",
     showGrade: "Näytä astevaihtelu",
@@ -91,7 +97,9 @@ const UI_TEXTS = {
       <dt>Taivutus</dt><dd>verbeillä kaikki tapaluokat, nomineilla sijamuodot (ol. ja ml.).</dd>
       <dt>Astevaihtelu</dt><dd>vahva aste <b class="gd">GD</b> vihreänä, heikko aste <b class="hd">HD</b> oranssina.</dd>
       <dt>Ääntäminen</dt><dd>🔈 sanan vieressä, tai napauta taulukon muotoa: kuuntele tai kopioi.</dd>
-      <dt>Suosikit</dt><dd>★ tallentaa sanan omalle listalle.</dd>`,
+      <dt>Suosikit</dt><dd>★ tallentaa sanan omalle listalle.</dd>
+      <dt>Valikko</dt><dd>☰ ylhäällä: kieli, asetukset, suosikit ja historia, muut kielet ja kokeelliset ominaisuudet.</dd>`,
+    menuTip: "Kieli ja asetukset löytyvät valikosta.",
     tryThese: "Kokeile:", randomWord: "Satunnainen sana",
     listen: "Kuuntele", fetching: "Haetaan…", listenTo: (text) => `Kuuntele: ${text}`,
     copy: "Kopioi", copied: (text) => `Kopioitu: ${text}`,
@@ -172,7 +180,7 @@ const UI_TEXTS = {
       <p>Lisenssit: sanakirjat © GiellaLT (CC BY 4.0, yhdistetty ja täydennetty taivutusmuodoilla),
          taivutus GiellaLT lang-sme (GPL-3.0), käännösten taivutus GiellaLT lang-fin (GPL-3.0) ja Norsk ordbank
          (Språkbanken / Nasjonalbiblioteket, CC BY 4.0), koltansaame (kokeellinen) GiellaLT dict-sms-mul, dict-fin-sms ja
-         dict-nob-sms (CC BY 4.0 / 3.0), sql.js (MIT). Android-sovelluksen kokeellinen
+         dict-nob-sms (CC BY 4.0 / 3.0), norjan käännökset (kokeellinen) Apertium apertium-sme-nob (GPL-2.0-or-later), sql.js (MIT). Android-sovelluksen kokeellinen
          tekstintunnistus: Google ML Kit (Googlen käyttöehdot). Kuva käsitellään puhelimessa eikä lähde laitteelta;
          ML Kit voi lähettää Googlelle nimettömiä käyttötilastoja, kun tekstintunnistusta käytetään. Sátni FST on vapaa ohjelma (GPL-3.0).
          Astevaihtelun ryhmät: Oahpa (Giellatekno). Kaikki lähteet, lisenssit ja tehdyt muutokset: Lisenssit-painike alla.
@@ -218,6 +226,12 @@ const UI_TEXTS = {
       finnes ingen ordbok mellom nordsamisk og skoltesamisk, så for et samisk ord hentes de via de finske oversettelsene
       og merkes «via finsk». Da kan de høre til en annen betydning av ordet.</p>
       <p>Materialet er ennå ikke kontrollert av noen som kan skoltesamisk.</p>`,
+    expApertium: "Apertium-oversettelser", expApertiumDesc: "Norsk oversettelse av ord som ikke har det i ordbøkene.",
+    expApertiumInfo: `<p>Når oversettelsesspråket er norsk og et ord mangler oversettelse, viser ordkortet en oversettelse
+      fra ordlisten til maskinoversetteren Apertium (apertium-sme-nob).</p>
+      <p>Ordlisten er laget for maskinoversettelse, ikke som ordbok. Oversettelsen kan være grov eller feil, og den er
+      ikke kontrollert. Disse oversettelsene påvirker ikke søket.</p>`,
+    apertiumNote: "Apertium, ikke kontrollert",
     expEnable: "Slå på", cancel: "Avbryt", smsVia: "via finsk",
     ocrError: "Kunne ikke behandle bildet.", ocrNoApp: "Fant ingen kameraapp.",
     showGrade: "Vis stadieveksling",
@@ -263,7 +277,9 @@ const UI_TEXTS = {
       <dt>Bøying</dt><dd>alle modi for verb, kasus for nomen (ol. og ml.).</dd>
       <dt>Stadieveksling</dt><dd>sterkt stadium <b class="gd">GD</b> i grønt, svakt stadium <b class="hd">HD</b> i oransje.</dd>
       <dt>Uttale</dt><dd>🔈 ved ordet, eller trykk på en form i tabellen: lytt eller kopier.</dd>
-      <dt>Favoritter</dt><dd>★ lagrer ordet i din egen liste.</dd>`,
+      <dt>Favoritter</dt><dd>★ lagrer ordet i din egen liste.</dd>
+      <dt>Meny</dt><dd>☰ øverst: språk, innstillinger, favoritter og historikk, andre språk og eksperimentelle funksjoner.</dd>`,
+    menuTip: "Språk og innstillinger finner du i menyen.",
     tryThese: "Prøv:", randomWord: "Tilfeldig ord",
     listen: "Lytt", fetching: "Henter…", listenTo: (text) => `Lytt: ${text}`,
     copy: "Kopier", copied: (text) => `Kopiert: ${text}`,
@@ -342,7 +358,7 @@ const UI_TEXTS = {
       <p>Lisenser: ordbøkene © GiellaLT (CC BY 4.0, slått sammen og utvidet med bøyingsformer),
          bøying GiellaLT lang-sme (GPL-3.0), bøying av oversettelsene GiellaLT lang-fin (GPL-3.0) og Norsk ordbank
          (Språkbanken / Nasjonalbiblioteket, CC BY 4.0), skoltesamisk (eksperimentelt) GiellaLT dict-sms-mul, dict-fin-sms og
-         dict-nob-sms (CC BY 4.0 / 3.0), sql.js (MIT). Eksperimentell tekstgjenkjenning i
+         dict-nob-sms (CC BY 4.0 / 3.0), norske oversettelser (eksperimentelt) Apertium apertium-sme-nob (GPL-2.0-or-later), sql.js (MIT). Eksperimentell tekstgjenkjenning i
          Android-appen: Google ML Kit (Googles vilkår). Bildet behandles på telefonen og forlater ikke enheten;
          ML Kit kan sende anonym bruksstatistikk til Google når tekstgjenkjenningen brukes. Sátni FST er fri programvare (GPL-3.0).
          Stadievekslingsgrupper: Oahpa (Giellatekno). Alle kilder, lisenser og endringer: Lisenser-knappen nedenfor.

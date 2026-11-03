@@ -1,0 +1,278 @@
+verdict	lemma	pos	freq	row	rules	sg_nom	sg_gen	sg_ill	lexc
+FIXED 2026-11-03	Eliissá	N	55	is (III) · iss (II)	illweak	Eliissá	Eliisá	Eliissái	
+FIXED 2026-11-03	maritiima	A	46	mm (III) · mm (II) · m (I)	illweak	maritiima	maritiimma	maritiimii	NUORRA:maritijºma
+FIXED 2026-11-03	čáhcegáivvo	N	11	iv (III) · ivv (II)	illweak	čáhcegáivvo	čáhcegáivo	čáhcegáivvui	GOAHTI:čáhce#gáivvo
+FIXED 2026-11-03	Giillá	N	1	il (III) · ill (II)	illweak	Giillá	Giilá	Giillái	
+FIXED 2026-11-03	baikagáivvo	N	0	iv (III) · ivv (II)	illweak	baikagáivvo	baikagáivo	baikagáivvui	GOAHTI:baika#gáivvo
+FIXED 2026-11-03	cirggasgáivvo	N	0	iv (III) · ivv (II)	illweak	cirggasgáivvo	cirggasgáivo	cirggasgáivvui	GOAHTI:cirggas#gáivvo
+FIXED 2026-11-03	gáivvo	N	0	iv (III) · ivv (II)	illweak	gáivvo	gáivo	gáivvui	GOAHTI:gáivvo
+FIXED 2026-11-03	Áillu	N	0	il (III) · ill (II)	illweak	Áillu	Áilo / Áilu	Áillui	
+FIXED 2026-11-03	Áiná	N	0	nn (III) · nn (II) · n (I)	illweak	Áiná	Áinná / Áiná	Áinái	
+OK: adjective changes only in comparative	allat	A	7807	ll (III) · ll (II) · l (I)	nomgen	allat	allada / allaga	alladii / allagii	ALLAT:all
+OK: adjective changes only in comparative	lossat	A	3144	ss (III) · ss (II) · s (I)	nomgen	lossat	lossada	lossadii	LEXATTR:losºses
+OK: adjective changes only in comparative	árrat	A	1334	rr (III) · rr (II) · r (I)	nomgen	árrat	árrada	árradii	ALLAGA:árrad
+OK: adjective changes only in comparative	njuolgat	A	1319	lg (III) · lgg (II)	nomgen	njuolgat	njuolgada	njuolgadii	CAVGAT:njuolg
+OK: adjective changes only in comparative	čavgat	A	591	vg (III) · vgg (II)	nomgen	čavgat	čavgada	čavgadii	CAVGAT:čavg
+OK: adjective changes only in comparative	govdat	A	452	vd (III) · vdd (II)	nomgen	govdat	govdada / govdaga	govdadii / govdagii	ALLAT:govºd
+OK: adjective changes only in comparative	gassat	A	195	ss (III) · ss (II) · s (I)	nomgen	gassat	gassada / gassaga	gassadii / gassagii	ALLAT:gass
+OK: adjective changes only in comparative	geahppat	A	188	hpp (III) · hp (II) · b (I)	nomgen	geahppat	geahppada	geahppadii	LEXATTR:geahppadis
+OK: adjective changes only in comparative	ceakkonjuolgat	A	0	lg (III) · lgg (II)	nomgen	ceakkonjuolgat	ceakkonjuolgada	ceakkonjuolgadii	CAVGAT:ceakko7#njuolg
+OK: adjective changes only in comparative	eahpenjulges	A	0	lg (III) · lgg (II)	nomgen	eahpenjuolgat	eahpenjuolgada	eahpenjuolgadii	
+OK: adjective changes only in comparative	eahpenjuolgat	A	0	lg (III) · lgg (II)	nomgen	eahpenjuolgat	eahpenjuolgada	eahpenjuolgadii	CAVGAT:eahpe#njuolg
+OK: adjective changes only in comparative	gonagasivdnenjuolgat	A	0	lg (III) · lgg (II)	nomgen	gonagasivdnenjuolgat	gonagasivdnenjuolgada	gonagasivdnenjuolgadii	CAVGAT:gonagas#ivdne#njuolg
+OK: adjective changes only in comparative	ivdnenjuolgat	A	0	lg (III) · lgg (II)	nomgen	ivdnenjuolgat	ivdnenjuolgada	ivdnenjuolgadii	CAVGAT:ivdne#njuolg
+OK: adjective changes only in comparative	láskkonjuolgat	A	0	lg (III) · lgg (II)	nomgen	láskkonjuolgat	láskkonjuolgada	láskkonjuolgadii	CAVGAT:láskko7#njuolg
+OK: adjective changes only in comparative	njulges	A	0	lg (III) · lgg (II)	nomgen	njuolgat	njuolgada	njuolgadii	
+OK: adjective changes only in comparative	viŋkilnjuolgat	A	0	lg (III) · lgg (II)	nomgen	viŋkilnjuolgat	viŋkilnjuolgada	viŋkilnjuolgadii	CAVGAT:viŋkil#njuolg
+numeral: first part of compound or logi type	logi	Num	3656	hkk (III) · hk (II) · g (I)	nomgen	logi	logi	lohkái	NUMERALCOMPOUNDS:loh
+numeral: first part of compound or logi type	moaddelogi	Num	499	hkk (III) · hk (II) · g (I)	nomgen,ess	moaddelogi / moaddelohki	moattelogi	moattelohkái	NUMERALCOMPOUNDS:moatte#logi
+numeral: first part of compound or logi type	máŋgalogi	Num	358	hkk (III) · hk (II) · g (I)	nomgen,ess	máŋgalogi / máŋgalohki	máŋggalogi	máŋggalohkái	NUMERALCOMPOUNDS:máŋgga#logi
+numeral: first part of compound or logi type	guoktelogi	Num	322	hkk (III) · hk (II) · g (I)	nomgen,ess	guoktelogi / guoktelohki	guovttelogi	guovttelohkái	
+numeral: first part of compound or logi type	guoktenuppelohkái	Num	206	hkk (III) · hk (II) · g (I)	ess	guoktenuppelohkái	guovttenuppelogi	guoktenuppelohkái / guovttenuppelohkái	
+numeral: first part of compound or logi type	golbmalogi	Num	177	hkk (III) · hk (II) · g (I)	nomgen,ess	golbmalogi / golbmalohki	golmmalogi	golmmalohkái	
+numeral: first part of compound or logi type	nuppelohkái	Num	160	hkk (III) · hk (II) · g (I)	ess	nuppelohkái	nuppelogi	nuppelohkái	NUMERALCOMPOUNDS:%>nuppe#logi
+numeral: first part of compound or logi type	oktanuppelohkái	Num	153	hkk (III) · hk (II) · g (I)	ess	oktanuppelohkái	ovttanuppelogi	oktanuppelohkái / ovttanuppelohkái	
+numeral: first part of compound or logi type	vihttalogi	Num	145	hkk (III) · hk (II) · g (I)	nomgen,ess	vihttalogi / vihttalohki	viđalogi	viđalohkái	
+numeral: first part of compound or logi type	njealljelogi	Num	100	hkk (III) · hk (II) · g (I)	nomgen	njealljelogi / njealljelohki	njealjelogi	njealjelohkái	
+numeral: first part of compound or logi type	vihttanuppelohkái	Num	75	hkk (III) · hk (II) · g (I)	ess	vihttanuppelohkái	viđanuppelogi	viđanuppelohkái	
+numeral: first part of compound or logi type	guhttalogi	Num	40	hkk (III) · hk (II) · g (I)	nomgen,ess	guhttalogi / guhttalohki	guđalogi	guđalohkái	
+numeral: first part of compound or logi type	moaddenuppelohkái	Num	39	hkk (III) · hk (II) · g (I)	ess	moaddenuppelohkái	moattenuppelogi	moattenuppelohkái	
+numeral: first part of compound or logi type	njealljenuppelohkái	Num	30	hkk (III) · hk (II) · g (I)	ess	njealljenuppelohkái	njealjenuppelogi	njealjenuppelohkái	
+numeral: first part of compound or logi type	golbmanuppelohkái	Num	28	hkk (III) · hk (II) · g (I)	ess	golbmanuppelohkái	golmmanuppelogi	golmmanuppelohkái	
+numeral: first part of compound or logi type	máŋgaduhát	Num	28	ŋg (III) · ŋgg (II)	illweak	máŋgaduhát	máŋggaduháha / máŋggaduhát	máŋggaduháhii	
+numeral: first part of compound or logi type	čiežalogi	Num	28	hkk (III) · hk (II) · g (I)	nomgen	čiehčalogi / čiehčalohki / čiežalogi	čiežalogi	čiežalohkái	
+numeral: first part of compound or logi type	gávccinuppelohkái	Num	25	hkk (III) · hk (II) · g (I)	ess	gávccinuppelohkái	gávccinuppelogi	gávccinuppelohkái	
+numeral: first part of compound or logi type	guhttanuppelohkái	Num	18	hkk (III) · hk (II) · g (I)	ess	guhttanuppelohkái	guđanuppelogi	guđanuppelohkái	
+numeral: first part of compound or logi type	ovccilogi	Num	18	hkk (III) · hk (II) · g (I)	nomgen	okcilogi / okcilohki / ovccilogi	ovccilogi	ovccilohkái	
+numeral: first part of compound or logi type	čiežanuppelohkái	Num	17	hkk (III) · hk (II) · g (I)	ess	čiežanuppelohkái	čiežanuppelogi	čiežanuppelohkái	
+numeral: first part of compound or logi type	golbmaduhát	Num	16	lbm (III) · lmm (II)	illweak	golbmaduhát	golmmaduháha / golmmaduhát	golmmaduháhii	
+numeral: first part of compound or logi type	gávccilogi	Num	14	hkk (III) · hk (II) · g (I)	nomgen	gákcilogi / gákcilohki / gávccilogi	gávccilogi	gávccilohkái	
+numeral: first part of compound or logi type	moaddeduhát	Num	14	dd (III) · tt (II)	illweak	moaddeduhát	moatteduháha / moatteduhát	moatteduháhii	
+numeral: first part of compound or logi type	máŋganuppelohkái	Num	14	hkk (III) · hk (II) · g (I)	ess	máŋganuppelohkái	máŋgganuppelogi	máŋgganuppelohkái	
+numeral: first part of compound or logi type	guokteduhát	Num	13	kt (III) · vtt (II)	illweak	guokteduhát	guovtteduháha / guovtteduhát	guovtteduháhii	
+numeral: first part of compound or logi type	vihttaduhát	Num	11	htt (III) · ht (II) · đ (I)	illweak	vihttaduhát	viđaduháha / viđaduhát	viđaduháhii	
+numeral: first part of compound or logi type	njealljeduhát	Num	9	llj (III) · lj (II)	illweak	njealljeduhát	njealjeduháha / njealjeduhát	njealjeduháhii	
+numeral: first part of compound or logi type	čiežačuođi	Num	9	htt (III) · ht (II) · đ (I)	nomgen,ess	čiehčačuođi / čiežačuohti / čiežačuođi	čiežačuođi	čiežačuohtái	
+numeral: first part of compound or logi type	golbmalogičieža	Num	7	lbm (III) · lmm (II)	nomgen	golbmalogičieža	golbmalogičieža	golbmalogičižii / golbmalogičihčii / golbmalogičihččii	
+numeral: first part of compound or logi type	guhttaduhát	Num	6	htt (III) · ht (II) · đ (I)	illweak	guhttaduhát	guđaduháha / guđaduhát	guđaduháhii	
+numeral: first part of compound or logi type	golbmalogiovcci	Num	4	lbm (III) · lmm (II)	nomgen	golbmalogiovcci	golbmalogiovcci	golbmalogiokcái	
+numeral: first part of compound or logi type	guoktelogigávcci	Num	4	kt (III) · vtt (II)	nomgen	guoktelogigávcci	guoktelogigávcci	guoktelogigákcái	
+numeral: first part of compound or logi type	gávcciduhát	Num	4	kc (III) · vcc (II)	illweak	gákciduhát / gávcciduhát	gávcciduháha / gávcciduhát	gávcciduháhii	
+numeral: first part of compound or logi type	golbmalogigávcci	Num	3	lbm (III) · lmm (II)	nomgen	golbmalogigávcci	golbmalogigávcci	golbmalogigákcái	
+numeral: first part of compound or logi type	ovccinuppelohkái	Num	3	hkk (III) · hk (II) · g (I)	ess	ovccinuppelohkái	ovccinuppelogi	ovccinuppelohkái	
+numeral: first part of compound or logi type	čiežaduhát	Num	2	hčč (III) · hč (II) · ž (I)	illweak	čiehčaduhát / čiežaduhát	čiežaduháha / čiežaduhát	čiežaduháhii	
+numeral: first part of compound or logi type	guoktelogiovcci	Num	1	kt (III) · vtt (II)	nomgen	guoktelogiovcci	guoktelogiovcci	guoktelogiokcái	
+numeral: first part of compound or logi type	guoktelogičieža	Num	1	kt (III) · vtt (II)	nomgen	guoktelogičieža	guoktelogičieža	guoktelogičižii / guoktelogičihčii / guoktelogičihččii	
+numeral: first part of compound or logi type	ovcciduhát	Num	1	kc (III) · vcc (II)	illweak	okciduhát / ovcciduhát	ovcciduháha / ovcciduhát	ovcciduháhii	
+numeral: first part of compound or logi type	guhttalogigávcci	Num	0	htt (III) · ht (II) · đ (I)	nomgen	guhttalogigávcci	guhttalogigávcci	guhttalogigákcái	
+numeral: first part of compound or logi type	guhttalogiovcci	Num	0	htt (III) · ht (II) · đ (I)	nomgen	guhttalogiovcci	guhttalogiovcci	guhttalogiokcái	
+numeral: first part of compound or logi type	guhttalogičieža	Num	0	htt (III) · ht (II) · đ (I)	nomgen	guhttalogičieža	guhttalogičieža	guhttalogičižii / guhttalogičihčii / guhttalogičihččii	
+numeral: first part of compound or logi type	guoktečuođigolbmalogi	Num	0	hkk (III) · hk (II) · g (I)	nomgen,ess	guoktečuođigolbmalogi / guoktečuođigolbmalohki	guoktečuođigolmmalogi	guoktečuođigolmmalohkái	
+numeral: first part of compound or logi type	guoktečuođiguhttalogi	Num	0	hkk (III) · hk (II) · g (I)	nomgen,ess	guoktečuođiguhttalogi / guoktečuođiguhttalohki	guoktečuođiguđalogi	guoktečuođiguđalohkái	
+numeral: first part of compound or logi type	guoktečuođiguoktelogi	Num	0	hkk (III) · hk (II) · g (I)	nomgen,ess	guoktečuođiguoktelogi / guoktečuođiguoktelohki	guoktečuođiguovttelogi	guoktečuođiguovttelohkái	
+numeral: first part of compound or logi type	guoktečuođigávccilogi	Num	0	hkk (III) · hk (II) · g (I)	nomgen	guoktečuođigákcilogi / guoktečuođigákcilohki / guoktečuođigávccilogi	guoktečuođigávccilogi	guoktečuođigávccilohkái	
+numeral: first part of compound or logi type	guoktečuođilogi	Num	0	hkk (III) · hk (II) · g (I)	nomgen	guoktečuođilogi	guoktečuođilogi	guoktečuođilohkái	
+numeral: first part of compound or logi type	guoktečuođinjealljelogi	Num	0	hkk (III) · hk (II) · g (I)	nomgen	guoktečuođinjealljelogi / guoktečuođinjealljelohki	guoktečuođinjealjelogi	guoktečuođinjealjelohkái	
+numeral: first part of compound or logi type	guoktečuođiovccilogi	Num	0	hkk (III) · hk (II) · g (I)	nomgen	guoktečuođiokcilogi / guoktečuođiokcilohki / guoktečuođiovccilogi	guoktečuođiovccilogi	guoktečuođiovccilohkái	
+numeral: first part of compound or logi type	guoktečuođivihttalogi	Num	0	hkk (III) · hk (II) · g (I)	nomgen,ess	guoktečuođivihttalogi / guoktečuođivihttalohki	guoktečuođiviđalogi	guoktečuođiviđalohkái	
+numeral: first part of compound or logi type	guoktečuođičiežalogi	Num	0	hkk (III) · hk (II) · g (I)	nomgen	guoktečuođičiehčalogi / guoktečuođičiehčalohki / guoktečuođičiežalogi	guoktečuođičiežalogi	guoktečuođičiežalohkái	
+numeral: first part of compound or logi type	gákcilogi	Num	0	hkk (III) · hk (II) · g (I)	nomgen	gákcilogi / gákcilohki / gávccilogi	gávccilogi / gákcilogi	gávccilohkái / gákcilohkái	
+numeral: first part of compound or logi type	njealljegoalmmátlohkái	Num	0	hkk (III) · hk (II) · g (I)	ess	njealljegoalmmátlohkái	njealjegoalmmátlogi	njealjegoalmmátlohkái	
+numeral: first part of compound or logi type	njealljelogigávcci	Num	0	llj (III) · lj (II)	nomgen	njealljelogigávcci	njealljelogigávcci	njealljelogigákcái	
+numeral: first part of compound or logi type	njealljelogiovcci	Num	0	llj (III) · lj (II)	nomgen	njealljelogiovcci	njealljelogiovcci	njealljelogiokcái	
+numeral: first part of compound or logi type	njealljelogičieža	Num	0	llj (III) · lj (II)	nomgen	njealljelogičieža	njealljelogičieža	njealljelogičižii / njealljelogičihčii / njealljelogičihččii	
+numeral: first part of compound or logi type	vihttalogigávcci	Num	0	htt (III) · ht (II) · đ (I)	nomgen	vihttalogigávcci	vihttalogigávcci	vihttalogigákcái	
+numeral: first part of compound or logi type	vihttalogiovcci	Num	0	htt (III) · ht (II) · đ (I)	nomgen	vihttalogiovcci	vihttalogiovcci	vihttalogiokcái	
+numeral: first part of compound or logi type	vihttalogičieža	Num	0	htt (III) · ht (II) · đ (I)	nomgen	vihttalogičieža	vihttalogičieža	vihttalogičižii / vihttalogičihčii / vihttalogičihččii	
+numeral: first part of compound or logi type	čuođigolbmalogi	Num	0	hkk (III) · hk (II) · g (I)	nomgen,ess	čuođigolbmalogi / čuođigolbmalohki	čuođigolmmalogi	čuođigolmmalohkái	
+numeral: first part of compound or logi type	čuođiguhttalogi	Num	0	hkk (III) · hk (II) · g (I)	nomgen,ess	čuođiguhttalogi / čuođiguhttalohki	čuođiguđalogi	čuođiguđalohkái	
+numeral: first part of compound or logi type	čuođiguoktelogi	Num	0	hkk (III) · hk (II) · g (I)	nomgen,ess	čuođiguoktelogi / čuođiguoktelohki	čuođiguovttelogi	čuođiguovttelohkái	
+numeral: first part of compound or logi type	čuođigávccilogi	Num	0	hkk (III) · hk (II) · g (I)	nomgen	čuođigákcilogi / čuođigákcilohki / čuođigávccilogi	čuođigávccilogi	čuođigávccilohkái	
+numeral: first part of compound or logi type	čuođilogi	Num	0	hkk (III) · hk (II) · g (I)	nomgen	čuođilogi	čuođilogi	čuođilohkái	
+numeral: first part of compound or logi type	čuođinjealljelogi	Num	0	hkk (III) · hk (II) · g (I)	nomgen	čuođinjealljelogi / čuođinjealljelohki	čuođinjealjelogi	čuođinjealjelohkái	
+numeral: first part of compound or logi type	čuođiovccilogi	Num	0	hkk (III) · hk (II) · g (I)	nomgen	čuođiokcilogi / čuođiokcilohki / čuođiovccilogi	čuođiovccilogi	čuođiovccilohkái	
+numeral: first part of compound or logi type	čuođivihttalogi	Num	0	hkk (III) · hk (II) · g (I)	nomgen,ess	čuođivihttalogi / čuođivihttalohki	čuođiviđalogi	čuođiviđalohkái	
+numeral: first part of compound or logi type	čuođičiežalogi	Num	0	hkk (III) · hk (II) · g (I)	nomgen	čuođičiehčalogi / čuođičiehčalohki / čuođičiežalogi	čuođičiežalogi	čuođičiežalohkái	
+other: look by hand	nubbijođiheaddji	N	1344	ddj (III) · dj (II) · j (I)	illweak,nomgen	nubbijođiheaddji	nuppijođiheaddji	nuppijođiheaddjái	R:nubbi#jođiheaddji
+other: look by hand	nubbiovdaolmmoš	N	0	bb (III) · pp (II)	illweak	nubbiovdaolmmoš	nuppiovdaolbmo	nuppiovdaolbmui	R:nubbi#ovda#olmmoš
+plural-only word	guovssahasat	N	107	ss (III) · ss (II) · s (I)	nomgen,ess	guovssahas	guovssahasa	guovssahassii	BORALMASAT:guovssahass
+plural-only word	čoakkalmasat	N	76	ss (III) · ss (II) · s (I)	nomgen,ess	čoakkalmas	čoakkalmasa	čoakkalmassii	BORALMASAT:čoakkalmas
+plural-only word	čoakkálmasat	N	27	ss (III) · ss (II) · s (I)	nomgen,ess	čoakkálmas	čoakkálmasa	čoakkálmassii	BORALMASAT:čoakkálmas
+plural-only word	dutkkalmasat	N	4	ss (III) · ss (II) · s (I)	nomgen,ess	dutkkalmas	dutkkalmasa	dutkkalmassii	BORALMASAT:dutkkalmass
+plural-only word	bargonjuolggadusat	N	0	ss (III) · ss (II) · s (I)	nomgen,ess	bargonjuolggadus	bargonjuolggadusa	bargonjuolggadussii	BORALMASAT:bargo#njuolggaduss
+plural-only word	buohtalasealáhusat	N	0	ss (III) · ss (II) · s (I)	nomgen,ess	buohtalasealáhus	buohtalasealáhusa	buohtalasealáhussii	
+plural-only word	eallinmuitalusat	N	0	ss (III) · ss (II) · s (I)	nomgen,ess	eallinmuitalus	eallinmuitalusa	eallinmuitalussii	
+plural-only word	jienastannjuolggadusat	N	0	ss (III) · ss (II) · s (I)	nomgen,ess	jienastannjuolggadus	jienastannjuolggadusa	jienastannjuolggadussii	BORALMASAT:jienastan#njuolggaduss
+plural-only word	lohkamušat	N	0	šš (III) · šš (II) · š (I)	nomgen,ess	lohkamuš	lohkamuša	lohkamuššii	
+plural-only word	láhkamearrádusat	N	0	ss (III) · ss (II) · s (I)	nomgen,ess	láhkamearrádus	láhkamearrádusa	láhkamearrádussii	
+plural-only word	njuolggadusat	N	0	ss (III) · ss (II) · s (I)	nomgen,ess	njuolggadus	njuolggadusa	njuolggadussii	
+plural-only word	oamastusat	N	0	ss (III) · ss (II) · s (I)	nomgen,ess	oamastus	oamastusa	oamastussii	
+plural-only word	ortnetnjuolggadusat	N	0	ss (III) · ss (II) · s (I)	nomgen,ess	ortnetnjuolggadus	ortnetnjuolggadusa	ortnetnjuolggadussii	BORALMASAT:ortnet#njuolggaduss
+plural-only word	seahkalasealáhusat	N	0	ss (III) · ss (II) · s (I)	nomgen,ess	seahkalasealáhus	seahkalasealáhusa	seahkalasealáhussii	
+plural-only word	váimmusbázahusat	N	0	ss (III) · ss (II) · s (I)	nomgen,ess	váimmusbázahus	váimmusbázahusa	váimmusbázahussii	
+plural-only word	váimmusfápmobázahusat	N	0	ss (III) · ss (II) · s (I)	nomgen,ess	váimmusfápmobázahus	váimmusfápmobázahusa	váimmusfápmobázahussii	
+plural-only word	ávdugasat	N	0	ss (III) · ss (II) · s (I)	nomgen,ess	ávdugas	ávdugasa	ávdugassii	
+plural-only word	čiekŋalasat	N	0	ss (III) · ss (II) · s (I)	nomgen,ess	čiekŋalas	čiekŋalasa	čiekŋalassii	
+pronoun: outside Oahpa page	nubbi	Pron	20094	bb (III) · pp (II)	pron	nubbi	nuppe / nuppi	nubbái	R:nubbe
+pronoun: outside Oahpa page	máŋga	Pron	18246	ŋg (III) · ŋgg (II)	pron	máŋga	máŋgga	máŋgii	MANGA:máŋºga
+pronoun: outside Oahpa page	guhte	Pron	11080	htt (III) · ht (II) · đ (I)	pron	guhte / guhtes	guđe	guhtii	GUHTECASE:guhºte
+pronoun: outside Oahpa page	moadde	Pron	7343	dd (III) · tt (II)	pron	moadde	moatte / moatti	moaddái	GALLE:moadd
+pronoun: outside Oahpa page	soames	Pron	3199	bm (III) · pm (II) · m (I)	pron	soames / soamis	soapmása	soapmásii	
+pronoun: outside Oahpa page	goabbá	Pron	2077	bb (III) · pp (II)	pron	goabbá	goappá	goabbái	GUHTECASE:goabbá
+pronoun: outside Oahpa page	goabbánai	Pron	73	nn (III) · nn (II) · n (I)	pron	goabbánai	goappánai	goabbáinai	GUHTENAI:goabbá
+pronoun: outside Oahpa page	juobbá	Pron	35	bb (III) · pp (II)	pron	juobbá	juoppá	juobbái	JUOBBA:juobbá%>
+pronoun: outside Oahpa page	guhtenai	Pron	28	nn (III) · nn (II) · n (I)	pron	guhtenai	guđenai	guhtiinai	GUHTENAI:guhºte
+pronoun: outside Oahpa page	dábbá	Pron	7	bb (III) · pp (II)	pron	dábbá	dáppá	dábbái	JUOBBA:dábbá%>
+pronoun: outside Oahpa page	duobbá	Pron	4	bb (III) · pp (II)	pron	duobbá	duoppá	duobbái	JUOBBA:duobbá%>
+pronoun: outside Oahpa page	juobbágoabbá	Pron	3	bb (III) · pp (II)	pron	juobbágoabbá	juoppágoappá	juobbáigoabbái	
+pronoun: outside Oahpa page	dáidda	Pron	0	id (III) · idd (II)	pron	dáidda	dáidaga	dáidagii	SEAMU:dájºdag8
+pronoun: outside Oahpa page	goappát	Pron	0	bb (III) · pp (II)	pron	goabbá	goappá	goabbái	
+pronoun: outside Oahpa page	guđet	Pron	0	htt (III) · ht (II) · đ (I)	pron	guhte / guhtes	guđe	guhtii	
+pronoun: outside Oahpa page	okta	Pron	0	kt (III) · vtt (II)	pron	okta	ovtta	oktii	K-ge-only:akta
+pronoun: outside Oahpa page	oktahat	Pron	0	kt (III) · vtt (II)	pron	oktahat	ovttahaga	ovttahahkii	OVTTAHAT:ovttaha
+pronoun: outside Oahpa page	soamis	Pron	0	bm (III) · pm (II) · m (I)	pron	soames / soamis	soapmása	soapmásii	
+pronoun: outside Oahpa page	soapmásat	Pron	0	bm (III) · pm (II) · m (I)	pron	soames / soamis	soapmása	soapmásii	
+two inflections allowed by FST	Ánte	N	1687	nt (III) · ntt (II)	nomgen	Ánte	Ánte / Ántte	Ántei / Ántii	
+two inflections allowed by FST	dikšu	N	1651	kš (III) · všš (II)	nomgen	dikšu	dikšu / divššo / divššu	dikšui	ACTOR:dikšu¤
+two inflections allowed by FST	lohkki	N	1638	hkk (III) · hk (II) · g (I)	nomgen	lohkki	lohkki / lohke / lohki	lohkkái	ACTOR:lohkki¤
+two inflections allowed by FST	fidnu	N	822	dn (III) · tn (II) · n (I)	nomgen	fidnu	fidno / fidnu / fitno / fitnu	fidnui	
+two inflections allowed by FST	veahkaváldi	N	770	ld (III) · ldd (II)	nomgen	veahkaváldi	veahkaváldi / veahkaválddi	veahkaváldái	ACTOR:veahka#váldi¤
+two inflections allowed by FST	sálaš	N	503	ll (III) · ll (II) · l (I)	illweak,nomgen	sálaš	sálaža / sállaha / sállaša	sálažii / sállahii / sállašii	GAHPIR:sálaž
+two inflections allowed by FST	hálla	N	166	ll (III) · ll (II) · l (I)	nomgen	hálla	hálla / hála	hállii	GOAHTI-A:hálla
+two inflections allowed by FST	láđđi	N	164	đđ (III) · đđ (II) · đ (I)	nomgen	láđđi	láđđe / láđđi / láđe / láđi	láđđái	GOAHTI-I:láđđi
+two inflections allowed by FST	lihtar	N	148	htt (III) · ht (II) · đ (I)	illweak,nomgen	lihtar	lihtara / lihttara	lihtarii / lihttarii	
+two inflections allowed by FST	jáffu	N	118	ff (III) · ff (II) · f (I)	nomgen	jáffu	jáffo / jáffu / jáfo / jáfu	jáffui	AIGI:jáfºfu
+two inflections allowed by FST	čiežas	N	96	hčč (III) · hč (II) · ž (I)	illweak,nomgen	čiežas	čiehčasa / čiehččasa	čiehčasii / čiehččasii	
+two inflections allowed by FST	hárri	N	95	rr (III) · rr (II) · r (I)	nomgen	hárri	hárre / hárri / háre / hári	hárrái	AIGI-I:hárri
+two inflections allowed by FST	bátnedikšu	N	86	kš (III) · všš (II)	nomgen	bátnedikšu	bátnedikšu / bátnedivššo / bátnedivššu	bátnedikšui	ACTOR:bátne#dikšu¤
+two inflections allowed by FST	gássa	N	81	ss (III) · ss (II) · s (I)	nomgen	gássa	gássa / gása	gássii	GOAHTI-A:gássa
+two inflections allowed by FST	rišša	N	79	šš (III) · šš (II) · š (I)	nomgen	rišša	rišša / riša	riššii	GOAHTI-A:rišºša
+two inflections allowed by FST	Ceavccageađgi	N	51	đg (III) · đgg (II)	nomgen	Ceavccageađgi	Ceavccageađge / Ceavccageađgge / Ceavccageađggi / Ceavccageađgi	Ceavccageađgái	
+two inflections allowed by FST	Ráste	N	47	st (III) · stt (II)	nomgen	Ráste	Ráste / Rástte	Rástei / Rástii	
+two inflections allowed by FST	veránda	N	47	nd (III) · ndd (II)	nomgen	veránda	veránda / verándda	verándai / verándii	
+two inflections allowed by FST	lageš	N	27	hkk (III) · hk (II) · g (I)	illweak,nomgen	lageš	lageža / lahkeha	lagežii / lahkehii	
+two inflections allowed by FST	duovvi	N	23	vv (III) · vv (II) · v (I)	nomgen	duovvi	duovve / duovvi / duove / duovi	duovvii / duovvái	GOAHTI-I:duovvi
+two inflections allowed by FST	Duomás	N	19	bm (III) · pm (II) · m (I)	illweak,nomgen	Duomás	Duomás / Duomása / Duopmása	Duomásii / Duopmásii	
+two inflections allowed by FST	gaskalabbo	A	19	bb (III) · pp (II)	nomgen	gaskalabbo / gaskalat / gaskaleabbo / gaskalet / gaskalit / gaskalut	gaskalabbo / gaskaleappo	gaskalabbui / gaskalebbui	
+two inflections allowed by FST	gaskaleabbo	A	19	bb (III) · pp (II)	nomgen	gaskalabbo / gaskalat / gaskaleabbo / gaskalet / gaskalit / gaskalut	gaskalabbo / gaskaleappo	gaskalabbui / gaskalebbui	MADDELEABBO:gaskal
+two inflections allowed by FST	čuonan	N	14	dn (III) · tn (II) · n (I)	illweak,nomgen	čuonan	čuonama / čuotnama	čuonamii / čuotnamii	GAHPIR:čuonam
+two inflections allowed by FST	ruovttufidnu	N	11	dn (III) · tn (II) · n (I)	nomgen	ruovttufidnu	ruovttufidno / ruovttufidnu / ruovttufitno / ruovttufitnu	ruovttufidnui	
+two inflections allowed by FST	oarri	N	10	rr (III) · rr (II) · r (I)	nomgen	oarri	oarre / oarri / oare / oari	oarrii / oarrái	GOAHTI-I:oarri
+two inflections allowed by FST	Borsi	N	8	rs (III) · rss (II)	nomgen	Borsi	Borsi / Borsse / Borssi	Borsii / Borsái	
+two inflections allowed by FST	boandafidnu	N	5	dn (III) · tn (II) · n (I)	nomgen	boandafidnu	boandafidno / boandafidnu / boandafitno / boandafitnu	boandafidnui	
+two inflections allowed by FST	fuollafidnu	N	1	dn (III) · tn (II) · n (I)	nomgen	fuollafidnu	fuollafidno / fuollafidnu / fuollafitno / fuollafitnu	fuollafidnui	
+two inflections allowed by FST	guođoheaddjifidnu	N	1	dn (III) · tn (II) · n (I)	nomgen	guođoheaddjifidnu	guođoheaddjifidno / guođoheaddjifidnu / guođoheaddjifitno / guođoheaddjifitnu	guođoheaddjifidnui	
+two inflections allowed by FST	Kirkovuovdi	N	0	vd (III) · vdd (II)	nomgen	kirkovuovdi / kirkuvuovdi	kirkovuovdi / kirkuvuovdi / kirkovuovdde / kirkovuovddi	kirkovuovdái / kirkuvuovdái	
+two inflections allowed by FST	Rokča	N	0	kč (III) · včč (II)	nomgen	Rokča	Rokča / Rovčča	Rokčai / Rokčii	
+two inflections allowed by FST	boarráseabbo	A	0	bb (III) · pp (II)	nomgen	boarrásabbo / boarrásat / boarráseabbo / boarráset / boarrásit / boarrásut	boarrásabbo / boarráseappo	boarrásabbui / boarrásebbui	
+two inflections allowed by FST	boarráseamos	A	0	bm (III) · pm (II) · m (I)	illweak,nomgen	boarrásamos / boarráseamos	boarrásamosa / boarrásepmosa	boarrásamosii / boarrásepmosii	
+two inflections allowed by FST	bonus	N	0	dn (III) · tn (II) · n (I)	illweak,nomgen	bonus	bonusa / botnosa	bonusii / botnosii	GAHPIRLONG:bonus
+two inflections allowed by FST	botkehandikšu	N	0	kš (III) · všš (II)	nomgen	botkehandikšu	botkehandikšu / botkehandivššo / botkehandivššu	botkehandikšui	
+two inflections allowed by FST	buncesealla	N	0	ll (III) · ll (II) · l (I)	nomgen	buncesealla	buncesealla / bunceseala	buncesellii	
+two inflections allowed by FST	bázahusgássa	N	0	ss (III) · ss (II) · s (I)	nomgen	bázahusgássa	bázahusgássa / bázahusgása	bázahusgássii	
+two inflections allowed by FST	cihca	N	0	hcc (III) · hc (II) · z (I)	nomgen	cihca	ciza / cihccaga	cihccagii / cihcii	
+two inflections allowed by FST	dearri	N	0	rr (III) · rr (II) · r (I)	nomgen	dearri	dearre / dearri / deare / deari	dearrái	GOAHTI-I:dearri
+two inflections allowed by FST	dirri	N	0	rr (III) · rr (II) · r (I)	nomgen	dirri	dirre / dirri / dire / diri	dirrái	GOAHTI-I:dirri
+two inflections allowed by FST	divreborri	N	0	rr (III) · rr (II) · r (I)	nomgen	divreborri	divreborri / divrebore / divrebori	divreborrái	
+two inflections allowed by FST	dárkileamos	A	0	bm (III) · pm (II) · m (I)	illweak,nomgen	dárkilamos / dárkileamos	dárkilamosa / dárkilepmosa	dárkilamosii / dárkilepmosii	
+two inflections allowed by FST	eamisealla	N	0	ll (III) · ll (II) · l (I)	nomgen	eamisealla	eamisealla / eamiseala	eamisellii	
+two inflections allowed by FST	furstagoddi	N	0	dd (III) · tt (II)	nomgen	furstagoddi	furstagoddi / furstagotte / furstagotti	furstagoddái	
+two inflections allowed by FST	gacceš	N	0	zz (III) · cc (II)	illweak,nomgen	gacceš	gacceša / gazzeša	gaccešii / gazzešii	GAHPIR:gacceš
+two inflections allowed by FST	gaskaleamos	A	0	bm (III) · pm (II) · m (I)	illweak,nomgen	gaskalamos / gaskaleamos	gaskalamosa / gaskalepmosa	gaskalamosii / gaskalepmosii	
+two inflections allowed by FST	gearru	N	0	rr (III) · rr (II) · r (I)	nomgen	gearru	gearro / gearru / gearu	gerrui	ALBMI:gearru
+two inflections allowed by FST	gierddahandikšu	N	0	kš (III) · všš (II)	nomgen	gierddahandikšu	gierddahandikšu / gierddahandivššo / gierddahandivššu	gierddahandikšui	
+two inflections allowed by FST	girdioarri	N	0	rr (III) · rr (II) · r (I)	nomgen	girdioarri	girdioarre / girdioarri / girdioare / girdioari	girdioarrii / girdioarrái	
+two inflections allowed by FST	gollegoaivu	N	0	iv (III) · ivv (II)	nomgen	gollegoaivu	gollegoaivu / gollegoaivvo / gollegoaivvu	gollegoivui	ACTOR:golle#goajºvu¤
+two inflections allowed by FST	gone	N	0	nn (III) · nn (II) · n (I)	illweak,nomgen	gone	gone / gonneha	gonii / gonnehii	GOAHTI:gone
+two inflections allowed by FST	guolbbavuovdi	N	0	vd (III) · vdd (II)	nomgen	guolbbavuovdi	guolbbavuovdi / guolbbavuovdde / guolbbavuovddi	guolbbavuovdái	
+two inflections allowed by FST	guollegoaivu	N	0	iv (III) · ivv (II)	nomgen	guollegoaivu	guollegoaivu / guollegoaivvo / guollegoaivvu	guollegoivui	ACTOR:guolle#goajºvu¤
+two inflections allowed by FST	gáffalgoaivu	N	0	iv (III) · ivv (II)	nomgen	gáffalgoaivu	gáffalgoaivu / gáffalgoaivvo / gáffalgoaivvu	gáffalgoivui	ACTOR:gáffal#goajºvu¤
+two inflections allowed by FST	huksenfidnu	N	0	dn (III) · tn (II) · n (I)	nomgen	huksenfidnu	huksenfidno / huksenfidnu / huksenfitno / huksenfitnu	huksenfidnui	
+two inflections allowed by FST	hutki	N	0	tk (III) · tkk (II)	nomgen	hutki	hutki / hutkki	hutkái	ACTOR:hutki¤
+two inflections allowed by FST	hyasinta	N	0	nt (III) · ntt (II)	nomgen	hyasinta	hyasinta / hyasintta	hyasintii	
+two inflections allowed by FST	hávderoggi	N	0	gg (III) · kk (II)	nomgen	hávderoggi	hávderoggi / hávderokke / hávderokki	hávderoggái	ACTOR:hávde#roggi¤
+two inflections allowed by FST	ipmašeabbo	A	0	bb (III) · pp (II)	nomgen	ipmahabbo / ipmahat / ipmaheabbo / ipmahet / ipmahit / ipmahut / ipmašabbo / ipmašat / ipmašeabbo / ipmašet / ipmašit / ipmašut	ipmahabbo / ipmaheappo / ipmašabbo / ipmašeappo	ipmahabbui / ipmahebbui / ipmašabbui / ipmašebbui	
+two inflections allowed by FST	ipmašeamos	A	0	bm (III) · pm (II) · m (I)	illweak,nomgen	ipmahamos / ipmaheamos / ipmašamos / ipmašeamos	ipmahamosa / ipmahepmosa / ipmašamosa / ipmašepmosa	ipmahamosii / ipmahepmosii / ipmašamosii / ipmašepmosii	
+two inflections allowed by FST	jorri	A	0	rr (III) · rr (II) · r (I)	nomgen	jorri	jorri / jore / jori	jorrái	ALBMILONGSHORT:jorri¤
+two inflections allowed by FST	jorri	N	0	rr (III) · rr (II) · r (I)	nomgen	jorri	jorri / jore / jori	jorrái	ALBMILONGSHORT:jorri¤
+two inflections allowed by FST	luleš	N	0	ll (III) · ll (II) · l (I)	illweak,nomgen	luleš	luleša / lulleha / lulleša	lulešii / lullehii / lullešii	DAIVVAS:lulle
+two inflections allowed by FST	manimušoarri	N	0	rr (III) · rr (II) · r (I)	nomgen	manimušoarri	manimušoarre / manimušoarri / manimušoare / manimušoari	manimušoarrii / manimušoarrái	
+two inflections allowed by FST	mannesealla	N	0	ll (III) · ll (II) · l (I)	nomgen	mannesealla	mannesealla / manneseala	mannesellii	
+two inflections allowed by FST	meres	N	0	rr (III) · rr (II) · r (I)	illweak,nomgen	meres	meresa / merresa	meresii / merresii	GAHPIR:meres
+two inflections allowed by FST	miellaseabbo	A	0	bb (III) · pp (II)	nomgen	miellasabbo / miellasat / miellaseabbo / miellaset / miellasit / miellasut	miellasabbo / miellaseappo	miellasabbui / miellasebbui	
+two inflections allowed by FST	miellaseamos	A	0	bm (III) · pm (II) · m (I)	illweak,nomgen	miellasamos / miellaseamos	miellasamosa / miellasepmosa	miellasamosii / miellasepmosii	
+two inflections allowed by FST	monimušoarri	N	0	rr (III) · rr (II) · r (I)	nomgen	monimušoarri	monimušoarre / monimušoarri / monimušoare / monimušoari	monimušoarrii / monimušoarrái	
+two inflections allowed by FST	nazista	N	0	st (III) · stt (II)	nomgen	nazista	nazista / nazistta	nazistii	GOAHTI-A:nazisºta
+two inflections allowed by FST	nearvasealla	N	0	ll (III) · ll (II) · l (I)	nomgen	nearvasealla	nearvasealla / nearvaseala	nearvasellii	
+two inflections allowed by FST	ovddidanfidnu	N	0	dn (III) · tn (II) · n (I)	nomgen	ovddidanfidnu	ovddidanfidno / ovddidanfidnu / ovddidanfitno / ovddidanfitnu	ovddidanfidnui	
+two inflections allowed by FST	punda	N	0	nd (III) · ndd (II)	nomgen	punda	punda / pundda	pundii	
+two inflections allowed by FST	riektáseabbo	A	0	bb (III) · pp (II)	nomgen	riektásabbo / riektásat / riektáseabbo / riektáset / riektásit / riektásut / rievttat	riektásabbo / riektáseappo / rievttabu	riektásabbui / riektásebbui / rievttabui	
+two inflections allowed by FST	ruoidnadandikšu	N	0	kš (III) · všš (II)	nomgen	ruoidnadandikšu	ruoidnadandikšu / ruoidnadandivššo / ruoidnadandivššu	ruoidnadandikšui	
+two inflections allowed by FST	rássa	N	0	ss (III) · ss (II) · s (I)	nomgen	rássa	rássa / rása	rássii	GOAHTI-A:rássa
+two inflections allowed by FST	sealla	N	0	ll (III) · ll (II) · l (I)	nomgen	sealla	sealla / seala	sellii	GOAHTI-A:sealla
+two inflections allowed by FST	skirri	N	0	rr (III) · rr (II) · r (I)	nomgen	skirri	skirre / skirri / skire / skiri	skirrái	GOAHTI-I:skirri
+two inflections allowed by FST	skoađđi	N	0	đđ (III) · đđ (II) · đ (I)	nomgen	skoađđi	skoađđe / skoađđi / skoađe / skoađi	skoađđii / skoađđái	GOAHTI-I:skoađºđi
+two inflections allowed by FST	snorri	N	0	rr (III) · rr (II) · r (I)	nomgen	snorri	snorre / snorri / snore / snori	snorrái	GOAHTI-I:snorri
+two inflections allowed by FST	studeantagoddi	N	0	dd (III) · tt (II)	nomgen	studeantagoddi	studeantagoddi / studeantagotte / studeantagotti	studeantagoddái	
+two inflections allowed by FST	stuorrafurstagoddi	N	0	dd (III) · tt (II)	nomgen	stuorafurstagoddi / stuorrafurstagoddi	stuorafurstagoddi / stuorrafurstagoddi / stuorafurstagotte / stuorafurstagotti / stuorrafurstagotte / stuorrafurstagotti	stuorafurstagoddái / stuorrafurstagoddái	
+two inflections allowed by FST	sárgu	N	0	rg (III) · rgg (II)	nomgen	sárgu	sárgu / sárggo / sárggu	sárgui	ACTOR:sárgu¤
+two inflections allowed by FST	trenda	N	0	nd (III) · ndd (II)	nomgen	trenda	trenda / trendda	trendii	
+two inflections allowed by FST	vearrováldi	N	0	ld (III) · ldd (II)	nomgen	vearrováldi	vearrováldi / vearroválddi	vearrováldái	ACTOR:vearro#váldi¤
+two inflections allowed by FST	vuoiŋŋašskoađđi	N	0	đđ (III) · đđ (II) · đ (I)	nomgen	vuoiŋŋašskoađđi	vuoiŋŋašskoađđe / vuoiŋŋašskoađđi / vuoiŋŋašskoađe / vuoiŋŋašskoađi	vuoiŋŋašskoađđii / vuoiŋŋašskoađđái	GOAHTI-I:vuoiŋŋaš#skoađºđi
+two inflections allowed by FST	váibmoskoađđi	N	0	đđ (III) · đđ (II) · đ (I)	nomgen	váibmoskoađđi	váibmoskoađđe / váibmoskoađđi / váibmoskoađe / váibmoskoađi	váibmoskoađđii / váibmoskoađđái	GOAHTI-I:váibmo#skoađºđi
+two inflections allowed by FST	álli	N	0	ll (III) · ll (II) · l (I)	nomgen	álli	álle / álli / áli	állái	AIGI-I:álºli
+two inflections allowed by FST	ára	N	0	rr (III) · rr (II) · r (I)	illweak,nomgen	ára	ára / árrana	árii / árranii	GOAHTI-A:ára
+two inflections allowed by FST	ása	N	0	ss (III) · ss (II) · s (I)	illweak,nomgen	ása	ásaga / ássaga	ásagii / ássagii	
+two inflections allowed by FST	ássu	N	0	ss (III) · ss (II) · s (I)	nomgen	ássu	ásso / ássu / áso / ásu	ássui	GOAHTI-U:ássu
+two inflections allowed by FST	čeabi	N	0	hpp (III) · hp (II) · b (I)	illweak,nomgen	čeabi	čeabáha / čeahpáha	čeabáhii / čeahpáhii	
+two inflections allowed by FST	čoavjedánsu	N	0	ns (III) · nss (II)	nomgen	čoavjedánsu	čoavjedánsu / čoavjedánssu	čoavjedánsui	
+two stems or compound variants in Nom cell	guoktá	N	1487	kt (III) · vtt (II)	nomgen	guoktá / guovttes / guovttis	guoktá / guoktása	guoktái / guoktásii	
+two stems or compound variants in Nom cell	guovttes	N	1487	kt (III) · vtt (II)	nomgen	guoktá / guovttes / guovttis	guoktá / guoktása	guoktái / guoktásii	
+two stems or compound variants in Nom cell	guovttis	N	1487	kt (III) · vtt (II)	nomgen	guoktá / guovttes / guovttis	guoktá / guoktása	guoktái / guoktásii	
+two stems or compound variants in Nom cell	oarpmealle	N	63	rbm (III) · rpm (II)	nomgen	oarbmebealle / oarpmealle	oarbmebeale / oarpmeale	oarbmebeallái / oarpmeallái	BEALLE:oarbme#beall
+two stems or compound variants in Nom cell	oarpmealli	N	63	rbm (III) · rpm (II)	nomgen	oarbmebealli / oarpmealli	oarbmebeale / oarbmebeali / oarpmeale / oarpmeali	oarbmebeallái / oarpmeallái	GOAHTI-I:oarbme#bealli
+two stems or compound variants in Nom cell	gáfet	N	42	ff (III) · ff (II) · f (I)	illweak,nomgen	gáfe / gáffe	gáfe	gáfii / gáffii	BUVSSAT:gáffe
+two stems or compound variants in Nom cell	eallindiliguorahallan	N	9	ll (III) · ll (II) · l (I)	illweak,nomgen	eallindiliguorahallan / eallindilleguorahallan	eallindiliguorahallama / eallindiliguorahallan / eallindilleguorahallama / eallindilleguorahallan	eallindiliguorahallamii / eallindilleguorahallamii	
+two stems or compound variants in Nom cell	eallindilleguorahallan	N	9	ll (III) · ll (II) · l (I)	illweak,nomgen	eallindiliguorahallan / eallindilleguorahallan	eallindiliguorahallama / eallindiliguorahallan / eallindilleguorahallama / eallindilleguorahallan	eallindiliguorahallamii / eallindilleguorahallamii	
+two stems or compound variants in Nom cell	káfet	N	3	ff (III) · ff (II) · f (I)	illweak,nomgen	káfe / káffe	káfe	káfii / káffii	BUVSSAT:káffe
+two stems or compound variants in Nom cell	Buolláneatnanlássáš	N	0	dn (III) · tn (II) · n (I)	nomgen	buolláneatnamalássáš / buolláneatnanlássáš / buolláneanalássáš / buolláneananlássáš	buolláneatnamalássáža / buolláneatnanlássáža / buolláneanalássáža / buolláneananlássáža	buolláneatnamalássážii / buolláneatnanlássážii / buolláneanalássážii / buolláneananlássážii	
+two stems or compound variants in Nom cell	eanaoassi	N	0	dn (III) · tn (II) · n (I)	illweak,nomgen	eanaoassi / eananoassi / eatnanoassi	eanaoase / eanaoasi / eananoase / eananoasi / eatnanoase / eatnanoasi	eanaoassái / eananoassái / eatnanoassái	
+two stems or compound variants in Nom cell	easkaálgi	N	0	sk (III) · skk (II)	nomgen	easkaálgi / easkkaálgi	easkaálgi / easkkaálgi	easkaálgái / easkkaálgái	ACTOR:easka#álgi¤
+two stems or compound variants in Nom cell	easkkaálgi	N	0	sk (III) · skk (II)	nomgen	easkaálgi / easkkaálgi	easkaálgi / easkkaálgi	easkaálgái / easkkaálgái	
+two stems or compound variants in Nom cell	geahpimus	A	0	hpp (III) · hp (II) · b (I)	illweak,nomgen	geahpimus / geahppadamos / geahppadeamos	geahpimusa / geahppadamosa / geahppadepmosa	geahpimussii / geahppadamosii / geahppadepmosii	
+two stems or compound variants in Nom cell	geahpit	A	0	hpp (III) · hp (II) · b (I)	illweak,nomgen	geahpit / geahppadabbo / geahppadat / geahppadeabbo / geahppadet / geahppadit / geahppadut	geahpibu / geahppadabbo / geahppadeappo	geahpibui / geahppadabbui / geahppadebbui	
+two stems or compound variants in Nom cell	gántor	N	0	nt (III) · ntt (II)	nomgen	gántor / gánttor / kontor / konttor	gántora / gánttora / kontora / konttora	gántorii / gánttorii / kontorii / konttorii	
+two stems or compound variants in Nom cell	gánttor	N	0	nt (III) · ntt (II)	nomgen	gántor / gánttor / kontor / konttor	gántora / gánttora / kontora / konttora	gántorii / gánttorii / kontorii / konttorii	
+two stems or compound variants in Nom cell	kontor	N	0	nt (III) · ntt (II)	nomgen	gántor / gánttor / kontor / konttor	gántora / gánttora / kontora / konttora	gántorii / gánttorii / kontorii / konttorii	
+two stems or compound variants in Nom cell	konttor	N	0	nt (III) · ntt (II)	nomgen	gántor / gánttor / kontor / konttor	gántora / gánttora / kontora / konttora	gántorii / gánttorii / kontorii / konttorii	
+two stems or compound variants in Nom cell	ladnjes	A	0	dnj (III) · tnj (II) · nj (I)	nomgen	ladnjii / latnjat	ladnje / latnjada	ladnjii / latnjadii	
+two stems or compound variants in Nom cell	losimus	A	0	ss (III) · ss (II) · s (I)	illweak,nomgen	losimus / lossadamos / lossadeamos	losimusa / lossadamosa / lossadepmosa	losimussii / lossadamosii / lossadepmosii	
+two stems or compound variants in Nom cell	losit	A	0	ss (III) · ss (II) · s (I)	illweak,nomgen	losit / lossadabbo / lossadat / lossadeabbo / lossadet / lossadit / lossadut	losibu / lossadabbo / lossadeappo	losibui / lossadabbui / lossadebbui	
+two stems or compound variants in Nom cell	lágat	N	0	hkk (III) · hk (II) · g (I)	illweak,nomgen	lága / láhka	lága	lágii / láhkii	
+two stems or compound variants in Nom cell	meađmmagit	A	0	đbm (III) · đmm (II)	nomgen	meađbmagabbo / meađbmagat / meađbmageabbo / meađbmaget / meađbmagit / meađbmagut / meađmmagabbo / meađmmagat / meađmmageabbo / meađmmaget / meađmmagit / meađmmagut	meađbmagabbo / meađbmageappo / meađmmagabbo / meađmmageappo	meađbmagabbui / meađbmagebbui / meađmmagabbui / meađmmagebbui	
+two stems or compound variants in Nom cell	njuolggamus	A	0	lg (III) · lgg (II)	nomgen	njuolgadamos / njuolgadeamos / njuolggamus	njuolgadamosa / njuolgadepmosa / njuolggamusa	njuolgadamosii / njuolgadepmosii / njuolggamussii	
+two stems or compound variants in Nom cell	njuolggat	A	0	lg (III) · lgg (II)	nomgen	njuolgadabbo / njuolgadat / njuolgadeabbo / njuolgadet / njuolgadit / njuolgadut / njuolggat	njuolgadabbo / njuolgadeappo / njuolggabu	njuolgadabbui / njuolgadebbui / njuolggabui	
+two stems or compound variants in Nom cell	olgoeatnanlaš	A	0	dn (III) · tn (II) · n (I)	illweak,nomgen	olgoeananlaš / olgoeatnanlaš	olgoeananlačča / olgoeatnanlačča	olgoeananlažžii / olgoeatnanlažžii	
+two stems or compound variants in Nom cell	riektáseamos	A	0	kt (III) · vtt (II)	nomgen	riektásamos / riektáseamos / rievttamus	riektásamosa / riektásepmosa / rievttamusa	riektásamosii / riektásepmosii / rievttamussii	
+two stems or compound variants in Nom cell	riektáset	A	0	kt (III) · vtt (II)	nomgen	riektásabbo / riektásat / riektáseabbo / riektáset / riektásit / riektásut / rievttat	riektásabbo / riektáseappo / rievttabu	riektásabbui / riektásebbui / rievttabui	
+two stems or compound variants in Nom cell	rievttat	N	0	kt (III) · vtt (II)	nomgen	riektásabbo / riektásat / riektáseabbo / riektáset / riektásit / riektásut / rievttat	riektásabbo / riektáseappo / rievttabu	riektásabbui / riektásebbui / rievttabui	
+two stems or compound variants in Nom cell	rivttesmielalaš	A	0	kt (III) · vtt (II)	illweak,nomgen	rivttesmielalaš / riektamielalaš / rievttesmielalaš	rivttesmielalačča / riektamielalačča / rievttesmielalačča	rivttesmielalažžii / riektamielalažžii / rievttesmielalažžii	
+two stems or compound variants in Nom cell	roavskkas	N	0	vsk (III) · vskk (II)	nomgen,ess	roavskas / roavskkas	roavskasa	roavskasii	MALIS:roavsºkas
+two stems or compound variants in Nom cell	sarvvačuru	N	0	rv (III) · rvv (II)	illweak,nomgen	sarvvačuru / sarvagačuru / sarvatčuru	sarvvačurro / sarvvačurroga / sarvvačurroha / sarvagačurro / sarvagačurroga / sarvagačurroha / sarvatčurro / sarvatčurroga / sarvatčurroha	sarvvačurrogii / sarvvačurrohii / sarvvačurrui / sarvagačurrogii / sarvagačurrohii / sarvagačurrui / sarvatčurrogii / sarvatčurrohii / sarvatčurrui	
+two stems or compound variants in Nom cell	smávimus	A	0	vv (III) · vv (II) · v (I)	illweak,nomgen	smávimus / smávvámus / smávvásamos / smávváseamos	smávimusa / smávvámusa / smávvásamosa / smávvásepmosa	smávimussii / smávvámussii / smávvásamosii / smávvásepmosii	
+two stems or compound variants in Nom cell	smávit	A	0	vv (III) · vv (II) · v (I)	illweak,nomgen	smávit / smávvásabbo / smávvásat / smávváseabbo / smávváset / smávvásit / smávvásut / smávvát	smávibu / smávvábu / smávvásabbo / smávváseappo	smávibui / smávvábui / smávvásabbui / smávvásebbui	
+two stems or compound variants in Nom cell	soalddátbáhppa	N	0	hpp (III) · hp (II) · b (I)	illweak,nomgen	soalddáhabáhppa / soalddátbáhppa	soalddáhabáhpa / soalddátbáhpa	soalddáhabáhppii / soalddátbáhppii	
+two stems or compound variants in Nom cell	stuorraborgár	N	0	rr (III) · rr (II) · r (I)	illweak,nomgen	stuoraborgár / stuorraborgár	stuoraborgára / stuorraborgára	stuoraborgárii / stuorraborgárii	
+two stems or compound variants in Nom cell	stuorraherttot	N	0	rr (III) · rr (II) · r (I)	illweak,nomgen	stuoraherttot / stuorraherttot	stuoraherttoga / stuorraherttoga	stuoraherttogii / stuorraherttogii	
+two stems or compound variants in Nom cell	stuorramielat	A	0	rr (III) · rr (II) · r (I)	illweak,nomgen	stuoramielat / stuorramielat	stuoramielaga / stuorramielaga	stuoramielagii / stuorramielagii	
+two stems or compound variants in Nom cell	stádaadvokáhta	N	0	htt (III) · ht (II) · đ (I)	illweak,nomgen	stádaadvokáhta / stádaadvokáhtta	stádaadvokáhta	stádaadvokáhtii / stádaadvokáhttii	
+two stems or compound variants in Nom cell	stádaadvokáhtta	N	0	htt (III) · ht (II) · đ (I)	illweak,nomgen	stádaadvokáhta / stádaadvokáhtta	stádaadvokáhta	stádaadvokáhtii / stádaadvokáhttii	GOAHTI-A:stáda#advokáhtta
+two stems or compound variants in Nom cell	sáhkkes	A	0	hkk (III) · hk (II) · g (I)	illweak,nomgen	sáhkat / sáhkkii	sáhkada / sáhkke	sáhkadii / sáhkkii	
+two stems or compound variants in Nom cell	unnamielalaš	A	0	nn (III) · nn (II) · n (I)	nomgen	unnamielalaš / unamielalaš	unnamielalačča / unamielalačča	unnamielalažžii / unamielalažžii	
+two stems or compound variants in Nom cell	unnačuolmmaš	N	0	nn (III) · nn (II) · n (I)	nomgen	unnačuolmmaš / unačuolmmaš	unnačuolmmaža / unačuolmmaža	unnačuolmmažii / unačuolmmažii	
+two stems or compound variants in Nom cell	veahčiršlivgejeaddji	N	0	ddj (III) · dj (II) · j (I)	nomgen	veahčiršlivgejeaddji / veahčirašlivgejeaddji	veahčiršlivgejeaddji / veahčirašlivgejeaddji	veahčiršlivgejeaddjái / veahčirašlivgejeaddjái	
+two stems or compound variants in Nom cell	viiddit	A	0	id (III) · idd (II)	nomgen	viidásabbo / viidásat / viidáseabbo / viidáset / viidásit / viidásut / viidát / viiddit	viidábu / viidásabbo / viidáseappo / viiddibu	viidábui / viidásabbui / viidásebbui / viiddibui	
+two stems or compound variants in Nom cell	viidáset	A	0	id (III) · idd (II)	nomgen	viidásabbo / viidásat / viidáseabbo / viidáset / viidásit / viidásut / viidát / viiddit	viidábu / viidásabbo / viidáseappo / viiddibu	viidábui / viidásabbui / viidásebbui / viiddibui	
+two stems or compound variants in Nom cell	áramuddu	N	0	rr (III) · rr (II) · r (I)	illweak,nomgen	áramuddu / árranmuddu / árranamuddu	áramutto / áramuttu / árranmutto / árranmuttu / árranamutto / árranamuttu	áramuddui / árranmuddui / árranamuddui	
+two stems or compound variants in Nom cell	čoaskavarat	A	0	sk (III) · skk (II)	illweak,nomgen	čoaskkesvarat / čoaskavarat	čoaskkesvaraga / čoaskavaraga	čoaskkesvaragii / čoaskavaragii	
+verb: check njeaššut	njeaššut	V	0	šš (III) · šš (II) · š (I)	verb				

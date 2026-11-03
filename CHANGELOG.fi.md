@@ -3,6 +3,16 @@
 Sátni FST:n kaikki versiot. Lataukset: [GitHub-julkaisut](https://github.com/sombyduodji/satni-fst/releases).
 [English](CHANGELOG.md) · [Norsk](CHANGELOG.nb.md)
 
+## 0.9.3 — 2026-11-03
+
+- **Astevaihtelu korjattu.** Vahva ja heikko aste olivat väärin päin noin 340 sanalla, joukossa yleisiä sanoja kuten *dilli*, *gilli*, *sivva*, *nisu* ja *biras*. Sanakortti ja taivutustaulukon värit ovat nyt oikein. Myös ryhmän nimi korjattiin noin 450 sanalta, esimerkiksi *listu*.
+- **Selkeämpi asterivi.** Kun asteet III ja II kirjoitetaan samoin, rivi merkitsee nyt asteen, jota sana todella käyttää: *mannat* näyttää *nn* II, ja kontrahoituvat sanat kuten *suolu* näyttävät *ll* III.
+- **Lisää merkittyjä muotoja.** Joidenkin verbien asteen III muodot, kuten *viehkki* verbistä *viehkat*, on nyt merkitty vahvaksi asteeksi.
+- **Kokeellinen: Apertium-käännökset.** Uusi kytkin, oletuksena pois päältä, näyttää norjan käännöksen noin 4 600 sanalle, joilla sitä ei ole sanakirjoissa. Käännökset ovat apertium-sme-nob-konekääntimen sanastosta, ne on merkitty tarkistamattomiksi eivätkä ne vaikuta hakuun.
+- **Valikon löytäminen.** Kertavihje ☰-painikkeella kertoo, että kieli ja asetukset löytyvät valikosta, ja aloitussivulla on uusi Valikko-rivi.
+- **Hakuehdotukset.** Lista näkyy nyt myös, kun kirjoitettu sana on ainoa osuma, joten ei enää näytä siltä, ettei mitään löytynyt ennen Enteriä.
+- **Selainversio.** Asennettu selainversio lataa päivitetyn sanakirjan kerran, noin 45 Mt.
+
 ## 0.9.2.3 — 2026-11-03
 
 - **Astevaihtelulaatikot puhelimessa.** Sanat eivät enää mene laatikon yli kapealla näytöllä. Tämä korjaa version 0.9.2.2. Sanaparilla
