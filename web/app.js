@@ -52,8 +52,8 @@ const DEFAULT_SETTINGS = {
   // ei yhtään. Hakuun ne eivät vaikuta.
   extraLangs: [],
   // Kokeelliset ominaisuudet (valikon lopussa), kukin erikseen: ocr = kuvasta haku (Android-sovellus),
-  // sms = koltansaamen sanat sanakortissa, tableTr = muotojen käännökset taivutustaulukossa. experimental: vanha yhteinen kytkin (= ocr), siirretään exp.ocr:ään.
-  exp: { ocr: false, sms: false, tableTr: false },
+  // sms = koltansaamen sanat sanakortissa, tableTr = muotojen käännökset taivutustaulukossa, apertium = Apertiumin norjan käännökset. experimental: vanha yhteinen kytkin (= ocr), siirretään exp.ocr:ään.
+  exp: { ocr: false, sms: false, tableTr: false, apertium: false },
   // Kuvasta haku: suunta ("sme" = saamen teksti, "ui" = käyttöliittymän kielen teksti), merkintätapa ja väri
   ocrFrom: "sme", ocrStyle: "frame", ocrColor: "#2563eb",
 };
@@ -143,6 +143,41 @@ function showFirstRun() {
     $("first-run").close();
   };
   $("first-run").showModal();
+}
+
+// Kertavihje valikosta uusille ja päivittäville käyttäjille. Sulkeutuu napautuksesta, näppäilystä tai 10 sekunnissa.
+// Lasketaan nähdyksi vasta, kun se on ollut näkyvissä 3 sekuntia; muuten se näytetään uudelleen seuraavalla kerralla.
+function showMenuTip() {
+  try {
+    if (localStorage.getItem("satni-menu-tip")) return;
+  } catch (e) {
+    return;  // yksityinen tila: ei näytetä joka käynnistyksellä
+  }
+  if ($("first-run").open) {  // ensin kielen valinta, jotta vihje on oikealla kielellä
+    $("first-run").addEventListener("close", showMenuTip, { once: true });
+    return;
+  }
+  const btn = $("sidebar-toggle");
+  const tip = $("menu-tip");
+  const r = btn.getBoundingClientRect();
+  tip.textContent = t("menuTip");
+  tip.style.top = `${r.bottom + 10}px`;
+  tip.style.left = `${r.left}px`;
+  tip.hidden = false;
+  btn.classList.add("menu-tip-target");
+  const seen = setTimeout(() => {
+    try { localStorage.setItem("satni-menu-tip", "1"); } catch (e) { /* yksityinen tila */ }
+  }, 3000);
+  const close = () => {
+    clearTimeout(seen);
+    clearTimeout(timeout);
+    tip.hidden = true;
+    btn.classList.remove("menu-tip-target");
+    for (const type of ["pointerdown", "keydown", "input"]) document.removeEventListener(type, onUse, true);
+  };
+  const timeout = setTimeout(close, 10000);
+  const onUse = () => close();
+  for (const type of ["pointerdown", "keydown", "input"]) document.addEventListener(type, onUse, true);
 }
 
 // Valikon sulkeminen: taustan napautus, Esc tai Android-sovelluksen takaisin-ele (MainActivity.goBackOrFinish)
@@ -696,6 +731,7 @@ function selectResult(i, pushHistory = true) {
   state.transWords = first ? splitList(first.translations).slice(0, 4) : splitList(w[LANGUAGES[settings.lang].col]).slice(0, 3);
   if (first && first.restrictions) trans += ` (${first.restrictions})`;
   $("translation").textContent = trans || t("noTranslationIn")[settings.lang];
+  renderApertium(w, trans);
   renderExtraTranslations(w, groups);
   $("more-meanings").textContent = ownGroup.length > 1 ? t("moreMeanings", ownGroup.length - 1) :
     groups.some(([lang]) => lang !== settings.lang) ? t("otherLangs") : "";
@@ -739,6 +775,23 @@ function renderPositions(w) {
 }
 
 // Muut kielet -asetuksessa valittujen kielten käännökset pääkäännöksen alle (Englanniksi: house)
+// Apertium (kokeellinen, tietokannan taulu apertium, apertium_data.py): norjan käännös konekääntimen sanastosta,
+// vain jos sanalla ei ole käännöstä sanakirjoissa. Ei vaikuta hakuun, ja rivi merkitään tarkistamattomaksi.
+function renderApertium(w, trans) {
+  const line = $("apertium-line");
+  line.hidden = true;
+  if (trans || !settings.exp.apertium || settings.lang !== "nob") return;
+  let rows = [];
+  try {
+    rows = all("SELECT nob FROM apertium WHERE word_id = ?", [w.id]);
+  } catch (e) {
+    return;  // vanha tietokanta ilman taulua
+  }
+  if (!rows.length) return;
+  line.innerHTML = `${esc(rows[0].nob)} <span class="muted small">(${esc(t("apertiumNote"))})</span>`;
+  line.hidden = false;
+}
+
 function renderExtraTranslations(w, groups) {
   const lines = settings.extraLangs.filter((l) => LANGUAGES[l]).map((lang) => {
     const own = (groups.find(([l]) => l === lang) || [lang, []])[1][0];
@@ -1080,11 +1133,22 @@ function renderGradation() {
     }
   }
   // "hkk (III) · hk (II) · g (I)" -> asteet; vahva vihreä, heikko oranssi, muut harmaina
-  let strongDone = false;
-  const grades = (w.gradation_row || "").split(" · ").filter(Boolean).map((part) => {
-    const [value, q2] = part.replace(/\)$/, "").split(" (");
+  const parts = (w.gradation_row || "").split(" · ").filter(Boolean).map((part) => part.replace(/\)$/, "").split(" ("));
+  // Sama kirjoitusasu voi esiintyä kahdessa asteessa (nn III, nn II). Yleensä vaihtelu on II ~ I (mannat ~ manan),
+  // mutta kontrahoituvassa sanassa heikosta perusmuodosta tullaan asteeseen III (suolu ~ sullo, boazu ~ bohcco).
+  const form = (...formTags) => {
+    const tag = formTags.find((x) => state.paradigm.get(x)?.length);
+    return tag ? [state.paradigm.get(tag)[0], state.grades.get(tag + "|" + state.paradigm.get(tag)[0])] : [];
+  };
+  const syllables = (s) => (s.toLowerCase().match(/[aáeiouyäöâ]+/g) || []).length;
+  const [baseForm, baseGrade] = form("Sg+Nom", "Nom");
+  const [genForm, genGrade] = form("Sg+Gen", "Gen");
+  const contracted = baseGrade === "HD" && genGrade === "GD" && syllables(baseForm) === syllables(genForm);
+  const values = parts.map(([value]) => value);
+  const strongIdx = contracted ? values.indexOf(w.gd_cluster) : values.lastIndexOf(w.gd_cluster);
+  const grades = parts.map(([value, q2], i) => {
     let cls = "other";
-    if (value === w.gd_cluster && !strongDone) { cls = "gd"; strongDone = true; }
+    if (i === strongIdx) cls = "gd";
     else if (value === w.hd_cluster) cls = "hd";
     return `<span class="${cls}">${esc(value)} <small>${esc(q2 || "")}</small></span>`;
   }).join('<span class="sep"> · </span>');
@@ -1409,7 +1473,7 @@ function updateSuggestions(withForms = true) {
   // Muotohaku on vielä tulossa: rivi kertoo sen, ettei lista näytä tyhjältä (minulle löytyy vasta muotohaulla)
   const value = $("search").value.trim();
   const pending = !withForms && fold(value).length >= 2 && !value.includes(" ");
-  if (!pending && (!suggestions.length || (suggestions.length === 1 && !suggestions[0].form && fold(suggestions[0].sme_lemma) === fold($("search").value)))) {
+  if (!pending && !suggestions.length) {
     list.hidden = true;  // ei hideSuggestions: odottava muotohaku saa vielä tuoda ehdotuksia (munnje, kolmelle)
     return;
   }
@@ -1838,6 +1902,7 @@ function bindExperimental() {
     applyExperimental();
     if (name === "sms" && state.results.length) searchAgainKeepingWord();
     if (name === "tableTr" && state.word) renderTable();
+    if (name === "apertium" && state.results.length) searchAgainKeepingWord();
   };
   $("experimental-section").addEventListener("change", (e) => {
     const name = e.target.dataset.exp;
@@ -1845,7 +1910,7 @@ function bindExperimental() {
     if (!e.target.checked) { set(name, false); return; }
     e.target.checked = false;  // päälle vasta, kun käyttäjä hyväksyy
     pending = name;
-    const key = { ocr: "expOcr", sms: "expSms", tableTr: "expTableTr" }[name];
+    const key = { ocr: "expOcr", sms: "expSms", tableTr: "expTableTr", apertium: "expApertium" }[name];
     $("exp-dlg-title").textContent = t(key);
     $("exp-dlg-body").innerHTML = t(key + "Info");
     $("exp-dlg").showModal();
@@ -2169,6 +2234,7 @@ async function main() {
   if (pendingShared) openShared(pendingShared);
   else routeFromHash();
   if (!location.hash) $("search").focus();
+  showMenuTip();
 }
 
 main();
