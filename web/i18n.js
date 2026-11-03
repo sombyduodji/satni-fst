@@ -97,7 +97,9 @@ const UI_TEXTS = {
       <dt>Taivutus</dt><dd>verbeillä kaikki tapaluokat, nomineilla sijamuodot (ol. ja ml.).</dd>
       <dt>Astevaihtelu</dt><dd>vahva aste <b class="gd">GD</b> vihreänä, heikko aste <b class="hd">HD</b> oranssina.</dd>
       <dt>Ääntäminen</dt><dd>🔈 sanan vieressä, tai napauta taulukon muotoa: kuuntele tai kopioi.</dd>
-      <dt>Suosikit</dt><dd>★ tallentaa sanan omalle listalle.</dd>`,
+      <dt>Suosikit</dt><dd>★ tallentaa sanan omalle listalle.</dd>
+      <dt>Valikko</dt><dd>☰ ylhäällä: kieli, asetukset, suosikit ja historia, muut kielet ja kokeelliset ominaisuudet.</dd>`,
+    menuTip: "Kieli ja asetukset löytyvät valikosta.",
     tryThese: "Kokeile:", randomWord: "Satunnainen sana",
     listen: "Kuuntele", fetching: "Haetaan…", listenTo: (text) => `Kuuntele: ${text}`,
     copy: "Kopioi", copied: (text) => `Kopioitu: ${text}`,
@@ -275,7 +277,9 @@ const UI_TEXTS = {
       <dt>Bøying</dt><dd>alle modi for verb, kasus for nomen (ol. og ml.).</dd>
       <dt>Stadieveksling</dt><dd>sterkt stadium <b class="gd">GD</b> i grønt, svakt stadium <b class="hd">HD</b> i oransje.</dd>
       <dt>Uttale</dt><dd>🔈 ved ordet, eller trykk på en form i tabellen: lytt eller kopier.</dd>
-      <dt>Favoritter</dt><dd>★ lagrer ordet i din egen liste.</dd>`,
+      <dt>Favoritter</dt><dd>★ lagrer ordet i din egen liste.</dd>
+      <dt>Meny</dt><dd>☰ øverst: språk, innstillinger, favoritter og historikk, andre språk og eksperimentelle funksjoner.</dd>`,
+    menuTip: "Språk og innstillinger finner du i menyen.",
     tryThese: "Prøv:", randomWord: "Tilfeldig ord",
     listen: "Lytt", fetching: "Henter…", listenTo: (text) => `Lytt: ${text}`,
     copy: "Kopier", copied: (text) => `Kopiert: ${text}`,

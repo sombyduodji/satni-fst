@@ -9,6 +9,8 @@ All releases of Sátni FST. Downloads: [GitHub releases](https://github.com/somb
 - **Clearer gradation row.** When grades III and II are spelled alike, the row now marks the grade the word really uses: *mannat* shows *nn* II, and contracted words such as *suolu* show *ll* III.
 - **More labelled forms.** Grade III forms of some verbs, such as *viehkki* from *viehkat*, are now marked as strong grade.
 - **Experimental: Apertium translations.** A new switch, off by default, shows a Norwegian translation for about 4,600 words that have none in the dictionaries. They come from the apertium-sme-nob machine translation dictionary, are marked as unchecked and do not affect search.
+- **Finding the menu.** A one-time tip on the ☰ button says that language and settings are in the menu, and the welcome page has a new Menu row.
+- **Search suggestions.** The list now also appears when the word you typed is the only match, so it no longer looks as if nothing was found before you press Enter.
 - **Web version.** Installed browser versions download the updated dictionary once, about 45 MB.
 
 ## 0.9.2.3 — 2026-11-03

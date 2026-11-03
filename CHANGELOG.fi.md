@@ -9,6 +9,8 @@ Sátni FST:n kaikki versiot. Lataukset: [GitHub-julkaisut](https://github.com/so
 - **Selkeämpi asterivi.** Kun asteet III ja II kirjoitetaan samoin, rivi merkitsee nyt asteen, jota sana todella käyttää: *mannat* näyttää *nn* II, ja kontrahoituvat sanat kuten *suolu* näyttävät *ll* III.
 - **Lisää merkittyjä muotoja.** Joidenkin verbien asteen III muodot, kuten *viehkki* verbistä *viehkat*, on nyt merkitty vahvaksi asteeksi.
 - **Kokeellinen: Apertium-käännökset.** Uusi kytkin, oletuksena pois päältä, näyttää norjan käännöksen noin 4 600 sanalle, joilla sitä ei ole sanakirjoissa. Käännökset ovat apertium-sme-nob-konekääntimen sanastosta, ne on merkitty tarkistamattomiksi eivätkä ne vaikuta hakuun.
+- **Valikon löytäminen.** Kertavihje ☰-painikkeella kertoo, että kieli ja asetukset löytyvät valikosta, ja aloitussivulla on uusi Valikko-rivi.
+- **Hakuehdotukset.** Lista näkyy nyt myös, kun kirjoitettu sana on ainoa osuma, joten ei enää näytä siltä, ettei mitään löytynyt ennen Enteriä.
 - **Selainversio.** Asennettu selainversio lataa päivitetyn sanakirjan kerran, noin 45 Mt.
 
 ## 0.9.2.3 — 2026-11-03
