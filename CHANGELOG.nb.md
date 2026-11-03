@@ -3,6 +3,14 @@
 Alle versjoner av Sátni FST. Nedlastinger: [GitHub-utgivelser](https://github.com/sombyduodji/satni-fst/releases).
 [English](CHANGELOG.md) · [Suomi](CHANGELOG.fi.md)
 
+## 0.9.3 — 2026-11-03
+
+- **Stadieveksling rettet.** Sterkt og svakt stadium var byttet om på omtrent 340 ord, blant dem vanlige ord som *dilli*, *gilli*, *sivva*, *nisu* og *biras*. Ordkortet og fargene i bøyingstabellen er nå riktige. Gruppenavnet er også rettet på omtrent 450 ord, for eksempel *listu*.
+- **Tydeligere graderad.** Når grad III og II skrives likt, markerer raden nå graden ordet faktisk bruker: *mannat* viser *nn* II, og kontrakte ord som *suolu* viser *ll* III.
+- **Flere merkede former.** Grad III-former av noen verb, som *viehkki* av *viehkat*, er nå merket som sterkt stadium.
+- **Eksperimentelt: Apertium-oversettelser.** En ny bryter, av som standard, viser en norsk oversettelse for omtrent 4 600 ord som ikke har det i ordbøkene. De kommer fra maskinoversettelsesordlisten apertium-sme-nob, er merket som ikke kontrollert og påvirker ikke søket.
+- **Nettversjonen.** Installerte nettleserversjoner laster ned den oppdaterte ordboken én gang, omtrent 45 MB.
+
 ## 0.9.2.3 — 2026-11-03
 
 - **Stadievekslingsbokser på telefon.** Ordene går ikke lenger utenfor boksen på smale skjermer. Dette retter versjon 0.9.2.2. Ordparet
