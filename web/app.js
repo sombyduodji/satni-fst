@@ -95,6 +95,10 @@ function applyStaticTexts() {
   const version = window.SATNI_VERSION;
   $("about-version").textContent = !version ? t("aboutWeb", window.SATNI_WEB_VERSION)
     : window.SATNI_PLATFORM === "android" ? t("aboutAndroid", version) : t("aboutDesktop", version);
+  $("menu-version").textContent = $("about-version").textContent;
+  // Sähköpostin aiheessa versio, jotta palautteesta näkee, mitä versiota se koskee
+  $("feedback-mail").href = "mailto:satni@somby.fi?subject=" +
+    encodeURIComponent(`${t("feedbackSubject")} (${$("about-version").textContent})`);
   $("random-btn").textContent = t("randomWord");
   renderExtraLangs();
 
@@ -288,10 +292,13 @@ function queryDatabase(query) {
   }
   // 5 = taivutusmuoto (manan -> mannat); hyvin yleisen sanan muoto 1.2 eli käännösten edelle
   // (lei = leahkit eikä norjan "lei", mus = mun eikä norjan "mus")
-  const forms = [q, capitalize(q), nordic(q), capitalize(nordic(q))];
+  // Lisäksi haku sellaisena kuin se kirjoitettiin ja lyhenteen vartalo isolla (nato:s -> NATO:s), koska q on pienaakkosin
+  const colon = q.indexOf(":");
+  const acronymForm = colon > 0 ? q.slice(0, colon).toUpperCase() + q.slice(colon) : q;
+  const forms = [q, capitalize(q), nordic(q), capitalize(nordic(q)), query.trim(), acronymForm];
   for (const r of all(
     `SELECT DISTINCT d.${cols.split(", ").join(", d.")}
-     FROM paradigms p JOIN dictionary d ON d.id = p.word_id WHERE p.surface IN (?, ?, ?, ?)`, forms
+     FROM paradigms p JOIN dictionary d ON d.id = p.word_id WHERE p.surface IN (?, ?, ?, ?, ?, ?)`, forms
   )) add(r, r.freq >= COMMON_WORD ? 1.2 : 5);
   // 4.5–4.9 = taivutettu suomen- tai norjankielinen sana (juon, taloon, husene): sen perusmuodon (juoda, talo, hus)
   // saamennokset perusmuodon omassa järjestyksessä, kaikkien suorien käännösosumien jälkeen. Muodot ovat taulussa
@@ -1996,7 +2003,17 @@ function openShared(text) {
 function routeFromHash() {
   const m = location.hash.match(/^#\/sana\/([^/]+)(?:\/(\d+))?/);
   if (m) search(decodeURIComponent(m[1]), Number(m[2] || 0));
-  else { showOnly("welcome"); $("search").value = ""; }
+  else { showOnly("welcome"); $("search").value = ""; $("did-you-mean").hidden = true; }
+}
+
+// Logo ja nimi: takaisin aloitussivulle. Sivua ei ladata uudelleen, koska sanakirja on jo muistissa.
+function goHome(e) {
+  e.preventDefault();
+  closeDrawer();
+  hideSuggestions();
+  if (location.hash) history.pushState(null, "", location.pathname + location.search);
+  routeFromHash();
+  window.scrollTo(0, 0);
 }
 
 // --- Käynnistys ---
@@ -2060,6 +2077,12 @@ function bindEvents() {
   $("fav-btn").onclick = toggleFavourite;
   bindFormPop();
   $("about-btn").onclick = () => $("about").showModal();
+  $("author-btn").onclick = () => $("about").showModal();
+  $("support-btn").onclick = () => $("support-dlg").showModal();
+  $("feedback-btn").onclick = () => $("feedback-dlg").showModal();
+  $("support-feedback").onclick = () => { $("support-dlg").close(); $("feedback-dlg").showModal(); };
+  $("feedback-copy").onclick = async () => { await copyText("satni@somby.fi"); toast(t("copied", "satni@somby.fi"), 1800); };
+  for (const a of document.querySelectorAll(".home-link")) a.onclick = goHome;
   $("licenses-btn").onclick = showLicenses;
   $("did-you-mean").onclick = (e) => { const b = e.target.closest("[data-q]"); if (b) search(b.dataset.q); };
   $("lic-select").onchange = (e) => showLicenseFile(e.target.value);

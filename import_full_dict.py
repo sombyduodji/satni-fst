@@ -100,9 +100,11 @@ INFLECTION_START = {"Sg", "Pl", "Nom", "Attr", "Inf", "Ess"}
 FINNISH_LETTER_FIXES = str.maketrans({"æ": "ä", "Æ": "Ä", "ø": "ö", "Ø": "Ö"})
 
 
-# FST:n tuottamat muodot, joita ei oteta tietokantaan: lang-sme 6b1ae1cb40 tuottaa nämä lyhenteille EMRIP ja
-# Radisson-SAS perusmuodon lisäksi, eivätkä ne ole käytössä (päätös 2026-11-02).
-REJECTED_FORMS = {"EMRIPa", "Radisson-SASa"}
+# FST:n tuottamat muodot, joita ei oteta tietokantaan: lang-sme 6b1ae1cb40 taivuttaa lyhenteitä EMRIP ja
+# Radisson-SAS myös a-vartaloisina (EMRIPa, EMRIPas), eivätkä nämä ole käytössä (päätös 2026-11-02).
+# Kaksoispisteelliset muodot (EMRIP:s) jäävät.
+REJECTED_FORMS = {base + ending for base in ("EMRIP", "Radisson-SAS")
+                  for ending in ("a", "ii", "as", "ain", "at", "aid", "aide", "aiguin", "an")}
 
 
 def fix_finnish_text(text):

@@ -54,7 +54,29 @@ const UI_TEXTS = {
     voice: "Ääni",
     favourites: "★ Suosikit", history: "Historia", searchingForms: "Haetaan muotoja…", clearHistory: "Tyhjennä historia", clearHistoryTitle: "Tyhjennetäänkö historia?",
     clearHistoryBody: "Kaikki hakuhistoria poistetaan. Suosikit säilyvät.", clearHistoryOk: "Tyhjennä", historyMore: "Lisää…",
-    coffeeText: "Sátni FST on kaikille ilmainen ja pysyy ilmaisena. Jos haluat olla mukana tukemassa työtä, voit tarjota minulle kahvit. Giitu ❤️",
+    supportStory: `<p><strong>Buorre beaivi! Olen Juha Somby.</strong></p>
+      <p>UNESCO luokittelee kaikki saamen kielet uhanalaisiksi, ja puhujia on kaikkiaan arviolta alle 30 000. Pienille
+         kieliyhteisöille ja alkuperäiskansoille saavutettavat digitaaliset työkalut, kuten oikolukijat, morfologiset
+         jäsentimet (FST), sanakirjat ja oppimisvälineet, ovat tärkeitä, jotta kieli pysyy elävänä nykyajan arjessa.</p>
+      <p>Teen maksuttomia ja avoimen lähdekoodin sovelluksia ja työkaluja pohjoissaamelle ja muille saamen kielille.</p>`,
+    supportHelpTitle: "Näin voit auttaa",
+    supportCoffeeTitle: "Miksi tukea?",
+    supportCoffee: `<p>Avoimen kieliteknologian kehittäminen ja ylläpito vie aikaa ja vaatii aineiston ja koodin jatkuvaa hoitoa.
+         Tarjoamalla kahvit tuet suoraan tätä työtä:</p>
+      <ul class="support-ways">
+        <li>työkalut pysyvät maksuttomina ja avoimina oppijoille, äidinkielisille puhujille ja tutkijoille</li>
+        <li>uhanalaisille kielille rakentuu nykyaikaista digitaalista infrastruktuuria</li>
+        <li>yhteisölle syntyy uusia työkaluja, jäsentimiä ja vuorovaikutteisia sovelluksia</li>
+      </ul>`,
+    supportNote: `Tuki on vapaaehtoista eikä avaa mitään lisäominaisuuksia: sovellus ja sanakirja pysyvät kaikille maksuttomina.
+      Tuki menee sovelluksen kehittäjälle, ei sanakirjojen tekijöille. Sanakirja-aineisto on GiellaLT:n, Divvunin,
+      Giellateknon ja muiden tekijöiden työtä.`,
+    supportThanks: "Giitu olu! Kiitos, että tuet saamen kieliteknologiaa!",
+    supportWays: `<li><strong>Korjaa käännöksiä ja sanoja:</strong> kerro virheellisestä käännöksestä tai puuttuvasta sanasta.</li>
+      <li><strong>Ilmoita virheistä:</strong> kerro, jos jokin ei toimi tai näyttää oudolta.</li>
+      <li><strong>Ehdota ideoita:</strong> uusia ominaisuuksia, teemoja tai käyttöliittymän muutoksia.</li>
+      <li><strong>Saavutettavuus:</strong> kerro, mikä helpottaisi käyttöä, jos sinulla on esimerkiksi näkö- tai liikuntavamma tai lukivaikeus.</li>
+      <li><strong>Osallistu kehitykseen:</strong> lähdekoodi on avointa, ja korjaukset ovat tervetulleita.</li>`,
     noFavourites: "Ei vielä suosikkeja", noHistory: "Ei hakuja",
     addFavourite: "Lisää suosikkeihin", removeFavourite: "Poista suosikeista",
     loadingTitle: "Ladataan sanakirjaa…",
@@ -131,11 +153,22 @@ const UI_TEXTS = {
     // Tietoa-ikkuna. Ääntämisen kuvaus on sovittu Divvunin kanssa (2026-10-29), älä muuta sisältöä.
     aboutWeb: (v) => (v ? `Versio ${v} (web)` : "Web-versio"), aboutDesktop: (v) => `Versio ${v} (työpöytä)`,
     aboutAndroid: (v) => `Versio ${v} (Android)`,
-    aboutBody: `<p>Pohjoissaamen taivutin ja sanakirja, joka perustuu avoimeen lähdekoodiin.</p>
+    home: "Aloitussivulle", madeBy: "Tekijä:", sendFeedback: "Lähetä palautetta", feedbackIntro: "Virheet, puuttuvat sanat, käännöskorjaukset ja ideat ovat tervetulleita.", feedbackOpenMail: "Avaa sähköposti", feedbackGithub: "Tee ilmoitus GitHubissa", feedbackSubject: "Sátni FST -palaute", support: "Osallistu ja tue",
+    aboutBody: `<p class="about-tagline">Pohjoissaamen taivutin ja sanakirja, joka perustuu avoimeen lähdekoodiin.</p>
+      <h3>Tekijä</h3>
+      <p><strong>Juha Somby</strong><br>
+         <a href="mailto:satni@somby.fi">satni@somby.fi</a> ·
+         <a href="https://github.com/sombyduodji/satni-fst" target="_blank" rel="noopener">GitHub</a></p>
+      <h3>Kielidata ja kieliteknologia</h3>
       <p>Sanakirjadata ja kieliteknologiapohja ovat peräisin Giellateknolta ja Divvunilta. Kielidata ja
          taivutussäännöt on laskettu Giellateknon / Divvunin avoimilla FST-malleilla ja XML-sanakirjoilla.</p>
       <p>Ääntäminen: Divvunin ja Giellateknon puhesynteesi (UiT Norjan arktinen yliopisto), äänet Biret,
          Máhtte ja Sunná. Äänet haetaan palvelusta api-giellalt.uit.no samaan tapaan kuin sátni.org-sivustolla.</p>
+      <h3>Palaute</h3>
+      <p>Jos huomaat ongelman, ota yhteyttä sähköpostitse <a href="mailto:satni@somby.fi">satni@somby.fi</a>
+         tai tee ilmoitus GitHubissa: <a href="https://github.com/sombyduodji/satni-fst/issues" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst/issues</a>.
+         Palaute ja ehdotukset ovat tervetulleita sähköpostitse.</p>
+      <details><summary>Lähteet, lisenssit ja tietosuoja</summary>
       <p>Lisenssit: sanakirjat © GiellaLT (CC BY 4.0, yhdistetty ja täydennetty taivutusmuodoilla),
          taivutus GiellaLT lang-sme (GPL-3.0), käännösten taivutus GiellaLT lang-fin (GPL-3.0) ja Norsk ordbank
          (Språkbanken / Nasjonalbiblioteket, CC BY 4.0), koltansaame (kokeellinen) GiellaLT dict-sms-mul, dict-fin-sms ja
@@ -144,10 +177,7 @@ const UI_TEXTS = {
          ML Kit voi lähettää Googlelle nimettömiä käyttötilastoja, kun tekstintunnistusta käytetään. Sátni FST on vapaa ohjelma (GPL-3.0).
          Astevaihtelun ryhmät: Oahpa (Giellatekno). Kaikki lähteet, lisenssit ja tehdyt muutokset: Lisenssit-painike alla.
          Lähdekoodi: <a href="https://github.com/sombyduodji/satni-fst" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst</a>.</p>
-      <p>Jos huomaat ongelman, ota yhteyttä sähköpostitse <a href="mailto:satni@somby.fi">satni@somby.fi</a>
-         tai tee ilmoitus GitHubissa: <a href="https://github.com/sombyduodji/satni-fst/issues" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst/issues</a>.
-         Palaute ja ehdotukset ovat tervetulleita sähköpostitse.</p>
-      <p>Tekijä: Juha Somby</p>`,
+      </details>`,
     close: "Sulje", licenses: "Lisenssit", licensesTitle: "Lisenssit ja tekijänoikeudet",
   },
 
@@ -196,7 +226,29 @@ const UI_TEXTS = {
     voice: "Stemme",
     favourites: "★ Favoritter", history: "Historikk", searchingForms: "Søker etter former…", clearHistory: "Tøm historikken", clearHistoryTitle: "Tømme historikken?",
     clearHistoryBody: "All søkehistorikk slettes. Favorittene beholdes.", clearHistoryOk: "Tøm", historyMore: "Flere…",
-    coffeeText: "Sátni FST er gratis for alle og vil alltid være det. Vil du være med og støtte arbeidet, kan du spandere en kaffe på meg. Giitu ❤️",
+    supportStory: `<p><strong>Buorre beaivi! Jeg er Juha Somby.</strong></p>
+      <p>UNESCO klassifiserer alle samiske språk som truet, og det er anslagsvis under 30 000 talere til sammen. For små
+         språksamfunn og urfolk er tilgjengelige digitale verktøy, som stavekontroller, morfologiske analysatorer (FST),
+         ordbøker og læremidler, viktige for at språket skal holde seg levende i dagens hverdag.</p>
+      <p>Jeg lager gratis programvare og verktøy med åpen kildekode for nordsamisk og andre samiske språk.</p>`,
+    supportHelpTitle: "Slik kan du hjelpe",
+    supportCoffeeTitle: "Hvorfor støtte?",
+    supportCoffee: `<p>Å utvikle og vedlikeholde åpen språkteknologi tar tid og krever løpende arbeid med data og kode.
+         Ved å spandere en kaffe støtter du dette arbeidet direkte:</p>
+      <ul class="support-ways">
+        <li>verktøyene forblir gratis og åpne for elever, morsmålsbrukere og forskere</li>
+        <li>truede språk får moderne digital infrastruktur</li>
+        <li>det kommer nye verktøy, parsere og interaktive apper for samfunnet</li>
+      </ul>`,
+    supportNote: `Støtten er frivillig og gir ingen ekstra funksjoner: appen og ordboken forblir gratis for alle.
+      Støtten går til appens utvikler, ikke til dem som har laget ordbøkene. Ordbokdataene er arbeidet til GiellaLT, Divvun,
+      Giellatekno og andre bidragsytere.`,
+    supportThanks: "Giitu olu! Takk for at du støtter samisk språkteknologi!",
+    supportWays: `<li><strong>Rett oversettelser og ord:</strong> si fra om feil oversettelser eller ord som mangler.</li>
+      <li><strong>Meld fra om feil:</strong> si fra hvis noe ikke virker eller ser rart ut.</li>
+      <li><strong>Foreslå ideer:</strong> nye funksjoner, temaer eller endringer i brukergrensesnittet.</li>
+      <li><strong>Tilgjengelighet:</strong> si fra om hva som ville gjøre appen enklere å bruke, for eksempel hvis du har syns- eller bevegelseshemming eller dysleksi.</li>
+      <li><strong>Bidra til utviklingen:</strong> kildekoden er åpen, og rettelser er velkomne.</li>`,
     noFavourites: "Ingen favoritter ennå", noHistory: "Ingen søk",
     addFavourite: "Legg til i favoritter", removeFavourite: "Fjern fra favoritter",
     loadingTitle: "Laster ordboken…",
@@ -271,11 +323,22 @@ const UI_TEXTS = {
     // Oversettelse av den finske teksten som er avtalt med Divvun (2026-10-29)
     aboutWeb: (v) => (v ? `Versjon ${v} (nett)` : "Nettversjon"), aboutDesktop: (v) => `Versjon ${v} (skrivebord)`,
     aboutAndroid: (v) => `Versjon ${v} (Android)`,
-    aboutBody: `<p>Nordsamisk bøyingsverktøy og ordbok basert på åpen kildekode.</p>
+    home: "Til startsiden", madeBy: "Laget av", sendFeedback: "Send tilbakemelding", feedbackIntro: "Feil, manglende ord, rettelser av oversettelser og ideer er velkomne.", feedbackOpenMail: "Åpne e-post", feedbackGithub: "Meld fra på GitHub", feedbackSubject: "Tilbakemelding om Sátni FST", support: "Bidra og støtt",
+    aboutBody: `<p class="about-tagline">Nordsamisk bøyingsverktøy og ordbok basert på åpen kildekode.</p>
+      <h3>Laget av</h3>
+      <p><strong>Juha Somby</strong><br>
+         <a href="mailto:satni@somby.fi">satni@somby.fi</a> ·
+         <a href="https://github.com/sombyduodji/satni-fst" target="_blank" rel="noopener">GitHub</a></p>
+      <h3>Språkdata og språkteknologi</h3>
       <p>Ordbokdataene og språkteknologien kommer fra Giellatekno og Divvun. Språkdataene og
          bøyingsreglene er beregnet med Giellateknos og Divvuns åpne FST-modeller og XML-ordbøker.</p>
       <p>Uttale: talesyntese fra Divvun og Giellatekno (UiT Norges arktiske universitet), stemmene Biret,
          Máhtte og Sunná. Lyden hentes fra tjenesten api-giellalt.uit.no på samme måte som på nettstedet sátni.org.</p>
+      <h3>Tilbakemelding</h3>
+      <p>Hvis du finner et problem, ta kontakt på e-post <a href="mailto:satni@somby.fi">satni@somby.fi</a>
+         eller meld det på GitHub: <a href="https://github.com/sombyduodji/satni-fst/issues" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst/issues</a>.
+         Tilbakemeldinger og forslag tas gjerne imot på e-post.</p>
+      <details><summary>Kilder, lisenser og personvern</summary>
       <p>Lisenser: ordbøkene © GiellaLT (CC BY 4.0, slått sammen og utvidet med bøyingsformer),
          bøying GiellaLT lang-sme (GPL-3.0), bøying av oversettelsene GiellaLT lang-fin (GPL-3.0) og Norsk ordbank
          (Språkbanken / Nasjonalbiblioteket, CC BY 4.0), skoltesamisk (eksperimentelt) GiellaLT dict-sms-mul, dict-fin-sms og
@@ -284,10 +347,7 @@ const UI_TEXTS = {
          ML Kit kan sende anonym bruksstatistikk til Google når tekstgjenkjenningen brukes. Sátni FST er fri programvare (GPL-3.0).
          Stadievekslingsgrupper: Oahpa (Giellatekno). Alle kilder, lisenser og endringer: Lisenser-knappen nedenfor.
          Kildekode: <a href="https://github.com/sombyduodji/satni-fst" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst</a>.</p>
-      <p>Hvis du finner et problem, ta kontakt på e-post <a href="mailto:satni@somby.fi">satni@somby.fi</a>
-         eller meld det på GitHub: <a href="https://github.com/sombyduodji/satni-fst/issues" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst/issues</a>.
-         Tilbakemeldinger og forslag tas gjerne imot på e-post.</p>
-      <p>Laget av: Juha Somby</p>`,
+      </details>`,
     close: "Lukk", licenses: "Lisenser", licensesTitle: "Lisenser og opphavsrett",
   },
 };
