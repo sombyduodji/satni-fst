@@ -5,6 +5,7 @@ Sátni FST:n kaikki versiot. Lataukset: [GitHub-julkaisut](https://github.com/so
 
 ## Seuraava versio (ei julkaistu)
 
+- **Taivutusluokka.** Sanakortti näyttää substantiivin ja verbin luokan (I parillistavuinen, II paritontavuinen, III supistuma), kun lähde ja sanan muodot ovat samaa mieltä. Substantiiveille näytetään myös asteet. Muille sanoille luokkaa ei arvata.
 - **Itä ja länsi.** Alueittain vaihtelevat sanat ja käännökset on merkitty (it) ja (lä). Saman sanan kaksi kirjoitusasua, kuten *girku* ja *kirku*, ovat samalla kortilla, jonka löytää kummallakin. Eri sanoista, kuten *gánda* ja *lunta*, on linkki toiseen.
 - **Haku.** Aluemerkityt käännökset, kuten *patja*, löytyvät nyt.
 - **Ääntäminen.** Uusi napautus pysäyttää soivan äänen ja peruu kesken olevan haun, joten äänet eivät enää soi päällekkäin tai peräkkäin.

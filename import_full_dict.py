@@ -19,6 +19,7 @@ import xml.etree.ElementTree as ET
 
 import dialects
 import gradation
+import inflection_class
 import fin_forms
 import nob_forms
 
@@ -851,6 +852,7 @@ def main():
             s[1] += 1
 
     add_gradation(cursor)
+    inflection_class.apply(cursor)
     dialects.apply(cursor)
     nob_forms.add_nob_forms(cursor)
     fin_forms.add_fin_forms(cursor)
@@ -879,6 +881,12 @@ if __name__ == "__main__":
         # Päivittää vain astevaihtelutiedot olemassa olevaan tietokantaan (nopea, ei FST-ajoa)
         conn = sqlite3.connect(DB_FILE)
         add_gradation(conn.cursor())
+        conn.commit()
+        conn.close()
+    elif "--vain-taivutusluokka" in sys.argv:
+        # Päivittää vain taivutusluokat olemassa olevaan tietokantaan (nopea, ei FST-ajoa)
+        conn = sqlite3.connect(DB_FILE)
+        inflection_class.apply(conn.cursor())
         conn.commit()
         conn.close()
     elif "--vain-suoman" in sys.argv:

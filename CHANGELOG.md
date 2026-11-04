@@ -5,6 +5,7 @@ All releases of Sátni FST. Downloads: [GitHub releases](https://github.com/somb
 
 ## Next version (not released)
 
+- **Inflection class.** The word card shows the class of nouns and verbs (I even-syllable, II odd-syllable, III contracted) when the source and the word's forms agree. Nouns also show their grades. No class is guessed for other words.
 - **East and west.** Words and translations that differ by area are marked (it)/(lä) in Finnish and (ø)/(v) in Norwegian. Two spellings of the same word, such as *girku* and *kirku*, share one card that either spelling finds. Different words get a link to each other, such as *gánda* and *lunta*.
 - **Search.** Translations with an area mark, such as *patja*, are now found.
 - **Pronunciation.** A new tap stops the sound that is playing and cancels any request still on its way, so sounds no longer overlap or play one after another.

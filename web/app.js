@@ -1141,11 +1141,22 @@ function translationOfForm(w, tags, finClitics = null) {
   return [...new Set(out)].join(", ");
 }
 
+// Taivutusluokka (inflection_class.py): astesääntö vain substantiiveille, verbeille pelkkä luokka
+function inflectionClassCell(w) {
+  if (!w.inflection_class) return "";
+  const verb = w.pos.toUpperCase() === "V";
+  const name = t(verb ? "verbClassNames" : "nomClassNames")[w.inflection_class];
+  const rule = verb ? "" : `<span class="gc-rule">${t("nomClassRules")[w.inflection_class]}</span>`;
+  return `<div class="grad-cell infl-class"><span class="gc-cap">${esc(t(verb ? "verbClass" : "nomClass"))}</span>` +
+         `<span class="gc-val">${esc(name)}${rule}</span></div>`;
+}
+
 function renderGradation() {
   const w = state.word;
   const el = $("gradation");
   if (!settings.showGrade || UNINFLECTED_POS.includes(w.pos.toUpperCase()) || !state.paradigm.size) { el.innerHTML = ""; return; }
-  if (!w.gradation) { el.innerHTML = `<div class="grad-head">${esc(t("gradation"))}</div><span class="muted"><i>${esc(t("noGradation"))}</i></span>`; return; }
+  if (!w.gradation) { el.innerHTML = `<div class="grad-head">${esc(t("gradation"))}</div><span class="muted"><i>${esc(t("noGradation"))}</i></span>` +
+    (w.inflection_class ? `<div class="grad-cells">${inflectionClassCell(w)}</div>` : ""); return; }
 
   // Esimerkkimuodot: haettu muoto tai perusmuoto ja tavallisin vastakkaisen asteen muoto
   const preferred = ["Inf", "Sg+Nom", "Nom", "Ind+Prs+Sg1", "Sg+Acc", "Acc", "Sg+Gen", "Pl+Nom"];
@@ -1192,6 +1203,7 @@ function renderGradation() {
     + (w.gradation_group ? cell(t("gradGroup"),
       // rivitys vain välilyönneistä, ei tavuviivasta (h-čoahkit)
       w.gradation_group.split(" ").map((p) => `<span class="nw">${esc(p)}</span>`).join(" "), "group") : "")
+    + inflectionClassCell(w)
     + "</div>";
 }
 

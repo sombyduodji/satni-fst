@@ -91,7 +91,7 @@ def main():
             nob_translation TEXT, eng_translation TEXT, smn_translation TEXT, smj_translation TEXT,
             sma_translation TEXT, notes TEXT, gradation TEXT, gd_cluster TEXT, hd_cluster TEXT,
             -- freq: korpusfrekvenssi (GiellaLT), haun tasatilanteisiin (web/app.js: queryDatabase)
-            gradation_group TEXT, gradation_row TEXT, freq INTEGER, dialect TEXT, dial_same TEXT, dial_other TEXT,
+            gradation_group TEXT, gradation_row TEXT, inflection_class TEXT, freq INTEGER, dialect TEXT, dial_same TEXT, dial_other TEXT,
             -- dial_same: saman sanan toinen kirjoitusasu (dialects.py), jolla sanakin löytyy
             lemma_fold TEXT, variant_fold TEXT
         );
@@ -119,7 +119,7 @@ def main():
     trans_cols = ", ".join(TRANSLATION_COLUMNS.values())
     rows = src.execute(
         f"SELECT id, sme_lemma, pos, subtype, {trans_cols}, notes, gradation, gd_cluster, hd_cluster, "
-        "gradation_group, gradation_row, freq, dialect, dial_same, dial_other FROM dictionary"
+        "gradation_group, gradation_row, inflection_class, freq, dialect, dial_same, dial_other FROM dictionary"
     ).fetchall()
     dst.executemany(f"INSERT INTO dictionary VALUES ({', '.join('?' * (len(rows[0]) + 2))})",
                     [r + (fold(r[1]), fold(r[-2]) if r[-2] else None) for r in rows])
