@@ -19,7 +19,7 @@ cd "$(dirname "$0")" || exit 1
 #   SATNI_WIN_PC_KEY=$HOME/.ssh/oma_avain
 # Muut asetukset ympäristömuuttujina:
 #   SATNI_WIN_USE_VM=1    käytä virtuaalikonetta, vaikka PC on määritelty
-#   SATNI_WIN_KEEP_ON=1   älä sammuta PC:tä käännöksen jälkeen
+#   SATNI_WIN_SHUTDOWN=1  sammuta PC onnistuneen käännöksen jälkeen, ellei joku ole kirjautuneena
 #   SATNI_WIN_OUT=polku   tuloksen polku (oletus dist/satni-fst-windows.zip)
 # Windows-kone: Windows 10/11, Python 3.12 (C:\Program Files\Python312), OpenSSH-palvelin
 # (oletuskuorena PowerShell) ja avainkirjautuminen. Käännöskansio C:\satni-build luodaan automaattisesti.
@@ -111,7 +111,7 @@ mkdir -p "$(dirname "$OUT")"
 scp -q $SSH_OPTS "$WIN_USER@$IP":C:/satni-build/satni-fst-windows.zip "$OUT" || exit 1
 ls -la "$OUT"
 
-# PC sammutetaan onnistuneen käännöksen jälkeen, ellei joku ole kirjautuneena. Epäonnistunut käännös jättää sen päälle.
-if [ -n "$USE_PC" ] && [ -z "$SATNI_WIN_KEEP_ON" ]; then
+# PC jää oletuksena päälle, koska seuraava käännös voi tulla pian. Sammutus vain pyydettäessä.
+if [ -n "$USE_PC" ] && [ -n "$SATNI_WIN_SHUTDOWN" ]; then
     ssh $SSH_OPTS "$WIN_USER@$IP" 'if (quser 2>$null) { "Windows-PC jää päälle: käyttäjä on kirjautuneena" } else { "Sammutetaan Windows-PC"; shutdown /s /t 0 }'
 fi
