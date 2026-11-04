@@ -88,7 +88,7 @@ The finished apps are built from these steps. Most build steps run in Docker, so
 |---|---|---|
 | 1. Download the GiellaLT dictionaries | `./hae_sanakirjat.sh` | git |
 | 2. Build the database (`satni.db`, ~10 min) | `python3 import_full_dict.py` | Python 3, [HFST](https://hfst.github.io/) (`hfst-lookup`) |
-| 3. Desktop apps (AppImage + Windows) | `./build.sh` | Docker; a Windows VM for the Windows build (see `build_qt_exe.sh`) |
+| 3. Desktop apps (AppImage + Windows) | `./build.sh` | Docker; a Windows PC or VM for the Windows build (see `build_qt_exe.sh`) |
 | 4. Android app (APK) | `./build_apk.sh` | Docker |
 | 5. Release | attach `dist/Satni_FST-x86_64.AppImage`, `dist/satni-fst-windows.zip` and `dist/satni-fst.apk` to a GitHub release | — |
 | 6. Home page (GitHub Pages) | `./julkaise_sivu.sh` (`--vain-kokoa` builds it without publishing) | git |
