@@ -38,7 +38,8 @@ fi
 INPUTS="$CACHE/wsl-inputs.tar.gz"
 find dict-* -path '*/.git' -prune -o -type f -path '*/src/*' -print > "$CACHE/wsl-inputs.list"
 ls *.py korjaukset.tsv src/fst/*.hfst giella-fin/*.hfstol ordbank-nob/lemma.txt ordbank-nob/fullformsliste.txt \
-    lang-sme/src/fst/morphology/affixes/*.lexc lang-sme/src/fst/morphology/stems/*.lexc >> "$CACHE/wsl-inputs.list" || exit 1
+    lang-sme/src/fst/morphology/affixes/*.lexc lang-sme/src/fst/morphology/stems/*.lexc \
+    dict-sme-spa/inc/A_V_Saami_Spanish.xlsx dict-spa-sme/inc/newest_orig/A_Z_Spanish_Saami.xlsx >> "$CACHE/wsl-inputs.list" || exit 1
 tar -czf "$INPUTS" -T "$CACHE/wsl-inputs.list" || exit 1
 sha256sum "$INPUTS" | cut -d' ' -f1 > "$CACHE/wsl-inputs.sha256"
 ssh $SSH_OPTS "$WIN_USER@$IP" "New-Item -ItemType Directory -Force C:\satni-wsl, C:\tools\busy | Out-Null; Set-Content C:\tools\busy\satni-fst 'satni-fst: satni.db import in WSL'" || exit 1

@@ -2,7 +2,7 @@
 # Hakee tai päivittää GiellaLT:n sanakirjat, joista import_full_dict.py lukee muiden kielten käännökset
 # (dict-sme-*) ja suomen- ja norjankielisen haun (dict-fin-sme, dict-nob-sme). dict-smn-sme, dict-smj-sme ja
 # dict-sma-sme täydentävät puuttuvia saamenkielten käännöksiä; dict-smn-fin ja dict-fin-smn ovat suomennosehdotuksia
-# varten (pivot_fin.py).
+# varten (pivot_fin.py). dict-sme-spa ja dict-spa-sme: espanjan käännökset (spa_data.py, Excel-tiedostot).
 # Puuttuva repo kloonataan, olemassa oleva päivitetään (git pull). Lopuksi tulostetaan käytetyt versiot.
 #
 # LÄHDE: GiellaLT / Divvun / Giellatekno, UiT Norjan arktinen yliopisto (https://github.com/giellalt).
@@ -12,7 +12,7 @@
 cd "$(dirname "$0")" || exit 1
 for repo in dict-sme-nob dict-sme-eng dict-sme-smn dict-sme-smj dict-sme-sma dict-fin-sme dict-nob-sme \
             dict-sms-mul dict-fin-sms dict-nob-sms dict-smn-sme dict-smj-sme dict-sma-sme \
-            dict-smn-fin dict-fin-smn; do
+            dict-smn-fin dict-fin-smn dict-sme-spa dict-spa-sme; do
     if [ -d "$repo/.git" ]; then
         echo "Päivitetään $repo..."
         git -C "$repo" pull --ff-only --quiet || echo "  $repo: päivitys epäonnistui"

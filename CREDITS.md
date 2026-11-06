@@ -23,6 +23,8 @@ combines their work into one offline app.
 | Southern Sámi → North Sámi | Missing Southern Sámi translations | [giellalt/dict-sma-sme](https://github.com/giellalt/dict-sma-sme) |
 | Inari Sámi → Finnish | Finnish suggestions (experimental) | [giellalt/dict-smn-fin](https://github.com/giellalt/dict-smn-fin) |
 | Finnish → Inari Sámi | Finnish suggestions (experimental) | [giellalt/dict-fin-smn](https://github.com/giellalt/dict-fin-smn) |
+| North Sámi → Spanish | Spanish translations, meanings and examples (by Ángel) | [giellalt/dict-sme-spa](https://github.com/giellalt/dict-sme-spa) |
+| Spanish → North Sámi | Missing Spanish translations (by Ángel) | [giellalt/dict-spa-sme](https://github.com/giellalt/dict-spa-sme) |
 | Skolt Sámi → Finnish, Norwegian … | Skolt Sámi words (experimental) | [giellalt/dict-sms-mul](https://github.com/giellalt/dict-sms-mul) |
 | Finnish → Skolt Sámi | Skolt Sámi words (experimental) | [giellalt/dict-fin-sms](https://github.com/giellalt/dict-fin-sms) (CC BY 3.0) |
 | Norwegian → Skolt Sámi | Skolt Sámi words (experimental) | [giellalt/dict-nob-sms](https://github.com/giellalt/dict-nob-sms) |
@@ -53,6 +55,9 @@ CC BY 4.0 requires saying what was changed. When building the app's database,
 - adds inflection tables and consonant gradation generated with the lang-sme FST (below);
 - fills missing Inari, Lule and Southern Sámi translations from the Inari, Lule and Southern Sámi → North Sámi
   dictionaries, only for words that already exist and only when the word and word class point to one word;
+- reads the Spanish dictionaries from their Excel source files ([`spa_data.py`](spa_data.py)), merges rows that are
+  only synonyms into one meaning, keeps grammar notes (such as *IV* or *Dem, Nom, Sg*) and cross-references apart from
+  the translations, and adds Spanish only to words that already exist;
 - applies hand-made corrections from [`korjaukset.tsv`](korjaukset.tsv);
 - replaces Norwegian letters in Finnish translations (æ → ä, ø → ö) and drops empty placeholders such as `_FIN_`.
 

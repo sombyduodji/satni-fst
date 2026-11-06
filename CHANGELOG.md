@@ -11,6 +11,7 @@ All releases of Sátni FST. Downloads: [GitHub releases](https://github.com/somb
 - **Pronunciation.** A new tap stops the sound that is playing and cancels any request still on its way, so sounds no longer overlap or play one after another.
 - **More Sámi translations.** About 40 words get a missing Inari, Lule or Southern Sámi translation from GiellaLT's Inari, Lule and Southern Sámi to North Sámi dictionaries.
 - **Finnish suggestions (experimental).** For words with no Finnish translation, the word card can show a suggestion made through Inari Sámi or Norwegian, marked as unchecked. About 2,150 words get one. Switch it on under *Experimental features*.
+- **Spanish.** Spanish translations for about 7,600 words, including about two thirds of the most common ones, with meanings and example sentences from GiellaLT's Spanish dictionaries by Ángel. Switch them on under *Other languages*.
 
 ## 0.9.3 — 2026-11-03
 

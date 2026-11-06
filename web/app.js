@@ -14,7 +14,7 @@ const SANIT_URL = "https://sanit.oahpa.no/sme/{lang}/?lookup={word}";
 // Haku muista lähteistä: sátni.org (Divvunin ja Giellateknon sanakirjat ja Giellagáldun termit)
 const SATNI_URL = "https://satni.org/{word}";
 
-// Käännöskielet (GiellaLT:n dict-sme-*-sanakirjat) ja niiden sarakkeet tietokannassa; main = pääkieli
+// Käännöskielet (GiellaLT:n dict-sme-*-sanakirjat, espanja dict-sme-spa ja dict-spa-sme) ja niiden sarakkeet tietokannassa; main = pääkieli
 // (suomi ja norja, joista on myös käänteinen sanakirja), muut näytetään valikossa omana ryhmänään.
 // Kielten nimet ovat käyttöliittymän kielellä (i18n.js: langName, langIn).
 const LANGUAGES = {
@@ -24,6 +24,7 @@ const LANGUAGES = {
   smn: { col: "smn_translation" },
   smj: { col: "smj_translation" },
   sma: { col: "sma_translation" },
+  spa: { col: "spa_translation" },
 };
 const TRANS_COLS = Object.keys(LANGUAGES).map((l) => LANGUAGES[l].col).join(", ");
 

@@ -41,6 +41,8 @@ web/data/
 /dict-sma-sme/
 /dict-smn-fin/
 /dict-fin-smn/
+/dict-sme-spa/
+/dict-spa-sme/
 /lang-fin/
 /lang-sme/
 # Norsk ordbank (Språkbanken), haetaan samalla skriptillä

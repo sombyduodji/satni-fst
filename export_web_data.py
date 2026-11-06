@@ -33,7 +33,8 @@ SEARCH_FOLD = str.maketrans({"æ": "ä", "ø": "ö"})
 
 # Käännöskielet ja niiden sarakkeet satni.db:ssä (ks. import_full_dict.py)
 TRANSLATION_COLUMNS = {"fin": "finnish_translation", "nob": "nob_translation", "eng": "eng_translation",
-                       "smn": "smn_translation", "smj": "smj_translation", "sma": "sma_translation"}
+                       "smn": "smn_translation", "smj": "smj_translation", "sma": "sma_translation",
+                       "spa": "spa_translation"}
 
 
 def fold(text):
@@ -90,7 +91,7 @@ def main():
         CREATE TABLE dictionary (
             id INTEGER PRIMARY KEY, sme_lemma TEXT, pos TEXT, subtype TEXT, finnish_translation TEXT,
             nob_translation TEXT, eng_translation TEXT, smn_translation TEXT, smj_translation TEXT,
-            sma_translation TEXT, notes TEXT, gradation TEXT, gd_cluster TEXT, hd_cluster TEXT,
+            sma_translation TEXT, spa_translation TEXT, notes TEXT, gradation TEXT, gd_cluster TEXT, hd_cluster TEXT,
             -- freq: korpusfrekvenssi (GiellaLT), haun tasatilanteisiin (web/app.js: queryDatabase)
             gradation_group TEXT, gradation_row TEXT, inflection_class TEXT, freq INTEGER, dialect TEXT, dial_same TEXT, dial_other TEXT,
             -- dial_same: saman sanan toinen kirjoitusasu (dialects.py), jolla sanakin löytyy

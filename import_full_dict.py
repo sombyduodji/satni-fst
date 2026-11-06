@@ -5,6 +5,7 @@ LÄHTEET (ks. CREDITS.md):
     dict-sme-fin, dict-sme-nob, dict-sme-eng, dict-sme-smn, dict-sme-smj, dict-sme-sma (käännökset)
     sekä dict-fin-sme ja dict-nob-sme (haku suomeksi ja norjaksi) ja dict-smn-sme, dict-smj-sme ja
     dict-sma-sme (puuttuvat inarin-, luulajan- ja eteläsaamen käännökset). https://github.com/giellalt
+  - Espanja: GiellaLT dict-sme-spa ja dict-spa-sme (Ángel, CC BY 4.0), Excel-tiedostot (spa_data.py).
   - Taivutus: GiellaLT lang-sme -analysaattori ja -generaattori (src/fst/), lisenssi GPL-3.0.
 CC BY 4.0 edellyttää muutosten mainitsemista: sanakirjat yhdistetään, niihin lisätään FST:llä
 generoidut taivutusmuodot ja astevaihtelu, korjaukset.tsv:n korjaukset sovelletaan ja suomennosten
@@ -23,6 +24,7 @@ import gradation
 import inflection_class
 import fin_forms
 import nob_forms
+import spa_data
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 GENERATOR = os.path.join(SCRIPT_DIR, "src", "fst", "generator-gt-norm.hfst")
@@ -37,7 +39,9 @@ REVERSE_DIRS = {lang: os.path.join(SCRIPT_DIR, f"dict-{lang}-sme", "src") for la
 # Muiden saamenkielten sanakirjat (inari/luulaja/etelä -> pohjoissaame): täydentävät vain puuttuvia käännöksiä
 # (sanakirjat dict-sme-smn/smj/sma ovat jo lähes samat, ks. fill_sami_translations)
 SAMI_REVERSE_DIRS = {lang: os.path.join(SCRIPT_DIR, f"dict-{lang}-sme", "src") for lang in ("smn", "smj", "sma")}
-TRANSLATION_COLUMNS = {lang: "finnish_translation" if lang == "fin" else f"{lang}_translation" for lang in LANGUAGES}
+# Espanja luetaan Excel-tiedostoista (spa_data.py), muut GiellaLT:n XML-sanakirjoista
+TRANSLATION_LANGS = LANGUAGES + ["spa"]
+TRANSLATION_COLUMNS = {lang: "finnish_translation" if lang == "fin" else f"{lang}_translation" for lang in TRANSLATION_LANGS}
 CORRECTIONS_FILE = os.path.join(SCRIPT_DIR, "korjaukset.tsv")
 # <t t_type="..."> -viittaukset kielioppisivuille (oahpa.no), eivät käännöksiä eivätkä saamen sanoja
 GRAMMAR_POINTERS = ("grammar", "grammarexpl")
@@ -375,6 +379,7 @@ def parse_xml_dictionaries():
 
     parse_reverse_dictionaries(entries, by_lemma)
     fill_sami_translations(entries, by_lemma)
+    fill_spanish(entries, by_lemma)
     merge_duplicate_entries(entries, by_lemma)
 
     words = [
@@ -509,6 +514,76 @@ def fill_sami_translations(entries, by_lemma):
                                 data["meanings"].append(meaning)
                             meaning["translations"].append(headword)
         print(f"  dict-{lang}-sme: käännös {len(filled_words)} sanalle, jolta se puuttui")
+
+
+def _spanish_pos(raw):
+    """dict-sme-spa:n sanaluokka (VLc, "A, N", Attr) -> FST:n tagi; Lc-pääte ja toinen vaihtoehto jätetään pois."""
+    first = (raw or "").split(",")[0].strip()
+    if first.endswith("Lc"):
+        first = first[:-2]
+    return "A" if first == "Attr" else detect_pos(first, "") if first else UNKNOWN_POS
+
+
+def _spanish_entry(entries, by_lemma, lemma, pos, subtype=""):
+    keys = by_lemma.get(lemma, [])
+    return find_entry(entries, by_lemma, lemma, pos, subtype) or (keys[0] if len(keys) == 1 else None)
+
+
+def fill_spanish(entries, by_lemma):
+    """Espanjankieliset käännökset (spa_data.py): dict-sme-spa:n merkitykset sanoille, jotka jo ovat sanakirjassa,
+    ja dict-spa-sme:n hakusanat sanoille, joilla espanjaa ei vielä ole. Uusia sanoja ei lisätä, eikä espanjan
+    sanoja lisätä hakuun. Peräkkäiset rivit, joilla ei ole käyttörajoitusta, selitystä, kielioppitietoa eikä
+    esimerkkiä, ovat synonyymejä ja yhdistetään yhdeksi merkitykseksi."""
+    meanings = spa_data.sme_spa_meanings()
+    if not meanings:
+        print("Espanjan sanakirjaa dict-sme-spa ei löydy, ohitetaan (hae: ./hae_sanakirjat.sh).")
+        return
+    words = set()
+    previous = None
+    for lemma, raw_pos, subtype, m in meanings:
+        key = _spanish_entry(entries, by_lemma, lemma, _spanish_pos(raw_pos), subtype)
+        if key is None:
+            previous = None
+            continue
+        data = entries[key]
+        trans = data["translations"].setdefault("spa", [])
+        plain = not (m["restrictions"] or m["explanations"] or m["labels"] or m["examples"])
+        if plain and previous and previous[0] == key:
+            meaning = previous[1]
+            meaning["translations"] += [t for t in m["translations"] if t not in meaning["translations"]]
+        else:
+            meaning = new_meaning("spa", m["translations"])
+            meaning.update(restrictions=m["restrictions"], explanations=m["explanations"], labels=m["labels"],
+                           examples=[(sme, spa, "") for sme, spa in m["examples"]])
+            data["meanings"].append(meaning)
+        previous = (key, meaning) if plain else None
+        for text in m["translations"]:
+            if text not in trans:
+                trans.append(text)
+        words.add(key)
+    # Selitys sanakortin käännösriville vain, jos sanalla ei ole yhtään varsinaista käännöstä
+    for key in words:
+        data = entries[key]
+        if not data["translations"].get("spa"):
+            data["translations"]["spa"] = [e for m in data["meanings"] if m["lang"] == "spa" for e in m["explanations"]][:1]
+    filled = set()
+    for head, lemma, raw_pos in spa_data.spa_sme_pairs():
+        key = _spanish_entry(entries, by_lemma, lemma, _spanish_pos(raw_pos))
+        if key is None or (key in words and key not in filled):
+            continue
+        data = entries[key]
+        if data["translations"].get("spa") and key not in filled:
+            continue
+        filled.add(key)
+        trans = data["translations"].setdefault("spa", [])
+        if head not in trans:
+            trans.append(head)
+            meaning = next((m for m in data["meanings"] if m["lang"] == "spa"), None)
+            if meaning is None:
+                meaning = new_meaning("spa")
+                data["meanings"].append(meaning)
+            meaning["translations"].append(head)
+    print(f"  espanja: dict-sme-spa {len(words)} sanalle, dict-spa-sme {len(filled)} sanalle, jolta se puuttui")
 
 
 def apply_corrections(words, details):
@@ -813,6 +888,7 @@ def main():
             smn_translation TEXT,
             smj_translation TEXT,
             sma_translation TEXT,
+            spa_translation TEXT,
             freq INTEGER,
             notes TEXT
         )

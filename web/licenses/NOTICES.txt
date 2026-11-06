@@ -31,7 +31,8 @@ Language data (all versions)
 ----------------------------
 Dictionaries: GiellaLT dict-sme-fin, dict-sme-nob, dict-sme-eng,
 dict-sme-smn, dict-sme-smj, dict-sme-sma, dict-fin-sme, dict-nob-sme,
-dict-smn-sme, dict-smj-sme, dict-sma-sme, dict-smn-fin and dict-fin-smn
+dict-smn-sme, dict-smj-sme, dict-sma-sme, dict-smn-fin, dict-fin-smn,
+dict-sme-spa and dict-spa-sme (Spanish, by Ángel)
   © GiellaLT / Divvun / Giellatekno, UiT The Arctic University of Norway,
   and contributors.
   Licence: Creative Commons Attribution 4.0 International
@@ -45,6 +46,8 @@ dict-smn-sme, dict-smj-sme, dict-sma-sme, dict-smn-fin and dict-fin-smn
   Inari, Lule and Southern Sámi to North Sámi dictionaries. Experimental
   Finnish suggestions are made through Inari Sámi (dict-smn-sme,
   dict-smn-fin, dict-fin-smn) or through Norwegian, marked as unchecked.
+  The Spanish dictionaries are read from their Excel sources; synonym rows
+  are merged and grammar notes are kept apart from the translations.
 
 Skolt Sámi (experimental): GiellaLT dict-sms-mul, dict-fin-sms and
 dict-nob-sms
