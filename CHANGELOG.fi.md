@@ -12,6 +12,7 @@ Sátni FST:n kaikki versiot. Lataukset: [GitHub-julkaisut](https://github.com/so
 - **Lisää saamenkielten käännöksiä.** Noin 40 sanaa saa puuttuvan inarin-, luulajan- tai eteläsaamen käännöksen GiellaLT:n inarin-, luulajan- ja eteläsaamen ja pohjoissaamen sanakirjoista.
 - **Suomennosehdotukset (kokeellinen).** Sanalle, jolla ei ole suomennosta, sanakortti voi näyttää inarinsaamen tai norjan kautta muodostetun ehdotuksen, joka on merkitty tarkistamattomaksi. Ehdotus on noin 2 150 sanalla. Kytke päälle kohdasta *Kokeelliset ominaisuudet*.
 - **Espanja.** Espanjankieliset käännökset noin 7 600 sanalle, myös noin kahdelle kolmasosalle yleisimmistä, merkityksineen ja esimerkkilauseineen GiellaLT:n espanjan sanakirjoista, jotka on tehnyt Ángel. Kytke päälle kohdasta *Muut kielet*.
+- **Haku muilla kielillä.** Muut kielet -asetuksessa valituilla kielillä voi myös hakea, pohjoissaamen ja suomen osumien jälkeen: *perro* löytää sanan *beana*. Tuloslista kertoo, millä kielellä sana löytyi. Vain perusmuodot löytyvät.
 
 ## 0.9.3 — 2026-11-03
 

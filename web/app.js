@@ -294,10 +294,9 @@ async function loadDatabase() {
 
 // --- Haku ---
 
-// Haku löytää pohjoissaamen sanat ja muodot sekä käännökset vain suomeksi tai norjaksi: valittu käännöskieli,
-// tai jos se on jokin muu kieli (englanti, inarin-, luulajan- tai eteläsaame), käyttöliittymän kieli. Muiden
-// kielten sanat (luulajansaamen lea, norjan mus suomenkielisessä haussa) eivät siis peitä pohjoissaamen
-// muotoja (lea = leahkit, mus = mun).
+// Haku löytää pohjoissaamen sanat ja muodot sekä käännökset suomeksi tai norjaksi (käyttöliittymän kieli). Muut kielet
+// -asetuksessa valittujen kielten (englanti, inarin-, luulajan-, eteläsaame, espanja) käännöksillä löytyy vasta niiden
+// jälkeen (rank 6.5), joten ne eivät peitä pohjoissaamen muotoja (lea = leahkit eikä luulajansaamen lea).
 const COMMON_WORD = 50000;  // korpusfrekvenssi, jota yleisemmän sanan taivutusmuoto menee käännösten edelle
 
 function queryDatabase(query) {
@@ -355,6 +354,19 @@ function queryDatabase(query) {
       add({ ...r, via: { base, cell } }, pos === "Pron" ? (PERS_PRONOUNS[r.sme_lemma] ? 4.3 : 4.4) + rank / 100 : 4.5 + rank / 10);  // suora osuma (pienempi rank) säilyy ennallaan
     }
   }
+  // 6.5 = käännös Muut kielet -asetuksessa valitulla kielellä (espanjaksi perro -> beana): vain sanan oma käännös,
+  // ei taivutettuja muotoja. Ensin ainoa tai ensimmäinen käännös, sitten muut.
+  const extra = extraSearchLangs();
+  if (extra.length) {
+    for (const r of all(
+      `SELECT d.${cols.split(", ").join(", d.")}, t.fold, t.lang FROM trans_search t JOIN dictionary d ON d.id = t.word_id
+       WHERE t.lang IN (${extra.map(() => "?").join(", ")}) AND t.nr IS NULL
+         AND (t.fold = ? OR t.fold LIKE ? OR t.fold LIKE ? OR t.fold LIKE ?)`,
+      [...extra, q, `${q},%`, `%, ${q},%`, `%, ${q}`]
+    )) {
+      add({ ...r, extraLang: r.lang }, r.fold === q ? 6.5 : r.fold.startsWith(`${q},`) ? 6.51 : 6.52);
+    }
+  }
   // 7 = perusmuoto alkaa hakusanalla; monisanaiset ilmaukset (dahkat iežas ...) vain, jos haussa on välilyönti
   const phrases = q.includes(" ") ? "" : "AND instr(lemma_fold, ' ') = 0";
   for (const r of all(`SELECT ${cols} FROM dictionary WHERE lemma_fold >= ? AND lemma_fold < ? ${phrases} LIMIT 60`, [q, q + "￿"])) add(r, 7);
@@ -363,12 +375,13 @@ function queryDatabase(query) {
   // (sutnje: son eikä suotnjat), sitten sana, jolla on käännös valitulla kielellä, sitten verbit.
   // Käännösosumien keskinäinen järjestys tulee sanakirjasta (nr), joten frekvenssiä ei käytetä niille.
   const translated = (r) => (r[col] ? 1 : 0);
-  const samiFreq = (r) => ([1, 1.2, 5, 5.5].includes(r.rank) ? r.freq || 0 : 0);
+  const samiFreq = (r) => ([1, 1.2, 5, 5.5].includes(r.rank) || r.extraLang ? r.freq || 0 : 0);
   const results = [...found.values()]
     .sort((a, b) => a.rank - b.rank || samiFreq(b) - samiFreq(a) || translated(b) - translated(a)
       || (b.pos === "V") - (a.pos === "V") || a.sme_lemma.localeCompare(b.sme_lemma, "se"))
     .slice(0, 30);
-  if (results.some((r) => r.rank < PREFIX_RANK)) return results;
+  // Muun kielen osuma ei estä liitepartikkelin irrotusta (saamen sana ensin)
+  if (results.some((r) => r.rank < PREFIX_RANK && !r.extraLang)) return results;
   // Ei osumaa: ehkä sanan perässä on liitepartikkeli (boađátgo = boađát + -go, viesusge, dathan, myös dalle-ge ja
   // kaksi peräkkäin: dahkagohan). Partikkeli irrotetaan ja vartalo haetaan saamen sanana (perusmuoto tai taivutusmuoto).
   for (const clitic of CLITICS) {
@@ -398,6 +411,19 @@ function queryDatabase(query) {
     }
   }
   return results;
+}
+
+// Muut kielet -asetuksessa valitut kielet, joilla haku myös löytää (ei suomi eikä norja, jotka ovat käyttöliittymän kieliä)
+function extraSearchLangs() {
+  return settings.extraLangs.filter((l) => LANGUAGES[l] && !LANGUAGES[l].main && l !== settings.lang);
+}
+
+// Hakutuloksen tai ehdotuksen käännösteksti: muun kielen osumassa myös sen kielen käännös (koira · Espanjaksi: perro)
+function resultTrans(r, max) {
+  const own = translationOf(r, max);
+  if (!r.extraLang) return own;
+  const other = `${t("langIn")[r.extraLang]}: ${translationOf(r, max, r.extraLang)}`;
+  return own ? `${own} · ${other}` : other;
 }
 
 // Suomen liitepartikkelit haussa (pisimmät ensin) ja niiden pohjoissaamen vastineet (FIN_CLITICS toisin päin)
@@ -487,6 +513,17 @@ function suggestWords(prefix, withForms = true) {
        FROM trans_search t JOIN dictionary d ON d.id = t.word_id
        WHERE t.lang = ? AND (t.fold LIKE ? OR t.fold LIKE ?) ORDER BY length(d.sme_lemma) LIMIT 8`,
       [settings.lang, `${q}%`, `%, ${q}%`]
+    ));
+  }
+  // Muut kielet -asetuksessa valitut kielet viimeisinä (espanjaksi per -> beana "perro")
+  const extra = extraSearchLangs();
+  if (rows.length < 8 && extra.length) {
+    rows.push(...all(
+      `SELECT d.id, d.sme_lemma, d.pos, ${TRANS_COLS.split(", ").map((c) => "d." + c).join(", ")}, MIN(t.lang) AS extraLang
+       FROM trans_search t JOIN dictionary d ON d.id = t.word_id
+       WHERE t.lang IN (${extra.map(() => "?").join(", ")}) AND t.nr IS NULL AND (t.fold LIKE ? OR t.fold LIKE ?)
+       GROUP BY d.id ORDER BY d.freq DESC, length(d.sme_lemma) LIMIT 8`,
+      [...extra, `${q}%`, `%, ${q}%`]
     ));
   }
   // Kirjoitettu sana taivutusmuotona (munnje = mun, minulle = mun): perusmuodon jälkeen, jos sana on itse käännetty hakusana
@@ -665,7 +702,7 @@ function renderResults() {
   const collapsed = strong > 0 && prefixOnly > 0 && !state.showPrefix && state.index < strong;
   state.results.slice(0, collapsed ? strong : state.results.length).forEach((r, i) => {
     const b = document.createElement("button");
-    const trans = translationOf(r, 2);
+    const trans = resultTrans(r, 2);
     const pos = r.subtype ? `${r.pos} ${r.subtype}` : r.pos;
     b.innerHTML = `${esc(shownLemma(r))} <span class="trans">(${esc(pos)})${trans ? " – " + esc(trans) : ""}</span>`;
     b.dataset.i = i;
@@ -1559,7 +1596,7 @@ function updateSuggestions(withForms = true) {
   }
   list.innerHTML = (pending ? `<li class="sugg-loading" role="status"><span class="sugg-ring"></span>${esc(t("searchingForms"))}</li>` : "") + suggestions.map((s, i) =>
     `<li role="option" data-i="${i}"><b>${esc(s.sme_lemma)}</b>${s.smeForm ? `<i class="sugg-form">${esc(s.smeForm)}</i>` : ""}` +
-    `<span class="pos">${esc(s.pos)}</span><span class="trans">${esc(s.form ? s.formNote : translationOf(s, 2))}</span></li>`).join("");
+    `<span class="pos">${esc(s.pos)}</span><span class="trans">${esc(s.form ? s.formNote : resultTrans(s, 2))}</span></li>`).join("");
   list.hidden = false;
 }
 function hideSuggestions() { clearTimeout(suggestTimer); clearTimeout(formTimer); $("suggestions").hidden = true; activeSuggestion = -1; }
@@ -1669,7 +1706,8 @@ function scanPhoto(source) {
 // Saamen tekstissä sana on saamen perusmuoto tai taivutusmuoto (korjattu tarkkeet, ocrCorrector); suomen- tai
 // norjankielisessä tekstissä sana löytyy käännöksistä, myös taivutettuna (taloon -> talo -> viessu).
 const SAMI_RANKS = [1, 1.2, 5, 5.5, 6];
-const uiRows = (word) => queryDatabase(word).filter((r) => r.rank < PREFIX_RANK && !SAMI_RANKS.includes(r.rank));
+// Muiden kielten osumat (rank 6.5) eivät kuulu kuvan suomen- tai norjankieliseen tekstiin
+const uiRows = (word) => queryDatabase(word).filter((r) => r.rank < PREFIX_RANK && !SAMI_RANKS.includes(r.rank) && !r.extraLang);
 
 // Kuplan teksti. Saamesta: perusmuoto ja käännös käyttöliittymän kielellä; kuuntele lausuu kuvan sanan.
 // Suomesta/norjasta: saamennokset; kuuntele lausuu ensimmäisen saamennoksen.

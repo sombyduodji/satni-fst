@@ -12,6 +12,7 @@ Alle versjoner av Sátni FST. Nedlastinger: [GitHub-utgivelser](https://github.c
 - **Flere samiske oversettelser.** Omtrent 40 ord får en manglende enaresamisk, lulesamisk eller sørsamisk oversettelse fra GiellaLTs enaresamisk-, lulesamisk- og sørsamisk-nordsamiske ordbøker.
 - **Finske forslag (eksperimentelt).** For ord uten finsk oversettelse kan ordkortet vise et forslag laget via enaresamisk eller norsk, merket som ikke kontrollert. Omtrent 2 150 ord får et. Slå det på under *Eksperimentelle funksjoner*.
 - **Spansk.** Spanske oversettelser for omtrent 7 600 ord, også omtrent to tredjedeler av de vanligste, med betydninger og eksempelsetninger fra GiellaLTs spanske ordbøker laget av Ángel. Slå dem på under *Andre språk*.
+- **Søk på andre språk.** Språk som er slått på under *Andre språk* kan også brukes til å søke, etter treff på nordsamisk og norsk: *perro* finner *beana*. Resultatlisten viser hvilket språk som ga treff. Bare grunnformer blir funnet.
 
 ## 0.9.3 — 2026-11-03
 
