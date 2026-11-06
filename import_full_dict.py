@@ -3,7 +3,8 @@
 LÄHTEET (ks. CREDITS.md):
   - Sanakirjat: GiellaLT / Divvun / Giellatekno, UiT Norjan arktinen yliopisto, lisenssi CC BY 4.0:
     dict-sme-fin, dict-sme-nob, dict-sme-eng, dict-sme-smn, dict-sme-smj, dict-sme-sma (käännökset)
-    sekä dict-fin-sme ja dict-nob-sme (haku suomeksi ja norjaksi). https://github.com/giellalt
+    sekä dict-fin-sme ja dict-nob-sme (haku suomeksi ja norjaksi) ja dict-smn-sme, dict-smj-sme ja
+    dict-sma-sme (puuttuvat inarin-, luulajan- ja eteläsaamen käännökset). https://github.com/giellalt
   - Taivutus: GiellaLT lang-sme -analysaattori ja -generaattori (src/fst/), lisenssi GPL-3.0.
 CC BY 4.0 edellyttää muutosten mainitsemista: sanakirjat yhdistetään, niihin lisätään FST:llä
 generoidut taivutusmuodot ja astevaihtelu, korjaukset.tsv:n korjaukset sovelletaan ja suomennosten
@@ -14,7 +15,7 @@ import subprocess
 import os
 import glob
 import sys
-import threading
+import concurrent.futures
 import xml.etree.ElementTree as ET
 
 import dialects
@@ -33,13 +34,18 @@ LANGUAGES = ["fin", "nob", "eng", "smn", "smj", "sma"]
 XML_DIRS = {lang: os.path.join(SCRIPT_DIR, f"dict-sme-{lang}", "src") for lang in LANGUAGES}
 # Käänteiset sanakirjat (suomi/norja -> saame): parantavat hakua suomen- ja norjankielisillä sanoilla
 REVERSE_DIRS = {lang: os.path.join(SCRIPT_DIR, f"dict-{lang}-sme", "src") for lang in ("fin", "nob")}
+# Muiden saamenkielten sanakirjat (inari/luulaja/etelä -> pohjoissaame): täydentävät vain puuttuvia käännöksiä
+# (sanakirjat dict-sme-smn/smj/sma ovat jo lähes samat, ks. fill_sami_translations)
+SAMI_REVERSE_DIRS = {lang: os.path.join(SCRIPT_DIR, f"dict-{lang}-sme", "src") for lang in ("smn", "smj", "sma")}
 TRANSLATION_COLUMNS = {lang: "finnish_translation" if lang == "fin" else f"{lang}_translation" for lang in LANGUAGES}
 CORRECTIONS_FILE = os.path.join(SCRIPT_DIR, "korjaukset.tsv")
 # <t t_type="..."> -viittaukset kielioppisivuille (oahpa.no), eivät käännöksiä eivätkä saamen sanoja
 GRAMMAR_POINTERS = ("grammar", "grammarexpl")
 
-# Montako hfst-lookup-prosessia ajetaan rinnakkain
-WORKERS = max(1, min(8, os.cpu_count() or 1))
+# Montako hfst-lookup-prosessia ajetaan rinnakkain (SATNI_WORKERS) ja montako kyselyä kukin saa kerrallaan:
+# 5 000 kyselyä vie generaattorilla noin 300 Mt (mitattu 2026-11-06), joten kahdeksan prosessia noin 2,5 Gt
+WORKERS = int(os.environ.get("SATNI_WORKERS") or max(1, min(8, os.cpu_count() or 1)))
+LOOKUP_BATCH = 5000
 # Aikaraja sekunteina yhdelle syötteelle: muutama muiden kielten sanakirjojen sana jumittaa analysaattorin
 # loputtomiin (tavallinen sana vie ~30 ms)
 LOOKUP_TIME_CUTOFF = "2"
@@ -368,6 +374,7 @@ def parse_xml_dictionaries():
             print(f"  dict-sme-{lang}: {merged} käännöstä olemassa oleviin sanoihin, {added} uutta sanaehdokasta")
 
     parse_reverse_dictionaries(entries, by_lemma)
+    fill_sami_translations(entries, by_lemma)
     merge_duplicate_entries(entries, by_lemma)
 
     words = [
@@ -448,6 +455,62 @@ def parse_reverse_dictionaries(entries, by_lemma):
         print(f"  dict-{lang}-sme: {pairs} hakusana-saamennos-paria, {added} uutta sanaehdokasta")
 
 
+def fill_sami_translations(entries, by_lemma):
+    """dict-smn-sme, dict-smj-sme ja dict-sma-sme: hakusana (inari/luulaja/etelä) tulee käännökseksi sanalle,
+    jolla ei ole tämän kielen käännöstä dict-sme-smn/smj/sma:sta (esim. mii -> inari mij). Uusia sanoja ei
+    lisätä, eikä hakusanoja lisätä hakuun. Saamen sana liitetään vain, jos lemma ja sanaluokka osoittavat
+    yhteen sanaan, jottei käännös mene väärälle homonyymille."""
+    for lang, xml_dir in SAMI_REVERSE_DIRS.items():
+        xml_files = sorted(glob.glob(os.path.join(xml_dir, "*.xml")))
+        if not xml_files:
+            print(f"Sanakirjaa dict-{lang}-sme ei löydy, ohitetaan (hae: ./hae_sanakirjat.sh).")
+            continue
+        filled_words = set()
+        for filepath in xml_files:
+            filename = os.path.basename(filepath)
+            if filename == "meta.xml":
+                continue
+            try:
+                root = ET.parse(filepath).getroot()
+            except ET.ParseError as e:
+                print(f"Virhe XML-tiedoston {filename} käsittelyssä: {e}")
+                continue
+            for entry in root.iter('e'):
+                head_elem = entry.find('lg/l')
+                headword = _clean(head_elem.text) if head_elem is not None else ""
+                if not headword:
+                    continue
+                for tg in entry.iter('tg'):
+                    if tg.get(XML_LANG) not in (None, "sme"):
+                        continue
+                    for t_elem in tg.findall('t'):
+                        lemma = _clean(t_elem.text)
+                        if (not lemma or _placeholder(lemma) or t_elem.get('t_type') in GRAMMAR_POINTERS
+                                or t_elem.get('t_type') == "expl"):
+                            continue
+                        pos = detect_pos(t_elem.get('pos') or head_elem.get('pos'), filename)
+                        subtype = ""
+                        if pos == "Prop":
+                            pos, subtype = "N", "Prop"
+                        keys = by_lemma.get(lemma, [])
+                        key = find_entry(entries, by_lemma, lemma, pos, subtype) or (keys[0] if len(keys) == 1 else None)
+                        if key is None:
+                            continue
+                        data = entries[key]
+                        if data["translations"].get(lang) and key not in filled_words:
+                            continue
+                        filled_words.add(key)
+                        trans = data["translations"].setdefault(lang, [])
+                        if headword not in trans:
+                            trans.append(headword)
+                            meaning = next((m for m in data["meanings"] if m["lang"] == lang), None)
+                            if meaning is None:
+                                meaning = new_meaning(lang)
+                                data["meanings"].append(meaning)
+                            meaning["translations"].append(headword)
+        print(f"  dict-{lang}-sme: käännös {len(filled_words)} sanalle, jolta se puuttui")
+
+
 def apply_corrections(words, details):
     """Soveltaa korjaukset.tsv-tiedoston käsin tehdyt korjaukset XML:stä luettuihin sanoihin."""
     if not os.path.exists(CORRECTIONS_FILE):
@@ -500,8 +563,9 @@ def run_hfst_lookup(fst_path, queries):
     if not queries:
         return {}
 
-    chunk_size = (len(queries) + WORKERS - 1) // WORKERS
-    chunks = [queries[i:i + chunk_size] for i in range(0, len(queries), chunk_size)]
+    # Pienet erät jaetaan prosesseille sitä mukaa kuin ne vapautuvat: hfst-lookupin muisti kasvaa syötteen mukana
+    # (generaattorilla ~36 kt kyselyä kohti, 200 000 kyselyä ~5 Gt), ja vaikeat sanat jakautuvat tasaisemmin
+    chunks = [queries[i:i + LOOKUP_BATCH] for i in range(0, len(queries), LOOKUP_BATCH)]
     outputs = [None] * len(chunks)
     errors = []
 
@@ -515,20 +579,18 @@ def run_hfst_lookup(fst_path, queries):
                 encoding="utf-8",
             )
             if proc.returncode != 0:
-                errors.append(proc.stderr.strip())
+                errors.append(proc.stderr.strip() or f"paluuarvo {proc.returncode}")
             outputs[idx] = proc.stdout
         except OSError as e:
             errors.append(str(e))
             outputs[idx] = ""
 
-    threads = [threading.Thread(target=worker, args=(i, c)) for i, c in enumerate(chunks)]
-    for t in threads:
-        t.start()
-    for t in threads:
-        t.join()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS) as pool:
+        list(pool.map(worker, range(len(chunks)), chunks))
 
+    # Kaatunut erä (esim. muisti loppui) jättäisi sanoilta taivutukset pois, joten tuonti keskeytetään
     if errors:
-        print(f"hfst-lookup virhe: {errors[0]}")
+        raise RuntimeError(f"hfst-lookup epäonnistui {len(errors)} erässä: {errors[0] or 'ei virheilmoitusta (tapettu?)'}")
 
     results = {}
     for out in outputs:
@@ -730,9 +792,12 @@ def main():
     print(f"  {len(queries)} generointikyselyä, {WORKERS} rinnakkaista prosessia")
     generated = run_hfst_lookup(GENERATOR, queries)
 
-    if os.path.exists(DB_FILE):
-        os.remove(DB_FILE)
-    conn = sqlite3.connect(DB_FILE)
+    # Uusi tietokanta kirjoitetaan ensin väliaikaiseen tiedostoon, joka korvaa satni.db:n vasta valmiina:
+    # keskeytynyt ajo (esim. muisti loppuu) ei jätä sovellusta ilman tietokantaa
+    tmp_db = DB_FILE + ".uusi"
+    if os.path.exists(tmp_db):
+        os.remove(tmp_db)
+    conn = sqlite3.connect(tmp_db)
     cursor = conn.cursor()
 
     cursor.execute('''
@@ -869,6 +934,7 @@ def main():
     conn.commit()
     conn.execute("VACUUM;")
     conn.close()
+    os.replace(tmp_db, DB_FILE)
 
     print("\nSanaluokka      sanoja   joilla taivutusmuotoja")
     for pos, (total, with_forms) in sorted(stats.items(), key=lambda x: -x[1][0]):

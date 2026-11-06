@@ -16,6 +16,7 @@ import sqlite3
 import subprocess
 
 import apertium_data
+import pivot_fin
 import skolt_data
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -114,6 +115,8 @@ def main():
         CREATE TABLE sms (lang TEXT, fold TEXT, pos TEXT, words TEXT, PRIMARY KEY (lang, fold, pos)) WITHOUT ROWID;
         -- Apertium (kokeellinen, apertium_data.py): norjan käännös sanoille, joilla sitä ei muuten ole
         CREATE TABLE apertium (word_id INTEGER PRIMARY KEY, nob TEXT) WITHOUT ROWID;
+        -- Suomennosehdotukset (kokeellinen, pivot_fin.py): via = smn (inarinsaamen kautta) tai nob (norjan kautta)
+        CREATE TABLE pivot_fin (word_id INTEGER PRIMARY KEY, fin TEXT, via TEXT) WITHOUT ROWID;
     """)
 
     trans_cols = ", ".join(TRANSLATION_COLUMNS.values())
@@ -161,6 +164,10 @@ def main():
     apertium_rows = apertium_data.rows(src)
     dst.executemany("INSERT INTO apertium VALUES (?,?)", apertium_rows)
     print(f"Apertium: {len(apertium_rows)} riviä" if apertium_rows else "Apertium: apertium-sme-nob-lähdettä ei löytynyt")
+
+    pivot_rows = pivot_fin.rows(src)
+    dst.executemany("INSERT INTO pivot_fin VALUES (?,?,?)", pivot_rows)
+    print(f"Suomennosehdotukset: {len(pivot_rows)} riviä" if pivot_rows else "Suomennosehdotukset: dict-smn-fin puuttuu (hae_sanakirjat.sh)")
 
     dst.executescript("""
         CREATE INDEX idx_lemma_fold ON dictionary(lemma_fold);

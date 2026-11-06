@@ -9,6 +9,8 @@ Sátni FST:n kaikki versiot. Lataukset: [GitHub-julkaisut](https://github.com/so
 - **Itä ja länsi.** Alueittain vaihtelevat sanat ja käännökset on merkitty (it) ja (lä). Saman sanan kaksi kirjoitusasua, kuten *girku* ja *kirku*, ovat samalla kortilla, jonka löytää kummallakin. Eri sanoista, kuten *gánda* ja *lunta*, on linkki toiseen.
 - **Haku.** Aluemerkityt käännökset, kuten *patja*, löytyvät nyt.
 - **Ääntäminen.** Uusi napautus pysäyttää soivan äänen ja peruu kesken olevan haun, joten äänet eivät enää soi päällekkäin tai peräkkäin.
+- **Lisää saamenkielten käännöksiä.** Noin 40 sanaa saa puuttuvan inarin-, luulajan- tai eteläsaamen käännöksen GiellaLT:n inarin-, luulajan- ja eteläsaamen ja pohjoissaamen sanakirjoista.
+- **Suomennosehdotukset (kokeellinen).** Sanalle, jolla ei ole suomennosta, sanakortti voi näyttää inarinsaamen tai norjan kautta muodostetun ehdotuksen, joka on merkitty tarkistamattomaksi. Ehdotus on noin 2 150 sanalla. Kytke päälle kohdasta *Kokeelliset ominaisuudet*.
 
 ## 0.9.3 — 2026-11-03
 

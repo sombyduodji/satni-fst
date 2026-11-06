@@ -9,6 +9,8 @@ All releases of Sátni FST. Downloads: [GitHub releases](https://github.com/somb
 - **East and west.** Words and translations that differ by area are marked (it)/(lä) in Finnish and (ø)/(v) in Norwegian. Two spellings of the same word, such as *girku* and *kirku*, share one card that either spelling finds. Different words get a link to each other, such as *gánda* and *lunta*.
 - **Search.** Translations with an area mark, such as *patja*, are now found.
 - **Pronunciation.** A new tap stops the sound that is playing and cancels any request still on its way, so sounds no longer overlap or play one after another.
+- **More Sámi translations.** About 40 words get a missing Inari, Lule or Southern Sámi translation from GiellaLT's Inari, Lule and Southern Sámi to North Sámi dictionaries.
+- **Finnish suggestions (experimental).** For words with no Finnish translation, the word card can show a suggestion made through Inari Sámi or Norwegian, marked as unchecked. About 2,150 words get one. Switch it on under *Experimental features*.
 
 ## 0.9.3 — 2026-11-03
 

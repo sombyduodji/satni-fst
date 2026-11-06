@@ -18,11 +18,21 @@ combines their work into one offline app.
 | North Sámi → Southern Sámi | Southern Sámi translations | [giellalt/dict-sme-sma](https://github.com/giellalt/dict-sme-sma) |
 | Finnish → North Sámi | Searching with Finnish words | [giellalt/dict-fin-sme](https://github.com/giellalt/dict-fin-sme) |
 | Norwegian → North Sámi | Searching with Norwegian words | [giellalt/dict-nob-sme](https://github.com/giellalt/dict-nob-sme) |
+| Inari Sámi → North Sámi | Missing Inari Sámi translations; Finnish suggestions (experimental) | [giellalt/dict-smn-sme](https://github.com/giellalt/dict-smn-sme) |
+| Lule Sámi → North Sámi | Missing Lule Sámi translations | [giellalt/dict-smj-sme](https://github.com/giellalt/dict-smj-sme) |
+| Southern Sámi → North Sámi | Missing Southern Sámi translations | [giellalt/dict-sma-sme](https://github.com/giellalt/dict-sma-sme) |
+| Inari Sámi → Finnish | Finnish suggestions (experimental) | [giellalt/dict-smn-fin](https://github.com/giellalt/dict-smn-fin) |
+| Finnish → Inari Sámi | Finnish suggestions (experimental) | [giellalt/dict-fin-smn](https://github.com/giellalt/dict-fin-smn) |
 | Skolt Sámi → Finnish, Norwegian … | Skolt Sámi words (experimental) | [giellalt/dict-sms-mul](https://github.com/giellalt/dict-sms-mul) |
 | Finnish → Skolt Sámi | Skolt Sámi words (experimental) | [giellalt/dict-fin-sms](https://github.com/giellalt/dict-fin-sms) (CC BY 3.0) |
 | Norwegian → Skolt Sámi | Skolt Sámi words (experimental) | [giellalt/dict-nob-sms](https://github.com/giellalt/dict-nob-sms) |
 
 **Skolt Sámi word frequencies** (`sms_frekvenssit.tsv`): counts of dictionary words in the texts marked free in GiellaLT's [corpus-sms](https://github.com/giellalt/corpus-sms), used only to order words. No corpus text is included.
+
+**Finnish suggestions (experimental):** for words with no Finnish translation, [`pivot_fin.py`](pivot_fin.py) suggests
+one through Inari Sámi (the word's Inari Sámi translation and its Finnish translation in `dict-smn-fin` or
+`dict-fin-smn`) or, failing that, the Finnish translation other words have for the same Norwegian word. Finnish words
+are checked with the GiellaLT lang-fin analyser. The suggestions are marked as unchecked in the app.
 
 **Apertium Norwegian translations (experimental):** the bilingual dictionary of [apertium/apertium-sme-nob](https://github.com/apertium/apertium-sme-nob) (GPL-2.0-or-later, © Apertium contributors), used for words with no Norwegian translation in GiellaLT and marked as unchecked (`apertium_data.py`).
 
@@ -41,6 +51,8 @@ CC BY 4.0 requires saying what was changed. When building the app's database,
 - merges all the dictionaries above into one database, joining translations of the same word;
 - adds words that appear only in the other-language dictionaries, if the North Sámi FST recognises them;
 - adds inflection tables and consonant gradation generated with the lang-sme FST (below);
+- fills missing Inari, Lule and Southern Sámi translations from the Inari, Lule and Southern Sámi → North Sámi
+  dictionaries, only for words that already exist and only when the word and word class point to one word;
 - applies hand-made corrections from [`korjaukset.tsv`](korjaukset.tsv);
 - replaces Norwegian letters in Finnish translations (æ → ä, ø → ö) and drops empty placeholders such as `_FIN_`.
 

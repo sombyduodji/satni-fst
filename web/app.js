@@ -52,8 +52,8 @@ const DEFAULT_SETTINGS = {
   // ei yhtään. Hakuun ne eivät vaikuta.
   extraLangs: [],
   // Kokeelliset ominaisuudet (valikon lopussa), kukin erikseen: ocr = kuvasta haku (Android-sovellus),
-  // sms = koltansaamen sanat sanakortissa, tableTr = muotojen käännökset taivutustaulukossa, apertium = Apertiumin norjan käännökset. experimental: vanha yhteinen kytkin (= ocr), siirretään exp.ocr:ään.
-  exp: { ocr: false, sms: false, tableTr: false, apertium: false },
+  // sms = koltansaamen sanat sanakortissa, tableTr = muotojen käännökset taivutustaulukossa, apertium = Apertiumin norjan käännökset, pivotFin = suomennosehdotukset. experimental: vanha yhteinen kytkin (= ocr), siirretään exp.ocr:ään.
+  exp: { ocr: false, sms: false, tableTr: false, apertium: false, pivotFin: false },
   // Kuvasta haku: suunta ("sme" = saamen teksti, "ui" = käyttöliittymän kielen teksti), merkintätapa ja väri
   ocrFrom: "sme", ocrStyle: "frame", ocrColor: "#2563eb",
 };
@@ -735,6 +735,7 @@ function selectResult(i, pushHistory = true) {
   if (first && first.restrictions) trans += ` (${first.restrictions})`;
   $("translation").textContent = trans || t("noTranslationIn")[settings.lang];
   renderApertium(w, trans);
+  renderPivotFin(w, trans);
   renderExtraTranslations(w, groups);
   $("more-meanings").textContent = ownGroup.length > 1 ? t("moreMeanings", ownGroup.length - 1) :
     groups.some(([lang]) => lang !== settings.lang) ? t("otherLangs") : "";
@@ -819,6 +820,23 @@ function renderApertium(w, trans) {
   }
   if (!rows.length) return;
   line.innerHTML = `${esc(rows[0].nob)} <span class="muted small">(${esc(t("apertiumNote"))})</span>`;
+  line.hidden = false;
+}
+
+// Suomennosehdotus (kokeellinen, tietokannan taulu pivot_fin, pivot_fin.py): inarinsaamen tai norjan kautta
+// muodostettu suomennos, vain jos sanalla ei ole suomennosta. Ei vaikuta hakuun, ja rivi merkitään tarkistamattomaksi.
+function renderPivotFin(w, trans) {
+  const line = $("pivot-fin-line");
+  line.hidden = true;
+  if (trans || !settings.exp.pivotFin || settings.lang !== "fin") return;
+  let rows = [];
+  try {
+    rows = all("SELECT fin, via FROM pivot_fin WHERE word_id = ?", [w.id]);
+  } catch (e) {
+    return;  // vanha tietokanta ilman taulua
+  }
+  if (!rows.length) return;
+  line.innerHTML = `${esc(rows[0].fin)} <span class="muted small">(${esc(t("pivotFinNote")[rows[0].via] || "")})</span>`;
   line.hidden = false;
 }
 
@@ -1964,6 +1982,7 @@ function bindExperimental() {
     if (name === "sms" && state.results.length) searchAgainKeepingWord();
     if (name === "tableTr" && state.word) renderTable();
     if (name === "apertium" && state.results.length) searchAgainKeepingWord();
+    if (name === "pivotFin" && state.results.length) searchAgainKeepingWord();
   };
   $("experimental-section").addEventListener("change", (e) => {
     const name = e.target.dataset.exp;
@@ -1971,7 +1990,7 @@ function bindExperimental() {
     if (!e.target.checked) { set(name, false); return; }
     e.target.checked = false;  // päälle vasta, kun käyttäjä hyväksyy
     pending = name;
-    const key = { ocr: "expOcr", sms: "expSms", tableTr: "expTableTr", apertium: "expApertium" }[name];
+    const key = { ocr: "expOcr", sms: "expSms", tableTr: "expTableTr", apertium: "expApertium", pivotFin: "expPivotFin" }[name];
     $("exp-dlg-title").textContent = t(key);
     $("exp-dlg-body").innerHTML = t(key + "Info");
     $("exp-dlg").showModal();

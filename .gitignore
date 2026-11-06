@@ -2,6 +2,7 @@
 
 # Tietokanta (import_full_dict.py luo XML:stä ja FST:stä, ~4 min)
 satni.db
+satni.db.uusi
 sanakirja.db
 
 # Buildien tulokset ja väliaikaiset tiedostot
@@ -35,6 +36,11 @@ web/data/
 /dict-sme-sma/
 /dict-fin-sme/
 /dict-nob-sme/
+/dict-smn-sme/
+/dict-smj-sme/
+/dict-sma-sme/
+/dict-smn-fin/
+/dict-fin-smn/
 /lang-fin/
 /lang-sme/
 # Norsk ordbank (Språkbanken), haetaan samalla skriptillä
