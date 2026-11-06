@@ -93,6 +93,12 @@ package `giella-fin` (currently `0.2.20120821+g2928~d16e00e3-1~sid1`, lang-fin c
 [`hae_sanakirjat.sh`](hae_sanakirjat.sh); they are not part of this repository. [`fin_forms.py`](fin_forms.py) keeps only the forms of words used as translations and drops
 archaic and dialectal variants (*vaattehien*, *taloin*, *kirkko-laissa*).
 
+The forms are checked when the database is built with [Voikko](https://voikko.puimula.org/) (libvoikko and voikko-fi,
+GPL-2.0-or-later; Harri Pitkänen and the Voikko contributors, based on the Kotus word list). It runs offline. It drops
+spoken and dialect variants (*haluun*, *kauns*) and corrects forms that lang-fin gets wrong (*pelastusliiveilta* →
+*pelastusliiveiltä*). A change is made only when Voikko analyses the new form as the same word and the same grammatical form.
+Voikko is a build tool only. None of its data is distributed with the app.
+
 ## Norwegian inflection — Norsk ordbank, CC BY
 
 The inflected forms of the Norwegian translations (*hus – huset – husene*, *gjøre – gjorde – gjort*)

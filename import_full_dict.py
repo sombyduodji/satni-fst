@@ -15,6 +15,7 @@ norjalaiset kirjaimet korjataan (ks. CREDITS.md: "Changes made to the dictionary
 import sqlite3
 import subprocess
 import os
+import re
 import glob
 import sys
 import concurrent.futures
@@ -146,7 +147,12 @@ XML_LANG = '{http://www.w3.org/XML/1998/namespace}lang'
 
 
 def _clean(text):
-    return " ".join(text.split()) if text else ""
+    """Välilyönnit siistiksi ja työmerkinnät XXX, XXXX ja _XXX pois (dict-sme-fin njavki: "päällä vita
+    korvamerkissä XXX", dict-sme-nob: "om enkeltindivid_XXX"); pelkästä merkinnästä tulee tyhjä."""
+    if not text:
+        return ""
+    words = [re.sub(r"_XXX+$", "", w) for w in text.split()]
+    return " ".join(w for w in words if w and not re.fullmatch(r"X{3,}", w))
 
 
 # Työmerkinnät, jotka ovat sanakirjassa käännöksen paikalla: dict-sme-eng:n X_smeeng.xml:ssä "(ei LpDict)"
@@ -157,6 +163,64 @@ NOT_TRANSLATIONS = {"(ei LpDict)"}
 def _placeholder(text):
     """Täyttämätön käännöspaikka, esim. "_FIN_" tai "_NOB_", tai työmerkintä (NOT_TRANSLATIONS)."""
     return (len(text) > 2 and text.startswith("_") and text.endswith("_") and text[1:-1].isupper()) or text in NOT_TRANSLATIONS
+
+
+# dict-sme-eng:n X_smeeng.xml on Konrad Nielsenin sanakirjasta, ja siinä on johdinten kielioppimerkintöjä
+# ("continuative of njuol’got", "caus. of rok’čit") ja viittauksia saamen sanoihin Nielsenin vanhalla
+# kirjoitusasulla (gâs’kâlâmŏs, vǣnʒâs). Ne eivät ole englantia (tarkistettu Hunspellilla 2026-11-06).
+# Vanhat kirjaimet ja Nielsenin heittomerkki sanan sisällä (vai’det, saw’re, cieg’gât); englannin one’s, don’t,
+# you’re, we’ll ja I’ve eivät ole merkintöjä
+NIELSEN_OLD = re.compile(r"[âêîôûǣæʒǥǯāēīōūŏĕǡ¹²³]")
+_APOSTROPHE = re.compile(r"([^\W\d_]+)’([^\W\d_]+)")
+_ENGLISH_APOSTROPHE = {"s", "t", "ll", "ve", "d", "m"}
+
+
+def _nielsen(text):
+    """Vanha kirjain tai Nielsenin heittomerkki sanan sisällä; englannin one’s, don’t, you’re ja we’ll eivät ole."""
+    if NIELSEN_OLD.search(text):
+        return True
+    return any(after.lower() not in _ENGLISH_APOSTROPHE and not (after.lower() == "re" and before.lower() in ("you", "we", "they"))
+               for before, after in _APOSTROPHE.findall(text))
+
+
+NIELSEN_GRAMMAR = re.compile(r"^=|\b(continuative|freq\.?|frequentative|caus\.?|causative|mom\.?|momentaneous|subit\.?|"
+                             r"subitive|diminutive|deminutive|dimin\.(-\w+)?|inchoative|reflexive|(shorter |longer )?passive|"
+                             r"a stronger form)\s+(of|to|from|corresponding)\b", re.I)
+
+
+# Saksaa (Nielsenin sanakirja oli saame-saksa), ruotsia, suomea ja norjaa X_smeeng.xml:n englannin paikalla;
+# löydetty Hunspellilla (en_GB, en_US) ja saksan funktiosanoilla, käyty läpi käsin 2026-11-06
+NOT_ENGLISH = {
+    "Brücke", "Dame im Kartenspiel", "Drüse", "Fell am Unterleib des Rens", "Fett zwischen Bug und Hals des Rentiers",
+    "Gras (kurz und dünn", "wächst auf Wiesen)", "Gras (kurz und dünn, wächst auf Wiesen)",
+    "Halsblock des Hundes (hindert den Hund daran wegzulaufen)", "Kante des Kragens des lappischen Pelzmantels",
+    "Larve der Rachenbremse", "Männchen", "Nähnadel", "Riefe (der Büchse)", "Stange im Heuschober", "Sünde",
+    "Türseite (der Lappenhütte od. Stube)", "Zelttuch für den Unterstand (meistens aus Sackleinwand)",
+    "auf einem Pfahl / vier Pfählen stehender Speicher", "den Schlucken haben",
+    "dunkle Pelzeinfassung an der Wintermütze der Männer", "dünn werden", "dürre Föhre", "eine offene Stelle (im Eis)",
+    "einen Schnitt od. Riß machen", "kalt (von Wasser)", "krächzen", "kurz- und glatthaarig", "männlich", "fremd",
+    "nicht verwandt", "nicht zur Sache gehörig", "schmale Pelzeinfassung an der Öffnung des ledernen Fausthandschuhs",
+    "schmächtig", "sich an etw. heranschleichen", "sich die Hosen herauf- od. herunterziehen", "säugen", "träumen",
+    "winseln (von Hunden und jungen Hündchen)", "wünschen", "aussen-", "brauner Tonkrug", "damit", "dann", "dass",
+    "denn", "drohen", "geneigt (z.B. Baum)", "gezimmerte Ecke", "jung", "schlank", "sie zwei", "weibliches Renkalb",
+    "beröm", "säga", "storsåte", "minuutti", "spekefisk"}
+ENGLISH_TYPOS = {"motherlesss": "motherless", "selfrighteous": "self-righteous"}
+
+
+def clean_nielsen_english(text):
+    """Englannin käännös ilman Nielsenin merkintöjä: "middlemost (= gâs’kâlâmŏs)" -> "middlemost";
+    kielioppimerkintä, vanhaa saamea sisältävä selitys ("become njar’bâd") tai muu kieli kuin englanti
+    (NOT_ENGLISH: "den Schlucken haben") -> "" (jätetään pois)."""
+    if NIELSEN_GRAMMAR.search(text) or text in NOT_ENGLISH:
+        return ""
+    text = ENGLISH_TYPOS.get(text, text)
+    # Sisimmät sulkeet ensin, jotta myös sisäkkäiset poistuvat: "hiccup (= njâk(kâ)kâs’tet)" -> "hiccup"
+    while True:
+        new = re.sub(r"\s*\([^()]*\)", lambda m: "" if _nielsen(m.group(0)) else m.group(0), text).strip()
+        if new == text:
+            break
+        text = new
+    return "" if _nielsen(text) else text
 
 
 def parse_meaning(mg, lang="fin"):
@@ -170,6 +234,8 @@ def parse_meaning(mg, lang="fin"):
             continue
         for t_elem in tg.findall('t'):
             text = fix(_clean(t_elem.text))
+            if lang == "eng":
+                text = clean_nielsen_english(text)
             # t_type="grammar"/"grammarexpl" on viittaus kielioppisivulle ("Les om lokativ"), ei käännös
             if not text or _placeholder(text) or t_elem.get('t_type') in GRAMMAR_POINTERS:
                 continue

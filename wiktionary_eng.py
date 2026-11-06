@@ -35,6 +35,26 @@ POS = {"noun": "N", "verb": "V", "adj": "A", "adv": "Adv", "name": "N", "pron": 
 NOT_TRANSLATION = re.compile(r"^(synonym|alternative|obsolete|archaic|dated|nonstandard|misspelling|abbreviation|"
                              r"initialism|form|plural|inflection) (of|form|spelling)\b|\bof\b.*\bform\b", re.I)
 MAX_SENSES = 3
+# Wiktionaryn tyylitunnisteet: loukkaava, halventava ja alatyylinen sana (vahvin ensin)
+REGISTER_TAGS = {"offensive": "offensive", "slur": "offensive", "derogatory": "derogatory", "pejorative": "derogatory",
+                 "vulgar": "vulgar"}
+REGISTER_ORDER = ["offensive", "derogatory", "vulgar"]
+
+
+def _register(tags):
+    """Merkityksen tunnisteista vahvin tyylimerkintä (offensive, derogatory, vulgar) tai ""."""
+    found = {REGISTER_TAGS[t] for t in tags or () if t in REGISTER_TAGS}
+    return next((r for r in REGISTER_ORDER if r in found), "")
+
+
+def _senses(j):
+    return [s for s in j.get("senses", []) if not (s.get("form_of") or s.get("alt_of") or "form-of" in s.get("tags", []))]
+
+
+def _entry_register(j):
+    """Hakusanan tyylimerkintä, jos sen jokainen merkitys on loukkaava, halventava tai alatyylinen; muuten ""."""
+    regs = [_register(s.get("tags")) for s in _senses(j)]
+    return next((r for r in REGISTER_ORDER if r in regs), "") if regs and all(regs) else ""
 MAX_LENGTH = 40
 
 
@@ -57,18 +77,22 @@ def _glosses(path, code):
     """{"sana|POS": [selitykset]} Wiktionaryn sanoista kielellä code, kolme ensimmäistä merkitystä."""
     out = collections.defaultdict(list)
     for j in _entries(path, code):
-        senses = [s for s in j.get("senses", []) if not (s.get("form_of") or s.get("alt_of") or "form-of" in s.get("tags", []))]
-        for s in senses[:MAX_SENSES]:
+        for s in _senses(j)[:MAX_SENSES]:
             for g in s.get("glosses", [])[:1]:
                 g = clean_gloss(g)
                 key = f"{j['word']}|{POS[j['pos']]}"
+                # Loukkaavaksi tai alatyyliseksi merkitty merkitys näytetään merkinnän kanssa: "jerk (offensive)"
+                if g and _register(s.get("tags")):
+                    g = f"{g} ({_register(s.get('tags'))})"
                 if g and g not in out[key]:
                     out[key].append(g)
     return dict(out)
 
 
 def _english_to_sami(path):
-    """[[englannin sana, POS, pohjoissaamen sana]] englannin sanojen käännöstaulukoista."""
+    """[[englannin sana, POS, pohjoissaamen sana, tyylimerkintä]] englannin sanojen käännöstaulukoista. Merkintä
+    (offensive, derogatory, vulgar) tulee taulukon merkityksestä, tai hakusanasta, jonka kaikki merkitykset ovat
+    sellaisia (fag: "A homosexual man", offensive, vulgar); muuten ""."""
     out = []
     for line in open(path, encoding="utf-8"):
         if '"code": "se"' not in line:
@@ -76,12 +100,27 @@ def _english_to_sami(path):
         j = json.loads(line)
         if j.get("lang_code") != "en" or not POS.get(j.get("pos")):
             continue
-        for tr in j.get("translations", []) + [t for s in j.get("senses", []) for t in s.get("translations", [])]:
+        tables = [(t, _entry_register(j)) for t in j.get("translations", [])]
+        tables += [(t, _register(s.get("tags")) or _entry_register(j)) for s in j.get("senses", []) for t in s.get("translations", [])]
+        for tr, reg in tables:
             if tr.get("code") == "se" and tr.get("word"):
                 for sme in re.split(r",\s*", tr["word"]):
                     if sme.strip():
-                        out.append([j["word"], POS[j["pos"]], sme.strip()])
+                        out.append([j["word"], POS[j["pos"]], sme.strip(), reg])
     return sorted({tuple(x) for x in out})
+
+
+def _registers(path, code):
+    """{sana: tyylimerkintä} kielen code sanoille, joiden kaikki merkitykset kaikissa sanaluokissa ovat loukkaavia,
+    halventavia tai alatyylisiä (vittu: vulgar); sanakortti näyttää merkinnän käännöksen vieressä."""
+    seen = {}
+    for j in _entries(path, code):
+        reg = _entry_register(j)
+        w = j["word"]
+        if w in seen and not seen[w]:
+            continue
+        seen[w] = (next((r for r in REGISTER_ORDER if r in (reg, seen.get(w))), "") if reg else "")
+    return {w: r for w, r in seen.items() if r}
 
 
 def fetch_and_extract():
@@ -96,7 +135,9 @@ def fetch_and_extract():
             urllib.request.urlretrieve(url, paths[code] + ".osa")
             os.replace(paths[code] + ".osa", paths[code])
     extracted = {"se": _glosses(paths["se"], "se"), "fi": _glosses(paths["fi"], "fi"), "nb": _glosses(paths["nb"], "nb"),
-                 "en_se": _english_to_sami(paths["en"])}
+                 "en_se": _english_to_sami(paths["en"]),
+                 "register": {"sme": _registers(paths["se"], "se"), "fin": _registers(paths["fi"], "fi"),
+                              "nob": _registers(paths["nb"], "nb"), "eng": _registers(paths["en"], "en")}}
     for name, data in extracted.items():
         with gzip.open(os.path.join(OUT_DIR, f"{name}.json.gz"), "wt", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False)
@@ -111,6 +152,17 @@ def _load(name):
         return json.load(f)
 
 
+# Lähdesanakirjojen merkinnät, joiden mukaan saamen sana on halventava tai alatyylinen
+SAMI_REGISTER_MARK = re.compile(r"\b(vulg\.?|vulgaari\w*|alat\.|alatyyl\w*|halv\.|halventava\w*|pejor\w*|gudnenjeaidin|"
+                                r"skjellsord|nedsettende|vulgær\w*|offensive|derogatory|insult)", re.I)
+
+
+def sami_marked(data):
+    """Onko saamen sanan jossakin merkityksessä merkintä halventavasta tai alatyylisestä käytöstä."""
+    return any(SAMI_REGISTER_MARK.search(" ".join(m.get(k) and " ".join(m[k]) or "" for k in ("translations", "explanations",
+               "restrictions", "labels"))) for m in data.get("meanings", []))
+
+
 def fill_english(entries, by_lemma, find_entry):
     """Reitit 1 ja 2 sanoille, joilla ei ole englannin käännöstä: sanan oma Wiktionary-selitys ensin, sitten
     englannin sanat, joiden käännöksenä sana on. Uusia sanoja ei lisätä. Merkitykseen tunniste "Wiktionary"."""
@@ -122,8 +174,15 @@ def fill_english(entries, by_lemma, find_entry):
     for key, glosses in se.items():
         lemma, pos = key.rsplit("|", 1)
         found[(lemma, pos)] += glosses
-    for eng, pos, sme in en_se:
-        if eng not in found[(sme, pos)]:
+    offensive = {}
+    for row in en_se:
+        eng, pos, sme = row[:3]
+        reg = row[3] if len(row) > 3 else ""
+        if reg:
+            # Loukkaava englannin sana vain, jos saamen sanakin on merkitty halventavaksi tai alatyyliseksi, ja silloin
+            # merkinnän kanssa; muuten neutraali saamen sana saisi herjasanan (homsa -> fag)
+            offensive.setdefault((sme, pos), []).append(f"{eng} ({reg})")
+        elif eng not in found[(sme, pos)]:
             found[(sme, pos)].append(eng)
     filled = 0
     for (lemma, pos), words in found.items():
@@ -132,6 +191,8 @@ def fill_english(entries, by_lemma, find_entry):
         if key is None or entries[key]["translations"].get("eng"):
             continue
         data = entries[key]
+        if sami_marked(data):
+            words = words + [w for w in offensive.get((lemma, pos), []) if w not in words]
         # Selitys voi itse olla lista ("he, she, it"), joten kaksoiskappaleet poistetaan osista (son: he, she, it, they)
         words = list(dict.fromkeys(part.strip() for w in words for part in w.split(",") if part.strip()))
         data["translations"]["eng"] = words
@@ -167,6 +228,33 @@ def agree_rows(src):
         if both:
             rows.append((wid, ", ".join(dict.fromkeys(both))))
     return rows
+
+
+# Tyylimerkinnät käyty käsin läpi 2026-11-06: pois sanat, jotka ovat neutraaleja tai joita sanakirjassa käytetään
+# neutraalissa merkityksessä (sirká = sintti kalana, cokkadit = paneskella "panna toistuvasti"), ja osalle osuvampi merkintä
+REGISTER_EXCLUDE = {("fin", "offensiivinen"), ("fin", "käskyläinen"), ("fin", "pikkumainen"), ("fin", "ryysy"),
+                    ("fin", "sintti"), ("fin", "viihdekirjallisuus"), ("fin", "paneskella"), ("nob", "narkoman")}
+REGISTER_OVERRIDE = {("eng", "arse"): "vulgar", ("eng", "tit"): "vulgar", ("eng", "fuck"): "vulgar",
+                     ("fin", "hihhuli"): "derogatory", ("fin", "venakko"): "offensive"}
+
+
+def register_rows(src):
+    """Taulu register (lang, term, tag): sovelluksen käännössanat, jotka Wiktionary merkitsee kaikissa merkityksissään
+    loukkaaviksi (offensive), halventaviksi (derogatory) tai alatyylisiksi (vulgar). Sanakortti näyttää merkinnän."""
+    reg = _load("register")
+    if reg is None:
+        return []
+    cols = {"fin": "finnish_translation", "nob": "nob_translation", "eng": "eng_translation"}
+    split = lambda v: [re.sub(r"\s*\([^)]*\)", "", x).strip() for x in re.split(r",\s*(?![^()]*\))", v or "") if x.strip()]
+    rows = {}
+    for lang, col in cols.items():
+        texts = [v for (v,) in src.execute(f"SELECT {col} FROM dictionary WHERE coalesce({col}, '') <> ''")]
+        texts += [v for (v,) in src.execute("SELECT translations FROM meanings WHERE lang = ? AND coalesce(translations, '') <> ''", (lang,))]
+        for v in texts:
+            for term in split(v):
+                if term in reg.get(lang, {}) and (lang, term) not in REGISTER_EXCLUDE:
+                    rows[(lang, term)] = REGISTER_OVERRIDE.get((lang, term), reg[lang][term])
+    return sorted((lang, term, tag) for (lang, term), tag in rows.items())
 
 
 if __name__ == "__main__":

@@ -22,8 +22,14 @@ _CROSS_REF = re.compile(r"Geahča|\bVer:")
 MAX_TRANSLATION_WORDS = 6
 
 
+# Lähteen kirjoitusvirheet, jotka Hunspell-oikolukimen (es_ES) tarkistus löysi 2026-11-06 ja jotka on tarkistettu käsin
+TYPOS = {"reluctacia": "reluctancia", "constrasta": "contrasta", "latimarse": "lastimarse",
+         "antropólogico": "antropológico", "interdependecia": "interdependencia"}
+_TYPO_RE = re.compile(r"\b(" + "|".join(TYPOS) + r")\b")
+
+
 def _clean(text):
-    return " ".join(str(text or "").split())
+    return _TYPO_RE.sub(lambda m: TYPOS[m.group(1)], " ".join(str(text or "").split()))
 
 
 def read_xlsx(path):

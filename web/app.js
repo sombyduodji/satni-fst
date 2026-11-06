@@ -225,6 +225,26 @@ const nordic = (s) => s.replace(/ä/g, "æ").replace(/ö/g, "ø");
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const splitList = (s) => (s || "").split(",").map((p) => p.trim()).filter(Boolean);
 
+// Loukkaavat, halventavat ja alatyyliset käännössanat (taulu register, Wiktionaryn merkinnät käsin tarkistettuina,
+// wiktionary_eng.py: register_rows): sanakortissa ja merkityksissä sanan perään merkintä, esim. "vittu (alatyylinen)"
+let registerTags = null;
+function registerTag(lang, term) {
+  if (!registerTags) {
+    registerTags = new Map();
+    try {
+      for (const r of all("SELECT lang, term, tag FROM register")) registerTags.set(`${r.lang}|${r.term}`, r.tag);
+    } catch (e) { /* vanha tietokanta ilman taulua */ }
+  }
+  return registerTags.get(`${lang}|${term.replace(/\s*\([^)]*\)/g, "").trim()}`) || null;
+}
+// Pilkuilla erotettu käännöslista HTML:ksi merkintöineen; pilkut sulkeiden sisällä eivät erota (naida (kerran, joskus))
+function labelledList(text, lang) {
+  return String(text || "").split(/,\s*(?![^()]*\))/).map((item) => {
+    const tag = registerTag(lang, item);
+    return esc(item) + (tag ? ` <span class="reg-label reg-${tag}" title="${esc(t("registerNote"))}">${esc(t("register")[tag])}</span>` : "");
+  }).join(", ");
+}
+
 function all(sql, params = []) {
   const stmt = db.prepare(sql);
   stmt.bind(params);
@@ -424,6 +444,15 @@ function resultTrans(r, max) {
   if (!r.extraLang) return own;
   const other = `${t("langIn")[r.extraLang]}: ${translationOf(r, max, r.extraLang)}`;
   return own ? `${own} · ${other}` : other;
+}
+
+// Sama HTML:nä tyylimerkintöineen (tuloslista ja hakuehdotukset): "pylly, perse (alatyylinen)"
+function resultTransHtml(r, max) {
+  const own = translationOf(r, max);
+  const ownHtml = own ? labelledList(own, settings.lang) : "";
+  if (!r.extraLang) return ownHtml;
+  const other = `${esc(t("langIn")[r.extraLang])}: ${labelledList(translationOf(r, max, r.extraLang), r.extraLang)}`;
+  return ownHtml ? `${ownHtml} · ${other}` : other;
 }
 
 // Suomen liitepartikkelit haussa (pisimmät ensin) ja niiden pohjoissaamen vastineet (FIN_CLITICS toisin päin)
@@ -749,9 +778,9 @@ function renderResults() {
   const collapsed = strong > 0 && prefixOnly > 0 && !state.showPrefix && state.index < strong;
   state.results.slice(0, collapsed ? strong : state.results.length).forEach((r, i) => {
     const b = document.createElement("button");
-    const trans = resultTrans(r, 2);
+    const trans = resultTransHtml(r, 2);
     const pos = r.subtype ? `${r.pos} ${r.subtype}` : r.pos;
-    b.innerHTML = `${esc(shownLemma(r))} <span class="trans">(${esc(pos)})${trans ? " – " + esc(trans) : ""}</span>`;
+    b.innerHTML = `${esc(shownLemma(r))} <span class="trans">(${esc(pos)})${trans ? " – " + trans : ""}</span>`;
     b.dataset.i = i;
     b.onclick = () => selectResult(i);
     box.appendChild(b);
@@ -820,7 +849,8 @@ function selectResult(i, pushHistory = true) {
   // Merkitys, jossa on vain käyttörajoitus (go: "i spørsmål"): "(ei norjannosta)" ja rajoitus perään
   const note = first && first.restrictions ? ` (${first.restrictions})` : "";
   if (trans) trans += note;
-  $("translation").textContent = trans || t("noTranslationIn")[settings.lang] + note;
+  if (trans) $("translation").innerHTML = labelledList(trans, settings.lang);
+  else $("translation").textContent = t("noTranslationIn")[settings.lang] + note;
   renderApertium(w, trans);
   renderPivotFin(w, trans);
   renderExtraTranslations(w, groups);
@@ -935,10 +965,10 @@ function renderExtraTranslations(w, groups) {
       // Wiktionaryn englanti suomen ja norjan kautta (taulu wikt_eng, wiktionary_eng.py): tarkistamaton, ei hakuun
       let row = null;
       try { row = all("SELECT eng FROM wikt_eng WHERE word_id = ?", [w.id])[0]; } catch (e) { /* vanha tietokanta */ }
-      if (row) return `<span class="muted">${esc(t("langIn").eng)}:</span> ${esc(splitList(row.eng).slice(0, 3).join(", "))} ` +
+      if (row) return `<span class="muted">${esc(t("langIn").eng)}:</span> ${labelledList(splitList(row.eng).slice(0, 3).join(", "), "eng")} ` +
         `<span class="muted small">(${esc(t("wiktEngNote"))})</span>`;
     }
-    return text && `<span class="muted">${esc(t("langIn")[lang])}:</span> ${esc(text)}`;
+    return text && `<span class="muted">${esc(t("langIn")[lang])}:</span> ${labelledList(text, lang)}`;
   }).filter(Boolean);
   const sms = skoltFor(w);
   if (sms) lines.push(`<span class="muted">${esc(t("langIn").sms)}${sms.via ? ` (${esc(t("smsVia"))})` : ""}:</span> ${esc(sms.text)}`);
@@ -1468,7 +1498,7 @@ function meaningHtml(m, numbered) {
   const tags = splitList(m.labels).map((l) => `<span class="tag">${esc(l)}</span>`).join("") +
     (m.geo || "").split(",").filter(Boolean).map((g) => `<span class="tag">${esc(t("usedIn", t("geo")[g] || g, g))}</span>`).join("");
   let html = `<div class="meaning"><div class="head">${numbered ? `<span class="nr">${m.nr}.</span>` : ""}` +
-    `${esc(m.translations)}${m.explanations ? ` <span class="expl">(${esc(m.explanations)})</span>` : ""}` +
+    `${labelledList(m.translations, m.lang)}${m.explanations ? ` <span class="expl">(${esc(m.explanations)})</span>` : ""}` +
     `${m.restrictions ? ` <span class="restr">– ${esc(m.restrictions)}</span>` : ""}${tags}</div>`;
   for (const ex of m.examples) {
     html += `<div class="example"><span class="sme">${esc(ex.sme)}</span>` +
@@ -1654,7 +1684,7 @@ function updateSuggestions(withForms = true) {
     `<li role="option" data-i="${i}" class="sugg-dym"><span class="sugg-dym-label">${esc(t("didYouMean"))}</span> <b>${esc(s.dym.word)}</b>` +
     ` → ${esc(s.dym.lemma)}<span class="trans">${esc(s.dym.trans || "")}${s.dym.lang ? ` · ${esc(t("langName")[s.dym.lang])}` : ""}</span></li>` :
     `<li role="option" data-i="${i}"><b>${esc(s.sme_lemma)}</b>${s.smeForm ? `<i class="sugg-form">${esc(s.smeForm)}</i>` : ""}` +
-    `<span class="pos">${esc(s.pos)}</span><span class="trans">${esc(s.form ? s.formNote : resultTrans(s, 2))}</span></li>`).join("");
+    `<span class="pos">${esc(s.pos)}</span><span class="trans">${s.form ? esc(s.formNote) : resultTransHtml(s, 2)}</span></li>`).join("");
   list.hidden = false;
 }
 function hideSuggestions() { clearTimeout(suggestTimer); clearTimeout(formTimer); $("suggestions").hidden = true; activeSuggestion = -1; }

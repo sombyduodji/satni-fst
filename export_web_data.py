@@ -174,6 +174,8 @@ def main():
         CREATE TABLE pivot_fin (word_id INTEGER PRIMARY KEY, fin TEXT, via TEXT) WITHOUT ROWID;
         -- Englanti Wiktionarysta suomen ja norjan kautta, kun molemmat antavat saman (wiktionary_eng.py, tarkistamaton)
         CREATE TABLE wikt_eng (word_id INTEGER PRIMARY KEY, eng TEXT) WITHOUT ROWID;
+        -- Loukkaavat, halventavat ja alatyyliset käännössanat (Wiktionaryn merkinnät, käyty käsin läpi; wiktionary_eng.py)
+        CREATE TABLE register (lang TEXT, term TEXT, tag TEXT, PRIMARY KEY (lang, term)) WITHOUT ROWID;
     """)
 
     trans_cols = ", ".join(TRANSLATION_COLUMNS.values())
@@ -244,6 +246,10 @@ def main():
     wikt_rows = wiktionary_eng.agree_rows(src)
     dst.executemany("INSERT INTO wikt_eng VALUES (?,?)", wikt_rows)
     print(f"Wiktionaryn englanti suomen ja norjan kautta: {len(wikt_rows)} riviä" if wikt_rows else "Wiktionary: wiktionary/ puuttuu (python3 wiktionary_eng.py --hae)")
+
+    register_rows = wiktionary_eng.register_rows(src)
+    dst.executemany("INSERT INTO register VALUES (?,?,?)", register_rows)
+    print(f"Tyylimerkinnät (loukkaava, halventava, alatyylinen): {len(register_rows)} käännössanaa")
 
     pivot_rows = pivot_fin.rows(src)
     dst.executemany("INSERT INTO pivot_fin VALUES (?,?,?)", pivot_rows)
