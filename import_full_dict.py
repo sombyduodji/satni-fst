@@ -917,8 +917,10 @@ def main():
             s[1] += 1
 
     add_gradation(cursor)
-    inflection_class.apply(cursor)
     dialects.apply(cursor)
+    # Luokka vasta kirjoitusasujen yhdistämisen jälkeen, kuten --vain-taivutusluokka-ajossa: yhdistetyn sanan
+    # taulukossa ovat molempien asujen muodot (oambealle ja oarpmealle), ja luokka näytetään vain, jos ne sopivat
+    inflection_class.apply(cursor)
     nob_forms.add_nob_forms(cursor)
     fin_forms.add_fin_forms(cursor)
 
