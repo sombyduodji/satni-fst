@@ -2,7 +2,10 @@
 # tiedoston XML-tiedostojen jälkeen, joten korjaukset säilyvät, vaikka XML-data päivitettäisiin.
 #
 # Sarakkeet erotetaan SARKAIMELLA (tab):
-#   saamen_lemma <TAB> sanaluokka <TAB> suomennokset
+#   saamen_lemma <TAB> sanaluokka <TAB> suomennokset [<TAB> englanninkieliset käännökset]
+#
+# - neljäs sarake on valinnainen: se korvaa englannin käännökset (esim. väärän Wiktionary-käännöksen);
+#   jos suomennossarake on tyhjä, suomennos säilyy ennallaan
 #
 # - sanaluokka kuten tietokannassa: N, V, A, Adv, Num, Pron, Pcle, Po, Pr, CC, CS, Interj, Cmp, MWE
 # - suomennokset pilkulla eroteltuina; ne KORVAAVAT XML:n suomennokset
@@ -28,3 +31,44 @@ nubbi	Pron	toinen
 galle	Pron	kuinka monta, montako
 galle	Adv	kuinka monta, montako
 galle	Num	kuinka monta, montako
+
+# Wiktionaryn englanti, joka ei vastaa sanan suomennosta ja norjannosta (tarkistettu käsin 2026-11-06). Useimmissa
+# Wiktionary kuvasi samannäköistä toista sanaa (deaivu "osuma" eikä juustomuotti, guovda "keskikohta" eikä kosteikko).
+geažil	Po		because of, due to
+ávžžuhit	V		to urge, to recommend, to encourage
+geahčči	N		viewer, spectator, watcher
+mielddus	N		attachment, enclosure
+neavvut	V		to advise, to guide
+biru	N		devil
+oinnolaš	A		visible, apparent
+láđđi	N		cloth, fabric
+suođđat	V		to seep, to leak
+guovda	N		wet meadow, marsh
+duhkku	N		tuft, clump, thicket
+bora	N		drill
+deaivu	N		cheese mould
+dikŋa	N		tip of the nose, muzzle
+dánsu	N		dancer
+easka	N		just now
+lihpi	N		wattle
+noarvi	N		batten, strip of wood
+roahcu	N		lecher, philanderer
+siigat	V		to glide, to drift
+viidnemuorji	N		grape
+báhkkodit	V		to express, to pronounce
+bánžat	V		to swell up
+# Wiktionaryn englanti osin oikein, täydennetty suomennoksen ja norjannoksen mukaan
+fertet	V		must, to have to, need
+ollugat	Pron		many, many people
+čielgat	V		to become clear, to clear up
+sárgut	V		to draw, to scratch, to carve
+njálggat	A		sweet, tasty
+ája	N		spring (of water), source
+bagadallat	V		to instruct, to guide
+báhkki	N		burl, wart
+huvdet	V		to punish, to discipline
+doaibmi	N		entrepreneur, operator
+suovvi	N		haystack
+# Tarkistettu Neahttadigisánit-sanakirjasta (sanit.oahpa.no) 2026-11-06: Sápmi = Sameland, sáhttit = kunne; ha høve til
+Sápmi	N		Sápmi, the Sámi homeland
+sáhttit	V		can, to be able to, may

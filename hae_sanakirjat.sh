@@ -44,6 +44,11 @@ if [ ! -f giella-fin/analyser-gt-desc.hfstol ] || [ "$1" = "--paivita-fin" ]; th
     fi
     rm -rf "$TMP"
 fi
+# Wiktionary (CC BY-SA 4.0, kaikki.org): englanti sanoille, joilla sitä ei ole (wiktionary_eng.py). Lataus on noin 8 Gt,
+# joten vain kerran tai pyydettäessä (--paivita-wiktionary); poiminta tallentuu hakemistoon wiktionary/.
+if [ ! -f wiktionary/se.json.gz ] || [ "$1" = "--paivita-wiktionary" ]; then
+    python3 wiktionary_eng.py --hae || echo "  Wiktionary: haku epäonnistui"
+fi
 echo
 echo "Versiot:"
 for repo in dict-sme-nob dict-sme-eng dict-sme-smn dict-sme-smj dict-sme-sma dict-fin-sme dict-nob-sme \

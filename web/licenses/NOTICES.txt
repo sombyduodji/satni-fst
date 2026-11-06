@@ -81,6 +81,19 @@ Finnish inflection: GiellaLT lang-fin, based on the Omorfi lexicon
   Licence: GNU GPL version 3 (GPL-3.0.txt)
   Source: https://github.com/giellalt/lang-fin
 
+English translations from Wiktionary (where GiellaLT has no English)
+  © Wiktionary contributors, https://en.wiktionary.org
+  Machine-readable extract from kaikki.org (wiktextract, Tatu Ylönen)
+  Licence: Creative Commons Attribution-ShareAlike 4.0 International
+  (CC-BY-SA-4.0.txt, https://creativecommons.org/licenses/by-sa/4.0/),
+  used here under GPL-3.0 as CC BY-SA 4.0 allows
+  Changes: only words without English get one: Wiktionary's own North
+  Sámi entries and English entries that list a Northern Sámi
+  translation. Where the Finnish and the Norwegian translation give the
+  same English in Wiktionary, it is shown as an unchecked suggestion.
+  Notes in brackets and "synonym of"-type explanations are left out.
+  The extracted data is shared under the same licence.
+
 Norwegian inflection: Norsk ordbank – bokmål 2005 (dump of 2022-02-01)
   © Språkbanken / Nasjonalbiblioteket
   Licence: CC BY 4.0 (CC-BY-4.0.txt)

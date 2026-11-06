@@ -15,6 +15,7 @@ All releases of Sátni FST. Downloads: [GitHub releases](https://github.com/somb
 - **Search in other languages.** Languages switched on under *Other languages* can also be used to search, after North Sámi and Finnish or Norwegian matches: *perro* finds *beana*. The result list shows which language matched. Only base forms are found.
 - **Search finds translations with a note in brackets.** *naida* now finds words translated "naida (kerran)", and *immoral* finds "immoral (of women)": about 3,400 words that could only be found by typing the note too.
 - **"Did you mean" in the search box and for other languages.** While typing, the search box suggests the word with its missing special letters (*cahci* → *čáhci*), also in the languages switched on under *Other languages* (*arbol* → *árbol*, *tjielte* → *tjïelte*). The suggestion only adds letters, never swaps them.
+- **More English.** About 3,100 words get English from Wiktionary, and about 2,500 more show an unchecked English suggestion. English search also ignores a leading *to* or *a* (*read* finds "to read").
 
 ## 0.9.3 — 2026-11-03
 

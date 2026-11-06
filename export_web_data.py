@@ -17,6 +17,7 @@ import subprocess
 
 import apertium_data
 import pivot_fin
+import wiktionary_eng
 import skolt_data
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -40,6 +41,16 @@ def without_letters(text):
     import unicodedata
     text = unicodedata.normalize("NFD", text.lower().translate(EXTRA_LETTERS))
     return "".join(ch for ch in text if not unicodedata.combining(ch))
+
+
+ENGLISH_ARTICLE = re.compile(r"^(?:to|a|an|the)\s+", re.I)
+
+
+def without_articles(text):
+    """Englannin lista ilman alun to/a/an/the-sanoja samassa järjestyksessä, tai None, jos muutosta ei ole."""
+    items = [ENGLISH_ARTICLE.sub("", i) for i in split_items(text)]
+    joined = ", ".join(dict.fromkeys(i for i in items if i))
+    return joined if joined and joined != text else None
 
 
 def split_items(text):
@@ -161,6 +172,8 @@ def main():
         CREATE TABLE apertium (word_id INTEGER PRIMARY KEY, nob TEXT) WITHOUT ROWID;
         -- Suomennosehdotukset (kokeellinen, pivot_fin.py): via = smn (inarinsaamen kautta) tai nob (norjan kautta)
         CREATE TABLE pivot_fin (word_id INTEGER PRIMARY KEY, fin TEXT, via TEXT) WITHOUT ROWID;
+        -- Englanti Wiktionarysta suomen ja norjan kautta, kun molemmat antavat saman (wiktionary_eng.py, tarkistamaton)
+        CREATE TABLE wikt_eng (word_id INTEGER PRIMARY KEY, eng TEXT) WITHOUT ROWID;
     """)
 
     trans_cols = ", ".join(TRANSLATION_COLUMNS.values())
@@ -181,6 +194,11 @@ def main():
                 bare = without_brackets(text)
                 if bare:
                     search_rows.append((r[0], lang, fold(bare), None))
+                # Englanti myös ilman alun to/a/an/the: read löytää "to read", spouse "a spouse"
+                if lang == "eng":
+                    plain = without_articles(bare or text)
+                    if plain:
+                        search_rows.append((r[0], lang, fold(plain), None))
     for w, lang, head, nr in src.execute("SELECT word_id, lang, headword, MIN(nr) FROM reverse_index GROUP BY word_id, lang, headword"):
         search_rows.append((w, lang, fold(head), nr))
         bare = without_brackets(head)
@@ -222,6 +240,10 @@ def main():
     apertium_rows = apertium_data.rows(src)
     dst.executemany("INSERT INTO apertium VALUES (?,?)", apertium_rows)
     print(f"Apertium: {len(apertium_rows)} riviä" if apertium_rows else "Apertium: apertium-sme-nob-lähdettä ei löytynyt")
+
+    wikt_rows = wiktionary_eng.agree_rows(src)
+    dst.executemany("INSERT INTO wikt_eng VALUES (?,?)", wikt_rows)
+    print(f"Wiktionaryn englanti suomen ja norjan kautta: {len(wikt_rows)} riviä" if wikt_rows else "Wiktionary: wiktionary/ puuttuu (python3 wiktionary_eng.py --hae)")
 
     pivot_rows = pivot_fin.rows(src)
     dst.executemany("INSERT INTO pivot_fin VALUES (?,?,?)", pivot_rows)

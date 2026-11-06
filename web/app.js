@@ -929,6 +929,13 @@ function renderExtraTranslations(w, groups) {
   const lines = settings.extraLangs.filter((l) => LANGUAGES[l]).map((lang) => {
     const own = (groups.find(([l]) => l === lang) || [lang, []])[1][0];
     const text = own ? splitList(own.translations || own.explanations).slice(0, 4).join(", ") : translationOf(w, 3, lang);
+    if (!text && lang === "eng") {
+      // Wiktionaryn englanti suomen ja norjan kautta (taulu wikt_eng, wiktionary_eng.py): tarkistamaton, ei hakuun
+      let row = null;
+      try { row = all("SELECT eng FROM wikt_eng WHERE word_id = ?", [w.id])[0]; } catch (e) { /* vanha tietokanta */ }
+      if (row) return `<span class="muted">${esc(t("langIn").eng)}:</span> ${esc(splitList(row.eng).slice(0, 3).join(", "))} ` +
+        `<span class="muted small">(${esc(t("wiktEngNote"))})</span>`;
+    }
     return text && `<span class="muted">${esc(t("langIn")[lang])}:</span> ${esc(text)}`;
   }).filter(Boolean);
   const sms = skoltFor(w);
@@ -2011,7 +2018,7 @@ function bindOcrGestures() {
 // --- Lisenssit ---
 // Kaikissa versioissa samat tiedostot (web/licenses/); työpöytäversion build lisää Pythonin ja Debian-kirjastojen
 // lisenssit kansioon licenses/desktop/ ja niiden luettelon tiedostoon files.txt
-const LICENSE_FILES = ["NOTICES.txt", "GPL-3.0.txt", "LGPL-3.0.txt", "CC-BY-4.0.txt", "CC-BY-3.0.txt", "MPL-2.0.txt", "Apache-2.0.txt",
+const LICENSE_FILES = ["NOTICES.txt", "GPL-3.0.txt", "LGPL-3.0.txt", "CC-BY-4.0.txt", "CC-BY-SA-4.0.txt", "CC-BY-3.0.txt", "MPL-2.0.txt", "Apache-2.0.txt",
   "../vendor/LICENSE-sql.js.txt"];
 async function showLicenses() {
   let files = LICENSE_FILES;

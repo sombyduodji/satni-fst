@@ -15,6 +15,7 @@ Alle versjoner av Sátni FST. Nedlastinger: [GitHub-utgivelser](https://github.c
 - **Søk på andre språk.** Språk som er slått på under *Andre språk* kan også brukes til å søke, etter treff på nordsamisk og norsk: *perro* finner *beana*. Resultatlisten viser hvilket språk som ga treff. Bare grunnformer blir funnet.
 - **Søket finner oversettelser med en presisering i parentes.** *naida* finner nå ord som er oversatt med "naida (kerran)", og *immoral* finner "immoral (of women)": omtrent 3 400 ord som før bare ble funnet hvis man skrev presiseringen også.
 - **«Mente du» i søkefeltet og på andre språk.** Mens du skriver, foreslår søkefeltet ordet med de manglende spesialbokstavene (*cahci* → *čáhci*), også på språk som er slått på under *Andre språk* (*arbol* → *árbol*, *tjielte* → *tjïelte*). Forslaget legger bare til bokstaver og bytter dem aldri.
+- **Mer engelsk.** Omtrent 3 100 ord får engelsk oversettelse fra Wiktionary, og omtrent 2 500 flere viser et ukontrollert engelsk forslag. Engelsk søk ser bort fra *to* og *a* først (*read* finner «to read»).
 
 ## 0.9.3 — 2026-11-03
 

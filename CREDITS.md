@@ -25,6 +25,14 @@ combines their work into one offline app.
 | Finnish → Inari Sámi | Finnish suggestions (experimental) | [giellalt/dict-fin-smn](https://github.com/giellalt/dict-fin-smn) |
 | North Sámi → Spanish | Spanish translations, meanings and examples (by Ángel) | [giellalt/dict-sme-spa](https://github.com/giellalt/dict-sme-spa) |
 | Spanish → North Sámi | Missing Spanish translations (by Ángel) | [giellalt/dict-spa-sme](https://github.com/giellalt/dict-spa-sme) |
+
+**English from Wiktionary:** for words with no English in GiellaLT's dictionary, [`wiktionary_eng.py`](wiktionary_eng.py)
+uses English Wiktionary (© Wiktionary contributors, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)),
+read from the machine-readable extract at [kaikki.org](https://kaikki.org) (wiktextract by Tatu Ylönen). Only two
+direct sources become translations: Wiktionary's own North Sámi entries, and English entries whose translation table
+lists the North Sámi word. When the Wiktionary explanations of a word's first Finnish and first Norwegian translation
+give the same English, it is shown as an unchecked suggestion. Under CC BY-SA, this extracted data is shared under the
+same licence (it is used in this GPL-3.0 app as CC BY-SA 4.0 allows).
 | Skolt Sámi → Finnish, Norwegian … | Skolt Sámi words (experimental) | [giellalt/dict-sms-mul](https://github.com/giellalt/dict-sms-mul) |
 | Finnish → Skolt Sámi | Skolt Sámi words (experimental) | [giellalt/dict-fin-sms](https://github.com/giellalt/dict-fin-sms) (CC BY 3.0) |
 | Norwegian → Skolt Sámi | Skolt Sámi words (experimental) | [giellalt/dict-nob-sms](https://github.com/giellalt/dict-nob-sms) |

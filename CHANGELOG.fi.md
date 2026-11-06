@@ -15,6 +15,7 @@ Sátni FST:n kaikki versiot. Lataukset: [GitHub-julkaisut](https://github.com/so
 - **Haku muilla kielillä.** Muut kielet -asetuksessa valituilla kielillä voi myös hakea, pohjoissaamen ja suomen osumien jälkeen: *perro* löytää sanan *beana*. Tuloslista kertoo, millä kielellä sana löytyi. Vain perusmuodot löytyvät.
 - **Haku löytää käännökset, joissa on tarkenne sulkeissa.** *naida* löytää nyt sanat, joiden käännös on "naida (kerran)", ja *immoral* käännöksen "immoral (of women)": noin 3 400 sanaa, jotka löytyivät aiemmin vain kirjoittamalla tarkennekin.
 - **"Tarkoititko" hakukentässä ja muilla kielillä.** Hakukenttä ehdottaa jo kirjoittaessa sanaa, josta puuttuvat erikoiskirjaimet on lisätty (*cahci* → *čáhci*), myös Muut kielet -asetuksessa valituilla kielillä (*arbol* → *árbol*, *tjielte* → *tjïelte*). Ehdotus vain lisää kirjaimia eikä vaihda niitä.
+- **Lisää englantia.** Noin 3 100 sanaa saa englannin käännöksen Wiktionarysta, ja noin 2 500 sanalle näytetään tarkistamaton englannin ehdotus. Englanninkielinen haku ei välitä alun sanoista *to* ja *a* (*read* löytää "to read").
 
 ## 0.9.3 — 2026-11-03
 

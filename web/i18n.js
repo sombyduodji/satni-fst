@@ -59,6 +59,7 @@ const UI_TEXTS = {
       <p>Pistokokeissa noin yhdeksän kymmenestä inarin kautta tulleesta ja neljä viidestä norjan kautta tulleesta
       ehdotuksesta oli oikein. Ehdotuksia ei ole tarkistettu, eivätkä ne vaikuta hakuun.</p>`,
     pivotFinNote: { smn: "inarinsaamen kautta, tarkistamaton", nob: "norjan kautta, tarkistamaton" },
+    wiktEngNote: "Wiktionary suomen ja norjan kautta, tarkistamaton",
     expEnable: "Ota käyttöön", cancel: "Peruuta", smsVia: "suomen kautta",
     ocrError: "Kuvan käsittely ei onnistunut.", ocrNoApp: "Kamerasovellusta ei löytynyt.",
     showGrade: "Näytä astevaihtelu",
@@ -194,7 +195,7 @@ const UI_TEXTS = {
       <p>Lisenssit: sanakirjat © GiellaLT (CC BY 4.0, yhdistetty ja täydennetty taivutusmuodoilla),
          taivutus GiellaLT lang-sme (GPL-3.0), käännösten taivutus GiellaLT lang-fin (GPL-3.0) ja Norsk ordbank
          (Språkbanken / Nasjonalbiblioteket, CC BY 4.0), koltansaame (kokeellinen) GiellaLT dict-sms-mul, dict-fin-sms ja
-         dict-nob-sms (CC BY 4.0 / 3.0), norjan käännökset (kokeellinen) Apertium apertium-sme-nob (GPL-2.0-or-later), suomennosehdotukset (kokeellinen) GiellaLT dict-smn-sme, dict-smn-fin ja dict-fin-smn (CC BY 4.0), espanjan käännökset GiellaLT dict-sme-spa ja dict-spa-sme (Ángel, CC BY 4.0), sql.js (MIT). Android-sovelluksen kokeellinen
+         dict-nob-sms (CC BY 4.0 / 3.0), norjan käännökset (kokeellinen) Apertium apertium-sme-nob (GPL-2.0-or-later), suomennosehdotukset (kokeellinen) GiellaLT dict-smn-sme, dict-smn-fin ja dict-fin-smn (CC BY 4.0), espanjan käännökset GiellaLT dict-sme-spa ja dict-spa-sme (Ángel, CC BY 4.0), osa englannin käännöksistä Wiktionary (CC BY-SA 4.0, kaikki.org), sql.js (MIT). Android-sovelluksen kokeellinen
          tekstintunnistus: Google ML Kit (Googlen käyttöehdot). Kuva käsitellään puhelimessa eikä lähde laitteelta;
          ML Kit voi lähettää Googlelle nimettömiä käyttötilastoja, kun tekstintunnistusta käytetään. Sátni FST on vapaa ohjelma (GPL-3.0).
          Astevaihtelun ryhmät: Oahpa (Giellatekno). Kaikki lähteet, lisenssit ja tehdyt muutokset: Lisenssit-painike alla.
@@ -253,6 +254,7 @@ const UI_TEXTS = {
       <p>I stikkprøver var omtrent ni av ti forslag via enaresamisk og fire av fem via norsk riktige. Forslagene er
       ikke kontrollert og påvirker ikke søket.</p>`,
     pivotFinNote: { smn: "via enaresamisk, ikke kontrollert", nob: "via norsk, ikke kontrollert" },
+    wiktEngNote: "Wiktionary via finsk og norsk, ikke kontrollert",
     expEnable: "Slå på", cancel: "Avbryt", smsVia: "via finsk",
     ocrError: "Kunne ikke behandle bildet.", ocrNoApp: "Fant ingen kameraapp.",
     showGrade: "Vis stadieveksling",
@@ -386,7 +388,7 @@ const UI_TEXTS = {
       <p>Lisenser: ordbøkene © GiellaLT (CC BY 4.0, slått sammen og utvidet med bøyingsformer),
          bøying GiellaLT lang-sme (GPL-3.0), bøying av oversettelsene GiellaLT lang-fin (GPL-3.0) og Norsk ordbank
          (Språkbanken / Nasjonalbiblioteket, CC BY 4.0), skoltesamisk (eksperimentelt) GiellaLT dict-sms-mul, dict-fin-sms og
-         dict-nob-sms (CC BY 4.0 / 3.0), norske oversettelser (eksperimentelt) Apertium apertium-sme-nob (GPL-2.0-or-later), finske forslag (eksperimentelt) GiellaLT dict-smn-sme, dict-smn-fin og dict-fin-smn (CC BY 4.0), spanske oversettelser GiellaLT dict-sme-spa og dict-spa-sme (Ángel, CC BY 4.0), sql.js (MIT). Eksperimentell tekstgjenkjenning i
+         dict-nob-sms (CC BY 4.0 / 3.0), norske oversettelser (eksperimentelt) Apertium apertium-sme-nob (GPL-2.0-or-later), finske forslag (eksperimentelt) GiellaLT dict-smn-sme, dict-smn-fin og dict-fin-smn (CC BY 4.0), spanske oversettelser GiellaLT dict-sme-spa og dict-spa-sme (Ángel, CC BY 4.0), en del av de engelske oversettelsene Wiktionary (CC BY-SA 4.0, kaikki.org), sql.js (MIT). Eksperimentell tekstgjenkjenning i
          Android-appen: Google ML Kit (Googles vilkår). Bildet behandles på telefonen og forlater ikke enheten;
          ML Kit kan sende anonym bruksstatistikk til Google når tekstgjenkjenningen brukes. Sátni FST er fri programvare (GPL-3.0).
          Stadievekslingsgrupper: Oahpa (Giellatekno). Alle kilder, lisenser og endringer: Lisenser-knappen nedenfor.

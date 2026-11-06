@@ -6,6 +6,7 @@ LÄHTEET (ks. CREDITS.md):
     sekä dict-fin-sme ja dict-nob-sme (haku suomeksi ja norjaksi) ja dict-smn-sme, dict-smj-sme ja
     dict-sma-sme (puuttuvat inarin-, luulajan- ja eteläsaamen käännökset). https://github.com/giellalt
   - Espanja: GiellaLT dict-sme-spa ja dict-spa-sme (Ángel, CC BY 4.0), Excel-tiedostot (spa_data.py).
+  - Englanti, kun GiellaLT:n dict-sme-eng:ssä sitä ei ole: Wiktionary (CC BY-SA 4.0) kaikki.org:sta (wiktionary_eng.py).
   - Taivutus: GiellaLT lang-sme -analysaattori ja -generaattori (src/fst/), lisenssi GPL-3.0.
 CC BY 4.0 edellyttää muutosten mainitsemista: sanakirjat yhdistetään, niihin lisätään FST:llä
 generoidut taivutusmuodot ja astevaihtelu, korjaukset.tsv:n korjaukset sovelletaan ja suomennosten
@@ -25,6 +26,7 @@ import inflection_class
 import fin_forms
 import nob_forms
 import spa_data
+import wiktionary_eng
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 GENERATOR = os.path.join(SCRIPT_DIR, "src", "fst", "generator-gt-norm.hfst")
@@ -386,6 +388,9 @@ def parse_xml_dictionaries():
     fill_sami_translations(entries, by_lemma)
     fill_spanish(entries, by_lemma)
     merge_duplicate_entries(entries, by_lemma)
+    # Vasta yhdistämisen jälkeen: muuten Wiktionaryn englanti voisi täyttää rinnakkaisen sanan, joka sitten yhdistetään
+    # sanaan, jolla GiellaLT:n englanti jo on (37 sanaa 2026-11-06)
+    wiktionary_eng.fill_english(entries, by_lemma, find_entry)
 
     words = [
         (lemma, pos, subtype, data["sem_type"], {l: ", ".join(t) for l, t in data["translations"].items() if t})
@@ -597,23 +602,31 @@ def apply_corrections(words, details):
         return words
 
     corrections = {}
+    eng_corrections = {}  # valinnainen 4. sarake: englannin käännökset (korvaavat esim. Wiktionaryn englannin)
     with open(CORRECTIONS_FILE, encoding="utf-8") as f:
         for line_no, line in enumerate(f, 1):
             line = line.rstrip("\n")
             if not line.strip() or line.lstrip().startswith("#"):
                 continue
             parts = [p.strip() for p in line.split("\t")]
-            if len(parts) != 3 or not parts[0] or not parts[1]:
-                print(f"  korjaukset.tsv rivi {line_no}: odotettiin 3 sarkaimella erotettua saraketta, ohitetaan")
+            if len(parts) not in (3, 4) or not parts[0] or not parts[1]:
+                print(f"  korjaukset.tsv rivi {line_no}: odotettiin 3 tai 4 sarkaimella erotettua saraketta, ohitetaan")
                 continue
-            lemma, pos, trans = parts
-            trans = fix_finnish_text(trans)
-            corrections[(lemma, POS_MAP.get(pos.upper(), pos))] = trans
+            lemma, pos, trans = parts[:3]
+            key = (lemma, POS_MAP.get(pos.upper(), pos))
+            if len(parts) == 4 and parts[3]:
+                eng_corrections[key] = parts[3]
+            if trans:  # tyhjä suomennossarake: suomennos säilyy, vain englanti korjataan
+                corrections[key] = fix_finnish_text(trans)
 
     result = []
     applied = set()
     for lemma, pos, subtype, sem_type, trans in words:
         key = (lemma, pos)
+        if key in eng_corrections:
+            trans = {**trans, "eng": eng_corrections[key]}
+            info = details.setdefault((lemma, pos, subtype), {"freq": None, "notes": [], "meanings": [], "reverse": []})
+            info["meanings"] = [m for m in info["meanings"] if m["lang"] != "eng"] + [new_meaning("eng", [eng_corrections[key]])]
         if key in corrections:
             applied.add(key)
             if corrections[key] == "-":
@@ -632,7 +645,7 @@ def apply_corrections(words, details):
             result.append((lemma, pos, "", "", {"fin": trans}))
             details[(lemma, pos, "")] = {"freq": None, "notes": [], "new_from": "fin", "reverse": [],
                                          "meanings": [new_meaning("fin", [trans])]}
-    print(f"Sovellettiin {len(corrections)} korjausta tiedostosta korjaukset.tsv.")
+    print(f"Sovellettiin {len(corrections)} suomennoksen ja {len(eng_corrections)} englannin korjausta tiedostosta korjaukset.tsv.")
     return result
 
 
