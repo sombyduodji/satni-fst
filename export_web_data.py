@@ -26,6 +26,35 @@ OUT_DB = os.path.join(OUT_DIR, "satni-web.db")
 
 # Käännöksen aluemerkintä (patja (it)) ei kuulu haettavaan sanaan
 DIALECT_MARK = re.compile(r" \((?:it|lä|ø|v|torne)\)")
+# Sulkeissa oleva tarkenne käännöksessä: naida (kerran), immoral (of women), (too) fond of giving away
+BRACKETED = re.compile(r"\s*\([^()]*\)\s*")
+
+
+def split_items(text):
+    """Käännöslista osiin vain sulkeiden ulkopuolisista pilkuista: "seurata (tietä, jälkiä), ajaa" ->
+    ["seurata (tietä, jälkiä)", "ajaa"]."""
+    items, depth, cur = [], 0, ""
+    for ch in text:
+        depth += (ch == "(") - (ch == ")")
+        if ch == "," and depth <= 0:
+            items.append(cur.strip())
+            cur = ""
+        else:
+            cur += ch
+    items.append(cur.strip())
+    return [i for i in items if i]
+
+
+def without_brackets(text):
+    """Hakuun sama lista ilman sulkeissa olevia tarkenteita (naida (kerran) -> naida), tai None, jos sulkeita ei ole.
+    Järjestys säilyy, jotta haun järjestys (ainoa, ensimmäinen vai muu käännös) pysyy samana (ks. app.js: queryDatabase)."""
+    if "(" not in text:
+        return None
+    # Sulkematon sulku (riibat: "holde seg (frisk") katkaistaan sulun kohdalta
+    items = [" ".join(BRACKETED.sub(" ", i).split("(")[0].replace(")", " ").split()) for i in split_items(text)]
+    items = [i for i in items if i]
+    joined = ", ".join(dict.fromkeys(items))
+    return joined if joined and joined != text else None
 
 # Sama haun normalisointi kuin gui.py:ssä: ä = æ, ö = ø
 SEARCH_FOLD = str.maketrans({"æ": "ä", "ø": "ö"})
@@ -127,13 +156,23 @@ def main():
     ).fetchall()
     dst.executemany(f"INSERT INTO dictionary VALUES ({', '.join('?' * (len(rows[0]) + 2))})",
                     [r + (fold(r[1]), fold(r[-2]) if r[-2] else None) for r in rows])
-    dst.executemany("INSERT INTO trans_search VALUES (?, ?, ?, NULL)", [
-        (r[0], lang, fold(DIALECT_MARK.sub("", r[4 + i]))) for r in rows for i, lang in enumerate(TRANSLATION_COLUMNS) if r[4 + i]
-    ])
-    dst.executemany("INSERT INTO trans_search VALUES (?, ?, ?, ?)", (
-        (w, lang, fold(head), nr) for w, lang, head, nr in
-        src.execute("SELECT word_id, lang, headword, MIN(nr) FROM reverse_index GROUP BY word_id, lang, headword")
-    ))
+    # Hakuun käännös sellaisenaan ja toisena rivinä ilman sulkeissa olevia tarkenteita, jotta naida löytää sanan,
+    # jonka käännös on "naida (kerran)" (koko haun tarkistus 2026-11-06: noin 3 400 sanaa ei muuten löytynyt)
+    search_rows = []
+    for r in rows:
+        for i, lang in enumerate(TRANSLATION_COLUMNS):
+            if r[4 + i]:
+                text = DIALECT_MARK.sub("", r[4 + i])
+                search_rows.append((r[0], lang, fold(text), None))
+                bare = without_brackets(text)
+                if bare:
+                    search_rows.append((r[0], lang, fold(bare), None))
+    for w, lang, head, nr in src.execute("SELECT word_id, lang, headword, MIN(nr) FROM reverse_index GROUP BY word_id, lang, headword"):
+        search_rows.append((w, lang, fold(head), nr))
+        bare = without_brackets(head)
+        if bare:
+            search_rows.append((w, lang, fold(bare), nr))
+    dst.executemany("INSERT INTO trans_search VALUES (?, ?, ?, ?)", search_rows)
 
     tag_ids = {}
     for (tag,) in src.execute("SELECT DISTINCT tag FROM paradigms ORDER BY tag"):

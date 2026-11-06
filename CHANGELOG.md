@@ -13,6 +13,7 @@ All releases of Sátni FST. Downloads: [GitHub releases](https://github.com/somb
 - **Finnish suggestions (experimental).** For words with no Finnish translation, the word card can show a suggestion made through Inari Sámi or Norwegian, marked as unchecked. About 2,150 words get one. Switch it on under *Experimental features*.
 - **Spanish.** Spanish translations for about 7,600 words, including about two thirds of the most common ones, with meanings and example sentences from GiellaLT's Spanish dictionaries by Ángel. Switch them on under *Other languages*.
 - **Search in other languages.** Languages switched on under *Other languages* can also be used to search, after North Sámi and Finnish or Norwegian matches: *perro* finds *beana*. The result list shows which language matched. Only base forms are found.
+- **Search finds translations with a note in brackets.** *naida* now finds words translated "naida (kerran)", and *immoral* finds "immoral (of women)": about 3,400 words that could only be found by typing the note too.
 
 ## 0.9.3 — 2026-11-03
 
