@@ -147,9 +147,14 @@ def _clean(text):
     return " ".join(text.split()) if text else ""
 
 
+# Työmerkinnät, jotka ovat sanakirjassa käännöksen paikalla: dict-sme-eng:n X_smeeng.xml:ssä "(ei LpDict)"
+# (74 sanaa, Kotuksen aineistosta 2013) eli englantia ei löytynyt lähteestä
+NOT_TRANSLATIONS = {"(ei LpDict)"}
+
+
 def _placeholder(text):
-    """Täyttämätön käännöspaikka, esim. "_FIN_" tai "_NOB_"."""
-    return len(text) > 2 and text.startswith("_") and text.endswith("_") and text[1:-1].isupper()
+    """Täyttämätön käännöspaikka, esim. "_FIN_" tai "_NOB_", tai työmerkintä (NOT_TRANSLATIONS)."""
+    return (len(text) > 2 and text.startswith("_") and text.endswith("_") and text[1:-1].isupper()) or text in NOT_TRANSLATIONS
 
 
 def parse_meaning(mg, lang="fin"):
@@ -164,7 +169,7 @@ def parse_meaning(mg, lang="fin"):
         for t_elem in tg.findall('t'):
             text = fix(_clean(t_elem.text))
             # t_type="grammar"/"grammarexpl" on viittaus kielioppisivulle ("Les om lokativ"), ei käännös
-            if not text or t_elem.get('t_type') in GRAMMAR_POINTERS:
+            if not text or _placeholder(text) or t_elem.get('t_type') in GRAMMAR_POINTERS:
                 continue
             # t_type="expl" on selitys (esim. "naisen nimi"), ei varsinainen käännös
             target = meaning["explanations"] if t_elem.get('t_type') == "expl" else meaning["translations"]
