@@ -529,20 +529,27 @@ function suggestWords(prefix, withForms = true) {
   // Kirjoitettu sana taivutusmuotona (munnje = mun, minulle = mun): perusmuodon jälkeen, jos sana on itse käännetty hakusana
   const col = LANGUAGES[settings.lang].col;
   const exact = rows.filter((r) => fold(r.sme_lemma) === q && r[col]);
-  const forms = withForms ? formSuggestions(prefix) : [];
+  // "Tarkoititko" myös hakukentän ehdotuksiin (boadat -> boađát, arbol -> árbol, a la vista) samalla hitaammalla
+  // kierroksella kuin muodot ja samalla haulla (queryDatabase vain kerran)
+  const typed = prefix.trim();
+  const searched = withForms && fold(typed).length >= 2 ? queryDatabase(typed) : null;
+  const forms = withForms ? formSuggestions(prefix, searched) : [];
+  const dym = searched
+    ? [...(typed.includes(" ") ? [] : didYouMean(typed, searched)), ...extraDidYouMean(typed, searched)].slice(0, 2)
+        .map((d) => ({ id: d.id, sme_lemma: d.lemma, pos: "", form: d.word, dym: d })) : [];
   // Oma tyhjä hakusana (mus, munnje ilman suomennosta) on turha, kun perusmuoto (mun) näkyy
   const useful = forms.length ? rows.filter((r) => fold(r.sme_lemma) !== q || r[col]) : rows;
   const seen = new Set();
-  return [...forms, ...exact, ...useful]
+  return [...dym, ...forms, ...exact, ...useful]
     .filter((r) => !seen.has(r.sme_lemma + r.pos) && seen.add(r.sme_lemma + r.pos)).slice(0, 8);
 }
 
 // Koko sanan osumat taivutusmuotona tai liitepartikkelin kanssa samalla haulla kuin Enter (queryDatabase); form = kirjoitettu sana
-function formSuggestions(text) {
+function formSuggestions(text, results = null) {
   const typed = text.trim();
   if (fold(typed).length < 2 || typed.includes(" ")) return [];
   const col = LANGUAGES[settings.lang].col;
-  const results = queryDatabase(typed);
+  results = results || queryDatabase(typed);
   const isForm = (r) => r.via || r.clitics || r.finClitic || r.rank === 1.2 || r.rank === 5;
   // Suorat osumat samassa järjestyksessä kuin Enterillä: missä = gos ennen pronominin mii muotoa mas
   const direct = results.filter((r) => !isForm(r) && r.rank <= 3).slice(0, 3);
@@ -680,14 +687,54 @@ function didYouMean(query, results) {
     if (!best.has(word) || (r.freq || 0) > (best.get(word).freq || 0)) best.set(word, r);
   }
   return [...best.entries()].sort((a, b) => (b[1].freq || 0) - (a[1].freq || 0)).slice(0, 2)
-    .map(([word, r]) => ({ word, lemma: r.sme_lemma, trans: splitList(r.tr)[0] }));
+    .map(([word, r]) => ({ word, id: r.id, lemma: r.sme_lemma, trans: splitList(r.tr)[0] }));
+}
+// "Tarkoititko" Muut kielet -asetuksessa valituille kielille: sama hakusana erikoiskirjaimin ja tarkkein (arbol -> árbol,
+// vyevdi -> vyevdi, cuvgat -> čuvgat). Hakusanat ilman erikoiskirjaimia ovat taulussa trans_bare (export_web_data.py).
+// Samat säännöt kuin pohjoissaamessa: ei ehdotusta, jos haku löysi suomen- tai norjankielisen käännöksen tai sanan
+// tällä kielellä, ja jos haku löysi saamen sanan, ehdotetun sanan on oltava selvästi yleisempi.
+const EXTRA_LETTERS = { đ: "d", ŋ: "n", ŧ: "t", æ: "ae", ø: "o", ß: "ss", ł: "l" };
+function withoutLetters(text) {
+  return text.toLowerCase().replace(/[đŋŧæøßł]/g, (c) => EXTRA_LETTERS[c]).normalize("NFD").replace(/\p{M}/gu, "");
+}
+// Ehdotus vain lisää puuttuvia kirjaimia (arbol -> árbol), ei vaihda kirjoitettuja (maŋŋá ei ole mánná, Réunion ei reunión)
+function addsLettersOnly(typed, term) {
+  const a = [...typed], b = [...term];
+  if (a.length !== b.length) return typed === withoutLetters(typed);  // æ -> ae: vain, jos haussa ei ole erikoiskirjaimia
+  return a.every((c, i) => c === b[i] || c === withoutLetters(b[i]));
+}
+function extraDidYouMean(query, results) {
+  const extra = extraSearchLangs();
+  if (!extra.length) return [];
+  if (results.some((r) => (r.rank > 1.2 && r.rank < 5 && !r.clitics) || (r.extraLang && r.rank < PREFIX_RANK))) return [];
+  const q = fold(query.trim());
+  let terms = [];
+  try {
+    terms = all(`SELECT DISTINCT lang, term FROM trans_bare WHERE bare = ? AND lang IN (${extra.map(() => "?").join(", ")})`,
+                [withoutLetters(q), ...extra]).filter((r) => r.term !== q && addsLettersOnly(q, r.term));
+  } catch (e) { return []; }  // vanha tietokanta ilman taulua
+  const sami = results.filter((r) => r.clitics || SAMI_HIT_RANKS.includes(r.rank));
+  const current = Math.max(0, ...sami.map((r) => r.freq || 0));
+  const col = LANGUAGES[settings.lang].col;
+  const out = [];
+  for (const { lang, term } of terms) {
+    const r = all(
+      `SELECT d.id, d.sme_lemma, d.freq, d.${col} AS tr, d.${LANGUAGES[lang].col} AS own FROM trans_search t
+       JOIN dictionary d ON d.id = t.word_id WHERE t.lang = ? AND (t.fold = ? OR t.fold LIKE ? OR t.fold LIKE ? OR t.fold LIKE ?)
+       ORDER BY d.freq DESC LIMIT 1`, [lang, term, `${term},%`, `%, ${term},%`, `%, ${term}`])[0];
+    if (!r || (sami.length && (r.freq || 0) < Math.max(1000, current * SUGGEST_FACTOR))) continue;
+    const word = splitList(r.own).find((x) => fold(x) === term) || term;  // alkuperäinen kirjoitusasu (æ, ø)
+    out.push({ word, id: r.id, lemma: r.sme_lemma, trans: splitList(r.tr)[0], lang, freq: r.freq || 0 });
+  }
+  return out.sort((a, b) => b.freq - a.freq).slice(0, 2);
 }
 function renderDidYouMean(query, results) {
   const box = $("did-you-mean");
-  const list = didYouMean(query, results);
+  const list = [...didYouMean(query, results), ...extraDidYouMean(query, results)].slice(0, 3);
   box.hidden = !list.length;
   box.innerHTML = list.length ? `<span>${esc(t("didYouMean"))}</span>` + list.map((s) =>
-    `<button data-q="${esc(s.word)}"><b>${esc(s.word)}</b> → ${esc(s.lemma)}${s.trans ? ` (${esc(s.trans)})` : ""}</button>`).join("") : "";
+    `<button data-q="${esc(s.word)}"><b>${esc(s.word)}</b> → ${esc(s.lemma)}${s.trans ? ` (${esc(s.trans)})` : ""}` +
+    `${s.lang ? ` <span class="muted small">${esc(t("langName")[s.lang])}</span>` : ""}</button>`).join("") : "";
 }
 
 // Pelkät "alkaa hakusanalla" -osumat (rank 7, esim. beana -> beanabálvalus) piilotetaan napin taakse,
@@ -1594,7 +1641,9 @@ function updateSuggestions(withForms = true) {
     list.hidden = true;  // ei hideSuggestions: odottava muotohaku saa vielä tuoda ehdotuksia (munnje, kolmelle)
     return;
   }
-  list.innerHTML = (pending ? `<li class="sugg-loading" role="status"><span class="sugg-ring"></span>${esc(t("searchingForms"))}</li>` : "") + suggestions.map((s, i) =>
+  list.innerHTML = (pending ? `<li class="sugg-loading" role="status"><span class="sugg-ring"></span>${esc(t("searchingForms"))}</li>` : "") + suggestions.map((s, i) => s.dym ?
+    `<li role="option" data-i="${i}" class="sugg-dym"><span class="sugg-dym-label">${esc(t("didYouMean"))}</span> <b>${esc(s.dym.word)}</b>` +
+    ` → ${esc(s.dym.lemma)}<span class="trans">${esc(s.dym.trans || "")}${s.dym.lang ? ` · ${esc(t("langName")[s.dym.lang])}` : ""}</span></li>` :
     `<li role="option" data-i="${i}"><b>${esc(s.sme_lemma)}</b>${s.smeForm ? `<i class="sugg-form">${esc(s.smeForm)}</i>` : ""}` +
     `<span class="pos">${esc(s.pos)}</span><span class="trans">${esc(s.form ? s.formNote : resultTrans(s, 2))}</span></li>`).join("");
   list.hidden = false;

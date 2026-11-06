@@ -30,6 +30,18 @@ DIALECT_MARK = re.compile(r" \((?:it|lä|ø|v|torne)\)")
 BRACKETED = re.compile(r"\s*\([^()]*\)\s*")
 
 
+# Erikoiskirjaimet, joita Unicode-hajotus ei pura (č, á, ñ, å purkautuvat itsestään)
+EXTRA_LETTERS = str.maketrans({"đ": "d", "ŋ": "n", "ŧ": "t", "æ": "ae", "ø": "o", "ß": "ss", "ł": "l"})
+
+
+def without_letters(text):
+    """Hakusana ilman erikoiskirjaimia ja tarkkeita (árbol -> arbol, čáhci -> cahci, vyevdi -> vyevdi). Sama kuin
+    app.js:n withoutLetters."""
+    import unicodedata
+    text = unicodedata.normalize("NFD", text.lower().translate(EXTRA_LETTERS))
+    return "".join(ch for ch in text if not unicodedata.combining(ch))
+
+
 def split_items(text):
     """Käännöslista osiin vain sulkeiden ulkopuolisista pilkuista: "seurata (tietä, jälkiä), ajaa" ->
     ["seurata (tietä, jälkiä)", "ajaa"]."""
@@ -129,6 +141,8 @@ def main():
         -- nr: käänteisen sanakirjan (dict-fin-sme, dict-nob-sme) järjestys, 0 = ensisijainen saamennos;
         -- NULL = sanan oma käännös (dict-sme-*)
         CREATE TABLE trans_search (word_id INTEGER, lang TEXT, fold TEXT, nr INTEGER);
+        -- Muiden kielten hakusanat ilman erikoiskirjaimia (arbol -> árbol, cahci -> čáhci): "Tarkoititko"-ehdotukset
+        CREATE TABLE trans_bare (lang TEXT, bare TEXT, term TEXT);
         -- Taivutustagit (Ind+Prs+Sg1 ...) numeroina: sama merkkijono toistuisi muuten lähes miljoona kertaa
         CREATE TABLE tags (id INTEGER PRIMARY KEY, tag TEXT);
         CREATE TABLE paradigms (word_id INTEGER, tag_id INTEGER, surface TEXT, grade TEXT);
@@ -173,6 +187,10 @@ def main():
         if bare:
             search_rows.append((w, lang, fold(bare), nr))
     dst.executemany("INSERT INTO trans_search VALUES (?, ?, ?, ?)", search_rows)
+    bare_rows = {(lang, without_letters(term), term) for _, lang, text, _ in search_rows if lang not in ("fin", "nob")
+                 for term in text.split(", ") if term and without_letters(term) != term}
+    dst.executemany("INSERT INTO trans_bare VALUES (?, ?, ?)", sorted(bare_rows))
+    print(f"Tarkoititko-hakusanat muilla kielillä: {len(bare_rows)}")
 
     tag_ids = {}
     for (tag,) in src.execute("SELECT DISTINCT tag FROM paradigms ORDER BY tag"):
@@ -215,6 +233,7 @@ def main():
         CREATE INDEX idx_paradigms_word ON paradigms(word_id);
         CREATE INDEX idx_paradigms_surface ON paradigms(surface);
         CREATE INDEX idx_meanings_word ON meanings(word_id);
+        CREATE INDEX idx_trans_bare ON trans_bare(bare);
         CREATE INDEX idx_examples_word ON examples(word_id);
     """)
     dst.commit()

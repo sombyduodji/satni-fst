@@ -14,6 +14,7 @@ Sátni FST:n kaikki versiot. Lataukset: [GitHub-julkaisut](https://github.com/so
 - **Espanja.** Espanjankieliset käännökset noin 7 600 sanalle, myös noin kahdelle kolmasosalle yleisimmistä, merkityksineen ja esimerkkilauseineen GiellaLT:n espanjan sanakirjoista, jotka on tehnyt Ángel. Kytke päälle kohdasta *Muut kielet*.
 - **Haku muilla kielillä.** Muut kielet -asetuksessa valituilla kielillä voi myös hakea, pohjoissaamen ja suomen osumien jälkeen: *perro* löytää sanan *beana*. Tuloslista kertoo, millä kielellä sana löytyi. Vain perusmuodot löytyvät.
 - **Haku löytää käännökset, joissa on tarkenne sulkeissa.** *naida* löytää nyt sanat, joiden käännös on "naida (kerran)", ja *immoral* käännöksen "immoral (of women)": noin 3 400 sanaa, jotka löytyivät aiemmin vain kirjoittamalla tarkennekin.
+- **"Tarkoititko" hakukentässä ja muilla kielillä.** Hakukenttä ehdottaa jo kirjoittaessa sanaa, josta puuttuvat erikoiskirjaimet on lisätty (*cahci* → *čáhci*), myös Muut kielet -asetuksessa valituilla kielillä (*arbol* → *árbol*, *tjielte* → *tjïelte*). Ehdotus vain lisää kirjaimia eikä vaihda niitä.
 
 ## 0.9.3 — 2026-11-03
 

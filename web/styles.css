@@ -129,6 +129,9 @@ select {
 .suggestions li.sugg-loading { color: var(--muted); font-size: 13px; cursor: default; pointer-events: none; }
 .sugg-ring { width: 14px; height: 14px; flex: none; border-radius: 50%; border: 2px solid var(--line, rgba(127, 127, 127, .3)); border-top-color: var(--accent); animation: speak-spin .8s linear infinite; }
 .suggestions li .sugg-form { color: var(--muted); }
+/* Tarkoititko-ehdotus hakukentän listassa (app.js: suggestWords) */
+.suggestions li.sugg-dym .sugg-dym-label { color: var(--muted); font-size: 13px; }
+.suggestions li.sugg-dym b { color: var(--accent); }
 .suggestions li .pos { color: var(--subtle); font-size: 12px; }
 .suggestions li .trans { color: var(--muted); font-size: 13px; margin-left: auto; text-align: right; }
 .suggestions li.active, .suggestions li:hover { background: var(--select); }

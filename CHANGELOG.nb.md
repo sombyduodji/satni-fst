@@ -14,6 +14,7 @@ Alle versjoner av Sátni FST. Nedlastinger: [GitHub-utgivelser](https://github.c
 - **Spansk.** Spanske oversettelser for omtrent 7 600 ord, også omtrent to tredjedeler av de vanligste, med betydninger og eksempelsetninger fra GiellaLTs spanske ordbøker laget av Ángel. Slå dem på under *Andre språk*.
 - **Søk på andre språk.** Språk som er slått på under *Andre språk* kan også brukes til å søke, etter treff på nordsamisk og norsk: *perro* finner *beana*. Resultatlisten viser hvilket språk som ga treff. Bare grunnformer blir funnet.
 - **Søket finner oversettelser med en presisering i parentes.** *naida* finner nå ord som er oversatt med "naida (kerran)", og *immoral* finner "immoral (of women)": omtrent 3 400 ord som før bare ble funnet hvis man skrev presiseringen også.
+- **«Mente du» i søkefeltet og på andre språk.** Mens du skriver, foreslår søkefeltet ordet med de manglende spesialbokstavene (*cahci* → *čáhci*), også på språk som er slått på under *Andre språk* (*arbol* → *árbol*, *tjielte* → *tjïelte*). Forslaget legger bare til bokstaver og bytter dem aldri.
 
 ## 0.9.3 — 2026-11-03
 
