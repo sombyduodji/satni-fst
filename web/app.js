@@ -817,8 +817,10 @@ function selectResult(i, pushHistory = true) {
   const first = ownGroup[0];
   let trans = first ? splitList(first.translations || first.explanations).slice(0, 4).join(", ") : translationOf(w, 3);
   state.transWords = first ? splitList(first.translations).slice(0, 4) : splitList(w[LANGUAGES[settings.lang].col]).slice(0, 3);
-  if (first && first.restrictions) trans += ` (${first.restrictions})`;
-  $("translation").textContent = trans || t("noTranslationIn")[settings.lang];
+  // Merkitys, jossa on vain käyttörajoitus (go: "i spørsmål"): "(ei norjannosta)" ja rajoitus perään
+  const note = first && first.restrictions ? ` (${first.restrictions})` : "";
+  if (trans) trans += note;
+  $("translation").textContent = trans || t("noTranslationIn")[settings.lang] + note;
   renderApertium(w, trans);
   renderPivotFin(w, trans);
   renderExtraTranslations(w, groups);
