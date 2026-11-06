@@ -123,8 +123,33 @@ REJECTED_FORMS = {"EMRIPa", "Radisson-SASa"} | {f"info:{ending}" for ending in (
 ACRONYM_TAGS = {"Sg+Nom", "Sg+Gen", "Sg+Acc"}
 
 
+# Suomennosten kirjoitusvirheet ja vanhentuneet kirjoitusasut (tarkistettu 2026-11-06): kumpikaan oikoluin (Voikko,
+# lang-fin) ei tunne vanhaa sanaa, molemmat tuntevat korjatun, ja korjaus on yhden kirjaimen päässä (tai valittu
+# käsin, kun Voikon ehdotus oli väärä: kaivosyitys -> kaivosyritys); käyty käsin läpi, harvinaiset ja murresanat säilyvät
+FINNISH_TYPOS = {
+ "arkelologi": "arkeologi", "arkkitehtooninen": "arkkitehtoninen", "aurinkopaneli": "aurinkopaneeli",
+ "ekspisiittisesti": "eksplisiittisesti", "fäärsaarelainen": "färsaarelainen", "haastellinen": "haasteellinen",
+ "harmooninen": "harmoninen", "ideolooginen": "ideologinen", "irroittautua": "irrottautua", "kaivosyitys": "kaivosyritys",
+ "kallionjykänne": "kallionjyrkänne", "kaulalihkakset": "kaulalihakset", "kovääninen": "kovaääninen",
+ "kultuurihistoriallinen": "kulttuurihistoriallinen", "käprisyneenä": "käpristyneenä", "käyttätyä": "käyttäytyä",
+ "legitiimys": "legitiimiys", "limonaadi": "limonadi", "lutherilainen": "luterilainen", "lyhykalloinen": "lyhytkalloinen",
+ "mietittyttää": "mietityttää", "monikulkio": "monikulmio", "muinaisimuistojen": "muinaismuistojen", "näköoala": "näköala",
+ "osaanottaja": "osanottaja", "petrooli": "petroli", "ponttooni": "ponttoni", "pylvägrafiikka": "pylväsgrafiikka",
+ "reiitin": "reititin", "renesanssi": "renessanssi", "selvityminen": "selviytyminen", "selvityä": "selviytyä",
+ "smirkeli": "smirgeli", "standarisoida": "standardisoida", "synagooga": "synagoga", "taitelija": "taiteilija",
+ "tendessi": "tendenssi", "teorema": "teoreema", "tietokonenohjelma": "tietokoneohjelma", "tiibettiläinen": "tiibetiläinen",
+ "toisijaisesti": "toissijaisesti", "topograafinen": "topografinen", "tulisase": "tuliase", "vaihtehtoinen": "vaihtoehtoinen",
+ "yleieurooppalainen": "yleiseurooppalainen", "biograafinen": "biografinen", "kliniikka": "klinikka", "kamina": "kamiina",
+ "jystää": "jyystää", "loidommas": "loitommas", "loidompana": "loitompana", "röhistely": "röyhistely", "neljittäin": "nelittäin",
+ "nykyäys": "nykäys", "ylimistö": "ylimystö", "vähintäinkin": "vähintäänkin", "pöllyyttää": "pöllyttää",
+ "suolisolbmu": "suolisolmu", "kurenuohtta": "kurenuotta", "interrogatiiviprononomini": "interrogatiivipronomini",
+ "vistous": "viistous", "virtava": "virtaava",
+}
+_FINNISH_TYPO_RE = re.compile(r"\b(" + "|".join(sorted(FINNISH_TYPOS, key=len, reverse=True)) + r")\b")
+
+
 def fix_finnish_text(text):
-    return text.translate(FINNISH_LETTER_FIXES)
+    return _FINNISH_TYPO_RE.sub(lambda m: FINNISH_TYPOS[m.group(1)], text.translate(FINNISH_LETTER_FIXES))
 
 
 # Sanaluokka puuttuu (dict-sme-eng: pos="Xxx"): päätellään toisesta sanakirjasta tai FST:stä
