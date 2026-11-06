@@ -27,6 +27,12 @@ _VERB_STEM = re.compile(r'^\s*([^+:\s!]+)(?:\+[^:]*)?:\S+\s+(\S+)\s*(?:"[^"]*")?
 VOWELS = re.compile("[aáeiouyäöâ]+")
 CASES = ["Nom", "Gen", "Acc", "Ill", "Loc", "Com"]
 TAGS = [f"{number}+{case}" for number in ("Sg", "Pl") for case in CASES] + ["Ess"]
+# Sanat, joiden luokasta lähteet ovat eri mieltä: luokka näytetään vain, kun se on varma (käyttäjän päätös
+# 2026-11-06). Wiktionaryn pohjoissaamen sanat (kaikki.org) olivat samaa mieltä 2 439 sanasta 2 441:stä;
+# nämä kaksi GiellaLT taivuttaa eri tavalla:
+#   soađis: GiellaLT gen. soađđása (II), Wiktionary soađđá (III)
+#   njivlla: GiellaLT gen. njivlaga (II), Wiktionary parillinen, sanan njivli muunnos (I)
+DISPUTED = {("soađis", "N"), ("njivlla", "N")}
 
 
 def _noun_section(line):
@@ -140,13 +146,13 @@ def apply(cursor):
     ):
         words.setdefault((word_id, lemma), {}).setdefault(tag, []).append((surface, grade))
     updates = [(cls, word_id) for (word_id, lemma), forms in words.items()
-               if (cls := classify_noun(nouns.get(lemma), forms))]
+               if (lemma, "N") not in DISPUTED and (cls := classify_noun(nouns.get(lemma), forms))]
     noun_count = len(updates)
 
     # Yhdistetyillä kirjoitusasuilla (dialects.py) on kaksi lemmaa, joilla voi olla eri luokka
     merged = "AND dial_same IS NULL" if "dial_same" in cols else ""
     for word_id, lemma in cursor.execute(f"SELECT id, sme_lemma FROM dictionary WHERE pos = 'V' {merged}").fetchall():
-        cls = classify_verb(verbs.get(lemma), lemma)
+        cls = None if (lemma, "V") in DISPUTED else classify_verb(verbs.get(lemma), lemma)
         if cls:
             updates.append((cls, word_id))
     cursor.executemany("UPDATE dictionary SET inflection_class = ? WHERE id = ?", updates)
