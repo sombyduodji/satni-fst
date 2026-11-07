@@ -313,6 +313,30 @@ table.paradigm tbody tr:nth-child(even) td { background: var(--surface-alt); }
 table.paradigm tr.section td {
   background: var(--section) !important; color: var(--accent); font-weight: 700; padding-top: 10px;
 }
+/* Verbitaulukko: yksikkö, duaali ja monikko omissa pyöristetyissä laatikoissaan, pääosioiden välissä rako.
+   Kapeassa näkymässä vaihtoehtoiset muodot rivittyvät /-merkin kohdalta, jotta laatikon oikea reuna näkyy. */
+table.paradigm.grouped { border-collapse: separate; border-spacing: 0; --grp-line: color-mix(in srgb, var(--accent) 22%, transparent); }
+table.paradigm.grouped td { white-space: normal; }
+table.paradigm.grouped .form, table.paradigm.grouped .pron, table.paradigm.grouped .form-tr { white-space: nowrap; }
+table.paradigm.grouped tbody tr td { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+table.paradigm.grouped tbody tr td:first-child { border-left: 1px solid var(--grp-line); }
+table.paradigm.grouped tbody tr td:last-child { border-right: 1px solid var(--grp-line); }
+table.paradigm.grouped td.label { padding-left: 14px; }
+table.paradigm.grouped tr.g-first td { border-top: 1px solid var(--grp-line); padding-top: 8px; }
+table.paradigm.grouped tr.g-last td { border-bottom: 1px solid var(--grp-line); padding-bottom: 8px; }
+table.paradigm.grouped tr.g-first td:first-child { border-top-left-radius: 16px; }
+table.paradigm.grouped tr.g-first td:last-child { border-top-right-radius: 16px; }
+table.paradigm.grouped tr.g-last td:first-child { border-bottom-left-radius: 16px; }
+table.paradigm.grouped tr.g-last td:last-child { border-bottom-right-radius: 16px; }
+table.paradigm.grouped tr.section td { border-left: 0; border-right: 0; padding-bottom: 6px; }
+table.paradigm.grouped tr.section td:first-child, table.paradigm.grouped thead th:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+table.paradigm.grouped tr.section td:last-child, table.paradigm.grouped thead th:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+table.paradigm.grouped tr.gap td { height: 6px; padding: 0; background: transparent; border: 0; }
+table.paradigm.grouped tr.gap-sec td { height: 14px; }
+table.paradigm.grouped tr.gap-after td { height: 4px; }
+.table-wrap + .table-wrap { margin-top: 14px; }
+/* Ruudukkotaulukoissa (sijamuodot) laatikon sisällä hento raidoitus, joka auttaa pitkän rivin seuraamisessa */
+table.paradigm.boxed tbody tr:not(.gap):not(.section):nth-child(even) td { background: color-mix(in srgb, var(--accent) 9%, transparent); }
 .form { cursor: pointer; border-radius: 4px; }
 .form:hover { background: var(--select); }
 .form.picked { background: var(--select); outline: 2px solid var(--accent); }

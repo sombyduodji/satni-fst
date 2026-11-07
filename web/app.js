@@ -1436,30 +1436,35 @@ function renderTable() {
   };
   const label = (t) => `<td class="label">${esc(t)}</td>`;
   const section = (...cells) => `<tr class="section">${cells.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`;
+  // Verbitaulukko ryhmiteltynä: yksikkö, duaali ja monikko omiin pyöristettyihin laatikoihinsa, pääosioiden väliin pieni rako
+  const gap = (cls) => `<tr class="gap ${cls}" aria-hidden="true"><td colspan="5"></td></tr>`;
+  const verbSection = (first, ...cells) => (first ? "" : gap("gap-sec")) + section(...cells) + gap("gap-after");
+  const personRows = (rowFn) => PERSONS.map((pp, i) => {
+    const cls = pp.endsWith("1") ? "g-first" : pp.endsWith("3") ? "g-last" : "";
+    return `<tr${cls ? ` class="${cls}"` : ""}>${rowFn(pp)}</tr>` + (pp.endsWith("3") && i < PERSONS.length - 1 ? gap("") : "");
+  }).join("");
 
   let html = "";
   if (!p.size && !UNINFLECTED_POS.includes(pos)) {
     html = `<p class="muted">${esc(t("noForms"))}</p>`;
   } else if (pos === "V") {
-    let rows = section(t("indicative"), t("present"), "", t("preterite"), "");
-    for (const pp of PERSONS) {
+    let rows = verbSection(true, t("indicative"), t("present"), "", t("preterite"), "");
+    rows += personRows((pp) => {
       const pr = PRONOUNS[pp];
-      rows += `<tr>${label(pp)}${cell(pairs(`Ind+Prs+${pp}`), pr)}${cell(pairs("Ind+Prs+ConNeg"), `${pr} ${NEG_AUX[pp]}`, null, pp)}` +
-              `${cell(pairs(`Ind+Prt+${pp}`), pr)}${cell(pairs("Ind+Prt+ConNeg"), `${pr} ${NEG_AUX[pp]}`, null, pp)}</tr>`;
-    }
-    rows += section("", t("conditional"), "", t("potential"), "");
-    for (const pp of PERSONS) {
+      return `${label(pp)}${cell(pairs(`Ind+Prs+${pp}`), pr)}${cell(pairs("Ind+Prs+ConNeg"), `${pr} ${NEG_AUX[pp]}`, null, pp)}` +
+             `${cell(pairs(`Ind+Prt+${pp}`), pr)}${cell(pairs("Ind+Prt+ConNeg"), `${pr} ${NEG_AUX[pp]}`, null, pp)}`;
+    });
+    rows += verbSection(false, "", t("conditional"), "", t("potential"), "");
+    rows += personRows((pp) => {
       const pr = PRONOUNS[pp];
-      rows += `<tr>${label(pp)}${cell(pairs(`Cond+Prs+${pp}`), pr)}${cell(pairs("Cond+Prs+ConNeg"), `${pr} ${NEG_AUX[pp]}`, null, pp)}` +
-              `${cell(pairs(`Pot+Prs+${pp}`), pr)}${cell(pairs("Pot+Prs+ConNeg"), `${pr} ${NEG_AUX[pp]}`, null, pp)}</tr>`;
-    }
-    rows += section("", t("imperative"), "", "", "");
-    for (const pp of PERSONS) {
-      rows += `<tr>${label(pp)}${cell(pairs(`Imprt+${pp}`))}${cell(pairs("Imprt+ConNeg"), NEG_AUX_IMPRT[pp], null, pp)}<td></td><td></td></tr>`;
-    }
+      return `${label(pp)}${cell(pairs(`Cond+Prs+${pp}`), pr)}${cell(pairs("Cond+Prs+ConNeg"), `${pr} ${NEG_AUX[pp]}`, null, pp)}` +
+             `${cell(pairs(`Pot+Prs+${pp}`), pr)}${cell(pairs("Pot+Prs+ConNeg"), `${pr} ${NEG_AUX[pp]}`, null, pp)}`;
+    });
+    rows += verbSection(false, "", t("imperative"), "", "", "");
+    rows += personRows((pp) => `${label(pp)}${cell(pairs(`Imprt+${pp}`))}${cell(pairs("Imprt+ConNeg"), NEG_AUX_IMPRT[pp], null, pp)}<td></td><td></td>`);
     let nf = section(t("nonFinite"), "");
     VERB_NONFINITE_TAGS.forEach((tag, i) => { nf += `<tr>${label(t("nonFiniteRows")[i])}${cell(pairs(tag))}</tr>`; });
-    html = table(["", t("affirmative"), t("negative"), t("affirmative"), t("negative")], rows) + table(null, nf);
+    html = table(["", t("affirmative"), t("negative"), t("affirmative"), t("negative")], rows, "grouped") + table(null, nf);
   } else if (UNINFLECTED_POS.includes(pos)) {
     html = table(["", t("baseForm")], `<tr>${label(t("uninflected"))}${cell([["", w.sme_lemma]])}</tr>`);
   } else if (!p.has("Sg+Nom") && !p.has("Pl+Nom") && p.has("Nom")) {
@@ -1487,11 +1492,33 @@ function renderTable() {
     (legend ? `<p class="legend">${t("gradeLegend")}</p>` : "") +
     (settings.exp.tableTr && html.includes("form-tr") ? `<p class="hint form-tr-note">${esc(t("tableTrNote"))}</p>` : "") +
     html + `<p class="hint">${esc(t("tapHint"))}</p>`;
+  boxTables($("panel-table"));
 }
 
-function table(headers, rows) {
+// Muut taulukot (sijamuodot, vertailumuodot, nominaalimuodot) samaan tyyliin kuin verbitaulukko: jokainen otsikkojen
+// välinen riviryhmä omaksi pyöristetyksi laatikokseen, ja otsikkoriville rako ennen ja jälkeen.
+function boxTables(root) {
+  for (const tbl of root.querySelectorAll("table.paradigm:not(.grouped)")) {
+    tbl.classList.add("grouped", "boxed");
+    const rows = [...tbl.tBodies[0].rows];
+    const cols = Math.max(...rows.map((r) => r.cells.length), tbl.tHead ? tbl.tHead.rows[0].cells.length : 0);
+    const gap = (cls) => { const g = document.createElement("tr"); g.className = "gap " + cls; g.setAttribute("aria-hidden", "true");
+      g.innerHTML = `<td colspan="${cols}"></td>`; return g; };
+    rows.forEach((tr, i) => {
+      if (tr.classList.contains("section")) {
+        if (i > 0) tr.before(gap("gap-sec"));
+        tr.after(gap("gap-after"));
+        return;
+      }
+      if (!rows[i - 1] || rows[i - 1].classList.contains("section")) tr.classList.add("g-first");
+      if (!rows[i + 1] || rows[i + 1].classList.contains("section")) tr.classList.add("g-last");
+    });
+  }
+}
+
+function table(headers, rows, cls = "") {
   const head = headers ? `<thead><tr>${headers.map((h) => `<th>${esc(h)}</th>`).join("")}</tr></thead>` : "";
-  return `<div class="table-wrap"><table class="paradigm">${head}<tbody>${rows}</tbody></table></div>`;
+  return `<div class="table-wrap"><table class="paradigm${cls ? " " + cls : ""}">${head}<tbody>${rows}</tbody></table></div>`;
 }
 
 function meaningHtml(m, numbered) {
