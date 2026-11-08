@@ -568,9 +568,48 @@ function suggestWords(prefix, withForms = true) {
         .map((d) => ({ id: d.id, sme_lemma: d.lemma, pos: "", form: d.word, dym: d })) : [];
   // Oma tyhjä hakusana (mus, munnje ilman suomennosta) on turha, kun perusmuoto (mun) näkyy
   const useful = forms.length ? rows.filter((r) => fold(r.sme_lemma) !== q || r[col]) : rows;
+  // Sama sana vain kerran tunnisteen mukaan, ei perusmuodon ja sanaluokan: mii = me ja mii = mikä ovat eri sanoja.
+  // Muotorivi ja saman sanan tavallinen rivi yhdistyvät; "tarkoititko"-rivit pidetään erillään kuten ennen.
+  const key = (r) => r.dym ? "dym|" + r.sme_lemma : r.id != null ? "id|" + r.id : r.sme_lemma + "|" + r.pos;
   const seen = new Set();
-  return [...dym, ...forms, ...exact, ...useful]
-    .filter((r) => !seen.has(r.sme_lemma + r.pos) && seen.add(r.sme_lemma + r.pos)).slice(0, 8);
+  const unique = [...dym, ...forms, ...exact, ...useful].filter((r) => !seen.has(key(r)) && seen.add(key(r)));
+  return mergeSameLemma(unique, col).slice(0, 8);
+}
+
+// Saman perusmuodon rivit, joiden käännös on sama tai toisen alku (galle Adv/Num/Pron "kuinka monta, montako",
+// makkáraš A "millainen" ja Pron "millainen, minkälainen"), yhdeksi riviksi sanaluokat yhdistettyinä. Eri merkitykset
+// jäävät erilleen, vaikka sana toistuisi käännöksen lopussa (gosa Adv "minne" ja CC "johon, jonne, mihin, minne";
+// mii me / mikä). Rivi ilman käännöstä jätetään pois, kun samalla perusmuodolla on käännetty sana (man Pron ilman
+// suomennosta, kun man Adv = kuinka).
+function mergeSameLemma(rows, col) {
+  const plain = (r) => !r.dym && !r.form && !r.extraLang;
+  const words = (r) => (r[col] || "").split(",").map((w) => fold(w.trim())).filter(Boolean);
+  const startsWith = (long, short) => short.length <= long.length && short.every((w, i) => long[i] === w);
+  const translated = new Set();
+  const hasTranslated = (lemma) => {
+    if (!translated.has(lemma)) {
+      translated.add(lemma);
+      if (all(`SELECT 1 FROM dictionary WHERE sme_lemma = ? AND ${col} <> '' LIMIT 1`, [lemma]).length) translated.add("+" + lemma);
+    }
+    return translated.has("+" + lemma);
+  };
+  const out = [];
+  for (const r of rows) {
+    if (!plain(r)) { out.push(r); continue; }
+    const mine = words(r);
+    if (!mine.length) {
+      if (!hasTranslated(r.sme_lemma)) out.push(r);
+      continue;
+    }
+    const i = out.findIndex((o) => plain(o) && o.sme_lemma === r.sme_lemma && o[col] &&
+      (startsWith(words(o), mine) || startsWith(mine, words(o))));
+    if (i < 0) { out.push(r); continue; }
+    // Laajempi käännös jää näkyviin (makkáraš: millainen, minkälainen), sanaluokat yhdessä (Adv/Num/Pron)
+    const keep = words(out[i]).length >= mine.length ? out[i] : r;
+    const pos = [...new Set([...out[i].pos.split("/"), r.pos])].join("/");
+    out[i] = { ...keep, pos };
+  }
+  return out;
 }
 
 // Koko sanan osumat taivutusmuotona tai liitepartikkelin kanssa samalla haulla kuin Enter (queryDatabase); form = kirjoitettu sana
@@ -588,7 +627,8 @@ function formSuggestions(text, results = null) {
   return [...direct, ...shown.slice(0, 3).map((r) => {
     const translated = r.via || r.finClitic;
     // Saamen muoto kursiivilla perusmuodon perässä: mus -> mun mus, minulla -> mun mus (ja oikealla haettu suomen sana)
-    let smeForm = translated ? null : typed;
+    // Ei kursiivimuotoa, kun kirjoitettu sana on sanan oma perusmuoto (guhtemuš ilman suomennosta: ei "guhtemuš guhtemuš")
+    let smeForm = translated || fold(r.sme_lemma) === fold(typed) ? null : typed;
     if (r.via) {
       const tag = settings.lang === "fin" ? samiTagOfFinCell(r.via.cell, r.pos.toUpperCase(), r.via.base) : null;
       smeForm = tag ? (loadWord(r.id).paradigm.get(tag) || [])[0] || null : null;

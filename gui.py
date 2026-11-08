@@ -196,10 +196,10 @@ def suggest_words(prefix, limit=8):
         rows = conn.execute(
             """
             SELECT * FROM (
-                SELECT sme_lemma, pos, finnish_translation, 1 AS rank FROM dictionary
+                SELECT id, sme_lemma, pos, finnish_translation, 1 AS rank FROM dictionary
                 WHERE PYLOWER(sme_lemma) LIKE ?
                 UNION ALL
-                SELECT sme_lemma, pos, finnish_translation, 2 FROM dictionary
+                SELECT id, sme_lemma, pos, finnish_translation, 2 FROM dictionary
                 WHERE PYLOWER(finnish_translation) LIKE ? OR PYLOWER(finnish_translation) LIKE ?
             )
             ORDER BY rank, length(sme_lemma), sme_lemma
@@ -212,10 +212,11 @@ def suggest_words(prefix, limit=8):
         print(f"Ehdotusvirhe: {e}")
         return []
     result, seen = [], set()
-    for lemma, pos, trans, _ in rows:
-        if (lemma, pos) in seen:
+    # Sama sana kerran tunnisteen mukaan: mii = me ja mii = mikä ovat eri sanoja
+    for word_id, lemma, pos, trans, _ in rows:
+        if word_id in seen:
             continue
-        seen.add((lemma, pos))
+        seen.add(word_id)
         result.append((lemma, pos, ", ".join(p.strip() for p in (trans or "").split(",")[:2])))
         if len(result) >= limit:
             break

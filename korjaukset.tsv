@@ -32,6 +32,14 @@ galle	Pron	kuinka monta, montako
 galle	Adv	kuinka monta, montako
 galle	Num	kuinka monta, montako
 
+# Pronominien taivutusmuodot, jotka sme-nob-sanakirjassa ovat omina hakusanoinaan ilman suomennosta (tarkistettu
+# 2026-11-08 sanan paradigmasta ja Voikolla): maid = mii Acc (mitä), man = mii Gen (minkä), gean = gii Gen/Acc
+# (kenen, kenet), geasa = gii Ill (kenelle). manin (mii Ess, "som hva") ja gallis (galle Loc) jätetty ilman.
+maid	Pron	mitä
+man	Pron	minkä
+gean	Pron	kenen, kenet
+geasa	Pron	kenelle
+
 # Wiktionaryn englanti, joka ei vastaa sanan suomennosta ja norjannosta (tarkistettu käsin 2026-11-06). Useimmissa
 # Wiktionary kuvasi samannäköistä toista sanaa (deaivu "osuma" eikä juustomuotti, guovda "keskikohta" eikä kosteikko).
 geažil	Po		because of, due to

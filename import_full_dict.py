@@ -39,6 +39,10 @@ LANGUAGES = ["fin", "nob", "eng", "smn", "smj", "sma"]
 XML_DIRS = {lang: os.path.join(SCRIPT_DIR, f"dict-sme-{lang}", "src") for lang in LANGUAGES}
 # Käänteiset sanakirjat (suomi/norja -> saame): parantavat hakua suomen- ja norjankielisillä sanoilla
 REVERSE_DIRS = {lang: os.path.join(SCRIPT_DIR, f"dict-{lang}-sme", "src") for lang in ("fin", "nob")}
+# Käänteisen sanakirjan väärä sanaluokka, joka vie hakusanan väärälle saamen sanalle: (kieli, hakusana, saamennos) ->
+# oikea sanaluokka. dict-fin-sme: mitä (Adv) -> maid (Adv) on esimerkin (maid don doppe oidnet?) mukaan pronomini
+# maid (mii-sanan akkusatiivi), ei adverbi maid "myös" (tarkistettu 2026-11-08)
+REVERSE_POS_FIXES = {("fin", "mitä", "maid"): "Pron"}
 # Muiden saamenkielten sanakirjat (inari/luulaja/etelä -> pohjoissaame): täydentävät vain puuttuvia käännöksiä
 # (sanakirjat dict-sme-smn/smj/sma ovat jo lähes samat, ks. fill_sami_translations)
 SAMI_REVERSE_DIRS = {lang: os.path.join(SCRIPT_DIR, f"dict-{lang}-sme", "src") for lang in ("smn", "smj", "sma")}
@@ -529,6 +533,7 @@ def parse_reverse_dictionaries(entries, by_lemma):
                                 or t_elem.get('t_type') == "expl"):
                             continue
                         pos = detect_pos(t_elem.get('pos') or head_elem.get('pos'), filename)
+                        pos = REVERSE_POS_FIXES.get((lang, headword, lemma), pos)
                         subtype = ""
                         if pos == "Prop":
                             pos, subtype = "N", "Prop"
