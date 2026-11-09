@@ -506,7 +506,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .ocr-swatches button.active { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--c); }
 .ocr-bubble {
   position: absolute; z-index: 2; display: flex; align-items: center; gap: 12px;
-  max-width: calc(100% - 16px); padding: 8px 8px 8px 14px; border: 0; border-radius: 14px;
+  width: max-content; max-width: calc(100% - 16px); padding: 8px 8px 8px 14px; border: 0; border-radius: 14px;
   background: var(--surface); color: var(--text); box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
   font: inherit; text-align: left; cursor: pointer; transform: translate(-50%, calc(-100% - 10px));
 }
@@ -518,9 +518,25 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 }
 .ocr-bubble.below::after { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--surface); }
 .ocr-bubble .b-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.ocr-bubble .b-word { font-weight: 700; font-size: 17px; }
-.ocr-bubble .b-lemma { color: var(--muted); font-weight: 400; font-size: 14px; }
-.ocr-bubble .b-trans { color: var(--muted); font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ocr-bubble .b-word { font-weight: 700; font-size: 17px; white-space: nowrap; }
+.ocr-bubble .b-text:has(.b-row) {
+  /* Kuvan sanan kupla: rivi = saamen sana | käännös, sarakkeet tasattuina; perusmuodon rivi ohuen viivan alla */
+  display: grid; grid-template-columns: auto auto; column-gap: 12px; row-gap: 0; align-items: baseline;
+}
+.ocr-bubble .b-row { display: contents; }
+.ocr-bubble .b-more { color: var(--muted); }
+/* Painikkeet vierekkäin; kahden rivin kuplassa päällekkäin, jolloin käännös mahtuu puhelimessa yhdelle riville */
+.ocr-bubble .b-actions { display: flex; align-items: center; gap: 12px; flex: none; }
+.ocr-bubble:has(.b-base) .b-actions { flex-direction: column; gap: 6px; }
+.ocr-bubble:has(.b-base) .b-speak { margin-right: 0; }
+.ocr-bubble .b-sme { font-weight: 700; font-size: 17px; white-space: nowrap; padding: 2px 0; }
+.ocr-bubble .b-tr {
+  font-size: 15px; padding: 2px 0;
+  /* Pitkä käännös (minulla / minulta / minussa / minusta) rivittyy /-merkin kohdalta vasta, kun tila loppuu */
+}
+.ocr-bubble .b-base > * { color: var(--muted); font-weight: 400; font-size: 14px; border-top: 1px solid var(--border); margin-top: 3px; padding-top: 4px; }
+.ocr-bubble .b-base .b-sme { font-weight: 600; }
+.ocr-bubble .b-form:only-child > * { padding: 3px 0; }
 .ocr-bubble .b-open, .ocr-bubble .b-speak, .ocr-bubble .b-copy {
   flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
   background: var(--accent); color: var(--accent-text);

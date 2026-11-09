@@ -186,7 +186,8 @@ def _clean(text):
 
 # Työmerkinnät, jotka ovat sanakirjassa käännöksen paikalla: dict-sme-eng:n X_smeeng.xml:ssä "(ei LpDict)"
 # (74 sanaa, Kotuksen aineistosta 2013) eli englantia ei löytynyt lähteestä
-NOT_TRANSLATIONS = {"(ei LpDict)"}
+# "attr." on dict-sme-fin:ssä kolmen adjektiivin käännöksenä (<t>attr.</t>: ollu, olu, bealleálás), ei suomen sana
+NOT_TRANSLATIONS = {"(ei LpDict)", "attr."}
 
 
 def _placeholder(text):

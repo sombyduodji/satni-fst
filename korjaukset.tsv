@@ -40,6 +40,13 @@ man	Pron	minkä
 gean	Pron	kenen, kenet
 geasa	Pron	kenelle
 
+# Kieltoverbin persoonamuodot ilman suomennosta (2026-11-09, Voikko: en/emme/ette/eivät = ei-sanan muodot), duaali kuten
+# pronomineissa: in = en, ean = emme (2), eahppi = ette (2), eaba = eivät (2)
+in	V	en
+ean	V	emme (2)
+eahppi	V	ette (2)
+eaba	V	eivät (2)
+
 # Wiktionaryn englanti, joka ei vastaa sanan suomennosta ja norjannosta (tarkistettu käsin 2026-11-06). Useimmissa
 # Wiktionary kuvasi samannäköistä toista sanaa (deaivu "osuma" eikä juustomuotti, guovda "keskikohta" eikä kosteikko).
 geažil	Po		because of, due to

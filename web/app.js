@@ -1303,7 +1303,8 @@ function finWithClitics(phrase, clitics, back) {
   return variants.join(" / ");
 }
 
-function translationOfForm(w, tags, finClitics = null) {
+// transWords: käännökset, joita taivutetaan (oletuksena avoimen sanakortin; kuvan kupla antaa omansa)
+function translationOfForm(w, tags, finClitics = null, transWords = state.transWords) {
   const pron = w.subtype === "Pers" && PERS_PRONOUNS[w.sme_lemma];
   if (pron && pron[settings.lang]) {
     const phrases = tags.map((tag) => pronounPhrase(tag, pron[settings.lang], settings.lang)).filter(Boolean)
@@ -1313,7 +1314,7 @@ function translationOfForm(w, tags, finClitics = null) {
   const pos = FORM_POS[w.pos.toUpperCase()];
   if (!pos) return "";
   const out = [];
-  for (const word of state.transWords || []) {
+  for (const word of transWords || []) {
     const forms = translationForms(settings.lang, word.replace(/\(.*?\)/g, "").trim(), pos);
     if (!forms) continue;
     let phrases = [...new Set(tags.map((tag) => FORM_PHRASES[settings.lang](tag, pos, forms)).filter(Boolean))];
@@ -1790,11 +1791,15 @@ function ocrCorrector() {
   const lemma = db.prepare("SELECT 1 FROM dictionary WHERE lemma_fold = ? LIMIT 1");
   const form = db.prepare("SELECT 1 FROM paradigms WHERE surface IN (?, ?) LIMIT 1");
   const exists = (stmt, params) => { stmt.bind(params); const found = stmt.step(); stmt.reset(); return found; };
-  const isSami = (w) => exists(lemma, [fold(w)]) || exists(form, [w, capitalize(w)]);
+  const plain = (w) => exists(lemma, [fold(w)]) || exists(form, [w, capitalize(w)]);
+  // Liitepartikkelin kanssa (válddátgo = válddát + -go, songe = son + -ge): haku tuntee nämä (queryDatabase)
+  const isSami = (w) => plain(w) || CLITICS.some((c) => w.length > c.length + 1 && w.endsWith(c) && plain(w.slice(0, -c.length)));
   const cache = new Map();
   const correct = (word) => {
     const w = [...word.toLowerCase()].map((c) => OCR_LOOKALIKES[c] || c).join("");
     if (isSami(w)) return w;
+    // Yhdysmerkkinen nimi (Biret-Iŋgá, Biret-Iŋggáin): viimeinen osa taipuu, joten se haetaan
+    if (w.includes("-")) return correct(w.slice(w.lastIndexOf("-") + 1));
     const spots = [...w].map((c, i) => (OCR_DIACRITICS[c] ? i : -1)).filter((i) => i >= 0).slice(0, 10);
     const variant = (picked) => [...w].map((c, i) => (picked.includes(i) ? OCR_DIACRITICS[c] : c)).join("");
     const combos = (k, from = 0) => (k === 0 ? [[]] : spots.slice(from).flatMap((s, j) =>
@@ -1866,16 +1871,45 @@ const uiRows = (word) => queryDatabase(word).filter((r) => r.rank < PREFIX_RANK 
 
 // Kuplan teksti. Saamesta: perusmuoto ja käännös käyttöliittymän kielellä; kuuntele lausuu kuvan sanan.
 // Suomesta/norjasta: saamennokset; kuuntele lausuu ensimmäisen saamennoksen.
-function ocrGloss(word) {
+function ocrGloss(word, original = "") {
   if (settings.ocrFrom === "ui") {
     const rows = uiRows(word);
     const base = rows.find((r) => r.via)?.via.base;
     const sami = [...new Set(rows.map((r) => r.sme_lemma))];
     return { lemma: base && base !== word ? base : "", trans: sami.slice(0, 3).join(", "), say: sami[0] || "" };
   }
-  const row = queryDatabase(word).find((r) => SAMI_RANKS.includes(r.rank));
+  // Isolla kirjoitettu sana kuvassa: nimi ensin, jos sellainen on (Máhte = miehen nimi eikä máhttit "osata",
+  // Iŋggáin = Iŋgá). Muuten ensimmäinen saamen osuma, jolla on käännös (in = en, ei pelkkä kieltoverbin hakusana).
+  const part = (original || "").slice((original || "").lastIndexOf("-") + 1);
+  const sami = (q) => queryDatabase(q).filter((r) => SAMI_RANKS.includes(r.rank));
+  let query = word, rows = sami(word);
+  if (/^\p{Lu}/u.test(part)) {
+    const names = sami(capitalize(word)).filter((r) => r.subtype === "Prop");
+    if (names.length && (!rows.length || names[0].rank <= rows[0].rank)) { query = capitalize(word); rows = names; }
+  }
+  const row = rows.find((r) => r[LANGUAGES[settings.lang].col]) || rows[0];
   if (!row) return { trans: "", say: word };
-  return { lemma: fold(row.sme_lemma) !== fold(word) ? row.sme_lemma : "", trans: translationOf(row, 2), say: word };
+  const lemma = fold(row.sme_lemma) !== fold(word) ? row.sme_lemma : "";
+  return { lemma, form: lemma ? ocrFormTranslation(row, word) : "", trans: translationOf(row, 2), say: word, query, id: row.id };
+}
+
+// Kuvan taivutetun sanan käännös samassa muodossa kuin sanakortilla (beavddis = pöydässä / pöydästä, manan = menen).
+// Vain ensimmäinen käännös, jotta kupla pysyy lyhyenä. Tekstissä muoto, joka voi olla myös indikatiivi, on lähes
+// aina indikatiivi: imperatiivit pois, jos indikatiivi on (áigu = aikoo, ei aikokaamme / aikokaa).
+// Tyhjä, jos muotoa ei voi kääntää varmasti (esim. partitiivi): silloin kuplassa on vain perusmuodon käännös.
+function ocrFormTranslation(row, word) {
+  if (!FORM_PHRASES[settings.lang]) return "";
+  const data = loadWord(row.id);
+  const stem = fold(row.clitics ? row.cliticStem : word);
+  let tags = [...new Set([...data.paradigm].filter(([, forms]) => forms.some((f) => fold(f) === stem)).map(([tag]) => tag))];
+  if (tags.some((tag) => tag.startsWith("Ind+"))) tags = tags.filter((tag) => !tag.startsWith("Imprt+"));
+  if (!tags.length) return "";
+  const own = data.meanings.find((m) => m.lang === settings.lang && m.translations);
+  const base = (own ? splitList(own.translations) : splitList(data.word[LANGUAGES[settings.lang].col]))[0];
+  if (!base) return "";
+  const finClitics = row.clitics && settings.lang === "fin" && row.clitics.every((c) => FIN_CLITICS[c]) ? row.clitics : null;
+  const parts = [...new Set(translationOfForm(data.word, tags, finClitics, [base]).split(" / ").map((p) => p.trim()).filter(Boolean))];
+  return parts.join(" / ");
 }
 
 function ocrResult(r) {
@@ -1976,12 +2010,20 @@ function pickOcrWord(i) {
   ocr.picked = i;
   if (i == null) { bubble.hidden = true; return; }
   const w = ocr.words[i];
-  if (!w.gloss) w.gloss = ocrGloss(w.word);
+  if (!w.gloss) w.gloss = ocrGloss(w.word, w.clean);
   photo.querySelector(`[data-i="${i}"]`).classList.add("picked");
-  bubble.innerHTML = `<span class="b-text"><span class="b-word">${esc(w.word)}${w.gloss.lemma
-    ? ` <span class="b-lemma">(${esc(w.gloss.lemma)})</span>` : ""}</span>${w.gloss.trans
-    ? `<span class="b-trans">${esc(w.gloss.trans)}</span>` : ""}</span><span class="b-speak" role="button"
-    aria-label="${esc(t("listen"))}" ${w.gloss.say ? "" : "hidden"}>${SPEAK_ICON}</span><span class="b-open">${OPEN_ICON}</span>`;
+  // Rivi = saamen sana ja sen käännös: ensin kuvan muoto (beavddis  pöydässä / pöydästä), alla himmeämpänä perusmuoto
+  // (beavdi  pöytä). Perusmuotoinen sana yhdellä rivillä; jos muotoa ei voi kääntää, ylärivillä on vain saamen sana.
+  // Enintään kaksi muotoa (mus = minulla / minulta …): loput näkyvät sanakortilla
+  const short = (trans) => {
+    const parts = trans.split(" / ");
+    return parts.slice(0, 2).map(esc).join(" /<wbr> ") + (parts.length > 2 ? ` <span class="b-more">…</span>` : "");
+  };
+  const g = w.gloss, row = (sme, trans, cls) =>
+    `<span class="b-row ${cls}"><span class="b-sme">${esc(sme)}</span>${trans ? `<span class="b-tr">${short(trans)}</span>` : ""}</span>`;
+  const rows = g.lemma ? row(w.word, g.form, "b-form") + row(g.lemma, g.trans, "b-base") : row(w.word, g.trans, "b-form");
+  bubble.innerHTML = `<span class="b-text">${rows}</span><span class="b-actions"><span class="b-speak" role="button"
+    aria-label="${esc(t("listen"))}" ${w.gloss.say ? "" : "hidden"}>${SPEAK_ICON}</span><span class="b-open">${OPEN_ICON}</span></span>`;
   bubble.setAttribute("aria-label", w.word);
   bubble.hidden = false;
   placeOcrBubble();
@@ -2014,7 +2056,10 @@ function openOcrWord() {
   const w = ocr.words[ocr.picked];
   suppressClickUntil = Date.now() + 700;
   $("ocr-view").hidden = true;
-  search(w.word);
+  // Sama sana kuin kuplassa (Máhte avaa nimen, ei verbiä máhttit)
+  const q = w.gloss?.query || w.word;
+  const index = w.gloss?.id ? queryDatabase(q).findIndex((r) => r.id === w.gloss.id) : 0;
+  search(q, Math.max(index, 0));
   ocrReturnHash = location.hash;
 }
 
