@@ -38,7 +38,10 @@ function lauseCandidates(base, pos, exactOnly = false) {
     AND (t.fold = ? OR t.fold LIKE ? OR t.fold LIKE ? OR t.fold LIKE ?) GROUP BY d.id`,
     [f, `${f}, %`, f, `${f}, %`, `%, ${f}`, `%, ${f}, %`]).filter((r) => !exactOnly || r.at === 0);
   const want = LAUSE_POS[pos] || null;
+  // Pienellä kirjoitettu sana ei saa isolla alkavaa saamen sanaa (kanssa ≠ Máhtiin), jos muitakin on
+  const lower = !/^\p{Lu}/u.test(base) && rows.some((r) => !/^\p{Lu}/u.test(r.sme_lemma));
   return rows
+    .filter((r) => !lower || !/^\p{Lu}/u.test(r.sme_lemma))
     .filter((r) => !r.sme_lemma.includes(" ") || rows.length === 1)
     .sort((a, b) => ((want && !want.includes(a.pos)) - (want && !want.includes(b.pos))) || (a.at - b.at)
       || ((b.freq || 0) - (a.freq || 0)) || (a.nr - b.nr))
@@ -98,6 +101,8 @@ function lauseParse(text) {
     if (!/\p{L}/u.test(raw)) { tokens.push({ punct: raw }); continue; }
     const word = raw.toLowerCase();
     if (LAUSE_NEG[word]) { tokens.push({ raw, word, neg: word, known: true }); continue; }
+    // kanssa: edeltävä sana komitatiivissa (hevosten kanssa = heasttaiguin), itse sana jää pois
+    if (word === "kanssa" && tokens.some((x) => !x.punct)) { tokens.push({ raw, word, post: "", withPost: true, known: true }); continue; }
     if (LAUSE_POSTPOS[word] && tokens.some((x) => !x.punct)) { tokens.push({ raw, word, post: LAUSE_POSTPOS[word], known: true }); continue; }
     // Kieltoverbi kysymyksenä: eikö = iigo, etkö = itgo
     const negq = [...LAUSE_CLITICS].find(([c]) => (c === "ko" || c === "kö") && word.endsWith(c) && LAUSE_NEG[word.slice(0, -c.length)]);
@@ -118,6 +123,13 @@ function lauseParse(text) {
     // Iso alkukirjain lauseen keskellä ja tuntematon sana: nimi, joka säilyy sellaisenaan (Juha)
     if (!pick && tokens.some((x) => !x.punct) && /^\p{Lu}/u.test(raw)) {
       tokens.push({ raw, word, name: true, known: true }); continue;
+    }
+    // Lauseen alussa tuntematon isolla alkava sana: nimi. Saamen kirjaimella varma (Máret, Ánne), muuten harmaana
+    // arvauksena (Elsa), koska se voi olla myös kirjoitusvirhe; napautus näyttää ehdotukset
+    // Pitkä sana (Unelmani, Vesiputket) on todennäköisemmin tuntematon suomen sana kuin nimi
+    const samiLetters = /[áčđŋšŧžÁČĐŊŠŦŽ]/.test(raw);
+    if (!pick && /^\p{Lu}/u.test(raw) && (samiLetters || raw.length <= 6)) {
+      tokens.push({ raw, word, name: true, guess: !samiLetters, known: true }); continue;
     }
     tokens.push({ raw, word, stem, clitic, analyses, pick, known: !!pick });
   }
@@ -198,6 +210,7 @@ function lauseSamiTag(tokens, i) {
   if (existential && fcase === "Par") return `${num || "Sg"}+Nom`;
   // Postposition edellä genetiivi (auton alla = biilla vuolde), ei objektin akkusatiivi
   const next = tokens.slice(i + 1).find((x) => !x.punct);
+  if (next?.withPost && fcase === "Gen") return `${num || "Sg"}+Com`;
   if (next?.post && fcase === "Gen") return `${num || "Sg"}+Gen`;
   if (hasVerb && (fcase === "Gen" || fcase === "Par")) return `${num || "Sg"}+Acc`;
   if (fcase === "Nom") return `${num || "Sg"}+Nom`;
@@ -222,7 +235,8 @@ function lauseSamiForm(tokens, i) {
   const t = tokens[i];
   const clitic = t.clitic ? Object.fromEntries(LAUSE_CLITICS)[t.clitic] : "";
   if (t.neg) return { form: LAUSE_NEG[t.neg] + clitic, base: "ii", note: LAUSE_NEG_PERSON[t.neg], exact: true };
-  if (t.name || t.num) return { form: t.raw, base: t.raw, exact: true };
+  if (t.name || t.num) return { form: t.raw, base: t.raw, exact: !t.guess };
+  if (t.withPost) return { form: "", base: "", tag: "Com", exact: true };
   if (t.post) return { form: t.post, base: t.post, tag: "Po", exact: true };
   if (!t.choice) return null;
   let tag = lauseSamiTag(tokens, i), post = "", guess = false;
@@ -247,6 +261,7 @@ function lauseSentence(tokens) {
   tokens.forEach((t, i) => {
     if (t.punct) { parts.push({ punct: t.punct }); return; }
     const s = lauseSamiForm(tokens, i);
+    if (s && s.form === "") return;  // kanssa sisältyy edeltävän sanan komitatiiviin
     parts.push({ text: s ? s.form : `[${t.raw}]` });
   });
   let out = "";
@@ -329,7 +344,7 @@ function renderLause() {
     const s = lauseSamiForm(tokens, i);
     const cls = !tok.known ? "unk" : s && !s.exact ? "approx" : "";
     return `<button class="lause-chip ${cls}" data-i="${i}"><span class="lc-fin">${esc(tok.raw)}</span>` +
-      (s ? `<span class="lc-sme">${esc(s.form)}</span><span class="lc-base">${esc(s.base)}</span>`
+      (s ? `<span class="lc-sme">${esc(s.form || "–")}</span><span class="lc-base">${esc(s.base)}</span>`
          : `<span class="lc-sme">?</span><span class="lc-base">${esc(t("lauseUnknown"))}</span>`) + "</button>";
   }).join("");
   const ready = tokens.length && tokens.every((tok) => tok.punct || tok.neg || tok.name || tok.num || tok.post || tok.choice || tok.skip);
@@ -449,6 +464,9 @@ function bindLause() {
   const reparse = () => {
     clearTimeout(timer);
     timer = setTimeout(() => {
+      // Tekstikentän change-tapahtuma (kentästä poistuttaessa) ilman muutosta ei saa lukea lausetta uudelleen:
+      // muuten sanan napautus heti kirjoittamisen jälkeen avaa valikon, jonka uudelleenpiirto heti sulkee
+      if ($("lause-input").value === lause.parsedText) return;
       lause.tokens = lauseParseRestoring($("lause-input").value);
       renderLause();
       lauseSave();

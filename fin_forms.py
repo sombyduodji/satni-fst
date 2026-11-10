@@ -334,8 +334,10 @@ def clean_variants(forms, cell, pos, word, rejected=frozenset()):
                 or ("tten" in f and f.replace("tten", "den") in others)
                 or (cell == "Sg+Ess" and not f.endswith(("ena", "enä")) and any(g.endswith(("ena", "enä")) for g in others)))
     keep = [f for f in keep if not archaic(f, [g for g in keep if g != f])] or keep
-    fewest_h = min(f.count("h") for f in keep)
-    keep = [f for f in keep if f.count("h") == fewest_h]
+    # Vanha h:llinen muoto (vaattehien) pois nomineilta; verbeillä h kuuluu vartaloon (lähti eikä läksi, tehdä)
+    if pos != "V":
+        fewest_h = min(f.count("h") for f in keep)
+        keep = [f for f in keep if f.count("h") == fewest_h]
     # Alkuosaltaan taipunut yhdyssana on pidempi ja eroaa perusmuodosta aiemmin kuin vaihtoehtonsa
     # (hienoissasokereissa / hienosokereissa); lasten / lapsien säilyy, koska lasten on lyhyempi.
     prefix = {f: len(os.path.commonprefix([f, word])) for f in keep}
