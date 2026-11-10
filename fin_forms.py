@@ -42,6 +42,17 @@ CELLS = {
     "A": {**NOMINAL_CELLS, "Comp": "Comp+Sg+Nom", "Superl": "Superl+Sg+Nom"},
     "V": {
         "Inf": "Act+InfA+Sg+Lat",
+        # 3. infinitiivin illatiivi (lähden juoksemaan): lausekääntäjässä saamen infinitiivi (manan viehkat)
+        "InfMa+Ill": "Act+InfMa+Sg+Ill",
+        # Lausekääntäjää varten (web/lauseet.js): leikkimässä = stoahkamin, myymästä = vuovdimis, aavistamatta = ávaškeahttá,
+        # tekevä = dahkki, passiivi (tehdään, tehtiin, tehty) = saamen passiivi (sme_passive.py). Haku ei käytä näitä.
+        "InfMa+Ine": "Act+InfMa+Sg+Ine",
+        "InfMa+Ela": "Act+InfMa+Sg+Ela",
+        "InfMa+Abe": "Act+InfMa+Sg+Abe",
+        "PrsPrc": "Act+PrsPrc+Sg+Nom",
+        "Pss+Prs": "Pss+Ind+Prs+Pe4",
+        "Pss+Prt": "Pss+Ind+Prt+Pe4",
+        "PssPrfPrc": "Pss+PrfPrc+Sg+Nom",
         **{f"Prs+{p}": f"Act+Ind+Prs+{p}" for p in PERSONS},
         **{f"Prt+{p}": f"Act+Ind+Prt+{p}" for p in PERSONS},
         **{f"Cond+{p}": f"Act+Cond+{p}" for p in PERSONS},
@@ -332,8 +343,10 @@ def clean_variants(forms, cell, pos, word, rejected=frozenset()):
                 or ("tten" in f and f.replace("tten", "den") in others)
                 or (cell == "Sg+Ess" and not f.endswith(("ena", "enä")) and any(g.endswith(("ena", "enä")) for g in others)))
     keep = [f for f in keep if not archaic(f, [g for g in keep if g != f])] or keep
-    fewest_h = min(f.count("h") for f in keep)
-    keep = [f for f in keep if f.count("h") == fewest_h]
+    # Vanha h:llinen muoto (vaattehien) pois nomineilta; verbeillä h kuuluu vartaloon (lähti eikä läksi, tehdä)
+    if pos != "V":
+        fewest_h = min(f.count("h") for f in keep)
+        keep = [f for f in keep if f.count("h") == fewest_h]
     # Alkuosaltaan taipunut yhdyssana on pidempi ja eroaa perusmuodosta aiemmin kuin vaihtoehtonsa
     # (hienoissasokereissa / hienosokereissa); lasten / lapsien säilyy, koska lasten on lyhyempi.
     prefix = {f: len(os.path.commonprefix([f, word])) for f in keep}
@@ -364,6 +377,21 @@ def pronoun_rows():
     return [(word, "Pron", ";".join(c)) for word, c in cells.items()]
 
 
+PROPER_RE = re.compile(r"[A-ZÄÖÅ][a-zäöå]+(-[A-ZÄÖÅa-zäöå][a-zäöå]+)?")
+
+
+def proper_names(cursor):
+    """Erisnimisanojen (subtype Prop) suomennokset, jotka ovat nimiä itsessään: {(nimi, "N")}. Selitykset
+    (miehen nimi, naisen nimi) eivät ole nimiä, joten ne jäävät pois."""
+    names = set()
+    for (text,) in cursor.execute("SELECT finnish_translation FROM dictionary WHERE subtype = 'Prop' AND pos = 'N'"):
+        for w in re.split(r"[,;]", re.sub(r"\(.*?\)", "", text or "")):
+            w = w.strip()
+            if PROPER_RE.fullmatch(w):
+                names.add((w, "N"))
+    return names
+
+
 def add_fin_forms(cursor):
     print("Taivutetaan suomenkieliset käännökset (GiellaLT lang-fin)...")
     cursor.execute("DROP TABLE IF EXISTS fin_forms")
@@ -373,6 +401,9 @@ def add_fin_forms(cursor):
         return
     words = sorted(w for w in translation_words(cursor, "fin", "finnish_translation", ("N", "V", "A", "Num"))
                    if not (w[1] == "Num" and w[0] in APPROXIMATE_NUMERALS))
+    # Erisnimet (Anár = Inari, Roavvenjárga = Rovaniemi): isolla alkavat yksisanaiset suomennokset, jotta taivutettu
+    # nimi tunnistetaan (Inariin -> Anárii); translation_words ottaa vain pienellä alkavat
+    words = sorted(set(words) | proper_names(cursor))
     analyses = lookup(ANALYSER, sorted({w for w, _ in words}))
     requests = {}
     for word, pos in words:

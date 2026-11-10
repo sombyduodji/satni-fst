@@ -8,6 +8,7 @@ Selaimessa tietokanta luetaan sql.js:llä (SQLite WebAssemblynä). Perusmuodoill
 -kirjaimille), koska selaimen SQLite ei osaa muuttaa niitä. Taivutusmuodot haetaan sellaisenaan
 (muodot ovat pienaakkosia, erisnimet isolla alkukirjaimella).
 """
+import collections
 import gzip
 import os
 import re
@@ -149,7 +150,9 @@ def main():
             -- dial_same: saman sanan toinen kirjoitusasu (dialects.py), jolla sanakin löytyy
             lemma_fold TEXT, variant_fold TEXT,
             -- human: ihmistä tarkoittava substantiivi (semantics.py): suomen -lle/-lla/-lta saa saamen muodon
-            human INTEGER
+            human INTEGER,
+            -- sem: lausekääntäjän sijasäännöt muille substantiiveille (semantics.py): surf, com tai place
+            sem TEXT
         );
         -- nr: käänteisen sanakirjan (dict-fin-sme, dict-nob-sme) järjestys, 0 = ensisijainen saamennos;
         -- NULL = sanan oma käännös (dict-sme-*)
@@ -168,6 +171,14 @@ def main():
         CREATE TABLE nob_forms (word TEXT, pos TEXT, forms TEXT, PRIMARY KEY (word, pos)) WITHOUT ROWID;
         -- back: vokaalisointu liitepartikkelia varten (1 = tuletko, talossako; 0 = menetkö, postimerkillekö), ks. fin_harmony
         CREATE TABLE fin_forms (word TEXT, pos TEXT, forms TEXT, back INTEGER, PRIMARY KEY (word, pos)) WITHOUT ROWID;
+        -- Saamen passiivi (sme_passive.py, GiellaLT lang-sme): lausekääntäjän suomen passiiville (maksetaan = máksojuvvo)
+        CREATE TABLE sme_passive (word_id INTEGER, tag TEXT, surface TEXT, PRIMARY KEY (word_id, tag)) WITHOUT ROWID;
+        -- Saamen sanamuotojen esiintymät sanakirjan esimerkkilauseissa: lausekääntäjä valitsee rinnakkaismuodoista
+        -- yleisimmän (lei eikä leai: 465 / 1)
+        CREATE TABLE sme_seen (form TEXT PRIMARY KEY, n INTEGER) WITHOUT ROWID;
+        -- Suomen käännöslistan sanat yksitellen (trans_search.fold pilkuista jaettuna): lausekääntäjän haku indeksillä
+        -- LIKE '%, sana'-haun sijaan (17 ms -> 0,01 ms hakua kohden); first = 0, kun sana on listan ensimmäinen
+        CREATE TABLE fin_items (item TEXT, word_id INTEGER, first INTEGER, nr INTEGER, PRIMARY KEY (item, word_id)) WITHOUT ROWID;
         -- Koltansaame (kokeellinen, skolt_data.py): suomen/norjan sanan vahvimmat koltan vastineet ("a, b, c")
         CREATE TABLE sms (lang TEXT, fold TEXT, pos TEXT, words TEXT, PRIMARY KEY (lang, fold, pos)) WITHOUT ROWID;
         -- Apertium (kokeellinen, apertium_data.py): norjan käännös sanoille, joilla sitä ei muuten ole
@@ -185,11 +196,11 @@ def main():
     rows = src.execute(
         f"SELECT id, sme_lemma, pos, subtype, {trans_cols}, notes, gradation, gd_cluster, hd_cluster, "
         "gradation_group, gradation_row, inflection_class, freq, dialect, dial_same, dial_other, "
-        f"{'human' if 'human' in src_cols else 'NULL'} FROM dictionary"
+        f"{'human' if 'human' in src_cols else 'NULL'}, {'sem' if 'sem' in src_cols else 'NULL'} FROM dictionary"
     ).fetchall()
-    # human viimeisenä (lemma_fold ja variant_fold ennen sitä, kuten taulussa)
+    # human ja sem viimeisinä (lemma_fold ja variant_fold ennen niitä, kuten taulussa); r[-4] = dial_same
     dst.executemany(f"INSERT INTO dictionary VALUES ({', '.join('?' * (len(rows[0]) + 2))})",
-                    [r[:-1] + (fold(r[1]), fold(r[-3]) if r[-3] else None, r[-1]) for r in rows])
+                    [r[:-2] + (fold(r[1]), fold(r[-4]) if r[-4] else None) + r[-2:] for r in rows])
     # Hakuun käännös sellaisenaan ja toisena rivinä ilman sulkeissa olevia tarkenteita, jotta naida löytää sanan,
     # jonka käännös on "naida (kerran)" (koko haun tarkistus 2026-11-06: noin 3 400 sanaa ei muuten löytynyt)
     search_rows = []
@@ -212,6 +223,14 @@ def main():
         if bare:
             search_rows.append((w, lang, fold(bare), nr))
     dst.executemany("INSERT INTO trans_search VALUES (?, ?, ?, ?)", search_rows)
+    items = {}
+    for r in search_rows:
+        if r[1] != "fin":
+            continue
+        for k, item in enumerate(r[2].split(", ")):
+            first, nr = items.get((item, r[0]), (1, None))
+            items[(item, r[0])] = (min(first, 0 if k == 0 else 1), r[3] if nr is None else nr if r[3] is None else min(nr, r[3]))
+    dst.executemany("INSERT INTO fin_items VALUES (?, ?, ?, ?)", ((i, w, f, n) for (i, w), (f, n) in items.items()))
     bare_rows = {(lang, without_letters(term), term) for _, lang, text, _ in search_rows if lang not in ("fin", "nob")
                  for term in text.split(", ") if term and without_letters(term) != term}
     dst.executemany("INSERT INTO trans_bare VALUES (?, ?, ?)", sorted(bare_rows))
@@ -239,6 +258,12 @@ def main():
         rows = src.execute("SELECT word, pos, forms FROM fin_forms ORDER BY word, pos").fetchall()
         back = fin_harmony({r[0] for r in rows})
         dst.executemany("INSERT INTO fin_forms VALUES (?,?,?,?)", ((w, p, f, back.get(w)) for w, p, f in rows))
+    seen = collections.Counter(w.lower() for (sme,) in src.execute("SELECT sme FROM examples WHERE sme IS NOT NULL")
+                               for w in re.findall(r"[\wáčđŋšŧžÁČĐŊŠŦŽ]+", sme) if not w.isdigit())
+    dst.executemany("INSERT INTO sme_seen VALUES (?,?)", sorted(seen.items()))
+    if src.execute("SELECT 1 FROM sqlite_master WHERE name = 'sme_passive'").fetchone():
+        dst.executemany("INSERT OR IGNORE INTO sme_passive VALUES (?,?,?)",
+                        src.execute("SELECT word_id, tag, surface FROM sme_passive ORDER BY word_id, tag"))
 
     sms_rows = {(lang, fold(word), pos): words for lang, word, pos, words in skolt_data.rows(SCRIPT_DIR)}
     dst.executemany("INSERT INTO sms VALUES (?,?,?,?)", ((*k, v) for k, v in sms_rows.items()))

@@ -42,9 +42,12 @@
              data-i18n-placeholder="searchPlaceholder" data-i18n-aria="search" disabled>
       <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
     </div>
-    <button class="primary-btn" id="search-btn" data-i18n="search" disabled>Hae</button>
+    <!-- Kapealla näytöllä, kun haun vieressä on muita painikkeita, Hae on pelkkä suurennuslasi (styles.css: .extra-tools) -->
+    <button class="primary-btn" id="search-btn" data-i18n-aria="search" disabled><span class="sb-label" data-i18n="search">Hae</span><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></button>
     <!-- Tekstintunnistus valokuvasta: vain Android-sovelluksessa (window.SatniOcr, MainActivity) -->
-    <button class="chip-btn ocr-btn" id="ocr-btn" data-i18n-title="ocrTitle" data-i18n-aria="ocrTitle" hidden disabled>📷</button>
+    <button class="chip-btn ocr-btn" id="ocr-btn" data-i18n-title="ocrTitle" data-i18n-aria="ocrTitle" hidden disabled>📷<span class="tool-label" data-i18n="ocrShort">Kuva</span></button>
+    <!-- Lausekääntäjä (kokeellinen, lauseet.js): avaa oman näkymän; haun teksti siirtyy mukaan -->
+    <button class="chip-btn lause-btn" id="lause-btn" data-i18n-title="lauseTitle" data-i18n-aria="lauseTitle" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg><span class="tool-label" data-i18n="lauseShort">Lause</span></button>
   </div>
 
   <div id="drawer-scrim" class="drawer-scrim"></div>
@@ -105,6 +108,11 @@
               <span class="switch-text"><span data-i18n="expOcr">Valokuvahaku</span>
                 <span class="muted small" data-i18n="expOcrDesc"></span></span>
               <input type="checkbox" class="switch" role="switch" data-exp="ocr">
+            </label>
+            <label class="switch-row">
+              <span class="switch-text"><span data-i18n="lauseTitle">Lausekääntäjä</span>
+                <span class="muted small" data-i18n="expLauseDesc"></span></span>
+              <input type="checkbox" class="switch" role="switch" data-exp="lause">
             </label>
             <label class="switch-row">
               <span class="switch-text"><span data-i18n="expTableTr">Konekäännökset taulukossa</span>
@@ -313,6 +321,27 @@
   </dialog>
 
   <!-- Tekstintunnistus: kuva ja sen sanat (app.js: openOcr, ocrResult) -->
+  <!-- Lausekääntäjä: suomenkielinen lause -> sanat laatikoina (saamen muoto ja perusmuoto) -> saamenkielinen lause -->
+  <div id="lause-view" class="lause-view" hidden>
+    <div class="lause-head">
+      <h2 data-i18n="lauseTitle">Lausekääntäjä</h2>
+      <button type="button" class="chip-btn" id="lause-close" data-i18n="close">Sulje</button>
+    </div>
+    <p class="muted small" data-i18n="lauseHint"></p>
+    <textarea id="lause-input" rows="2" data-i18n-placeholder="lausePlaceholder"></textarea>
+    <div id="lause-chips" class="lause-chips"></div>
+    <div id="lause-pop" class="lause-pop" hidden></div>
+    <div id="lause-card" class="lause-card" hidden></div>
+    <div id="lause-result" class="lause-result" hidden>
+      <p class="muted small" data-i18n="lauseResult">Saameksi (likimääräinen, tarkista sanat)</p>
+      <div class="lause-sme-row">
+        <p id="lause-sme" class="lause-sme"></p>
+        <!-- Lause ääneen Divvunin puhesynteesillä (app.js: speak), samalla äänellä kuin sanat -->
+        <button id="lause-speak" class="speak-btn" data-i18n-title="listen" data-i18n-aria="listen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
+      </div>
+    </div>
+  </div>
+
   <div id="ocr-view" class="ocr-view" hidden>
     <div class="ocr-head">
       <button class="chip-btn" id="ocr-camera" data-i18n="ocrCamera">📷 Ota kuva</button>
@@ -353,5 +382,6 @@
   <script src="vendor/sql-wasm.js"></script>
   <script src="i18n.js"></script>
   <script src="app.js"></script>
+  <script src="lauseet.js"></script>
 </body>
 </html>
