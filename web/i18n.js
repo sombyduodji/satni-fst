@@ -26,7 +26,7 @@ const UI_TEXTS = {
     ocrStyle: "Merkintätapa ja väri", ocrFrame: "Kehys", ocrUnderline: "Alleviivaus",
     ocrNoText: "Kuvasta ei löytynyt tekstiä. Kokeile ottaa kuva lähempää ja suoraan edestä.",
     ocrNoWords: "Tekstiä löytyi, mutta ei sanakirjan sanoja.",
-    ocrDirSwitched: "suunta vaihdettu", ocrRotateLeft: "Käännä kuvaa vasemmalle", ocrRotateRight: "Käännä kuvaa oikealle",
+    ocrDirSwitched: "suunta vaihdettu", ocrAlso: "tai", ocrRotateLeft: "Käännä kuvaa vasemmalle", ocrRotateRight: "Käännä kuvaa oikealle",
     experimental: "Kokeelliset ominaisuudet", experimentalOn: "Käytössä", experimentalOff: "Pois käytöstä",
     experimentalHint: "Kokeiluversioita: voivat vielä muuttua tai poistua.",
     // Lausekääntäjä (test-lauseet, lauseet.js)
@@ -247,7 +247,7 @@ const UI_TEXTS = {
     ocrStyle: "Merking og farge", ocrFrame: "Ramme", ocrUnderline: "Understreking",
     ocrNoText: "Fant ingen tekst i bildet. Prøv å ta bildet nærmere og rett forfra.",
     ocrNoWords: "Fant tekst, men ingen ord fra ordboka.",
-    ocrDirSwitched: "retning byttet", ocrRotateLeft: "Roter bildet mot venstre", ocrRotateRight: "Roter bildet mot høyre",
+    ocrDirSwitched: "retning byttet", ocrAlso: "eller", ocrRotateLeft: "Roter bildet mot venstre", ocrRotateRight: "Roter bildet mot høyre",
     experimental: "Eksperimentelle funksjoner", experimentalOn: "På", experimentalOff: "Av",
     experimentalHint: "Prøveversjoner: kan fortsatt endres eller fjernes.",
     lauseTitle: "Setningsoversetter", lauseBadge: "prøve", lauseShort: "Setning", ocrShort: "Bilde", expLauseDesc: "Kort finsk setning til samisk. Åpnes ved siden av søket.",

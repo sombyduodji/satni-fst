@@ -2024,10 +2024,41 @@ function ocrGloss(word, original = "") {
     const names = sami(capitalize(word)).filter((r) => r.subtype === "Prop");
     if (names.length && (!rows.length || names[0].rank <= rows[0].rank)) { query = capitalize(word); rows = names; }
   }
-  const row = rows.find((r) => r[LANGUAGES[settings.lang].col]) || rows[0];
+  const col = LANGUAGES[settings.lang].col;
+  const translated = rows.filter((r) => r[col]);
+  let row = translated[0] || rows[0];
   if (!row) return { trans: "", say: word };
+  // Harvinainen hakusana ei peitä yleisen sanan muotoa: substantiivi, adjektiivi tai verbi, jonka korpusfrekvenssi on alle
+  // 5 % saman kirjoitusasun yleisemmästä taivutusmuodosta (orru "liikkumaton" -> orrut "asuu", ovtta -> okta "yhden",
+  // bargan -> bargat "tehnyt"). Postpositiot, adverbit ja pronominit pysyvät (áigge = aikaan, rádjái = asti).
+  // Tarkistettu 2026-11-10 sanakirjan esimerkkilauseiden 10 919 sanalla.
+  const isHead = (r) => fold(r.sme_lemma) === fold(word);
+  const common = (r) => !isHead(r) && (r.freq || 0) >= 1000;
+  if (isHead(row) && ["N", "A", "V"].includes(row.pos)) {
+    const form = translated.filter(common).sort((a, b) => b.freq - a.freq)[0];
+    if (form && (row.freq || 0) < form.freq * 0.05) row = form;
+  }
   const lemma = fold(row.sme_lemma) !== fold(word) ? row.sme_lemma : "";
-  return { lemma, form: lemma ? ocrFormTranslation(row, word) : "", trans: translationOf(row, 2), say: word, query, id: row.id };
+  const gloss = { lemma, form: lemma ? ocrFormTranslation(row, word) : "", trans: translationOf(row, 2), say: word, query, id: row.id };
+  // Toinen yleinen merkitys pienemmällä rivillä (maid = myös · tai: minkä (mii); mii = me · tai: mikä): eri suomennos
+  // ja vähintään 10 % yhtä yleinen (sama sana eri merkityksessä, kuten mii Pers / Rel, aina)
+  // Ei harvinaisia muotoja (imperatiivi, potentiaali, duaali, kieltomuoto, 1. ja 2. persoona: bargu ≠ työskennelkäämme,
+  // dihte ≠ tiedämme) eikä lähes samaa
+  // merkitystä (badjel ylitse / yli: toinen sana alkaa toisella)
+  const firstWords = (r) => new Set(splitList(r[col]).flatMap((x) => x.toLowerCase().split(/\s+/)));
+  const mine = firstWords(row);
+  const overlaps = (r) => [...firstWords(r)].some((x) => [...mine].some((y) => x.length > 2 && y.length > 2 && (x.startsWith(y) || y.startsWith(x))));
+  const usualForm = (r) => isHead(r) || all(`SELECT t.tag FROM paradigms p JOIN tags t ON t.id = p.tag_id
+    WHERE p.word_id = ? AND p.surface IN (?, ?)`, [r.id, word, capitalize(word)]).some((x) => !/(Imprt|Pot|Du\d|ConNeg|Sg1|Sg2|Pl1|Pl2)/.test(x.tag));
+  const alt = translated.find((r) => r.id !== row.id && r.subtype !== "Prop"
+    && ((r.freq || 0) >= Math.max(1000, (row.freq || 0) * 0.1) || (r.sme_lemma === row.sme_lemma && r.freq === row.freq && r.freq))
+    && !overlaps(r) && usualForm(r));
+  if (alt) {
+    const altForm = !isHead(alt) ? ocrFormTranslation(alt, word) : "";
+    const text = (altForm || translationOf(alt, 1)).split(" / ")[0];
+    if (text && !mine.has(text.toLowerCase())) gloss.alt = { text, lemma: isHead(alt) ? "" : alt.sme_lemma };
+  }
+  return gloss;
 }
 
 // Kuvan taivutetun sanan käännös samassa muodossa kuin sanakortilla (beavddis = pöydässä / pöydästä, manan = menen).
@@ -2040,6 +2071,8 @@ function ocrFormTranslation(row, word) {
   const stem = fold(row.clitics ? row.cliticStem : word);
   let tags = [...new Set([...data.paradigm].filter(([, forms]) => forms.some((f) => fold(f) === stem)).map(([tag]) => tag))];
   if (tags.some((tag) => tag.startsWith("Ind+"))) tags = tags.filter((tag) => !tag.startsWith("Imprt+"));
+  // Duaali on tekstissä harvinainen: samannäköinen muu muoto ensin (dihte = tiesivät, ei tiedämme kahdestaan)
+  if (tags.some((tag) => !/Du\d/.test(tag))) tags = tags.filter((tag) => !/Du\d/.test(tag));
   if (!tags.length) return "";
   const own = data.meanings.find((m) => m.lang === settings.lang && m.translations);
   const base = (own ? splitList(own.translations) : splitList(data.word[LANGUAGES[settings.lang].col]))[0];
@@ -2179,7 +2212,10 @@ function pickOcrWord(i) {
   };
   const g = w.gloss, row = (sme, trans, cls) =>
     `<span class="b-row ${cls}"><span class="b-sme">${esc(sme)}</span>${trans ? `<span class="b-tr">${short(trans)}</span>` : ""}</span>`;
-  const rows = g.lemma ? row(w.word, g.form, "b-form") + row(g.lemma, g.trans, "b-base") : row(w.word, g.trans, "b-form");
+  // Toinen yleinen merkitys omalle himmeälle rivilleen (maid = myös · tai: minkä (mii))
+  const altRow = g.alt ? `<span class="b-row b-alt"><span class="b-sme">${esc(t("ocrAlso"))}</span><span class="b-tr">${esc(g.alt.text)}` +
+    (g.alt.lemma ? ` <span class="b-more">(${esc(g.alt.lemma)})</span>` : "") + `</span></span>` : "";
+  const rows = (g.lemma ? row(w.word, g.form, "b-form") + row(g.lemma, g.trans, "b-base") : row(w.word, g.trans, "b-form")) + altRow;
   bubble.innerHTML = `<span class="b-text">${rows}</span><span class="b-actions"><span class="b-speak" role="button"
     aria-label="${esc(t("listen"))}" ${w.gloss.say ? "" : "hidden"}>${SPEAK_ICON}</span><span class="b-open">${OPEN_ICON}</span></span>`;
   bubble.setAttribute("aria-label", w.word);

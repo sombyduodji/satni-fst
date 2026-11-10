@@ -611,6 +611,8 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 }
 .ocr-bubble .b-base > * { color: var(--muted); font-weight: 400; font-size: 14px; border-top: 1px solid var(--border); margin-top: 3px; padding-top: 4px; }
 .ocr-bubble .b-base .b-sme { font-weight: 600; }
+.ocr-bubble .b-alt > * { color: var(--muted); font-weight: 400; font-size: 13px; font-style: italic; padding-top: 2px; }
+.ocr-bubble:has(.b-alt) .b-actions { flex-direction: column; gap: 6px; }
 .ocr-bubble .b-form:only-child > * { padding: 3px 0; }
 .ocr-bubble .b-open, .ocr-bubble .b-speak, .ocr-bubble .b-copy {
   flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
