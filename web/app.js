@@ -2405,14 +2405,11 @@ function applyExperimental() {
   $("exp-ocr-row").hidden = !window.SatniOcr;
   $("ocr-btn").hidden = !(window.SatniOcr && settings.exp.ocr);
   if (!settings.exp.ocr) $("ocr-view").hidden = true;
-  // Lausekääntäjä (lauseet.js): painike haun viereen; kapealla näytöllä Hae-painike on silloin pelkkä kuvake
+  // Lausekääntäjä (lauseet.js): painike yläpalkkiin kameran ja sanastojen viereen
   if ($("lause-btn")) {
     $("lause-btn").hidden = !settings.exp.lause;
     if (!settings.exp.lause) $("lause-view").hidden = true;
   }
-  document.body.classList.toggle("extra-tools", !$("ocr-btn").hidden || !$("lause-btn")?.hidden);
-  // Molemmat (kamera ja lausekääntäjä): kapealla näytöllä omalle rivilleen haun alle (styles.css: .two-tools)
-  document.body.classList.toggle("two-tools", !$("ocr-btn").hidden && !$("lause-btn")?.hidden);
 }
 function bindExperimental() {
   let pending = null;

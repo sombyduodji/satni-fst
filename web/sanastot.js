@@ -126,7 +126,7 @@ function renderSanasto(listId) {
         const z = zi++ % 2 ? " zebra" : "";
         // Osion otsikko: sävytetty kaistale, jossa soittopainike (kaiutin + 1–29) kummankin sarakkeen kohdalla
         return (sec ? `<div class="nt-band${canOpus && (sec.card || sec.ord) ? "" : " plain"}"><span></span>` + (canOpus && (sec.card || sec.ord)
-          ? [sec.card, sec.ord].map((src) => `<span class="nt-playcell">${src ? playBtn(src, sec.label) : ""}</span>`).join("")
+          ? [sec.card, sec.ord].map((src) => `<span class="nt-playcell">${src ? playBtn(src, sec.playLabel || sec.label) : ""}</span>`).join("")
           : `<span class="nt-sec">${esc(sec.label)}</span>`) + `</div>` : "") +
           `<span class="nt-n${z}">${r.n}</span>` +
           `<span class="nt-cell${z}"><span class="sw main" data-say="${esc(r.card)}"${r.card_id ? ` data-id="${r.card_id}"` : ""}>${parts(r.card)}</span></span>` +

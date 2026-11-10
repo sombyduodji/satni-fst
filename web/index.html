@@ -32,8 +32,13 @@
         <div class="brand-sub" data-i18n="brandSub">Pohjoissaamen avoin sanakirja ja taivutusgeneraattori</div>
       </div>
     </a>
-    <!-- Sanastot (sanastot.js): aihekohtaiset sanalistat, kirja oikeassa yläkulmassa -->
-    <button class="chip-btn sanasto-btn" id="sanasto-btn" data-i18n-aria="sanastot" data-i18n-title="sanastot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5.6 4 9 4 12 6c3-2 6.4-2 9-.5V19c-2.6-1.5-6-1.5-9 .5-3-2-6.4-2-9-.5z"/><path d="M12 6v13.5"/><path d="M15.5 5.2v5.3l1.5-1.2 1.5 1.2V4.9"/></svg></button>
+    <!-- Työkalut oikeassa yläkulmassa: kamera (tekstintunnistus, vain Android-sovelluksessa: window.SatniOcr), lausekääntäjä
+         (kokeellinen, lauseet.js) ja sanastot (sanastot.js). Piilotettu painike ei vie tilaa. -->
+    <div class="header-tools">
+    <button class="chip-btn head-btn ocr-btn" id="ocr-btn" data-i18n-title="ocrTitle" data-i18n-aria="ocrTitle" hidden disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+    <button class="chip-btn head-btn lause-btn" id="lause-btn" data-i18n-title="lauseTitle" data-i18n-aria="lauseTitle" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg></button>
+    <button class="chip-btn head-btn sanasto-btn" id="sanasto-btn" data-i18n-aria="sanastot" data-i18n-title="sanastot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5.6 4 9 4 12 6c3-2 6.4-2 9-.5V19c-2.6-1.5-6-1.5-9 .5-3-2-6.4-2-9-.5z"/><path d="M12 6v13.5"/><path d="M15.5 5.2v5.3l1.5-1.2 1.5 1.2V4.9"/></svg></button>
+    </div>
   </header>
   <div class="stripe"><span></span><span></span><span></span><span></span></div>
 
@@ -44,12 +49,8 @@
              data-i18n-placeholder="searchPlaceholder" data-i18n-aria="search" disabled>
       <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
     </div>
-    <!-- Kapealla näytöllä, kun haun vieressä on muita painikkeita, Hae on pelkkä suurennuslasi (styles.css: .extra-tools) -->
+    <!-- Kapealla näytöllä Hae on pelkkä suurennuslasi -->
     <button class="primary-btn" id="search-btn" data-i18n-aria="search" disabled><span class="sb-label" data-i18n="search">Hae</span><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></button>
-    <!-- Tekstintunnistus valokuvasta: vain Android-sovelluksessa (window.SatniOcr, MainActivity) -->
-    <button class="chip-btn ocr-btn" id="ocr-btn" data-i18n-title="ocrTitle" data-i18n-aria="ocrTitle" hidden disabled>📷<span class="tool-label" data-i18n="ocrShort">Kuva</span></button>
-    <!-- Lausekääntäjä (kokeellinen, lauseet.js): avaa oman näkymän; haun teksti siirtyy mukaan -->
-    <button class="chip-btn lause-btn" id="lause-btn" data-i18n-title="lauseTitle" data-i18n-aria="lauseTitle" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg><span class="tool-label" data-i18n="lauseShort">Lause</span></button>
   </div>
 
   <div id="drawer-scrim" class="drawer-scrim"></div>

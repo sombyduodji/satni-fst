@@ -90,8 +90,12 @@ select {
 .chip-btn:hover, .icon-btn:hover { background: var(--chip-hover); }
 .icon-btn { display: none; font-size: 18px; line-height: 1; }
 /* Sanastot: kirjapainike ylätunnisteen oikeassa reunassa ja näkymä (sanastot.js) */
-.sanasto-btn { margin-left: auto; padding: 6px 9px; line-height: 0; flex: none; }
-.sanasto-btn svg { width: 22px; height: 22px; }
+.header-tools { margin-left: auto; display: flex; gap: 6px; flex: none; }
+.head-btn { padding: 6px 9px; line-height: 0; flex: none; }
+.head-btn svg { width: 22px; height: 22px; }
+.head-btn[hidden] { display: none; }
+@media (max-width: 400px) { .header-tools { gap: 4px; } .head-btn { padding: 6px 7px; } .head-btn svg { width: 21px; height: 21px; } }
+.tip-ico { width: 1.15em; height: 1.15em; vertical-align: -0.2em; color: var(--accent); }
 .sanasto-view { position: fixed; inset: 0; z-index: 46; background: var(--bg); display: flex; flex-direction: column; }
 .sanasto-view[hidden] { display: none; }
 .sanasto-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); }
@@ -765,7 +769,6 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 }
 /* Tekstintunnistus (Android-sovellus): kuva koko näytön kokoisena, sanakirjan sanat alleviivattuina samassa
    kohdassa ja asennossa kuin kuvassa; napautetun sanan päällä kupla (sana, käännös, linkki sanakirjaan) */
-.ocr-btn { font-size: 18px; padding: 6px 10px; line-height: 1.2; }
 .lause-view { position: fixed; inset: 0; z-index: 45; background: var(--bg); padding: 12px 16px; overflow-y: auto;
   display: flex; flex-direction: column; gap: 10px; }
 .lause-view[hidden] { display: none; }
@@ -820,24 +823,14 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .lause-sme-row { display: flex; align-items: center; gap: 12px; }
 .lause-sme-row .speak-btn { flex: none; }
 .lause-sme { margin: 0; flex: 1; font-size: 22px; font-weight: 700; }
-.lause-btn { padding: 6px 10px; line-height: 0; align-self: stretch; display: inline-flex; align-items: center; }
-.ocr-btn { align-self: stretch; }
-.lause-btn svg { width: 22px; height: 22px; }
-.lause-btn[hidden] { display: none; }
 #search-btn .sb-icon { display: none; width: 20px; height: 20px; vertical-align: -4px; }
-/* Puhelin: hakukenttä lähes koko leveydeltä. Hae on pelkkä suurennuslasi samalla rivillä, ja kamera sekä
-   lausekääntäjä (kun päällä) ovat omalla rivillään nimen kanssa. 375 px näytöllä kenttä on noin 295 px. Raja 600 px:
-   puhelimet ilmoittavat leveydeksi 360-480 px näytön koon ja fonttikoon asetuksista riippuen. */
-.tool-label { display: none; }
+/* Puhelin: hakukenttä lähes koko leveydeltä, Hae pelkkä suurennuslasi samalla rivillä (kamera ja lausekääntäjä ovat
+   yläpalkissa). Raja 600 px: puhelimet ilmoittavat leveydeksi 360-480 px näytön koon ja fonttikoon asetuksista riippuen. */
 @media (max-width: 600px) {
   #search-btn .sb-label { display: none; }
   #search-btn .sb-icon { display: inline; }
   #search-btn { padding-left: 12px; padding-right: 12px; }
   .searchbar .search-box { flex: 1 1 calc(100% - 68px); min-width: 0; }
-  body.extra-tools .ocr-btn, body.extra-tools .lause-btn { flex: 1 1 calc(50% - 6px); justify-content: center; gap: 8px; line-height: 1.2;
-    display: inline-flex; align-items: center; padding: 8px 10px; font-size: 15px; }
-  body.extra-tools .ocr-btn[hidden], body.extra-tools .lause-btn[hidden] { display: none; }
-  body.extra-tools .tool-label { display: inline; font-weight: 600; }
 }
 .ocr-view {
   position: fixed; inset: 0; z-index: 45; background: var(--bg); padding: 12px;

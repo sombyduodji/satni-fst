@@ -30,8 +30,8 @@ const UI_TEXTS = {
     experimental: "Kokeelliset ominaisuudet", experimentalOn: "Käytössä", experimentalOff: "Pois käytöstä",
     experimentalHint: "Kokeiluversioita: voivat vielä muuttua tai poistua.",
     // Lausekääntäjä (test-lauseet, lauseet.js)
-    lauseTitle: "Lausekääntäjä", lauseBadge: "kokeilu", lauseShort: "Lause", ocrShort: "Kuva", expLauseDesc: "Lyhyt suomenkielinen lause saameksi. Avataan haun vierestä.",
-    expLauseInfo: `<p>Haun viereen tulee painike, joka avaa lausekääntäjän: kirjoita lyhyt suomenkielinen lause, niin sovellus
+    lauseTitle: "Lausekääntäjä", lauseBadge: "kokeilu", lauseShort: "Lause", ocrShort: "Kuva", expLauseDesc: "Lyhyt suomenkielinen lause saameksi. Avataan yläpalkin puhekuplasta.",
+    expLauseInfo: `<p>Yläpalkkiin tulee <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg> puhekuplapainike, joka avaa lausekääntäjän: kirjoita lyhyt suomenkielinen lause, niin sovellus
       tekee siitä pohjoissaamenkielisen lauseen sanakirjan sanoista ja taivutusmuodoista.</p>
       <p>Jokainen sana näkyy omana laatikkonaan; napauttamalla voit vaihtaa tulkinnan tai saamen sanan. Lause on
       likimääräinen: se sopii lyhyisiin arkilauseisiin, ei pitkiin tai vaikeisiin.</p>`,
@@ -44,8 +44,8 @@ const UI_TEXTS = {
     lauseForm_place_All: "paikkaan (mihin?)", lauseForm_top_All: "päälle",
     sanastot: "Sanastot", back: "Takaisin", stop: "Pysäytä", sanastoIntro: (n, w) => `${n} aihetta, ${w} sanaa ääntämyksineen`, sanastoGroup_perus: "Perussanat", sanastoGroup_aika: "Aika", sanastoGroup_ihmiset: "Ihmiset", sanastoGroup_luonto: "Luonto", sanastoHelp: "Napauta sanaa: kuuntele, kopioi tai avaa sanakortti.", sanastoCard: "Avaa sanakortti", sanastoListenAll: "Kuuntele lista", sanastoListenHint: "suomi → saame", sanastoCardinal: "Perusluku", sanastoCardinalEx: "yksi, kaksi, kolme", sanastoOrdinal: "Järjestysluku", sanastoOrdinalEx: "ensimmäinen, toinen",
     lauseClear: "Tyhjennä lause", lauseCheckWord: "Näytä sanan tiedot", lauseInSentence: "Tässä lauseessa", lauseChoose: "Valitse tämä", lauseFullCard: "Koko sanakortti",
-    expOcr: "Valokuvahaku", expOcrDesc: "Tunnistaa valokuvan tekstistä sanakirjan sanat. Käynnistys 📷-painikkeesta.",
-    expOcrInfo: `<p>Hakukentän viereen tulee 📷-painike. Ota kuva tekstistä tai valitse kuva, ja sanakirjan sanat merkitään
+    expOcr: "Valokuvahaku", expOcrDesc: "Tunnistaa valokuvan tekstistä sanakirjan sanat. Käynnistys yläpalkin kamerapainikkeesta.",
+    expOcrInfo: `<p>Yläpalkkiin tulee <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg> kamerapainike. Ota kuva tekstistä tai valitse kuva, ja sanakirjan sanat merkitään
       kuvaan. Napauta sanaa, niin näet käännöksen.</p>
       <p>Teksti tunnistetaan puhelimessa Googlen ML Kitillä, eikä kuva lähde laitteelta. ML Kit voi lähettää Googlelle
       nimettömiä käyttötilastoja, kun toimintoa käytetään.</p>`,
@@ -133,6 +133,8 @@ const UI_TEXTS = {
       <dt>Astevaihtelu</dt><dd>vahva aste <b class="gd">GD</b> vihreänä, heikko aste <b class="hd">HD</b> oranssina.</dd>
       <dt>Ääntäminen</dt><dd>🔈 sanan vieressä, tai napauta taulukon muotoa: kuuntele tai kopioi.</dd>
       <dt>Suosikit</dt><dd>★ tallentaa sanan omalle listalle.</dd>
+      <dt>Sanastot</dt><dd><svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5.6 4 9 4 12 6c3-2 6.4-2 9-.5V19c-2.6-1.5-6-1.5-9 .5-3-2-6.4-2-9-.5z"/><path d="M12 6v13.5"/><path d="M15.5 5.2v5.3l1.5-1.2 1.5 1.2V4.9"/></svg> oikeassa yläkulmassa: aihekohtaiset sanalistat ääntämyksineen (luvut, kuukaudet, perhe, värit…), osassa kuunneltava äänilista.</dd>
+      <dt>Kuva ja lause</dt><dd><svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg> hakee sanat valokuvasta (sovelluksessa), <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg> kääntää lyhyen suomenkielisen lauseen. Kokeellisia: kytke päälle valikosta, jolloin painikkeet ilmestyvät ylhäälle.</dd>
       <dt>Valikko</dt><dd>☰ ylhäällä: kieli, asetukset, suosikit ja historia, muut kielet ja kokeelliset ominaisuudet.</dd>`,
     menuTip: "Kieli ja asetukset löytyvät valikosta.",
     tryThese: "Kokeile:", randomWord: "Satunnainen sana",
@@ -251,8 +253,8 @@ const UI_TEXTS = {
     ocrDirSwitched: "retning byttet", ocrAlso: "eller", ocrRotateLeft: "Roter bildet mot venstre", ocrRotateRight: "Roter bildet mot høyre",
     experimental: "Eksperimentelle funksjoner", experimentalOn: "På", experimentalOff: "Av",
     experimentalHint: "Prøveversjoner: kan fortsatt endres eller fjernes.",
-    lauseTitle: "Setningsoversetter", lauseBadge: "prøve", lauseShort: "Setning", ocrShort: "Bilde", expLauseDesc: "Kort finsk setning til samisk. Åpnes ved siden av søket.",
-    expLauseInfo: `<p>Ved siden av søket kommer en knapp som åpner setningsoversetteren: skriv en kort setning på finsk, så
+    lauseTitle: "Setningsoversetter", lauseBadge: "prøve", lauseShort: "Setning", ocrShort: "Bilde", expLauseDesc: "Kort finsk setning til samisk. Åpnes med snakkeboble-knappen i topplinjen.",
+    expLauseInfo: `<p>I topplinjen kommer en <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg> snakkeboble-knapp som åpner setningsoversetteren: skriv en kort setning på finsk, så
       lager appen en nordsamisk setning av ordboksordene og bøyningsformene.</p>
       <p>Hvert ord vises i sin egen boks; trykk for å bytte tolkning eller samisk ord. Setningen er omtrentlig: den passer
       for korte hverdagssetninger, ikke lange eller vanskelige.</p>`,
@@ -265,8 +267,8 @@ const UI_TEXTS = {
     lauseForm_place_All: "til sted (hvor hen?)", lauseForm_top_All: "opp på",
     sanastot: "Ordlister", back: "Tilbake", stop: "Stopp", sanastoIntro: (n, w) => `${n} emner, ${w} ord med uttale`, sanastoGroup_perus: "Grunnord", sanastoGroup_aika: "Tid", sanastoGroup_ihmiset: "Mennesker", sanastoGroup_luonto: "Natur", sanastoHelp: "Trykk på et ord: lytt, kopier eller åpne ordkortet.", sanastoCard: "Åpne ordkortet", sanastoListenAll: "Lytt til lista", sanastoListenHint: "på samisk", sanastoCardinal: "Grunntall", sanastoCardinalEx: "en, to, tre", sanastoOrdinal: "Ordenstall", sanastoOrdinalEx: "første, andre",
     lauseClear: "Tøm setningen", lauseCheckWord: "Vis opplysninger om ordet", lauseInSentence: "I denne setningen", lauseChoose: "Velg dette", lauseFullCard: "Hele ordkortet",
-    expOcr: "Bildesøk", expOcrDesc: "Finner ordene fra ordboka i teksten på et bilde. Starter med 📷-knappen.",
-    expOcrInfo: `<p>En 📷-knapp vises ved søkefeltet. Ta et bilde av tekst eller velg et bilde, så blir ordene fra ordboka
+    expOcr: "Bildesøk", expOcrDesc: "Finner ordene fra ordboka i teksten på et bilde. Starter med kameraknappen i topplinjen.",
+    expOcrInfo: `<p>I topplinjen kommer en <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg> kameraknapp. Ta et bilde av tekst eller velg et bilde, så blir ordene fra ordboka
       merket i bildet. Trykk på et ord for å se oversettelsen.</p>
       <p>Teksten gjenkjennes på telefonen med Googles ML Kit, og bildet forlater ikke enheten. ML Kit kan sende anonym
       bruksstatistikk til Google når funksjonen brukes.</p>`,
@@ -352,6 +354,8 @@ const UI_TEXTS = {
       <dt>Stadieveksling</dt><dd>sterkt stadium <b class="gd">GD</b> i grønt, svakt stadium <b class="hd">HD</b> i oransje.</dd>
       <dt>Uttale</dt><dd>🔈 ved ordet, eller trykk på en form i tabellen: lytt eller kopier.</dd>
       <dt>Favoritter</dt><dd>★ lagrer ordet i din egen liste.</dd>
+      <dt>Ordlister</dt><dd><svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5.6 4 9 4 12 6c3-2 6.4-2 9-.5V19c-2.6-1.5-6-1.5-9 .5-3-2-6.4-2-9-.5z"/><path d="M12 6v13.5"/><path d="M15.5 5.2v5.3l1.5-1.2 1.5 1.2V4.9"/></svg> øverst til høyre: ordlister etter tema med uttale (tall, måneder, familie, farger…), noen med lydliste å lytte til.</dd>
+      <dt>Bilde og setning</dt><dd><svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg> finner ord i et bilde (i appen), <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg> oversetter en kort finsk setning. Eksperimentelle: slå dem på i menyen, så dukker knappene opp øverst.</dd>
       <dt>Meny</dt><dd>☰ øverst: språk, innstillinger, favoritter og historikk, andre språk og eksperimentelle funksjoner.</dd>`,
     menuTip: "Språk og innstillinger finner du i menyen.",
     tryThese: "Prøv:", randomWord: "Tilfeldig ord",

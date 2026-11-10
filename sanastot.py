@@ -212,6 +212,11 @@ def lists():
               "rows": [row([fi, fin_form(fi, "Sg+Gen"), fin_form(fi, "Sg+Ine")], [nb, "i " + nb], [sme(s, "N", ["Sg+Gen", "Sg+Loc"])])
                        for fi, nb, s in months]})
 
+    # Norjaksi "milloin?"-muoto ja kuukausihuomautus (suomeksi ne tulevat taivuttimesta ja listasta)
+    NB_WHEN = {"vårvinter": "på vårvinteren", "vår": "om våren", "forsommer": "på forsommeren", "sommer": "om sommeren",
+               "ettersommer": "på ettersommeren", "høst": "om høsten", "høstvinter": "på høstvinteren", "vinter": "om vinteren",
+               "morgen": "om morgenen", "dag": "om dagen", "ettermiddag": "om ettermiddagen", "kveld": "om kvelden", "natt": "om natten"}
+    NB_MONTHS = {"maalis–huhtikuu": "mars–april", "kesäkuu": "juni", "elo–syyskuu": "august–september", "loka–marraskuu": "oktober–november"}
     seasons = [("kevättalvi", "vårvinter", "giđđadálvi", ["Sg+Loc"], "maalis–huhtikuu"),
                ("kevät", "vår", "giđđa", ["=giđđat"], None),
                ("alkukesä", "forsommer", "giđđageassi", ["Sg+Loc"], "kesäkuu"),
@@ -221,7 +226,8 @@ def lists():
                ("syystalvi", "høstvinter", "čakčadálvi", ["Sg+Loc"], "loka–marraskuu"),
                ("talvi", "vinter", "dálvi", ["=dálvet"], None)]
     L.append({"id": "vuodenajat", "icon": "season", "title": {"fi": "Vuodenajat (8)", "nb": "Årstider (8)"},
-              "rows": [row([fi, fin_form(fi, "Sg+Ade")], [nb], [sme(s, "N", tags, fi=fi, nb=nb)], {"fi": note} if note else None)
+              "rows": [row([fi, fin_form(fi, "Sg+Ade")], [nb, NB_WHEN[nb]], [sme(s, "N", tags, fi=fi, nb=nb)],
+                           {"fi": note, "nb": NB_MONTHS[note]} if note else None)
                        for fi, nb, s, tags, note in seasons]})
 
     time = [("aamu", "morgen", "iđit", ["=iđđes"]), ("päivä", "dag", "beaivi", ["=beaivet"]),
@@ -233,7 +239,7 @@ def lists():
             ("monelta?", "når? (klokka)", "galles", [])]
     L.append({"id": "aika", "icon": "clock", "title": {"fi": "Vuorokausi ja kello", "nb": "Døgnet og klokka"},
               "rows": [row([fi] + ([fin_form(fi, "Sg+Ade")] if tags and fin_form(fi, "Sg+Ade") and fi not in ("keskipäivä", "keskiyö") else []),
-                           [nb], [sme(s, None, tags, fi=fi, nb=nb)]) for fi, nb, s, tags in time]})
+                           [nb] + ([NB_WHEN[nb]] if nb in NB_WHEN else []), [sme(s, None, tags, fi=fi, nb=nb)]) for fi, nb, s, tags in time]})
 
     dirs = [("pohjoinen", "nord", "davvi", ["=davvin", "=davás"]), ("etelä", "sør", "lulli", ["=lulde", "=lulás"]),
             ("itä", "øst", "nuorta", ["=nuortan", "=nuorttas"]), ("länsi", "vest", "oarji", ["=oarjin", "=oarjjás"])]
@@ -440,8 +446,9 @@ if __name__ == "__main__":
         if audio(lst["id"]):
             lst["audio"] = audio(lst["id"])
         if lst["id"] == "luvut":
-            lst["numSections"] = [{"label": lab, "from": start, "card": audio(f"luvut-{k}"), "ord": audio(f"jarjestysluvut-{k}")}
-                                  for k, (lab, start) in enumerate([("1–29", 1), ("30–100", 30), ("101–1000", 101)], 1)]
+            # label = taulukon osio, playLabel = mitä äänite sisältää (osio 3: luvut 100–120, kuten pyydetty)
+            lst["numSections"] = [{"label": lab, "playLabel": pl, "from": start, "card": audio(f"luvut-{k}"), "ord": audio(f"jarjestysluvut-{k}")}
+                                  for k, (lab, pl, start) in enumerate([("1–29", "1–29", 1), ("30–100", "30–100", 30), ("101–1000", "100–120", 101)], 1)]
     check_spelling(L)
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump({"lists": L}, f, ensure_ascii=False, separators=(",", ":"))
