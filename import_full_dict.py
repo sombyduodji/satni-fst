@@ -701,19 +701,22 @@ def apply_corrections(words, details):
 
     corrections = {}
     eng_corrections = {}  # valinnainen 4. sarake: englannin käännökset (korvaavat esim. Wiktionaryn englannin)
+    nob_corrections = {}  # valinnainen 5. sarake: norjan käännökset (ministeriija = departement, ei ministeri)
     with open(CORRECTIONS_FILE, encoding="utf-8") as f:
         for line_no, line in enumerate(f, 1):
             line = line.rstrip("\n")
             if not line.strip() or line.lstrip().startswith("#"):
                 continue
             parts = [p.strip() for p in line.split("\t")]
-            if len(parts) not in (3, 4) or not parts[0] or not parts[1]:
-                print(f"  korjaukset.tsv rivi {line_no}: odotettiin 3 tai 4 sarkaimella erotettua saraketta, ohitetaan")
+            if len(parts) not in (3, 4, 5) or not parts[0] or not parts[1]:
+                print(f"  korjaukset.tsv rivi {line_no}: odotettiin 3-5 sarkaimella erotettua saraketta, ohitetaan")
                 continue
             lemma, pos, trans = parts[:3]
             key = (lemma, POS_MAP.get(pos.upper(), pos))
-            if len(parts) == 4 and parts[3]:
+            if len(parts) >= 4 and parts[3]:
                 eng_corrections[key] = parts[3]
+            if len(parts) == 5 and parts[4]:
+                nob_corrections[key] = parts[4]
             if trans:  # tyhjä suomennossarake: suomennos säilyy, vain englanti korjataan
                 corrections[key] = fix_finnish_text(trans)
 
@@ -721,6 +724,10 @@ def apply_corrections(words, details):
     applied = set()
     for lemma, pos, subtype, sem_type, trans in words:
         key = (lemma, pos)
+        if key in nob_corrections:
+            trans = {**trans, "nob": nob_corrections[key]}
+            info = details.setdefault((lemma, pos, subtype), {"freq": None, "notes": [], "meanings": [], "reverse": []})
+            info["meanings"] = [m for m in info["meanings"] if m["lang"] != "nob"] + [new_meaning("nob", [nob_corrections[key]])]
         if key in eng_corrections:
             trans = {**trans, "eng": eng_corrections[key]}
             info = details.setdefault((lemma, pos, subtype), {"freq": None, "notes": [], "meanings": [], "reverse": []})
@@ -743,7 +750,8 @@ def apply_corrections(words, details):
             result.append((lemma, pos, "", "", {"fin": trans}))
             details[(lemma, pos, "")] = {"freq": None, "notes": [], "new_from": "fin", "reverse": [],
                                          "meanings": [new_meaning("fin", [trans])]}
-    print(f"Sovellettiin {len(corrections)} suomennoksen ja {len(eng_corrections)} englannin korjausta tiedostosta korjaukset.tsv.")
+    print(f"Sovellettiin {len(corrections)} suomennoksen, {len(eng_corrections)} englannin ja {len(nob_corrections)} norjan "
+          "korjausta tiedostosta korjaukset.tsv.")
     return result
 
 

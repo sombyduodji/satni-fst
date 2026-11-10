@@ -2,10 +2,11 @@
 # tiedoston XML-tiedostojen jälkeen, joten korjaukset säilyvät, vaikka XML-data päivitettäisiin.
 #
 # Sarakkeet erotetaan SARKAIMELLA (tab):
-#   saamen_lemma <TAB> sanaluokka <TAB> suomennokset [<TAB> englanninkieliset käännökset]
+#   saamen_lemma <TAB> sanaluokka <TAB> suomennokset [<TAB> englanninkieliset käännökset [<TAB> norjankieliset käännökset]]
 #
 # - neljäs sarake on valinnainen: se korvaa englannin käännökset (esim. väärän Wiktionary-käännöksen);
 #   jos suomennossarake on tyhjä, suomennos säilyy ennallaan
+# - viides sarake on valinnainen: se korvaa norjan käännökset (neljäs sarake voi olla tyhjä)
 #
 # - sanaluokka kuten tietokannassa: N, V, A, Adv, Num, Pron, Pcle, Po, Pr, CC, CS, Interj, Cmp, MWE
 # - suomennokset pilkulla eroteltuina; ne KORVAAVAT XML:n suomennokset
@@ -46,6 +47,9 @@ in	V	en
 ean	V	emme (2)
 eahppi	V	ette (2)
 eaba	V	eivät (2)
+# risku = saamelaisnaisen pyöreä rintasolki (Sammallahti: liinasolki, rintasolki, risku; Giellagáldu: brosch, sølje),
+# käyttäjän tarkistama 2026-11-10; pelkkä "risku" ei kerro suomalaiselle lukijalle, mikä sana on
+risku	N	risku, rintasolki
 
 # Wiktionaryn englanti, joka ei vastaa sanan suomennosta ja norjannosta (tarkistettu käsin 2026-11-06). Useimmissa
 # Wiktionary kuvasi samannäköistä toista sanaa (deaivu "osuma" eikä juustomuotti, guovda "keskikohta" eikä kosteikko).
@@ -104,3 +108,19 @@ roađđi	N		red glow in the sky, afterglow
 ruskat	V		to get dirty, to get littered
 sárdnideapmi	N		preaching
 čuovggahit	V		to illuminate, to light up
+# Offline-tarkistus 2026-11-10 (Voikko, Hunspell), jokainen tarkistettu lähteestä ja käyttäjän luvalla korjattu:
+# dict-sme-fin:n selitys (t_type="expl") oli suomennoksen jatkona: saamenkielinen selitys tai esimerkkilause
+alesgahcin	N	takakaihdin (sarvessa)
+gihčat	V	kitistä, narista, narskua (pakkasella)
+olles	A	täysi, kokonainen, täydellinen
+# Suomennos saamen kirjoitusasulla tai englanniksi
+isláma	N	islam
+islamosku	N	islam
+máfia	N	mafia
+sáldo	N	saldo
+garragálvu	N	laitteisto, kovo
+# ministeriija = ministeriö / departement (Giellagáldu ja Sammallahti); Giellateknon "ministeri" on ministeri-ihminen
+ministeriija	N	ministeriö		departement
+# dict-sme-eng:n englanninkielisessä sarakkeessa oli saksaa (Elch, Name eines Sternbildes; Streit, Eigensinn)
+sarvva	N		moose, elk, a constellation
+nággu	N		quarrel, dispute, obstinacy

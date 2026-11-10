@@ -18,6 +18,11 @@ SME_SPA = os.path.join(SCRIPT_DIR, "dict-sme-spa", "inc", "A_V_Saami_Spanish.xls
 SPA_SME = os.path.join(SCRIPT_DIR, "dict-spa-sme", "inc", "newest_orig", "A_Z_Spanish_Saami.xlsx")
 _NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 _CROSS_REF = re.compile(r"Geahča|\bVer:")
+# Saamenkielinen käyttöohje käännössolussa (bás: "Geavaha: Diminutiiva hámiid", esimerkkeinä báslábbáš = corderito):
+# merkityksen selitys, ei käännös, jotta esimerkit säilyvät (offline-tarkistus 2026-11-10)
+_USAGE_NOTE = re.compile(r"^Geavaha:")
+# Käännössolussa saamea, ei espanjaa (areála: "100 kvadrat mehtera"; offline-tarkistus 2026-11-10)
+NOT_SPANISH = {"100 kvadrat mehtera"}
 # Pidempi käännössolu on selitys, ei käännös
 MAX_TRANSLATION_WORDS = 6
 
@@ -84,10 +89,10 @@ def sme_spa_meanings():
                 continue
             if _CROSS_REF.search(t):
                 labels.append(t)  # Geahča / Ver: dat (katso) ei ole käännös
-            elif any(len(part.split()) > MAX_TRANSLATION_WORDS for part in t.split(",")):
+            elif _USAGE_NOTE.match(t) or any(len(part.split()) > MAX_TRANSLATION_WORDS for part in t.split(",")):
                 explanations.append(t)  # No se traduce como sujeto gramatical en oración impersonal
             else:
-                translations += [_clean(part) for part in t.split(",") if _clean(part)]
+                translations += [_clean(part) for part in t.split(",") if _clean(part) and _clean(part) not in NOT_SPANISH]
         # Tässä tiedostossa EXPLANATION-sarakkeessa on kielioppitietoa (IV, AuxV, Dem, Nom, Sg), ei selityksiä
         if r.get("EXPLANATION"):
             labels.append(r["EXPLANATION"])
