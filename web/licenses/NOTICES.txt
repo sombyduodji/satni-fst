@@ -110,6 +110,18 @@ University of Norway), voices Biret, Máhtte and Sunná
   permission. The voice samples in voices/ were generated with the same
   service and are included with Divvun's permission.
 
+Spoken word lists (audio/: weekdays, months, seasons, numbers and ordinals in
+Word lists): Finnish word
+followed by the North Sámi word.
+  Finnish: synthesised offline with Chatterbox Finnish (Finnish-NLP, MIT
+  licence; fine-tuned from Resemble AI's Chatterbox, MIT licence). The voice
+  is modelled on a LibriVox recording read by Harri Tapani Ylilammi
+  (Olli Wuorinen: Salmelan heinätalkoot, public domain).
+  https://huggingface.co/Finnish-NLP/Chatterbox-Finnish
+  https://archive.org/details/salmelan_heinatalkoot_1509_librivox
+  North Sámi: Divvun's and Giellatekno's speech synthesis, voice Biret, with
+  Divvun's permission (see Pronunciation above).
+
 Logo: the Sámi flag (designed by Astrid Båhl, 1986) drawn as a drop.
 
 

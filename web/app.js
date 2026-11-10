@@ -2564,7 +2564,7 @@ function bindFormPop() {
     }
   });
   document.addEventListener("click", (e) => {
-    if (formPopTarget && !e.target.closest("#form-pop, .form")) closeFormPop();
+    if (formPopTarget && !e.target.closest("#form-pop, .form, #sanasto-body .sw")) closeFormPop();
   });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeFormPop(); });
   addEventListener("scroll", placeFormPop, true);

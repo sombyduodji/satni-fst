@@ -165,7 +165,7 @@ def fi_ord(n):
 
 
 def numbers():
-    nums = list(range(1, 22)) + [30, 40, 50, 60, 70, 80, 90, 100] + list(range(101, 111)) + list(range(120, 131)) + [1000]
+    nums = list(range(1, 30)) + [30, 40, 50, 60, 70, 80, 90, 100] + list(range(101, 131)) + [1000]
     gen = look(GEN, [card(n) + "+Num+Sg+Nom" for n in nums])
     cands = {n: ord_candidates(n) for n in nums}
     ana = look(ANA, sorted({c for v in cands.values() for c in v}))
@@ -198,7 +198,7 @@ def lists():
             ("lauantai", "lørdag", [("lávvordat", None)]),
             ("sunnuntai", "søndag", [("sotnabeaivi", None)])]
     L.append({"id": "viikonpaivat", "icon": "week", "title": {"fi": "Viikonpäivät", "nb": "Ukedager"},
-              "hint": {"fi": "perusmuoto · milloin? (maanantaina)", "nb": "grunnform · når? (på mandag)"},
+              "hint": {"fi": "vuossárga = maanantai · vuossárgga = maanantaina", "nb": "vuossárga = mandag · vuossárgga = på mandag"},
               "rows": [row([fi, fin_form(fi, "Sg+Ess")], [nb, "på " + nb], [sme(s, "N", ["Sg+Gen"], d) for s, d in sm])
                        for fi, nb, sm in days]})
 
@@ -207,7 +207,8 @@ def lists():
               ("heinäkuu", "juli", "suoidnemánnu"), ("elokuu", "august", "borgemánnu"), ("syyskuu", "september", "čakčamánnu"),
               ("lokakuu", "oktober", "golggotmánnu"), ("marraskuu", "november", "skábmamánnu"), ("joulukuu", "desember", "juovlamánnu")]
     L.append({"id": "kuukaudet", "icon": "month", "title": {"fi": "Kuukaudet", "nb": "Måneder"},
-              "hint": {"fi": "perusmuoto · genetiivi · missä? (tammikuussa)", "nb": "grunnform · genitiv · når? (i januar)"},
+              "hint": {"fi": "ođđajagemánnu = tammikuu · ođđajagemánu = tammikuun · ođđajagemánus = tammikuussa",
+                       "nb": "ođđajagemánnu = januar · ođđajagemánu = januars · ođđajagemánus = i januar"},
               "rows": [row([fi, fin_form(fi, "Sg+Gen"), fin_form(fi, "Sg+Ine")], [nb, "i " + nb], [sme(s, "N", ["Sg+Gen", "Sg+Loc"])])
                        for fi, nb, s in months]})
 
@@ -220,7 +221,6 @@ def lists():
                ("syystalvi", "høstvinter", "čakčadálvi", ["Sg+Loc"], "loka–marraskuu"),
                ("talvi", "vinter", "dálvi", ["=dálvet"], None)]
     L.append({"id": "vuodenajat", "icon": "season", "title": {"fi": "Vuodenajat (8)", "nb": "Årstider (8)"},
-              "hint": {"fi": "saamelainen vuosi: 8 vuodenaikaa · milloin? (keväällä)", "nb": "det samiske året: 8 årstider · når? (om våren)"},
               "rows": [row([fi, fin_form(fi, "Sg+Ade")], [nb], [sme(s, "N", tags, fi=fi, nb=nb)], {"fi": note} if note else None)
                        for fi, nb, s, tags, note in seasons]})
 
@@ -232,18 +232,19 @@ def lists():
             ("kello, tunti", "klokke, time", "diibmu", []), ("minuutti", "minutt", "minuhtta", []),
             ("monelta?", "når? (klokka)", "galles", [])]
     L.append({"id": "aika", "icon": "clock", "title": {"fi": "Vuorokausi ja kello", "nb": "Døgnet og klokka"},
-              "hint": {"fi": "perusmuoto · milloin? (aamulla)", "nb": "grunnform · når? (om morgenen)"},
               "rows": [row([fi] + ([fin_form(fi, "Sg+Ade")] if tags and fin_form(fi, "Sg+Ade") and fi not in ("keskipäivä", "keskiyö") else []),
                            [nb], [sme(s, None, tags, fi=fi, nb=nb)]) for fi, nb, s, tags in time]})
 
     dirs = [("pohjoinen", "nord", "davvi", ["=davvin", "=davás"]), ("etelä", "sør", "lulli", ["=lulde", "=lulás"]),
             ("itä", "øst", "nuorta", ["=nuortan", "=nuorttas"]), ("länsi", "vest", "oarji", ["=oarjin", "=oarjjás"])]
     L.append({"id": "suunnat", "icon": "compass", "title": {"fi": "Ilmansuunnat", "nb": "Himmelretninger"},
-              "hint": {"fi": "perusmuoto · missä? · mihin?", "nb": "grunnform · hvor? · hvorhen?"},
+              "hint": {"fi": "davvi = pohjoinen · davvin = pohjoisessa · davás = pohjoiseen", "nb": "davvi = nord · davvin = i nord · davás = nordover"},
               "rows": [row([fi, fin_form(fi, "Sg+Ine"), fin_form(fi, "Sg+Ill")], [nb], [sme(s, "N", tags, fi=fi, nb=nb)])
                        for fi, nb, s, tags in dirs]})
 
-    kin = ["eadni", "áhčči", "váhnen", "áhkku", "áddjá", "mánná", "nieida", "bárdni", "oabbá", "oappáš", "viellja", "vieljaš",
+    KIN_NB = {"siessá": "fars søster", "goaski": "mors eldre søster", "muoŧŧá": "mors yngre søster",
+              "eahki": "fars eldre bror", "čeahci": "fars yngre bror", "eanu": "mors bror"}
+    kin = ["eadni", "áhčči", "áhkku", "áddjá", "mánná", "nieida", "bárdni", "oabbá", "oappáš", "viellja", "vieljaš",
            "siessá", "goaski", "muoŧŧá", "eahki", "čeahci", "eanu", "mánáidmánná"]
     kin_rows = []
     for s in kin:
@@ -256,18 +257,30 @@ def lists():
             fi, expl = "täti", ("isän sisar",)
         if s == "nieida":
             fi = "tytär, tyttö"
-        if s == "váhnen":  # vanhempi · vanhemmat = váhnen · váhnemat (sanakirjan erillinen monikkohakusana váhnemat)
-            kin_rows.append(row(["vanhempi", "vanhemmat"], ["forelder", "foreldre"], [sme("váhnen", "N", ["Pl+Nom"])]))
-            continue
-        kin_rows.append(row([fi], [first(e[4]) if e else ""], [sme(s, "N", [])], {"fi": expl[0]} if expl else None))
+        nb = first(e[4]) if e else ""
+        if s == "nieida":
+            nb = "datter, jente"
+        if s == "eanu" and not expl:
+            expl = ("äidin veli",)
+        note = {"fi": expl[0]} if expl else {}
+        if s in KIN_NB:  # norjaksi muuten vain "tante" / "onkel" ilman eroa
+            note["nb"] = KIN_NB[s]
+        kin_rows.append(row([fi], [nb], [sme(s, "N", [])], note or None))
     L.append({"id": "suku", "icon": "family", "title": {"fi": "Perhe ja suku", "nb": "Familie og slekt"},
               "hint": {"fi": "saamessa eri sana isän ja äidin sisaruksille", "nb": "på samisk egne ord for fars og mors søsken"},
               "rows": kin_rows})
 
+    # Esimerkki attribuuttimuodosta (sanat oikoluettu Divvunilla, substantiivien merkitys tarkistettu sanakirjasta)
+    COLOUR_EX = {
+        "vielgat": ("vilges muohta", "valkoinen lumi", "kvit snø"), "čáhppat": ("čáhppes beana", "musta koira", "svart hund"),
+        "ruoksat": ("rukses dállu", "punainen talo", "rødt hus"), "alit": ("alit albmi", "sininen taivas", "blå himmel"),
+        "ruoná": ("ruoná rássi", "vihreä ruoho", "grønt gress"), "fiskat": ("fiskes lieđđi", "keltainen kukka", "gul blomst"),
+        "ruškat": ("ruškes boazu", "ruskea poro", "brun rein"), "ránis": ("ránes gáhttu", "harmaa kissa", "grå katt"),
+        "oránša": ("oránša biila", "oranssi auto", "oransje bil")}
+    COLOUR_EX = {k: {"sme": a, "fi": b, "nb": c} for k, (a, b, c) in COLOUR_EX.items()}
     colours = ["vielgat", "čáhppat", "ruoksat", "alit", "ruoná", "fiskat", "ruškat", "ránis", "oránša"]
     L.append({"id": "varit", "icon": "palette", "title": {"fi": "Värit", "nb": "Farger"},
-              "hint": {"fi": "talo on punainen (ruoksat) · punainen talo (rukses)", "nb": "huset er rødt (ruoksat) · et rødt hus (rukses)"},
-              "rows": [row([first(entry(s, "A")[3])], [first(entry(s, "A")[4])], [sme(s, "A", ["Attr"])]) for s in colours]})
+              "rows": [dict(row([first(entry(s, "A")[3])], [first(entry(s, "A")[4])], [sme(s, "A", ["Attr"])]), ex=COLOUR_EX[s]) for s in colours]})
 
     deer = [("boazu", None), ("eallu", "tokka, porokarja"), ("áldu", None), ("sarvvis", "hirvas, kuohitsematon urosporo"),
             ("heargi", "ajoporo, kuohittu urosporo"), ("miessi", "vasa"), ("čearpmat", "vuoden vanha urosporo"),
@@ -280,8 +293,9 @@ def lists():
                ("seaŋáš", "rakeinen pohjalumi"), ("njáhcu", "suojasää"), ("arvi", "sade"), ("biegga", "tuuli"), ("buolaš", "pakkanen"),
                ("liekkas", "lämmin"), ("galmmas", "kylmä"), ("beaivváš", "aurinko"), ("balva", "pilvi"), ("mierká", "sumu"),
                ("jiekŋa", "jää"), ("stoarbma", "myrsky"), ("baján", "ukkonen")]
+    WEATHER_NB = {"seaŋáš": "sukkersnø"}  # sanakirjassa ei norjaa
     L.append({"id": "saa", "icon": "snow", "title": {"fi": "Sää ja lumi", "nb": "Vær og snø"},
-              "rows": [row([fi], [first(entry(s)[4]) if entry(s) else ""], [sme(s, None, [], fi=fi)]) for s, fi in weather]})
+              "rows": [row([fi], [WEATHER_NB.get(s) or (first(entry(s)[4]) if entry(s) else "")], [sme(s, None, [], fi=fi)]) for s, fi in weather]})
 
     prons = [("minä · minun · minulle · minulla", "jeg · min · til meg · hos meg", "mun"), ("sinä · sinun · sinulle · sinulla", "du · din · til deg · hos deg", "don"),
              ("hän · hänen · hänelle · hänellä", "han/hun · hans/hennes · til ham/henne · hos ham/henne", "son"),
@@ -296,8 +310,8 @@ def lists():
         words = [s] + [form(e[0], t) for t in ("Gen", "Ill", "Loc")] if e else [s]
         prow.append(row([fi], [nb], [{"w": [w for w in words if w], "id": e[0] if e else None, "fi": "", "nb": ""}]))
     L.append({"id": "pronominit", "icon": "person", "title": {"fi": "Pronominit", "nb": "Pronomen"},
-              "hint": {"fi": "perusmuoto · genetiivi · kenelle? · kenellä?; saamessa myös kaksikko (duaali)",
-                       "nb": "grunnform · genitiv · til hvem? · hos hvem?; samisk har også totall (dual)"},
+              "hint": {"fi": "saamessa oma muoto kahdelle · moai = me kaksi · mii = me (kolme tai useampi)",
+                       "nb": "samisk har egen form for to · moai = vi to · mii = vi (tre eller flere)"},
               "rows": prow})
 
     questions = [("gii", "kuka"), ("mii", "mikä", "Rel"), ("gos", "missä, mistä"), ("gosa", "mihin"), ("goas", "milloin"),
@@ -311,6 +325,21 @@ def lists():
             qrows.append(row([fi], [first(e[1])], [{"w": [s], "id": e[0], "fi": fi, "nb": first(e[1])}]))
         else:
             qrows.append(row([fi], [first(entry(s)[4]) if entry(s) else ""], [sme(s, None, [], fi=fi)]))
+    # Esimerkkikysymys jokaiselle (verbimuodot GiellaLT-generaattorilla, sanat Divvunin oikoluvulla tarkistettu)
+    QEX = {"gii": ("Gii don leat?", "Kuka sinä olet?", "Hvem er du?"), "mii": ("Mii dát lea?", "Mikä tämä on?", "Hva er dette?"),
+           "goabbá": ("Goabbá lea du?", "Kumpi on sinun?", "Hvilken er din?"),
+           "makkár": ("Makkár dálki lea?", "Millainen sää on?", "Hva slags vær er det?"),
+           "gos": ("Gos don orut?", "Missä sinä asut?", "Hvor bor du?"), "gosa": ("Gosa don manat?", "Mihin sinä menet?", "Hvor skal du?"),
+           "goas": ("Goas don boađát?", "Milloin sinä tulet?", "Når kommer du?"),
+           "galles": ("Galles don boađát?", "Monelta sinä tulet?", "Hva tid kommer du?"),
+           "manne": ("Manne don leat dáppe?", "Miksi sinä olet täällä?", "Hvorfor er du her?"),
+           "mo": ("Mo manná?", "Miten menee?", "Hvordan går det?"), "galle": ("Galle jagi don leat?", "Kuinka vanha sinä olet?", "Hvor gammel er du?")}
+    for r in qrows:
+        e = QEX.get(r["sme"][0]["w"][0])
+        if e:
+            r["ex"] = {"sme": e[0], "fi": e[1], "nb": e[2]}
+        if r["sme"][0]["w"][0] == "galles" and not r["nb"][0]:
+            r["nb"] = ["når (klokka)"]
     L.append({"id": "kysymykset", "icon": "question", "title": {"fi": "Kysymyssanat", "nb": "Spørreord"}, "rows": qrows})
 
     greet = [("Bures!", "hei, terve", "hei"), ("Buorre iđit", "hyvää huomenta", "god morgen"), ("Buorre beaivi", "hyvää päivää", "god dag"),
@@ -326,6 +355,56 @@ def lists():
         grows.append(row([fi], [nb], [{"w": [s], "id": e[0] if e else None, "fi": fi, "nb": nb}]))
     L.append({"id": "tervehdykset", "icon": "greet", "title": {"fi": "Tervehdykset", "nb": "Hilsener"}, "rows": grows})
     return L
+
+
+# Listan sisäiset osiot (sanastot.js näyttää ne omina korttinaan otsikkoineen). Avain on rivin ensimmäinen saamen sana;
+# rivit järjestetään osioiden järjestykseen, ja osiota vailla jäävä rivi menee viimeiseen osioon.
+SECTIONS = {
+    "vuodenajat": [("Kevät", "Vår", ["giđđadálvi", "giđđa"]), ("Kesä", "Sommer", ["giđđageassi", "geassi"]),
+                   ("Syksy", "Høst", ["čakčageassi", "čakča"]), ("Talvi", "Vinter", ["čakčadálvi", "dálvi"])],
+    "aika": [("Vuorokauden ajat", "Tider på døgnet", ["iđit", "beaivi", "gaskabeaivi", "maŋŋelgaskabeaivi", "eahket", "idja", "gaskaidja"]),
+             ("Päivät", "Dager", ["odne", "ihttin", "ikte", "dál"]),
+             ("Kello ja aika", "Klokke og tid", ["vahkku", "diibmu", "minuhtta", "galles"])],
+    # Lähiperhe pareittain rinnakkain: äiti | isä, sisar | veli, pikkusisko | pikkuveli, tytär | poika, lapsi
+    "suku": [("Lähiperhe", "Nærmeste familie", ["eadni", "áhčči", "oabbá", "viellja", "oappáš", "vieljaš", "nieida", "bárdni", "mánná"]),
+             # Suku pareittain: isoäiti | isoisä, äidin sisaret (vanhempi | nuorempi), isän sisar | äidin veli,
+             # isän veljet (vanhempi | nuorempi), lapsenlapsi
+             ("Suku", "Slekt", ["áhkku", "áddjá", "goaski", "muoŧŧá", "siessá", "eanu", "eahki", "čeahci", "mánáidmánná"])],
+    "porot": [("Porot ja tokka", "Rein og flokk", ["boazu", "eallu", "gárdi"]),
+              ("Urokset, naaraat ja vasat", "Bukker, simler og kalver",
+               ["áldu", "rotnu", "sarvvis", "heargi", "miessi", "čearpmat", "vuonjal", "varit"])],
+    "saa": [("Sää", "Vær", ["dálki", "beaivváš", "balva", "arvi", "biegga", "stoarbma", "baján", "mierká", "njáhcu",
+                            "buolaš", "liekkas", "galmmas"]),
+            ("Lumi ja jää", "Snø og is", ["muohta", "vahca", "cuoŋu", "oppas", "seaŋáš", "jiekŋa"])],
+    "pronominit": [("Yksikkö", "Entall", ["mun", "don", "son"]), ("Kaksikko", "Totall", ["moai", "doai", "soai"]),
+                   ("Monikko", "Flertall", ["mii", "dii", "sii"])],
+    "kysymykset": [("Kuka, mikä, millainen", "Hvem, hva, hvordan", ["gii", "mii", "goabbá", "makkár"]),
+                   ("Missä, mihin, milloin", "Hvor, hvorhen, når", ["gos", "gosa", "goas", "galles"]),
+                   ("Miksi, miten, montako", "Hvorfor, hvordan, hvor mange", ["manne", "mo", "galle"])],
+    "tervehdykset": [("Tervehdys", "Hilsen", ["Bures!", "Buorre iđit", "Buorre beaivi", "Buorre eahket"]),
+                     ("Kuulumiset ja kiitos", "Hvordan går det, takk", ["Mo manná?", "Bures manná", "Giitu", "Ollu giitu", "Bures boahtin"]),
+                     ("Hyvästit", "Avskjed", ["Báze dearvan", "Mana dearvan", "Oaidnaleapmái", "Dearvvuođat"])],
+}
+
+
+def add_sections(L):
+    for lst in L:
+        secs = SECTIONS.get(lst["id"])
+        if not secs:
+            continue
+        where = {w: i for i, (_, _, ws) in enumerate(secs) for w in ws}
+        for r in lst["rows"]:
+            key = r["sme"][0]["w"][0]
+            if key not in where:
+                problems.append(f"{lst['id']}: ei osiota sanalle {key}")
+            r["sec"] = where.get(key, len(secs) - 1)
+        order = {w: k for _, _, ws in secs for k, w in enumerate(ws)}
+        lst["rows"].sort(key=lambda r: (r["sec"], order.get(r["sme"][0]["w"][0], 99)))
+        lst["sections"] = [{"fi": fi, "nb": nb} for fi, nb, _ in secs]
+        for k, (_, _, ws) in enumerate(secs):
+            missing = set(ws) - {r["sme"][0]["w"][0] for r in lst["rows"]}
+            if missing:
+                problems.append(f"{lst['id']}: osion sanoja puuttuu listasta: {', '.join(sorted(missing))}")
 
 
 def check_spelling(L):
@@ -344,6 +423,8 @@ def check_spelling(L):
                 for s in r["sme"]:
                     for w in s["w"]:
                         words |= set(re.findall(r"[\wáčđŋšŧžÁČĐŊŠŦŽ]+", w))
+                if r.get("ex"):
+                    words |= set(re.findall(r"[\wáčđŋšŧžÁČĐŊŠŦŽ]+", r["ex"]["sme"]))
     for w in sorted(w for w in words if w):
         if not spell(w):
             problems.append(f"oikoluku hylkää: {w}")
@@ -351,6 +432,16 @@ def check_spelling(L):
 
 if __name__ == "__main__":
     L = lists()
+    add_sections(L)
+    # Valmiit äänilistat (suomi + saame, Ogg Opus, web/audio/, ks. ~/Git/fi-tts): listan yläreunan kaiutin soittaa
+    # <id>.ogg:n; lukutaulukon osioilla omat painikkeet perus- ja järjestysluvuille (luvut-N.ogg, jarjestysluvut-N.ogg)
+    audio = lambda name: f"audio/{name}.ogg" if os.path.exists(os.path.join(os.path.dirname(OUT), "..", "audio", name + ".ogg")) else None
+    for lst in L:
+        if audio(lst["id"]):
+            lst["audio"] = audio(lst["id"])
+        if lst["id"] == "luvut":
+            lst["numSections"] = [{"label": lab, "from": start, "card": audio(f"luvut-{k}"), "ord": audio(f"jarjestysluvut-{k}")}
+                                  for k, (lab, start) in enumerate([("1–29", 1), ("30–100", 30), ("101–1000", 101)], 1)]
     check_spelling(L)
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump({"lists": L}, f, ensure_ascii=False, separators=(",", ":"))

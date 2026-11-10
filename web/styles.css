@@ -95,6 +95,21 @@ select {
 .sanasto-view { position: fixed; inset: 0; z-index: 46; background: var(--bg); display: flex; flex-direction: column; }
 .sanasto-view[hidden] { display: none; }
 .sanasto-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); }
+.sanasto-view > .stripe { flex: none; }
+.sanasto-view > .stripe + .sanasto-body { padding-top: 12px; }
+.sanasto-head:has(.head-ico:not([hidden])) h2 { font-size: 18px; line-height: 1.15; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.sanasto-head { gap: 8px; }
+.head-ico { width: 34px !important; height: 34px !important; border-radius: 10px !important; }
+.head-ico svg { width: 19px !important; height: 19px !important; }
+.head-ico[hidden] { display: none !important; }
+/* Kortit kevyesti irti taustasta (vaalea teema); tumma teema ilman varjoa */
+.sanasto-view { --card-shadow: 0 1px 2px rgba(15, 23, 42, .05), 0 4px 14px rgba(15, 23, 42, .05); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sanasto-view { --card-shadow: none; } }
+:root[data-theme="dark"] .sanasto-view { --card-shadow: none; }
+.sanasto-tile, .sl-card, .num-table, .mrow, .colour, .compass, .kt-node, .kt-side, .cv-b.l, .cv-chip, .rd-life, .ico-tile, .q-card, .tl-step,
+.tl-now, .season, .day, .snow-card { box-shadow: var(--card-shadow); }
+.sl-card .mrow { box-shadow: none; }
+.sl-card, .num-table, .compass, .rd-life, .q-card, .colour, .ico-tile { border-radius: 16px; }
 .sanasto-head h2 { margin: 0; font-size: 20px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sanasto-head .speak-btn { flex: none; }
 /* Android-sovelluksessa tilarivin tila on jo reunuksessa (kuten .topbar) */
@@ -104,9 +119,9 @@ select {
 .sanasto-intro { margin: 0 0 2px; font-size: 13px; color: var(--muted); }
 .sanasto-group { display: flex; flex-direction: column; gap: 6px; }
 .sanasto-group + .sanasto-group { margin-top: 10px; }
-.sanasto-group h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700;
+.sanasto-group h3, .sl-sec h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700;
   letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-.sanasto-group h3::before { content: ""; width: 14px; height: 4px; border-radius: 2px; background: var(--tc); }
+.sanasto-group h3::before, .sl-sec h3::before, .nt-sec::before { content: ""; width: 14px; height: 4px; border-radius: 2px; background: var(--tc); }
 .sanasto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 6px; }
 .sanasto-tile { display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 10px; border-radius: 14px;
   border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; text-align: left;
@@ -123,16 +138,75 @@ select {
 .st-n { flex: none; min-width: 26px; padding: 2px 7px; border-radius: 999px; font-size: 12px; font-weight: 600; text-align: center;
   color: var(--muted); background: var(--surface-alt); border: 1px solid var(--border); }
 .sanasto-hint { margin: 2px 0 4px; font-size: 13px; color: var(--muted); }
+/* Listasivu: ohje värillisenä palkkina, osiot omina kortteinaan (rivit ohuin viivoin), väri listan ryhmästä (--tc) */
+.sanasto-body > .sanasto-hint:first-child { margin: 0 0 4px; padding: 8px 12px; border-radius: 10px; color: var(--text);
+  background: color-mix(in srgb, var(--tc, var(--accent)) 10%, var(--surface)); border-left: 3px solid var(--tc, var(--accent)); }
+.sanasto-hint .sh-line { display: block; }
+.sanasto-hint .sh-line b { font-weight: 600; }
+.sanasto-hint .sh-line span { color: var(--muted); }
+.sanasto-body > .sanasto-hint:last-child { text-align: center; font-size: 12px; margin-top: 6px; }
+.sl-sec { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+.sl-sec + .sl-sec { margin-top: 8px; }
+/* Kortti ruudukkona: 1 px rako näkyy viivana (kortin tausta = reunaväri), yhden muodon sanat kaksi rinnakkain */
+.sl-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1px; background: var(--border);
+  border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.sl-card > .sanasto-row { grid-column: 1 / -1; border: 0; border-radius: 0; background: var(--surface); padding: 9px 12px; min-width: 0; }
+.sl-card > .sanasto-row.one { grid-column: auto; display: flex; flex-direction: column; justify-content: flex-start; gap: 1px; }
+.sl-card > .sanasto-row.one.wide { grid-column: 1 / -1; }
+.sanasto-row.one .sg-ui { font-size: 13px; color: var(--muted); line-height: 1.25; }
+.sanasto-row.one .one-w { font-size: 16px; line-height: 1.3; }
+.sanasto-row.one .sw-wrap { white-space: normal; flex-wrap: wrap; }
+.sanasto-row.ptab { display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); column-gap: 6px; padding: 8px 10px; }
+.sanasto-row.mrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: 8px; row-gap: 1px; }
+.mr-main { display: inline-flex; align-items: center; gap: 1px; min-width: 0; font-size: 17px; white-space: nowrap; }
+.mr-fi { font-size: 13px; color: var(--muted); text-align: right; }
+.mr-main { flex-wrap: wrap; row-gap: 0; }
+.mr-dial { margin: 0 0 0 2px; font-size: 10.5px; font-weight: 600; color: var(--muted); align-self: flex-start; line-height: 1.4; }
+.mr-sep { margin: 0 6px; color: var(--muted); }
+.mrow:has(.mr-dial) .mr-main { font-size: 16px; }
+.mr-note { grid-column: 2; grid-row: 2; font-size: 12px; font-style: italic; color: var(--muted); text-align: right; white-space: nowrap; }
+.mr-forms { grid-column: 1 / -1; grid-row: 2; font-size: 13px; color: var(--muted); }
+.mrow:has(.mr-note) .mr-forms { grid-column: 1; }
+.pt-cell { display: flex; flex-direction: column; min-width: 0; }
+.pt-cell .sw { font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
+.pt-fi { font-size: 11.5px; color: var(--muted); line-height: 1.2; overflow-wrap: anywhere; }
+.sanasto-row.one .sanasto-note { font-size: 12px; color: var(--muted); line-height: 1.25; }
+.nt-sec { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 10px 0 4px !important; font-size: 12px;
+  font-weight: 700; letter-spacing: .06em; color: var(--muted); }
+.num-table > .nt-head + .nt-head + .nt-sec { border-top: 0; padding-top: 2px !important; }
+.nt-sec + .nt-n, .nt-sec + .nt-n + .nt-cell, .nt-sec + .nt-n + .nt-cell + .nt-cell { border-top: 0; }
 .sanasto-row { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
 .sanasto-row.num { display: flex; align-items: center; gap: 8px; padding: 2px 8px; line-height: 1.2; }
 .sanasto-body:has(.sanasto-row.num) { gap: 4px; }
 .sanasto-n { font-size: 16px; font-weight: 700; min-width: 2.1em; text-align: right; color: var(--accent); }
 /* Lukutaulukko: numero | perusluku | järjestysluku, ohuet viivat rivien välissä */
 .num-table { display: grid; grid-template-columns: 1.9em minmax(0, 1fr) minmax(0, 1fr); column-gap: 8px;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px 10px; }
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 4px 12px 6px; flex-shrink: 0; }
 .num-table > * { padding: 5px 0; border-top: 1px solid var(--border); min-width: 0; }
-.num-table > .nt-head, .num-table > .nt-head + .nt-head, .num-table > :first-child { border-top: 0; font-size: 12px; color: var(--muted); padding-bottom: 2px; }
-.nt-n { font-size: 15px; font-weight: 700; color: var(--accent); display: flex; align-items: center; justify-content: flex-end; }
+/* Sarakeotsikot: nimi ja esimerkki, pysyvät näkyvissä taulukkoa vieritettäessä */
+.num-table > .nt-head, .num-table > .nt-corner { border-top: 0; position: sticky; top: -12px; z-index: 2; background: var(--surface);
+  padding: 14px 0 6px; margin-top: -6px; box-shadow: 0 1px 0 var(--border); }
+.nt-head { display: flex; flex-direction: column; gap: 1px; }
+.nt-head b { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: .01em; }
+.nt-head small { font-size: 11.5px; color: var(--muted); }
+/* Osion kaistale: väli lihavoituna listan värillä, alla soittopainikkeet sarakkeiden kohdalla */
+.num-table > .nt-band { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; align-items: center; border-top: 0;
+  margin: 10px -8px 2px; padding: 6px 8px; border-radius: 11px; background: color-mix(in srgb, var(--tc, var(--accent)) 9%, var(--surface)); }
+.num-table > .nt-head + .nt-head + .nt-band { margin-top: 8px; }
+.nt-band > .nt-sec { grid-column: 2 / -1; padding: 0 !important; font-size: 14px; letter-spacing: .02em; color: var(--tc, var(--accent)); }
+.nt-band > .nt-sec::before { display: none; }
+.nt-band > * { min-width: 0; }
+.nt-band + .nt-n, .nt-band + .nt-n + .nt-cell, .nt-band + .nt-n + .nt-cell + .nt-cell { border-top: 0; }
+/* Lukutaulukko luettavammaksi: ei pisteviivoja, joka toinen rivi sävytetty, toistuvat osat vaaleampina */
+#sanasto-body .num-table .sw { text-decoration: none; }
+.num-table .np { color: var(--muted); font-weight: 400; }
+.num-table { column-gap: 0; }
+.num-table > .nt-cell { font-size: 14px; padding-left: 7px; padding-right: 2px; }
+.num-table > .nt-n { padding-right: 2px; }
+.num-table > .nt-n, .num-table > .nt-cell { border-top: 0; }
+.num-table > .zebra { background: color-mix(in srgb, var(--tc, var(--accent)) 6%, transparent); }
+.num-table > .nt-n.zebra { border-radius: 8px 0 0 8px; } .num-table > .nt-cell.zebra + .nt-cell.zebra { border-radius: 0 8px 8px 0; }
+.nt-n { font-size: 15px; font-weight: 700; color: var(--tc, var(--accent)); display: flex; align-items: center; justify-content: flex-end; }
 .nt-cell { display: flex; flex-direction: column; justify-content: center; font-size: 14px; line-height: 1.2; }
 .nt-cell .num-fi { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 1.2em; }
 .nt-ico { display: inline-flex; gap: 2px; }
@@ -156,6 +230,10 @@ select {
 .sanasto-row .sub-line { font-size: 13px; color: var(--muted); margin-top: 2px; }
 .sanasto-row .sw { cursor: pointer; border-radius: 4px; -webkit-touch-callout: none; user-select: none; }
 .sanasto-row .sw:active { background: var(--chip); }
+/* Sanastojen sana avaa kuplan: hento pisteviiva vihjeenä, valittu sana korostettuna */
+#sanasto-body .sw { cursor: pointer; border-radius: 4px; text-decoration: underline dotted color-mix(in srgb, var(--muted) 60%, transparent);
+  text-decoration-thickness: 1.5px; text-underline-offset: 4px; -webkit-tap-highlight-color: transparent; }
+#sanasto-body .sw.picked { background: var(--select); box-shadow: 0 0 0 3px var(--select); text-decoration: none; }
 .sanasto-row .sw.main { font-weight: 700; }
 /* Laatikko taulukkona: sarakeotsikkona suomen muoto, alla saamen muoto (sanastot.js) */
 .sanasto-row.sg { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); column-gap: 8px; row-gap: 2px; align-items: center; }
@@ -310,6 +388,170 @@ main > * + * { margin-top: 12px; }
   transition: transform .1s, filter .1s;
 }
 .speak-btn svg { width: 21px; height: 21px; }
+/* Äänilista soi (sanastot.js): pysäytysneliö ja kehä, joka täyttyy soiton edetessä */
+.speak-btn.playing svg:not(.play-ring) { width: 19px; height: 19px; }
+.play-ring { position: absolute; inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px); transform: rotate(-90deg); pointer-events: none; }
+/* Lukutaulukon osion soittopainike: kaiutin + Kuuntele; soidessa pysäytysneliö ja täyttyvä kehä kuvakkeen ympärillä */
+.nt-play { display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px 3px 3px; border-radius: 999px; border: 0;
+  background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 0 0 1px color-mix(in srgb, var(--tc, var(--accent)) 25%, transparent);
+  color: var(--text); font: inherit; font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums; cursor: pointer;
+  transition: transform .1s, filter .1s; -webkit-tap-highlight-color: transparent; }
+.nt-play:active { transform: scale(.94); filter: brightness(.92); }
+/* Ilmansuunnat kompassina */
+.compass { display: grid; grid-template-columns: 1fr auto 1fr; grid-template-rows: auto auto auto; gap: 10px 8px; align-items: center;
+  justify-items: center; padding: 16px 8px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); flex-shrink: 0; }
+.cmp-rose { grid-area: 2 / 2; width: 92px; height: 92px; }
+.cmp-rose svg { width: 100%; height: 100%; }
+.cmp-rose circle { fill: color-mix(in srgb, var(--tc, var(--accent)) 7%, var(--surface)); stroke: var(--border); stroke-width: 1.5; }
+.cmp-n { fill: #dc2626; } .cmp-s { fill: var(--muted); } .cmp-ew { fill: color-mix(in srgb, var(--muted) 55%, transparent); }
+.cmp-dir { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1px; min-width: 0; }
+.cmp-n.cmp-dir { grid-area: 1 / 1 / 2 / 4; } .cmp-s.cmp-dir { grid-area: 3 / 1 / 4 / 4; }
+.cmp-w.cmp-dir { grid-area: 2 / 1; } .cmp-e.cmp-dir { grid-area: 2 / 3; }
+.cmp-sme { font-size: 19px; font-weight: 700; }
+.cmp-fi { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.cmp-forms { font-size: 13px; color: var(--muted); }
+/* Värit: jokainen omalla rivillään, vasemmalla värikaistale joka liukuu kortin pohjaan */
+.colour-grid { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+.colour { position: relative; display: flex; align-items: center; gap: 14px; min-height: 54px; padding: 6px 14px 6px 6px; border-radius: 14px;
+  border: 1px solid var(--border); overflow: hidden;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c) 34%, var(--surface)) 0%, color-mix(in srgb, var(--c) 10%, var(--surface)) 40%, var(--surface) 75%); }
+.col-sw { flex: none; align-self: stretch; width: 42px; border-radius: 10px; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .col-sw { box-shadow: inset 0 0 0 1px rgba(255,255,255,.28); } }
+:root[data-theme="dark"] .col-sw { box-shadow: inset 0 0 0 1px rgba(255,255,255,.28); }
+.col-txt { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.col-sme { font-size: 17px; font-weight: 700; }
+.col-ex { font-size: 13px; }
+.col-ex .sw { font-weight: 600; }
+.col-ex-fi { color: var(--muted); }
+.col-fi { flex: none; font-size: 13px; color: var(--muted); }
+/* Sukupuu */
+.kin-tree { display: flex; flex-direction: column; align-items: stretch; gap: 14px; flex-shrink: 0; }
+.kt-level { display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; }
+.kt-level + .kt-level::before, .kt-sides::before, .kt-sides + .kt-level::before { content: ""; position: absolute; top: -14px; left: 50%; width: 2px; height: 12px; background: var(--border); }
+.kt-sides { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.kt-cap { font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); text-align: center; }
+.kt-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.kt-node { display: flex; flex-direction: column; align-items: center; gap: 0; min-width: 84px; padding: 7px 10px; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--border); text-align: center; }
+.kt-node.you { justify-content: center; background: color-mix(in srgb, var(--tc, var(--accent)) 16%, var(--surface)); border-color: color-mix(in srgb, var(--tc, var(--accent)) 45%, transparent); }
+.kt-node.you .kt-sme { font-weight: 700; color: var(--tc, var(--accent)); }
+.kt-sme { font-size: 16px; font-weight: 700; }
+.kt-fi { font-size: 11.5px; color: var(--muted); line-height: 1.25; }
+.kt-side { --sc: #2563eb; display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 8px; border-radius: 14px;
+  background: color-mix(in srgb, var(--sc) 7%, var(--surface)); border: 1px solid color-mix(in srgb, var(--sc) 25%, transparent); }
+.kt-side.m { --sc: #db2777; }
+.kt-side .kt-cap { color: var(--sc); }
+.kt-side .kt-node { min-width: 0; }
+.kt-node.parent { border-color: color-mix(in srgb, var(--sc) 45%, transparent); }
+.kt-node.parent .kt-sme { font-size: 17px; }
+.kt-sib { display: flex; flex-direction: column; gap: 5px; }
+.kt-sib .kt-node { padding: 5px 8px; }
+/* Tervehdykset keskusteluna */
+.cv { display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; }
+.cv .kt-cap { text-align: left; }
+.cv-b { max-width: 78%; display: flex; flex-direction: column; padding: 8px 13px; border-radius: 16px; }
+.cv-b.l { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.cv-b.r { align-self: flex-end; background: color-mix(in srgb, var(--tc, var(--accent)) 16%, var(--surface)); border-bottom-right-radius: 4px; text-align: right; }
+.cv-sme { font-size: 17px; font-weight: 700; }
+.cv-fi { font-size: 12.5px; color: var(--muted); }
+.cv-more { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; flex-shrink: 0; }
+.cv-chip { display: flex; flex-direction: column; padding: 6px 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+.cv-chip .cv-sme { font-size: 15px; }
+/* Porot: elämänkaari kahdella kaistalla */
+.rd-life { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; padding: 10px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); }
+.rd-calf { grid-column: 1 / -1; display: flex; justify-content: center; }
+.rd-lane { font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; text-align: center; color: #2563eb; }
+.rd-lane.f { color: #db2777; }
+.rd-node { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 7px 8px; border-radius: 12px;
+  background: color-mix(in srgb, var(--tc, var(--accent)) 7%, var(--surface)); border: 1px solid var(--border); }
+.rd-calf .rd-node { min-width: 130px; }
+.ico-tile.rd-herd { flex-direction: column; align-items: flex-start; gap: 0; }
+/* Lumisanat omana korttinaan */
+.snow-card { margin-top: 8px; padding: 10px; border-radius: 16px; background: color-mix(in srgb, #0ea5e9 9%, var(--surface)); border: 1px solid color-mix(in srgb, #0ea5e9 30%, transparent); flex-shrink: 0; }
+.snow-card h3 { margin: 0 0 8px; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #0284c7; }
+.snow-card h3 svg { width: 18px; height: 18px; }
+.snow-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.snow-w { display: flex; flex-direction: column; padding: 8px 10px; border-radius: 12px; background: var(--surface); }
+/* Kysymyssanat */
+.q-list { display: flex; flex-direction: column; gap: 6px; }
+.q-card { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: 12px; padding: 9px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); }
+.q-word { display: flex; flex-direction: column; padding-right: 10px; border-right: 2px solid color-mix(in srgb, var(--tc, var(--accent)) 35%, transparent); }
+.q-sme { font-size: 20px; font-weight: 800; color: var(--tc, var(--accent)); }
+.q-fi { font-size: 12px; color: var(--muted); }
+.q-ex { display: flex; flex-direction: column; min-width: 0; }
+.q-ex .sw { font-size: 15px; font-weight: 600; }
+.q-ex-fi { font-size: 12.5px; color: var(--muted); }
+/* Päivät aikajanana ja "nyt" omana sirunaan */
+.timeline { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: stretch; gap: 4px; }
+.tl-step { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 0; padding: 10px 4px;
+  border-radius: 14px; background: var(--surface); border: 1px solid var(--border); text-align: center; }
+.tl-step.today { background: color-mix(in srgb, var(--tc, var(--accent)) 14%, var(--surface)); border-color: color-mix(in srgb, var(--tc, var(--accent)) 45%, transparent); }
+.tl-step.today .tl-sme { font-size: 19px; }
+.tl-fi { font-size: 12px; color: var(--muted); }
+.tl-sme { font-size: 17px; font-weight: 700; }
+.tl-arrow { align-self: center; color: var(--muted); font-size: 15px; }
+.tl-now { display: flex; align-items: center; gap: 8px; align-self: center; margin-top: 2px; padding: 6px 14px; border-radius: 999px;
+  background: var(--surface); border: 1px solid var(--border); }
+.tl-dot { width: 8px; height: 8px; border-radius: 50%; background: #16a34a; box-shadow: 0 0 0 3px color-mix(in srgb, #16a34a 25%, transparent); }
+/* Kello ja aika: kuvakkeelliset tiilet */
+.ico-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ico-tile { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 10px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); }
+.ico-tile svg { flex: none; width: 34px; height: 34px; padding: 6px; border-radius: 10px; color: var(--tc, var(--accent));
+  background: color-mix(in srgb, var(--tc, var(--accent)) 12%, var(--surface)); }
+.it-txt { display: flex; flex-direction: column; min-width: 0; }
+.it-sme { font-size: 16px; font-weight: 700; }
+.it-fi { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+/* Vuorokausi: taivaan värit aamusta yöhön, kulmassa aurinko tai kuu */
+.day-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.day { --dc: #b45309; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 1px; min-width: 0;
+  padding: 10px 12px 12px; border-radius: 14px; border: 1px solid rgba(0,0,0,.06); color: #1f2937; }
+.day > span { position: relative; z-index: 1; }
+.day .sw, .day .day-ui { color: inherit; }
+.day-art { position: absolute; right: -8px; bottom: -10px; width: 86px; height: 86px; opacity: .55; pointer-events: none; }
+.day-art .sun { fill: #fbbf24; } .day-art .ray line, .day-art .hz, .day-art .wave line { stroke: #f59e0b; stroke-width: 3; stroke-linecap: round; }
+.day-art .moon { fill: #fde68a; } .day-art .crater { fill: #fcd34d; } .day-art .star { fill: #fef9c3; }
+.day.d0 { background: linear-gradient(170deg, #fff7ed 0%, #fed7aa 100%); }
+.day.d1 { background: linear-gradient(170deg, #e0f2fe 0%, #fef9c3 100%); --dc: #a16207; }
+.day.d2 { background: linear-gradient(180deg, #bae6fd 0%, #e0f2fe 100%); --dc: #0369a1; }
+.day.d3 { background: linear-gradient(170deg, #fef3c7 0%, #fdba74 100%); --dc: #c2410c; }
+.day.d4 { background: linear-gradient(180deg, #fdba74 0%, #f9a8d4 100%); --dc: #9d174d; }
+.day.d4 .day-art .sun { fill: #f97316; } .day.d4 .day-art .hz, .day.d4 .day-art .wave line { stroke: #be185d; }
+.day.d5 { background: linear-gradient(180deg, #3730a3 0%, #1e1b4b 100%); color: #e5e7eb; --dc: #c7d2fe; }
+.day.d6 { background: linear-gradient(180deg, #172554 0%, #020617 100%); color: #e5e7eb; --dc: #a5b4fc; }
+.day.d5 .day-art, .day.d6 .day-art { opacity: .85; }
+.day.d5 .day-ui, .day.d6 .day-ui { color: #a5b4fc; }
+.day.d5 .sw, .day.d6 .sw { text-decoration-color: rgba(229,231,235,.45); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .day:not(.d5):not(.d6) { filter: brightness(.82) saturate(.9); } }
+:root[data-theme="dark"] .day:not(.d5):not(.d6) { filter: brightness(.82) saturate(.9); }
+.day:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.day-fi { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--dc); }
+.day-sme { font-size: 17px; font-weight: 700; }
+.day-form { overflow-wrap: anywhere; }
+.day-form { font-size: 13px; }
+.day-ui { opacity: .7; }
+/* Vuodenajat: 2 x 4 ruudukko, kevät vihreä, kesä keltainen, syksy oranssi, talvi sininen */
+.season-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex-shrink: 0; }
+.season { --sc: #16a34a; position: relative; display: flex; flex-direction: column; gap: 1px; min-width: 0; padding: 10px 12px 11px; border-radius: 14px;
+  background: color-mix(in srgb, var(--sc) 7%, var(--surface)); border: 1px solid color-mix(in srgb, var(--sc) 28%, transparent);
+  border-top: 4px solid var(--sc); }
+.season.s1 { --sc: #d97706; } .season.s2 { --sc: #ea580c; } .season.s3 { --sc: #2563eb; }
+.season.main { background: color-mix(in srgb, var(--sc) 15%, var(--surface)); }
+.se-ico { position: absolute; top: 9px; right: 10px; width: 22px; height: 22px; color: var(--sc); opacity: .45; }
+.season.main .se-ico { opacity: .75; }
+.se-fi { padding-right: 26px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: color-mix(in srgb, var(--sc) 75%, var(--text)); }
+.se-sme { font-size: 18px; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+.se-form { font-size: 13.5px; color: var(--text); opacity: .9; }
+.se-ui { font-size: 12.5px; color: var(--muted); }
+.se-note { margin-top: 3px; align-self: flex-start; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600;
+  color: color-mix(in srgb, var(--sc) 80%, var(--text)); background: color-mix(in srgb, var(--sc) 14%, var(--surface)); }
+.list-band { display: flex; align-items: center; gap: 10px; margin: 2px 0 8px; }
+.list-band > span { font-size: 12.5px; color: var(--muted); }
+.pl-ico { position: relative; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%;
+  background: var(--speak-bg); color: var(--speak); }
+.pl-ico svg:not(.play-ring) { width: 14px; height: 14px; }
+.pl-ico .play-ring { inset: -2px; width: calc(100% + 4px); height: calc(100% + 4px); }
+.nt-play.playing .pl-ico svg:not(.play-ring) { width: 13px; height: 13px; }
+.play-ring circle { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 100; }
 .speak-btn:hover { background: var(--speak-hover); }
 .speak-btn:active { transform: scale(.88); filter: brightness(.9); }
 .speak-btn:disabled { cursor: progress; }
@@ -709,7 +951,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .ocr-bubble button { border: 0; padding: 0; font: inherit; cursor: pointer; }
 /* Sanakortin muodon kupla: sama ulkoasu kuin kuvan sanakuplalla, sivun päällä */
 .form-pop {
-  position: absolute; z-index: 30; padding: 6px 6px 6px 14px; gap: 10px;
+  position: absolute; z-index: 50; padding: 6px 6px 6px 14px; gap: 10px;
   border: 1px solid var(--border); box-shadow: 0 8px 24px rgba(0, 0, 0, .3);
 }
 .form-pop::before {
