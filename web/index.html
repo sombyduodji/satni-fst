@@ -32,6 +32,8 @@
         <div class="brand-sub" data-i18n="brandSub">Pohjoissaamen avoin sanakirja ja taivutusgeneraattori</div>
       </div>
     </a>
+    <!-- Sanastot (sanastot.js): aihekohtaiset sanalistat, kirja oikeassa yläkulmassa -->
+    <button class="chip-btn sanasto-btn" id="sanasto-btn" data-i18n-aria="sanastot" data-i18n-title="sanastot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5.6 4 9 4 12 6c3-2 6.4-2 9-.5V19c-2.6-1.5-6-1.5-9 .5-3-2-6.4-2-9-.5z"/><path d="M12 6v13.5"/><path d="M15.5 5.2v5.3l1.5-1.2 1.5 1.2V4.9"/></svg></button>
   </header>
   <div class="stripe"><span></span><span></span><span></span><span></span></div>
 
@@ -322,6 +324,17 @@
 
   <!-- Tekstintunnistus: kuva ja sen sanat (app.js: openOcr, ocrResult) -->
   <!-- Lausekääntäjä: suomenkielinen lause -> sanat laatikoina (saamen muoto ja perusmuoto) -> saamenkielinen lause -->
+  <!-- Sanastot: yleisnäkymä (ruudukko) ja lista; sanastot.js -->
+  <div id="sanasto-view" class="sanasto-view" hidden>
+    <div class="sanasto-head">
+      <button type="button" class="chip-btn" id="sanasto-back" data-i18n-aria="back" hidden>←</button>
+      <h2 id="sanasto-title"></h2>
+      <button type="button" id="sanasto-speak" class="speak-btn" data-i18n-title="listen" data-i18n-aria="listen" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
+      <button type="button" class="chip-btn" id="sanasto-close" data-i18n="close">Sulje</button>
+    </div>
+    <div id="sanasto-body" class="sanasto-body"></div>
+  </div>
+
   <div id="lause-view" class="lause-view" hidden>
     <div class="lause-head">
       <h2 data-i18n="lauseTitle">Lausekääntäjä</h2>
@@ -387,5 +400,6 @@
   <script src="i18n.js"></script>
   <script src="app.js"></script>
   <script src="lauseet.js"></script>
+  <script src="sanastot.js"></script>
 </body>
 </html>

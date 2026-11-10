@@ -86,6 +86,34 @@ select {
 }
 .chip-btn:hover, .icon-btn:hover { background: var(--chip-hover); }
 .icon-btn { display: none; font-size: 18px; line-height: 1; }
+/* Sanastot: kirjapainike ylätunnisteen oikeassa reunassa ja näkymä (sanastot.js) */
+.sanasto-btn { margin-left: auto; padding: 6px 9px; line-height: 0; flex: none; }
+.sanasto-btn svg { width: 22px; height: 22px; }
+.sanasto-view { position: fixed; inset: 0; z-index: 46; background: var(--bg); display: flex; flex-direction: column; }
+.sanasto-view[hidden] { display: none; }
+.sanasto-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); }
+.sanasto-head h2 { margin: 0; font-size: 20px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sanasto-head .speak-btn { flex: none; }
+/* Android-sovelluksessa tilarivin tila on jo reunuksessa (kuten .topbar) */
+.android-app .sanasto-head { padding-top: 12px; }
+.sanasto-body { flex: 1; overflow-y: auto; padding: 4px 16px 24px; display: flex; flex-direction: column; gap: 8px; }
+.sanasto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.sanasto-tile { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font: inherit; font-size: 15px; text-align: left; cursor: pointer; }
+.sanasto-tile svg { width: 24px; height: 24px; flex: none; color: var(--accent); }
+.sanasto-tile span { min-width: 0; overflow-wrap: anywhere; }
+.sanasto-hint { margin: 2px 0 4px; font-size: 13px; color: var(--muted); }
+.sanasto-row { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
+.sanasto-row.num { display: flex; align-items: center; gap: 14px; }
+.sanasto-n { font-size: 20px; font-weight: 700; min-width: 2.6em; color: var(--accent); }
+.sanasto-row .ui-line { font-size: 13px; color: var(--muted); margin-bottom: 3px; }
+.sanasto-row .sme-line { font-size: 17px; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.sanasto-row .sub-line { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.sanasto-row .sw { cursor: pointer; border-radius: 4px; -webkit-touch-callout: none; user-select: none; }
+.sanasto-row .sw:active { background: var(--chip); }
+.sanasto-row .sw.main { font-weight: 700; }
+.sanasto-dial { margin-left: auto; font-size: 12px; color: var(--muted); padding: 1px 7px; border-radius: 99px; background: var(--chip); }
+.sanasto-note { font-size: 13px; color: var(--muted); font-style: italic; margin-top: 3px; }
 
 /* Käyttöliittymän kieli: valitsin valikossa ja aloitussivulla */
 .lang-switch svg {

@@ -305,6 +305,8 @@ def main():
     raw, packed = os.path.getsize(OUT_DB), os.path.getsize(OUT_DB + ".gz")
     os.remove(OUT_DB)
     print(f"web/data/satni-web.db.gz: {packed / 1e6:.1f} Mt (purettuna {raw / 1e6:.1f} Mt)")
+    # Sanastot (aihekohtaiset sanalistat) samasta tietokannasta: web/data/sanastot.json (gitignore, kuten tietokanta)
+    subprocess.run(["python3", os.path.join(SCRIPT_DIR, "sanastot.py")], check=False)
 
 
 if __name__ == "__main__":
