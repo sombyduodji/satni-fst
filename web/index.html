@@ -328,7 +328,11 @@
       <button type="button" class="chip-btn" id="lause-close" data-i18n="close">Sulje</button>
     </div>
     <p class="muted small" data-i18n="lauseHint"></p>
-    <textarea id="lause-input" rows="2" data-i18n-placeholder="lausePlaceholder"></textarea>
+    <!-- × tyhjentää lauseen ja sanojen valinnat (lauseet.js: lauseClear); näkyy vain, kun kentässä on tekstiä -->
+    <div class="lause-input-wrap">
+      <textarea id="lause-input" rows="2" data-i18n-placeholder="lausePlaceholder"></textarea>
+      <button type="button" id="lause-clear" class="lause-clear" data-i18n-title="lauseClear" data-i18n-aria="lauseClear" hidden>×</button>
+    </div>
     <div id="lause-chips" class="lause-chips"></div>
     <div id="lause-pop" class="lause-pop" hidden></div>
     <div id="lause-card" class="lause-card" hidden></div>

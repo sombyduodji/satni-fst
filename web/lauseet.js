@@ -472,6 +472,7 @@ function renderLause() {
       (s ? `<span class="lc-sme">${esc(s.form || "–")}</span><span class="lc-base">${esc(s.base)}</span>`
          : `<span class="lc-sme">?</span><span class="lc-base">${esc(t("lauseUnknown"))}</span>`) + "</button>";
   }).join("");
+  $("lause-clear").hidden = !$("lause-input").value;
   const ready = tokens.length && tokens.every((tok) => tok.punct || tok.neg || tok.name || tok.num || tok.post || tok.choice || tok.skip);
   $("lause-result").hidden = !ready;
   if (ready) $("lause-sme").textContent = lauseSentence(tokens.filter((tok) => !tok.skip));
@@ -620,7 +621,16 @@ function bindLause() {
     }, 300);
   };
   // Puhelimen näppäimistö: viimeinen sana voi olla vielä kesken (alleviivattu), joten luetaan myös sanan valmistuttua
-  $("lause-input").oninput = reparse;
+  $("lause-input").oninput = () => { $("lause-clear").hidden = !$("lause-input").value; reparse(); };
+  // × tyhjentää lauseen, sanojen valinnat ja tallennetun lauseen; kenttä saa kohdistuksen (näppäimistö auki)
+  $("lause-clear").onclick = () => {
+    clearTimeout(timer);
+    $("lause-input").value = "";
+    lause.tokens = [];
+    renderLause();
+    lauseSave();
+    $("lause-input").focus();
+  };
   $("lause-input").addEventListener("compositionend", reparse);
   $("lause-input").addEventListener("change", reparse);
   $("lause-chips").onclick = (e) => {

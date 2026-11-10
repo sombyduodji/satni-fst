@@ -448,8 +448,12 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .lause-head { display: flex; align-items: center; justify-content: space-between; }
 .lause-head h2 { margin: 0; font-size: 20px; }
 .lause-view > .small { margin: 0; }
-#lause-input { font: inherit; font-size: 17px; padding: 10px; border-radius: 10px; border: 1px solid var(--border);
-  background: var(--surface); color: var(--text); resize: vertical; }
+#lause-input { font: inherit; font-size: 17px; padding: 10px 44px 10px 10px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); resize: vertical; width: 100%; box-sizing: border-box; display: block; }
+.lause-input-wrap { position: relative; }
+.lause-clear { position: absolute; top: 6px; right: 6px; width: 34px; height: 34px; border: 0; border-radius: 50%;
+  background: var(--chip); color: var(--muted); font-size: 22px; line-height: 1; cursor: pointer; }
+.lause-clear[hidden] { display: none; }
 .lause-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .lause-chip { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 6px 10px; border-radius: 10px;
   border: 1px solid transparent; background: var(--gd-bg); color: var(--text); font: inherit; cursor: pointer; text-align: left; }

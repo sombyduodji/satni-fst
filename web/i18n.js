@@ -39,7 +39,7 @@ const UI_TEXTS = {
     lausePlaceholder: "saisinko yhden kahvin ja voileivän?", lauseUnknown: "tuntematon", lauseDidYouMean: "tarkoititko",
     lauseSkip: "Ohita sana", lauseResult: "Saameksi (likimääräinen, tarkista sanat)",
     lauseReading: "Tulkinta", lauseSamiWord: "Saamen sana",
-    lauseCheckWord: "Näytä sanan tiedot", lauseInSentence: "Tässä lauseessa", lauseChoose: "Valitse tämä", lauseFullCard: "Koko sanakortti",
+    lauseClear: "Tyhjennä lause", lauseCheckWord: "Näytä sanan tiedot", lauseInSentence: "Tässä lauseessa", lauseChoose: "Valitse tämä", lauseFullCard: "Koko sanakortti",
     expOcr: "Valokuvahaku", expOcrDesc: "Tunnistaa valokuvan tekstistä sanakirjan sanat. Käynnistys 📷-painikkeesta.",
     expOcrInfo: `<p>Hakukentän viereen tulee 📷-painike. Ota kuva tekstistä tai valitse kuva, ja sanakirjan sanat merkitään
       kuvaan. Napauta sanaa, niin näet käännöksen.</p>
@@ -256,7 +256,7 @@ const UI_TEXTS = {
     lausePlaceholder: "saisinko yhden kahvin ja voileivän?", lauseUnknown: "ukjent", lauseDidYouMean: "mente du",
     lauseSkip: "Hopp over ordet", lauseResult: "På samisk (omtrentlig, sjekk ordene)",
     lauseReading: "Tolkning", lauseSamiWord: "Samisk ord",
-    lauseCheckWord: "Vis opplysninger om ordet", lauseInSentence: "I denne setningen", lauseChoose: "Velg dette", lauseFullCard: "Hele ordkortet",
+    lauseClear: "Tøm setningen", lauseCheckWord: "Vis opplysninger om ordet", lauseInSentence: "I denne setningen", lauseChoose: "Velg dette", lauseFullCard: "Hele ordkortet",
     expOcr: "Bildesøk", expOcrDesc: "Finner ordene fra ordboka i teksten på et bilde. Starter med 📷-knappen.",
     expOcrInfo: `<p>En 📷-knapp vises ved søkefeltet. Ta et bilde av tekst eller velg et bilde, så blir ordene fra ordboka
       merket i bildet. Trykk på et ord for å se oversettelsen.</p>
