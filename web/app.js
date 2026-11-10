@@ -319,6 +319,13 @@ async function loadDatabase() {
 // jälkeen (rank 6.5), joten ne eivät peitä pohjoissaamen muotoja (lea = leahkit eikä luulajansaamen lea).
 const COMMON_WORD = 50000;  // korpusfrekvenssi, jota yleisemmän sanan taivutusmuoto menee käännösten edelle
 
+// Ihmistä tarkoittavien substantiivien merkintä (semantics.py) on vain uudemmassa tietokannassa
+let humanColumn = null;
+function hasHumanColumn() {
+  if (humanColumn === null) humanColumn = all("PRAGMA table_info(dictionary)").some((c) => c.name === "human");
+  return humanColumn;
+}
+
 function queryDatabase(query) {
   const q = fold(query.trim());
   const found = new Map();
@@ -326,7 +333,7 @@ function queryDatabase(query) {
     const prev = found.get(row.id);
     if (!prev || rank < prev.rank) found.set(row.id, { ...row, rank });
   };
-  const cols = `id, sme_lemma, pos, subtype, freq, ${TRANS_COLS}`;
+  const cols = `id, sme_lemma, pos, subtype, freq, ${TRANS_COLS}${hasHumanColumn() ? ", human" : ""}`;
   const searchLang = settings.lang;
 
   // 1 = saamen perusmuoto; 6 = isolla kirjoitettu erisnimi, joka osui vain kirjainkoosta riippumatta.
@@ -492,8 +499,8 @@ function translationFormsOf(word, lang) {
 
 // Suomen muodon solu -> saamen paradigman tagi samassa muodossa (Prs+Sg1 -> Ind+Prs+Sg1 = jugan). null, jos
 // saamessa ei ole yhtä vastinetta (partitiivi, adessiivi ...): silloin näytetään vain perusmuoto.
-function samiTagOfFinCell(cell, pos, base = null) {
-  return uncertainFinCell(cell, pos, base) ? null : samiCaseOfFinCell(cell, pos);
+function samiTagOfFinCell(cell, pos, base = null, human = false) {
+  return uncertainFinCell(cell, pos, base, human) ? null : samiCaseOfFinCell(cell, pos);
 }
 
 // Suomen -lla, -lta, -lle ja -ksi eivät vastaa yhtä saamen muotoa: pöydällä = beavddi alde (ei beavddis), jäällä = jieŋa alde,
@@ -501,8 +508,11 @@ function samiTagOfFinCell(cell, pos, base = null) {
 // (minulla = mus, minulle = munnje, kenellä = geas, kenelle = geasa); -ksi ei niissäkään.
 const UNCERTAIN_FIN_CASE = /(^|\+)(All|Ade|Abl|Tra)$/;
 const PEOPLE_PRONOUNS = ["kuka"];
-function uncertainFinCell(cell, pos, base) {
+// Ihmistä tarkoittava substantiivi (semantics.py) kuten persoonapronominit: isoäidille = áhkkui, isoäidillä = áhkus;
+// tarkistettu esimerkkilauseista ja korpuksesta 2026-11-09 (-lle = illatiivi 18/19, -lla = lokatiivi noin 25/29)
+function uncertainFinCell(cell, pos, base, human = false) {
   if (!UNCERTAIN_FIN_CASE.test(cell)) return false;
+  if (pos === "N" && human) return cell.endsWith("Tra");
   if (pos !== "PRON" || cell.endsWith("Tra")) return true;
   return cell.includes("+") && !PEOPLE_PRONOUNS.includes(base);  // Persoonapronominien solussa ei ole lukua ("All")
 }
@@ -630,7 +640,7 @@ function formSuggestions(text, results = null) {
     // Ei kursiivimuotoa, kun kirjoitettu sana on sanan oma perusmuoto (guhtemuš ilman suomennosta: ei "guhtemuš guhtemuš")
     let smeForm = translated || fold(r.sme_lemma) === fold(typed) ? null : typed;
     if (r.via) {
-      const tag = settings.lang === "fin" ? samiTagOfFinCell(r.via.cell, r.pos.toUpperCase(), r.via.base) : null;
+      const tag = settings.lang === "fin" ? samiTagOfFinCell(r.via.cell, r.pos.toUpperCase(), r.via.base, r.human) : null;
       smeForm = tag ? (loadWord(r.id).paradigm.get(tag) || [])[0] || null : null;
     }
     return { ...r, form: typed, smeForm, formNote: translated ? typed : translationOf(r, 2) };
@@ -1080,7 +1090,7 @@ function renderInfo(w) {
   // Toiseen suuntaan: taivutettu käännös (juon = juoda ≈ jugan), jos haku ei ollut saamen muoto.
   let html = formTrans ? t("formIn", esc(formLabel), esc(formTrans), settings.lang) : "";
   if (!html && state.via) {
-    const tag = settings.lang === "fin" ? samiTagOfFinCell(state.via.cell, w.pos.toUpperCase(), state.via.base) : null;
+    const tag = settings.lang === "fin" ? samiTagOfFinCell(state.via.cell, w.pos.toUpperCase(), state.via.base, w.human) : null;
     const sme = tag && (state.paradigm.get(tag) || [])[0];
     // tuletko = tulla ≈ boađátgo: saamen muotoon sama liite saamen vastineena (-kin: -ge / -nai)
     // Saamen 3. persoonan ja mii-imperatiiviin (boahtos, boahtit) liitettä ei voi lisätä (lang-sme ei hyväksy): muoto ilman
@@ -1215,7 +1225,7 @@ function nobPhrase(tag, pos, f) {
 
 // Saamen muodon tagi -> suomenkielinen muoto. Saamen lokatiivi on suomeksi sisä- tai ulkopaikallissija
 // (viesus = talossa / talosta), illatiivi illatiivi tai allatiivi (taloon / talolle), komitatiivi "kanssa".
-function finPhrase(tag, pos, f) {
+function finPhrase(tag, pos, f, human = false) {
   const parts = tag.split("+");
   const join = (...forms) => forms.filter(Boolean).join(" / ") || null;
   if (pos === "V") {
@@ -1238,12 +1248,13 @@ function finPhrase(tag, pos, f) {
     if (tag === "Attr") return f["Sg+Nom"];
   }
   const n = parts[0] === "Pl" ? "Pl" : "Sg";
-  const people = pos === "Pron" && PEOPLE_PRONOUNS.includes(f.__word);
+  const people = (pos === "Pron" && PEOPLE_PRONOUNS.includes(f.__word)) || (pos === "N" && human);
   switch (parts[parts.length - 1]) {
     case "Nom": return f[`${n}+Nom`];
     case "Acc": return join(f[`${n}+Acc`], f[n === "Sg" ? "Sg+Gen" : "Pl+Nom"], f[`${n}+Par`]);  // kenet, talon / taloa (objekti)
     case "Gen": return f[`${n}+Gen`];
-    // -lle, -lla ja -lta vain ihmisistä (geasa = keneen / kenelle), muilla sanoilla ne eivät ole varmoja (ks. uncertainFinCell)
+    // -lle, -lla ja -lta vain ihmisistä (geasa = keneen / kenelle, áhkkui = isoäitiin / isoäidille), muilla sanoilla ne
+    // eivät ole varmoja (ks. uncertainFinCell)
     case "Ill": return join(f[`${n}+Ill`], people && f[`${n}+All`]);
     case "Loc": return join(f[`${n}+Ine`], f[`${n}+Ela`], people && f[`${n}+Ade`], people && f[`${n}+Abl`]);
     case "Com": return f[`${n}+Gen`] && `${f[`${n}+Gen`]} kanssa`;
@@ -1317,7 +1328,7 @@ function translationOfForm(w, tags, finClitics = null, transWords = state.transW
   for (const word of transWords || []) {
     const forms = translationForms(settings.lang, word.replace(/\(.*?\)/g, "").trim(), pos);
     if (!forms) continue;
-    let phrases = [...new Set(tags.map((tag) => FORM_PHRASES[settings.lang](tag, pos, forms)).filter(Boolean))];
+    let phrases = [...new Set(tags.map((tag) => FORM_PHRASES[settings.lang](tag, pos, forms, w.human)).filter(Boolean))];
     if (finClitics) phrases = phrases.map((p) => finWithClitics(p, finClitics, forms.__back));
     if (phrases.length) out.push(phrases.join(" / "));
   }
@@ -1408,13 +1419,13 @@ function formTranslator(w) {
   if (!forms) return () => "";
   const f = forms;
   return (tags, neg = null) => {
-    const phrases = tags.map((tag) => (neg ? negVerbPhrase(lang, tag, neg, f) : positivePhrase(lang, tag, pos, f))).filter(Boolean);
+    const phrases = tags.map((tag) => (neg ? negVerbPhrase(lang, tag, neg, f) : positivePhrase(lang, tag, pos, f, w.human))).filter(Boolean);
     return [...new Set(phrases.flatMap((p) => p.split(" / ")))].join(" / ");
   };
 }
 
-function positivePhrase(lang, tag, pos, f) {
-  const phrase = FORM_PHRASES[lang](tag, pos, f);
+function positivePhrase(lang, tag, pos, f, human = false) {
+  const phrase = FORM_PHRASES[lang](tag, pos, f, human);
   if (!phrase || pos !== "V") return phrase;
   const person = tag.split("+").pop();
   if (lang !== "fin" || !FIN_PRONOUNS[person]) {

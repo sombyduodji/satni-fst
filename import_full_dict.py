@@ -24,6 +24,7 @@ import xml.etree.ElementTree as ET
 import dialects
 import gradation
 import inflection_class
+import semantics
 import fin_forms
 import nob_forms
 import spa_data
@@ -1112,6 +1113,7 @@ def main():
     # Luokka vasta kirjoitusasujen yhdistämisen jälkeen, kuten --vain-taivutusluokka-ajossa: yhdistetyn sanan
     # taulukossa ovat molempien asujen muodot (oambealle ja oarpmealle), ja luokka näytetään vain, jos ne sopivat
     inflection_class.apply(cursor)
+    semantics.apply(cursor)
     nob_forms.add_nob_forms(cursor)
     fin_forms.add_fin_forms(cursor)
 
@@ -1146,6 +1148,12 @@ if __name__ == "__main__":
         # Päivittää vain taivutusluokat olemassa olevaan tietokantaan (nopea, ei FST-ajoa)
         conn = sqlite3.connect(DB_FILE)
         inflection_class.apply(conn.cursor())
+        conn.commit()
+        conn.close()
+    elif "--vain-ihmiset" in sys.argv:
+        # Päivittää vain ihmistä tarkoittavien substantiivien merkinnän (semantics.py; nopea, ei FST-ajoa)
+        conn = sqlite3.connect(DB_FILE)
+        semantics.apply(conn.cursor())
         conn.commit()
         conn.close()
     elif "--vain-suoman" in sys.argv:

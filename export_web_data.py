@@ -147,7 +147,9 @@ def main():
             -- freq: korpusfrekvenssi (GiellaLT), haun tasatilanteisiin (web/app.js: queryDatabase)
             gradation_group TEXT, gradation_row TEXT, inflection_class TEXT, freq INTEGER, dialect TEXT, dial_same TEXT, dial_other TEXT,
             -- dial_same: saman sanan toinen kirjoitusasu (dialects.py), jolla sanakin löytyy
-            lemma_fold TEXT, variant_fold TEXT
+            lemma_fold TEXT, variant_fold TEXT,
+            -- human: ihmistä tarkoittava substantiivi (semantics.py): suomen -lle/-lla/-lta saa saamen muodon
+            human INTEGER
         );
         -- nr: käänteisen sanakirjan (dict-fin-sme, dict-nob-sme) järjestys, 0 = ensisijainen saamennos;
         -- NULL = sanan oma käännös (dict-sme-*)
@@ -179,12 +181,15 @@ def main():
     """)
 
     trans_cols = ", ".join(TRANSLATION_COLUMNS.values())
+    src_cols = [r[1] for r in src.execute("PRAGMA table_info(dictionary)")]
     rows = src.execute(
         f"SELECT id, sme_lemma, pos, subtype, {trans_cols}, notes, gradation, gd_cluster, hd_cluster, "
-        "gradation_group, gradation_row, inflection_class, freq, dialect, dial_same, dial_other FROM dictionary"
+        "gradation_group, gradation_row, inflection_class, freq, dialect, dial_same, dial_other, "
+        f"{'human' if 'human' in src_cols else 'NULL'} FROM dictionary"
     ).fetchall()
+    # human viimeisenä (lemma_fold ja variant_fold ennen sitä, kuten taulussa)
     dst.executemany(f"INSERT INTO dictionary VALUES ({', '.join('?' * (len(rows[0]) + 2))})",
-                    [r + (fold(r[1]), fold(r[-2]) if r[-2] else None) for r in rows])
+                    [r[:-1] + (fold(r[1]), fold(r[-3]) if r[-3] else None, r[-1]) for r in rows])
     # Hakuun käännös sellaisenaan ja toisena rivinä ilman sulkeissa olevia tarkenteita, jotta naida löytää sanan,
     # jonka käännös on "naida (kerran)" (koko haun tarkistus 2026-11-06: noin 3 400 sanaa ei muuten löytynyt)
     search_rows = []
