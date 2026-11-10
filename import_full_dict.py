@@ -19,6 +19,7 @@ import re
 import glob
 import sys
 import concurrent.futures
+import functools
 import xml.etree.ElementTree as ET
 
 import dialects
@@ -157,6 +158,35 @@ def fix_finnish_text(text):
     return _FINNISH_TYPO_RE.sub(lambda m: FINNISH_TYPOS[m.group(1)], text.translate(FINNISH_LETTER_FIXES))
 
 
+# Muiden kielten kirjoitusvirheet: offline-tarkistus 2026-11-10 (Hunspell nb/nn/en/es, Norsk ordbank, yhdyssanojen
+# jako tunnettuihin osiin, Divvunin oikolukijat), jokainen luettu käsin. Englannissa myös dict-sme-eng:n saksa
+# (arve: Regen, cumme: Kuss) sekä Nielsenin vanhat kirjoitusasut rince ja trambled.
+OTHER_TYPOS = {
+    "nob": {"utjevningsmadat": "utjevningsmandat", "stemmeseddelkonvoutt": "stemmeseddelkonvolutt",
+            "statsmetereolog": "statsmeteorolog", "dokumetasjonsarbeid": "dokumentasjonsarbeid",
+            "hodebeskyttelsse": "hodebeskyttelse", "førskolelærerudanning": "førskolelærerutdanning",
+            "koorderingsansvar": "koordineringsansvar", "avgresningsproblem": "avgrensningsproblem",
+            "uoverenstemmelse": "uoverensstemmelse", "stipendiatstillling": "stipendiatstilling",
+            "strukturmeldning": "strukturmelding", "rehabilieringsstipend": "rehabiliteringsstipend",
+            "semuljegryn": "semulegryn", "ultraviolett": "ultrafiolett",
+            "kulturminneregistreingsprosjekt": "kulturminneregistreringsprosjekt"},
+    "eng": {"lenght": "length", "rince": "rinse", "wich": "which", "trambled": "trampled", "Regen": "rain", "Kuss": "kiss"},
+    "sma": {"paramentarihkere": "parlamentarihkere"},
+}
+_OTHER_TYPO_RE = {lang: re.compile(r"\b(" + "|".join(sorted(t, key=len, reverse=True)) + r")\b") for lang, t in OTHER_TYPOS.items()}
+# Lähteen homonyyminumero käännöksen perässä (dict-sme-smj: bårråt¹, dict-sme-smn: kuullâđ¹)
+_HOMONYM_NUMBER_RE = re.compile(r"(?<=\w)[¹²³⁴⁵⁶⁷⁸⁹⁰]+")
+
+
+def fix_text(lang, text):
+    """Käännöstekstin korjaukset kielen mukaan (suomi: fix_finnish_text, muut: OTHER_TYPOS) ja homonyyminumerot pois."""
+    if lang == "fin":
+        text = fix_finnish_text(text)
+    elif lang in OTHER_TYPOS:
+        text = _OTHER_TYPO_RE[lang].sub(lambda m: OTHER_TYPOS[lang][m.group(1)], text)
+    return _HOMONYM_NUMBER_RE.sub("", text)
+
+
 # Sanaluokka puuttuu (dict-sme-eng: pos="Xxx"): päätellään toisesta sanakirjasta tai FST:stä
 UNKNOWN_POS = "?"
 
@@ -257,7 +287,7 @@ def clean_nielsen_english(text):
 def parse_meaning(mg, lang="fin"):
     """Yksi merkitysryhmä <mg> kielellä lang: käännökset, selitykset, käyttörajoitus (<re>), tunnisteet (<gramm>),
     alue (<geo>: N = Norja, S = Suomi, R = Ruotsi) ja esimerkkilauseet (<xg>)."""
-    fix = fix_finnish_text if lang == "fin" else (lambda text: text)
+    fix = functools.partial(fix_text, lang)
     meaning = new_meaning(lang)
     for tg in mg.findall('tg'):
         tg_lang = tg.get(XML_LANG)
@@ -507,7 +537,7 @@ def parse_reverse_dictionaries(entries, by_lemma):
         if not xml_files:
             print(f"Sanakirjaa dict-{lang}-sme ei löydy, ohitetaan (hae: ./hae_sanakirjat.sh).")
             continue
-        fix = fix_finnish_text if lang == "fin" else (lambda text: text)
+        fix = functools.partial(fix_text, lang)
         pairs = added = 0
         for filepath in xml_files:
             filename = os.path.basename(filepath)

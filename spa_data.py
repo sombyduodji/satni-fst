@@ -29,7 +29,10 @@ MAX_TRANSLATION_WORDS = 6
 
 # Lähteen kirjoitusvirheet, jotka Hunspell-oikolukimen (es_ES) tarkistus löysi 2026-11-06 ja jotka on tarkistettu käsin
 TYPOS = {"reluctacia": "reluctancia", "constrasta": "contrasta", "latimarse": "lastimarse",
-         "antropólogico": "antropológico", "interdependecia": "interdependencia"}
+         "antropólogico": "antropológico", "interdependecia": "interdependencia",
+         # offline-tarkistus 2026-11-10 (Hunspell es_ES, luettu käsin)
+         "instruccíón": "instrucción", "compañia": "compañía", "aislamento": "aislamiento", "aburrise": "aburrirse",
+         "ovido": "olvido"}
 _TYPO_RE = re.compile(r"\b(" + "|".join(TYPOS) + r")\b")
 
 
