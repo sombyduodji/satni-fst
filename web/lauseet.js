@@ -652,6 +652,14 @@ function bindLause() {
     }
     return backToOcrBase ? backToOcrBase() : false;
   };
+  // Selaimen takaisin-painike (verkkosovellus): sanakortista takaisin lauseeseen
+  window.addEventListener("popstate", () => {
+    if (lauseReturnHash && location.hash !== lauseReturnHash) {
+      lauseReturnHash = null;
+      $("lause-view").hidden = false;
+      renderLause();
+    }
+  });
   $("lause-pop").addEventListener("click", (e) => {
     const b = e.target.closest(".lp-info");
     if (b) lauseShowCard(Number($("lause-pop").dataset.i), Number(b.dataset.k));

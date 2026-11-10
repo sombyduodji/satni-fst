@@ -1,6 +1,6 @@
 /* Service worker: sovellus ja sanakirja toimivat ilman verkkoyhteyttä ensimmäisen käynnin jälkeen.
    Kun tiedostoja päivitetään, kasvata VERSION, jolloin selaimet hakevat uudet tiedostot. */
-const VERSION = "satni-v80";
+const VERSION = "satni-v82";
 // Sanastojen äänilistat (suomi + saame ja pelkkä saame): välimuistiin erikseen, jottei puuttuva tiedosto kaada asennusta
 const AUDIO = [
   "audio/kuukaudet.ogg", "audio/kuukaudet-sme.ogg", "audio/viikonpaivat.ogg", "audio/viikonpaivat-sme.ogg", "audio/vuodenajat.ogg", "audio/vuodenajat-sme.ogg", "audio/luvut-1.ogg", "audio/luvut-1-sme.ogg", "audio/luvut-2.ogg", "audio/luvut-2-sme.ogg", "audio/luvut-3.ogg", "audio/luvut-3-sme.ogg", "audio/jarjestysluvut-1.ogg", "audio/jarjestysluvut-1-sme.ogg", "audio/jarjestysluvut-2.ogg", "audio/jarjestysluvut-2-sme.ogg", "audio/jarjestysluvut-3.ogg", "audio/jarjestysluvut-3-sme.ogg",
@@ -22,8 +22,11 @@ const DATA = "data/satni-web.db.gz";
 const DATA_CACHE = "satni-data-v29";
 
 self.addEventListener("install", (event) => {
+  // cache: "reload": sovelluksen tiedostot verkosta eikä selaimen HTTP-välimuistista (muuten vanha app.js voisi jäädä);
+  // äänilistat saavat tulla HTTP-välimuistista, ne muuttuvat harvoin ja ovat isoja
+  const fresh = (f) => new Request(f, { cache: "reload" });
   event.waitUntil(caches.open(VERSION).then((cache) =>
-    cache.addAll(APP_SHELL).then(() => Promise.allSettled(AUDIO.map((f) => cache.add(f))))));
+    cache.addAll(APP_SHELL.map(fresh)).then(() => Promise.allSettled(AUDIO.map((f) => cache.add(f))))));
   self.skipWaiting();
 });
 

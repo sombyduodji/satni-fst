@@ -2152,6 +2152,7 @@ function layoutOcr(reset) {
   $("ocr-status").textContent = ocr.status;
   applyOcrLook();
   const { r, words } = ocr;
+  if (!r) return;  // kuvaa ei vielä luettu (koon muutos kesken tunnistuksen)
   const k = Math.min(stage.clientWidth / r.width, stage.clientHeight / r.height);
   ocr.base = { w: r.width * k, h: r.height * k };
   photo.style.width = `${ocr.base.w}px`;

@@ -1,8 +1,9 @@
 // Sanastot: aihekohtaiset sanalistat (luvut, viikonpäivät, kuukaudet ...). Aineisto data/sanastot.json (sanastot.py:
 // sanakirjasta ja GiellaLT-malleista, Divvunin oikoluvulla tarkistettu). Ylätunnisteen kirjapainike avaa näkymän;
-// saamen sanan napautus lukee sen ääneen, pitkä painallus avaa sanakortin (takaisin-ele palaa listaan).
+// sanan napautus avaa kuplan (kuuntele, kopioi, sanakortti), pitkä painallus suoraan sanakortin (takaisin-ele palaa listaan).
 
 let sanastot = null;          // listat, ladataan ensimmäisellä avauksella
+let sanastoDur = {};          // äänilistojen kestot sekunteina (Android WebView ilmoittaa keston äärettömäksi)
 let sanastoAuki = null;       // avoimen listan id tai null (yleisnäkymä)
 let sanastoReturnHash = null; // listasta avatun sanakortin osoite: takaisin-ele palaa listaan
 
@@ -26,7 +27,11 @@ const sanastoSvg = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="curre
 const sanastoLang = () => (settings.uiLang === "nb" ? "nb" : "fi");
 
 async function loadSanastot() {
-  if (!sanastot) sanastot = (await (await fetch("data/sanastot.json")).json()).lists;
+  if (!sanastot) {
+    const d = await (await fetch("data/sanastot.json")).json();
+    sanastot = d.lists;
+    sanastoDur = d.audioDur || {};
+  }
   return sanastot;
 }
 
@@ -402,6 +407,9 @@ function sanastoStopAudio() {
   const a = sanastoAudio, b = sanastoAudioBtn;
   sanastoAudio = sanastoAudioBtn = null;
   a.pause();
+  // Vapautetaan mediasoitin heti (Android WebView sallii vain rajallisen määrän soittimia ennen roskienkeruuta)
+  a.removeAttribute("src");
+  a.load();
   b.classList.remove("playing");
   (b.querySelector(".pl-ico") || b).innerHTML = sanastoAudioHtml;
   b.setAttribute("aria-label", b.dataset.label || t("listen"));
@@ -422,7 +430,8 @@ function sanastoPlayAudio(src, b) {
   const ring = host.querySelector(".play-ring circle");
   const tick = () => {
     if (sanastoAudio !== a) return;
-    if (a.duration) ring.style.strokeDashoffset = String(100 - (100 * a.currentTime) / a.duration);
+    const d = Number.isFinite(a.duration) && a.duration > 0 ? a.duration : sanastoDur[src];
+    if (d) ring.style.strokeDashoffset = String(Math.max(0, 100 - (100 * a.currentTime) / d));
     requestAnimationFrame(tick);
   };
   a.addEventListener("ended", () => { if (sanastoAudio === a) sanastoStopAudio(); });
@@ -459,6 +468,8 @@ function bindSanastot() {
   $("sanasto-back").onclick = () => { sanastoStopAudio(); sanastoAuki = null; renderSanastoGrid(); };
   $("sanasto-speak").onclick = sanastoSpeakAll;
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSanastot(); });
+  // Sovellus taustalle (kotinäppäin, näyttö kiinni): äänilista pysähtyy, ettei se jää soimaan ilman pysäytyspainiketta
+  document.addEventListener("visibilitychange", () => { if (document.hidden) sanastoStopAudio(); });
   const closeOcrBase = window.closeOcr;
   window.closeOcr = () => closeSanastot() || (closeOcrBase ? closeOcrBase() : false);
   const backBase = window.backToOcr;
@@ -470,6 +481,10 @@ function bindSanastot() {
     }
     return backBase ? backBase() : false;
   };
+  // Selaimen takaisin-painike (verkkosovellus): Android hoitaa saman backToOcr:llä ennen historiaa
+  window.addEventListener("popstate", () => {
+    if (sanastoReturnHash && location.hash !== sanastoReturnHash) { sanastoReturnHash = null; openSanastot(); }
+  });
   let press = null, longDone = false;
   const body = $("sanasto-body");
   body.addEventListener("pointerdown", (e) => {

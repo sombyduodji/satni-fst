@@ -436,6 +436,17 @@ def check_spelling(L):
             problems.append(f"oikoluku hylkää: {w}")
 
 
+def ogg_seconds(path):
+    """Ogg Opus -tiedoston kesto: viimeisen sivun granule-sijainti miinus OpusHeadin pre-skip, 48 kHz."""
+    with open(path, "rb") as f:
+        data = f.read()
+    head = data.find(b"OpusHead")
+    pre_skip = int.from_bytes(data[head + 10:head + 12], "little") if head >= 0 else 0
+    last = data.rfind(b"OggS")
+    granule = int.from_bytes(data[last + 6:last + 14], "little")
+    return round((granule - pre_skip) / 48000, 2)
+
+
 if __name__ == "__main__":
     L = lists()
     add_sections(L)
@@ -450,8 +461,12 @@ if __name__ == "__main__":
             lst["numSections"] = [{"label": lab, "playLabel": pl, "from": start, "card": audio(f"luvut-{k}"), "ord": audio(f"jarjestysluvut-{k}")}
                                   for k, (lab, pl, start) in enumerate([("1–29", "1–29", 1), ("30–100", "30–100", 30), ("101–1000", "100–120", 101)], 1)]
     check_spelling(L)
+    # Äänilistojen kestot (s): Android WebView ilmoittaa sovelluksen omien Ogg-tiedostojen keston äärettömäksi, joten
+    # soittimen edistymiskehä käyttää näitä
+    adir = os.path.join(os.path.dirname(OUT), "..", "audio")
+    dur = {f"audio/{n}": ogg_seconds(os.path.join(adir, n)) for n in sorted(os.listdir(adir)) if n.endswith(".ogg")} if os.path.isdir(adir) else {}
     with open(OUT, "w", encoding="utf-8") as f:
-        json.dump({"lists": L}, f, ensure_ascii=False, separators=(",", ":"))
+        json.dump({"lists": L, "audioDur": dur}, f, ensure_ascii=False, separators=(",", ":"))
     print(f"{OUT}: {len(L)} listaa, {sum(len(x['rows']) for x in L)} riviä, {os.path.getsize(OUT)} tavua")
     for p in problems:
         print("  HUOM:", p)
