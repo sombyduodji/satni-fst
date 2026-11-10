@@ -452,6 +452,13 @@ function queryDatabase(query) {
     `SELECT DISTINCT d.${cols.split(", ").join(", d.")}
      FROM paradigms p JOIN dictionary d ON d.id = p.word_id WHERE p.surface IN (?, ?, ?, ?)`, forms
   )) add(r, r.freq >= COMMON_WORD ? 1.2 : 5);
+  // Passiivimuoto (máksojuvvo -> máksit), sme_passive.py; vanhassa aineistossa taulua ei ole
+  try {
+    for (const r of all(
+      `SELECT DISTINCT d.${cols.split(", ").join(", d.")}
+       FROM sme_passive p JOIN dictionary d ON d.id = p.word_id WHERE p.surface IN (?, ?, ?, ?)`, forms
+    )) add(r, 5);
+  } catch (e) { /* vanha aineisto */ }
   // 4.5–4.9 = taivutettu suomen- tai norjankielinen sana (juon, taloon, husene): sen perusmuodon (juoda, talo, hus)
   // saamennokset perusmuodon omassa järjestyksessä, kaikkien suorien käännösosumien jälkeen. Muodot ovat taulussa
   // fin_forms / nob_forms (sama kuin viesus ≈ talossa -rivillä), joten tämä ei kasvata tietokantaa.
@@ -617,7 +624,12 @@ function samiCaseOfFinCell(cell, pos) {
   }
   const p = cell.split("+");
   if (pos === "V") {
-    if (cell === "Inf" || cell === "PrfPrc") return cell;
+    if (cell === "Inf" || cell === "PrfPrc" || cell === "PrsPrc") return cell;
+    // Uudet suomen verbimuodot (fin_forms.py): leikkimässä = stoahkamin, leikkimättä = stoagakeahttá, myymästä = vuovdimis,
+    // maksetaan = máksojuvvo, maksettiin = máksojuvvui, maksettu = máksojuvvon (passiivi: sme_passive.py)
+    const NONFIN = { "InfMa+Ine": "Actio+Ess", "InfMa+Abe": "VAbess", "InfMa+Ela": "Actio+Loc", "Pss+Prs": "Pass+Ind+Prs+Sg3",
+                     "Pss+Prt": "Pass+Ind+Prt+Sg3", "PssPrfPrc": "Pass+PrfPrc" };
+    if (NONFIN[cell]) return NONFIN[cell];
     if ((p[0] === "Prs" || p[0] === "Prt") && p[1] !== "ConNeg") return `Ind+${p[0]}+${p[1]}`;
     if ((p[0] === "Cond" || p[0] === "Pot") && p[1] !== "ConNeg") return `${p[0]}+Prs+${p[1]}`;
     if (p[0] === "Imprt") return `Imprt+${p[1]}`;
@@ -758,6 +770,11 @@ function loadWord(id) {
     if (!examples.has(key)) examples.set(key, []);
     examples.get(key).push(r);
   }
+  // Saamen passiivi (sme_passive.py: máksojuvvo, ráhkaduvvon) samaan taulukkoon Pass+-tageilla: haettu passiivimuoto
+  // saa käännöksen kuten muutkin muodot (máksojuvvo ≈ maksetaan) ja näkyy Kaikki muodot -välilehdellä
+  try {
+    for (const r of all(`SELECT tag, surface FROM sme_passive WHERE word_id = ?`, [id])) paradigm.set("Pass+" + r.tag, [r.surface]);
+  } catch (e) { /* vanha aineisto ilman passiivia */ }
   const meanings = all(`SELECT * FROM meanings WHERE word_id = ? ORDER BY rowid`, [id])
     .map((m) => ({ ...m, examples: examples.get(m.lang + m.nr) || [] }));
   return { word, paradigm, grades, meanings };
@@ -1325,6 +1342,19 @@ function finPhrase(tag, pos, f, human = false) {
     const person = FIN_PERSON[parts[parts.length - 1]];
     if (tag === "Inf") return f.Inf;
     if (tag === "PrfPrc") return f.PrfPrc;
+    // Uudet suomen muodot (fin_forms.py): stoahkamin = leikkimässä, dieđekeahttá = tietämättä, vuovdimis = myymästä
+    // (myös myymisestä), bálvaleaddji = palveleva (usein oma adjektiivinsa); rivi on aina likimääräinen (≈)
+    if (tag === "Actio+Ess") return f["InfMa+Ine"];
+    if (tag === "VAbess") return f["InfMa+Abe"];
+    if (tag === "Actio+Loc") return f["InfMa+Ela"];
+    if (tag === "PrsPrc") return f.PrsPrc;
+    // Passiivi (sme_passive.py): suomen passiivi on persoonaton (mun válljejuvvon = minut valittiin)
+    if (parts[0] === "Pass") {
+      if (tag === "Pass+PrfPrc") return f.PssPrfPrc;
+      if (parts[1] === "Ind" && parts[2] === "Prs" && parts[3] !== "ConNeg") return f["Pss+Prs"];
+      if (parts[1] === "Ind" && parts[2] === "Prt" && parts[3] !== "ConNeg") return f["Pss+Prt"];
+      return null;
+    }
     if (tag === "Ind+Prs+ConNeg") return f["Prs+ConNeg"] && `(ei) ${f["Prs+ConNeg"]}`;
     if (tag === "Ind+Prt+ConNeg") return f.PrfPrc && `(ei) ${f.PrfPrc}`;
     if (tag === "Cond+Prs+ConNeg") return f["Cond+ConNeg"] && `(ei) ${f["Cond+ConNeg"]}`;
@@ -1894,8 +1924,11 @@ const OCR_DIACRITICS = { a: "á", c: "č", d: "đ", n: "ŋ", s: "š", t: "ŧ", z
 function ocrCorrector() {
   const lemma = db.prepare("SELECT 1 FROM dictionary WHERE lemma_fold = ? LIMIT 1");
   const form = db.prepare("SELECT 1 FROM paradigms WHERE surface IN (?, ?) LIMIT 1");
+  // Passiivimuodot (ráhkaduvvon, máksojuvvo) sme_passive-taulusta; vanhassa aineistossa ei ole
+  let pass = null;
+  try { pass = db.prepare("SELECT 1 FROM sme_passive WHERE surface IN (?, ?) LIMIT 1"); } catch (e) { /* vanha aineisto */ }
   const exists = (stmt, params) => { stmt.bind(params); const found = stmt.step(); stmt.reset(); return found; };
-  const plain = (w) => exists(lemma, [fold(w)]) || exists(form, [w, capitalize(w)]);
+  const plain = (w) => exists(lemma, [fold(w)]) || exists(form, [w, capitalize(w)]) || (pass && exists(pass, [w, capitalize(w)]));
   // Liitepartikkelin kanssa (válddátgo = válddát + -go, songe = son + -ge): haku tuntee nämä (queryDatabase)
   const isSami = (w) => plain(w) || CLITICS.some((c) => w.length > c.length + 1 && w.endsWith(c) && plain(w.slice(0, -c.length)));
   const cache = new Map();
@@ -1918,7 +1951,7 @@ function ocrCorrector() {
   };
   return {
     correct: (word) => { if (!cache.has(word)) cache.set(word, correct(word)); return cache.get(word); },
-    free: () => { lemma.free(); form.free(); },
+    free: () => { lemma.free(); form.free(); pass?.free(); },
   };
 }
 

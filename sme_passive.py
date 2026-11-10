@@ -18,7 +18,11 @@ import subprocess
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 GENERATOR = os.path.join(SCRIPT_DIR, "src", "fst", "generator-gt-norm.hfst")
 DB_FILE = os.path.join(SCRIPT_DIR, "satni.db")
-TAGS = ["Ind+Prs+Sg3", "Ind+Prt+Sg3", "Ind+Prs+Pl3", "Ind+Prt+Pl3", "Ind+Prs+ConNeg", "PrfPrc"]
+PERSONS = ["Sg1", "Sg2", "Sg3", "Du1", "Du2", "Du3", "Pl1", "Pl2", "Pl3"]
+# Kaikki persoonat ja infinitiivi, jotta haku ja valokuvahaku löytävät tekstin muodot (biddjojuvvot, nannejuvvot);
+# 2026-11-10: kolmannen persoonan muodot kattoivat 76 % esimerkkilauseiden passiivimuodoista
+TAGS = (["Inf", "PrfPrc", "Ind+Prs+ConNeg", "Ind+Prt+ConNeg", "Cond+Prs+Sg3", "Cond+Prs+Pl3"]
+        + [f"Ind+{t}+{p}" for t in ("Prs", "Prt") for p in PERSONS])
 
 
 def generate(queries):

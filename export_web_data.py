@@ -292,6 +292,7 @@ def main():
         CREATE INDEX idx_paradigms_surface ON paradigms(surface);
         CREATE INDEX idx_meanings_word ON meanings(word_id);
         CREATE INDEX idx_trans_bare ON trans_bare(bare);
+        CREATE INDEX idx_sme_passive_surface ON sme_passive(surface);
         CREATE INDEX idx_examples_word ON examples(word_id);
     """)
     dst.commit()
