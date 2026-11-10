@@ -100,6 +100,12 @@ function applyStaticTexts() {
   $("about-version").textContent = !version ? t("aboutWeb", window.SATNI_WEB_VERSION)
     : window.SATNI_PLATFORM === "android" ? t("aboutAndroid", version) : t("aboutDesktop", version);
   $("menu-version").textContent = $("about-version").textContent;
+  // Kehitysversio (build_apk.sh --debug: versio päättyy -DEV): nimeen "DEV", ettei sitä sekoita julkaistuun
+  const dev = /-DEV$/.test(version || "");
+  for (const el of document.querySelectorAll(".brand-name, .menu-name")) {
+    el.innerHTML = `Sátni FST${dev ? ' <span class="dev-tag">DEV</span>' : ""}`;
+  }
+  if (dev && !document.title.endsWith(" DEV")) document.title = document.title.replace("Sátni FST", "Sátni FST DEV");
   // Sähköpostin aiheessa versio, jotta palautteesta näkee, mitä versiota se koskee
   $("feedback-mail").href = "mailto:satni@somby.fi?subject=" +
     encodeURIComponent(`${t("feedbackSubject")} (${$("about-version").textContent})`);
