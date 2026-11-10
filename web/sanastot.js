@@ -53,8 +53,12 @@ function renderSanastoGrid() {
   $("sanasto-body").scrollTop = 0;
 }
 
-// Saamen sana: napautus lukee ääneen, pitkä painallus avaa sanakortin
-const sanastoWord = (w, id, main) => `<span class="sw${main ? " main" : ""}" data-say="${esc(w)}"${id ? ` data-id="${id}"` : ""}>${esc(w)}</span>`;
+// Saamen sana: perässä kaiutin ja sanakortti (myös taivutusmuodoilla: vuossárgga avaa sanan vuossárga kortin, jossa
+// muodon käännös). Sanan napautus lukee sen myös ääneen ja pitkä painallus avaa kortin. Ilman sanakirjan sanaa
+// (čuođiokta) vain kaiutin.
+const sanastoWord = (w, id, main) => `<span class="sw-wrap"><span class="sw${main ? " main" : ""}" data-say="${esc(w)}"` +
+  `${id ? ` data-id="${id}"` : ""}>${esc(w)}</span><button type="button" class="sw-ico" data-say="${esc(w)}" aria-label="${esc(t("listen"))}">${SPEAK_ICON}</button>` +
+  (id ? `<button type="button" class="sw-ico" data-open="${id}" data-word="${esc(w)}" aria-label="${esc(t("sanastoCard"))}">${OPEN_ICON}</button>` : "") + `</span>`;
 
 function renderSanasto(listId) {
   const lang = sanastoLang();
@@ -66,16 +70,37 @@ function renderSanasto(listId) {
   $("sanasto-speak").hidden = false;
   let html = l.hint ? `<p class="sanasto-hint">${esc(l.hint[lang])}</p>` : "";
   if (l.kind === "numbers") {
-    html += l.rows.map((r) => `<div class="sanasto-row num"><span class="sanasto-n">${r.n}</span><div>` +
-      `<div class="sme-line">${sanastoWord(r.card, r.card_id, true)}</div>` +
-      `<div class="sub-line">${r.n}. ${r.ord ? sanastoWord(r.ord, r.ord_id) : ""}${(lang === "nb" ? r.nb_ord : r.fi_ord) ? ` · ${esc(lang === "nb" ? r.nb_ord : r.fi_ord)}` : ""}</div></div></div>`).join("");
-  } else {
+    // Tiivis rivi: numero, perusluku ja järjestysluku vierekkäin (kapealla näytöllä rivittyy)
     html += l.rows.map((r) => {
-      const ui = (lang === "nb" ? r.nb : r.fi).filter(Boolean).join(" · ");
-      const smes = r.sme.map((s) => `<div class="sme-line">${s.w.map((w, k) => sanastoWord(w, k === 0 ? s.id : null, k === 0)).join(" · ")}` +
-        (s.dial ? `<span class="sanasto-dial">${esc(s.dial)}</span>` : "") + `</div>`).join("");
-      const note = r.note && r.note[lang] ? `<div class="sanasto-note">${esc(r.note[lang])}</div>` : "";
-      return `<div class="sanasto-row"><div class="ui-line">${esc(ui)}</div>${smes}${note}</div>`;
+      const ord = lang === "nb" ? r.nb_ord : r.fi_ord;
+      return `<div class="sanasto-row num"><span class="sanasto-n">${r.n}</span><div class="num-words">` +
+        `<span class="num-card">${sanastoWord(r.card, r.card_id, true)}</span>` +
+        `<span class="num-ord"><span class="muted">${r.n}.</span> ${r.ord ? sanastoWord(r.ord, r.ord_id) : ""}` +
+        `${ord ? ` <span class="num-fi">${esc(ord)}</span>` : ""}</span></div></div>`;
+    }).join("");
+  } else {
+    // Taulukko: suomen (norjan) muodot sarakeotsikoina saamen muotojen yläpuolella (maanantai | maanantaina),
+    // murremerkintä omassa sarakkeessaan vasemmalla; sarakkeet samoissa kohdissa kaikissa laatikoissa
+    const dialCol = l.rows.some((r) => r.sme.some((x) => x.dial));
+    const cols = Math.max(...l.rows.flatMap((r) => r.sme.map((x) => x.w.length)));
+    html += l.rows.map((r) => {
+      const ui = (lang === "nb" ? r.nb : r.fi).filter(Boolean);
+      // Kolme tai useampi muoto (kuukaudet, pronominit): muodot allekkain, suomen muoto vasemmalla ja saamen oikealla
+      if (cols >= 3) {
+        const labels = ui.length === 1 && ui[0].includes(" · ") ? ui[0].split(" · ") : ui;
+        const lines = r.sme.flatMap((x) => x.w.map((w, k) => `<span class="sg-ui">${esc(labels[k] || "")}</span>` +
+          `<span class="sg-cell">${sanastoWord(w, x.id, k === 0)}</span>`)).join("");
+        const note = r.note && r.note[lang] ? `<div class="sanasto-note sg-full">${esc(r.note[lang])}</div>` : "";
+        return `<div class="sanasto-row sg rows">${lines}${note}</div>`;
+      }
+      const lead = dialCol ? "<span></span>" : "";
+      const head = ui.length === cols && cols > 1
+        ? lead + ui.map((f) => `<span class="sg-ui">${esc(f)}</span>`).join("")
+        : lead + `<span class="sg-ui sg-span">${esc(ui.join(" · "))}</span>`;
+      const lines = r.sme.map((x) => (dialCol ? `<span class="sanasto-dial">${esc(x.dial || "")}</span>` : "") +
+        Array.from({ length: cols }, (_, k) => `<span class="sg-cell">${x.w[k] ? sanastoWord(x.w[k], x.id, k === 0) : ""}</span>`).join("")).join("");
+      const note = r.note && r.note[lang] ? `<div class="sanasto-note sg-full">${esc(r.note[lang])}</div>` : "";
+      return `<div class="sanasto-row sg${dialCol ? " dial" : ""}" style="--cols:${cols}">${head}${lines}${note}</div>`;
     }).join("");
   }
   html += `<p class="sanasto-hint">${esc(t("sanastoHelp"))}</p>`;
@@ -132,6 +157,8 @@ function bindSanastot() {
   body.addEventListener("click", (e) => {
     const tile = e.target.closest(".sanasto-tile");
     if (tile) return renderSanasto(tile.dataset.list);
+    const ico = e.target.closest(".sw-ico");
+    if (ico) return ico.dataset.open ? sanastoOpenCard(ico.dataset.open, ico.dataset.word) : speak(ico.dataset.say, ico);
     const w = e.target.closest(".sw");
     if (w && !longDone) speak(w.dataset.say, null);
   });

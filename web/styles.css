@@ -103,16 +103,42 @@ select {
 .sanasto-tile svg { width: 24px; height: 24px; flex: none; color: var(--accent); }
 .sanasto-tile span { min-width: 0; overflow-wrap: anywhere; }
 .sanasto-hint { margin: 2px 0 4px; font-size: 13px; color: var(--muted); }
-.sanasto-row { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
-.sanasto-row.num { display: flex; align-items: center; gap: 14px; }
-.sanasto-n { font-size: 20px; font-weight: 700; min-width: 2.6em; color: var(--accent); }
+.sanasto-row { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
+.sanasto-row.num { display: flex; align-items: center; gap: 8px; padding: 2px 8px; line-height: 1.2; }
+.sanasto-body:has(.sanasto-row.num) { gap: 4px; }
+.sanasto-n { font-size: 16px; font-weight: 700; min-width: 2.1em; text-align: right; color: var(--accent); }
+.num-words { display: flex; flex-wrap: wrap; align-items: center; column-gap: 10px; row-gap: 0; min-width: 0; }
+.num-words .sw-ico { width: 22px; height: 22px; }
+.num-words .sw-ico svg { width: 13px; height: 13px; }
+.num-card { font-size: 16px; }
+.num-ord { font-size: 14px; }
+.num-fi { color: var(--muted); font-size: 13px; }
 .sanasto-row .ui-line { font-size: 13px; color: var(--muted); margin-bottom: 3px; }
-.sanasto-row .sme-line { font-size: 17px; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.sanasto-row .sme-line { font-size: 16px; display: flex; align-items: center; column-gap: 8px; flex-wrap: wrap; line-height: 1.25; }
+.sw-wrap { display: inline-flex; align-items: center; gap: 1px; white-space: nowrap; }
+.sw-ico { width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--accent);
+  display: inline-grid; place-items: center; cursor: pointer; flex: none; }
+.sw-ico:active { background: var(--chip); }
+.sw-ico svg { width: 13px; height: 13px; }
+.sw-ico.loading { opacity: .5; }
 .sanasto-row .sub-line { font-size: 13px; color: var(--muted); margin-top: 2px; }
 .sanasto-row .sw { cursor: pointer; border-radius: 4px; -webkit-touch-callout: none; user-select: none; }
 .sanasto-row .sw:active { background: var(--chip); }
 .sanasto-row .sw.main { font-weight: 700; }
-.sanasto-dial { margin-left: auto; font-size: 12px; color: var(--muted); padding: 1px 7px; border-radius: 99px; background: var(--chip); }
+/* Laatikko taulukkona: sarakeotsikkona suomen muoto, alla saamen muoto (sanastot.js) */
+.sanasto-row.sg { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); column-gap: 8px; row-gap: 2px; align-items: center; }
+.sanasto-row.sg.dial { grid-template-columns: 1.7em repeat(var(--cols), minmax(0, 1fr)); }
+.sg-ui { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.sg-span, .sg-full { grid-column: 1 / -1; }
+.sanasto-row.sg.dial .sg-span { grid-column: 2 / -1; }
+.sg-cell { font-size: 15px; min-width: 0; }
+.sg-cell .sw-wrap { white-space: nowrap; gap: 0; flex-wrap: wrap; }
+.sanasto-row.sg.rows { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); row-gap: 1px; }
+.sg-cell .sw-ico { width: 20px; height: 20px; }
+.sg-cell .sw-ico svg { width: 12px; height: 12px; }
+/* Murremerkintä omassa sarakkeessaan vasemmalla (tyhjä, jos sanalla ei ole murre-eroa) */
+.sanasto-dial { justify-self: start; font-size: 11px; color: var(--muted); padding: 1px 6px; border-radius: 99px; background: var(--chip); text-align: center; }
+.sanasto-dial:empty { display: block; background: none; padding: 0; }
 .sanasto-note { font-size: 13px; color: var(--muted); font-style: italic; margin-top: 3px; }
 
 /* Käyttöliittymän kieli: valitsin valikossa ja aloitussivulla */

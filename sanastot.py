@@ -243,7 +243,7 @@ def lists():
               "rows": [row([fi, fin_form(fi, "Sg+Ine"), fin_form(fi, "Sg+Ill")], [nb], [sme(s, "N", tags, fi=fi, nb=nb)])
                        for fi, nb, s, tags in dirs]})
 
-    kin = ["eadni", "áhčči", "váhnemat", "áhkku", "áddjá", "mánná", "nieida", "bárdni", "oabbá", "oappáš", "viellja", "vieljaš",
+    kin = ["eadni", "áhčči", "váhnen", "áhkku", "áddjá", "mánná", "nieida", "bárdni", "oabbá", "oappáš", "viellja", "vieljaš",
            "siessá", "goaski", "muoŧŧá", "eahki", "čeahci", "eanu", "mánáidmánná"]
     kin_rows = []
     for s in kin:
@@ -256,6 +256,9 @@ def lists():
             fi, expl = "täti", ("isän sisar",)
         if s == "nieida":
             fi = "tytär, tyttö"
+        if s == "váhnen":  # vanhempi · vanhemmat = váhnen · váhnemat (sanakirjan erillinen monikkohakusana váhnemat)
+            kin_rows.append(row(["vanhempi", "vanhemmat"], ["forelder", "foreldre"], [sme("váhnen", "N", ["Pl+Nom"])]))
+            continue
         kin_rows.append(row([fi], [first(e[4]) if e else ""], [sme(s, "N", [])], {"fi": expl[0]} if expl else None))
     L.append({"id": "suku", "icon": "family", "title": {"fi": "Perhe ja suku", "nb": "Familie og slekt"},
               "hint": {"fi": "saamessa eri sana isän ja äidin sisaruksille", "nb": "på samisk egne ord for fars og mors søsken"},
@@ -281,9 +284,11 @@ def lists():
               "rows": [row([fi], [first(entry(s)[4]) if entry(s) else ""], [sme(s, None, [], fi=fi)]) for s, fi in weather]})
 
     prons = [("minä · minun · minulle · minulla", "jeg · min · til meg · hos meg", "mun"), ("sinä · sinun · sinulle · sinulla", "du · din · til deg · hos deg", "don"),
-             ("hän · hänen · hänelle · hänellä", "han/hun · hans/hennes · til ham/henne", "son"),
-             ("me kaksi", "vi to", "moai"), ("te kaksi", "dere to", "doai"), ("he kaksi", "de to", "soai"),
-             ("me · meidän · meille · meillä", "vi · vår · til oss · hos oss", "mii"), ("te · teidän · teille · teillä", "dere · deres · til dere", "dii"),
+             ("hän · hänen · hänelle · hänellä", "han/hun · hans/hennes · til ham/henne · hos ham/henne", "son"),
+             ("me kaksi · meidän kahden · meille kahdelle · meillä kahdella", "vi to · vår (to) · til oss to · hos oss to", "moai"),
+             ("te kaksi · teidän kahden · teille kahdelle · teillä kahdella", "dere to · deres (to) · til dere to · hos dere to", "doai"),
+             ("he kaksi · heidän kahden · heille kahdelle · heillä kahdella", "de to · deres (to) · til dem to · hos dem to", "soai"),
+             ("me · meidän · meille · meillä", "vi · vår · til oss · hos oss", "mii"), ("te · teidän · teille · teillä", "dere · deres · til dere · hos dere", "dii"),
              ("he · heidän · heille · heillä", "de · deres · til dem · hos dem", "sii")]
     prow = []
     for fi, nb, s in prons:
