@@ -295,7 +295,8 @@ function setUiLanguage(code) {
   saveSettings();
   applyStaticTexts();
   renderSidebar();
-  if (db && state.query) searchAgainKeepingWord();
+  // Vain kun sanakortti on näkyvissä: etusivulla kielen vaihto ei saa avata edellistä sanaa
+  if (db && state.query && !$("word").hidden) searchAgainKeepingWord();
 }
 
 // Kielen vaihto muuttaa tulosten järjestystä (ks. queryDatabase): itse valittu sana pysyy valittuna,

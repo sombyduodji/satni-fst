@@ -502,7 +502,6 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
   body.extra-tools .ocr-btn[hidden], body.extra-tools .lause-btn[hidden] { display: none; }
   body.extra-tools .tool-label { display: inline; font-weight: 600; }
 }
-}
 .ocr-view {
   position: fixed; inset: 0; z-index: 45; background: var(--bg); padding: 12px;
   display: flex; flex-direction: column;
