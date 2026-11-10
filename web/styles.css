@@ -3,6 +3,7 @@
   --bg: #f4f6fa; --surface: #ffffff; --surface-alt: #f6f8fb; --border: #e2e8f0;
   --text: #0f172a; --muted: #64748b; --subtle: #94a3b8;
   --accent: #2563eb; --accent-hover: #1d4ed8; --accent-text: #ffffff;
+  --flag-red: #e11d48; --flag-yellow: #ca8a04; --flag-blue: #2563eb; --flag-green: #16a34a;
   --chip: #e8edf4; --chip-hover: #dbe3ee; --chip-text: #1e293b;
   --section: #eef2f8; --select: #dbeafe;
   --gd: #15803d; --gd-bg: #dcfce7; --hd: #c2410c; --hd-bg: #ffedd5;
@@ -17,6 +18,7 @@
     --bg: #0f141b; --surface: #171e27; --surface-alt: #1b232e; --border: #2a3441;
     --text: #e5e9f0; --muted: #94a3b8; --subtle: #64748b;
     --accent: #3b82f6; --accent-hover: #60a5fa;
+    --flag-red: #fb7185; --flag-yellow: #facc15; --flag-blue: #60a5fa; --flag-green: #4ade80;
     --chip: #232c38; --chip-hover: #2d3846; --chip-text: #e2e8f0;
     --section: #1f2834; --select: #1e3a5f;
     --gd: #4ade80; --gd-bg: #123220; --hd: #fb923c; --hd-bg: #3a2210;
@@ -30,6 +32,7 @@
   --bg: #0f141b; --surface: #171e27; --surface-alt: #1b232e; --border: #2a3441;
   --text: #e5e9f0; --muted: #94a3b8; --subtle: #64748b;
   --accent: #3b82f6; --accent-hover: #60a5fa;
+    --flag-red: #fb7185; --flag-yellow: #facc15; --flag-blue: #60a5fa; --flag-green: #4ade80;
   --chip: #232c38; --chip-hover: #2d3846; --chip-text: #e2e8f0;
   --section: #1f2834; --select: #1e3a5f;
   --gd: #4ade80; --gd-bg: #123220; --hd: #fb923c; --hd-bg: #3a2210;
@@ -97,11 +100,28 @@ select {
 /* Android-sovelluksessa tilarivin tila on jo reunuksessa (kuten .topbar) */
 .android-app .sanasto-head { padding-top: 12px; }
 .sanasto-body { flex: 1; overflow-y: auto; padding: 4px 16px 24px; display: flex; flex-direction: column; gap: 8px; }
-.sanasto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
-.sanasto-tile { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 12px; border: 1px solid var(--border);
-  background: var(--surface); color: var(--text); font: inherit; font-size: 15px; text-align: left; cursor: pointer; }
-.sanasto-tile svg { width: 24px; height: 24px; flex: none; color: var(--accent); }
-.sanasto-tile span { min-width: 0; overflow-wrap: anywhere; }
+/* Yleisnäkymä: ryhmät lipun väreillä, kortissa värillinen ikonimerkki, nimi, saamen esimakusanat ja sanamäärä */
+.sanasto-intro { margin: 0 0 2px; font-size: 13px; color: var(--muted); }
+.sanasto-group { display: flex; flex-direction: column; gap: 6px; }
+.sanasto-group + .sanasto-group { margin-top: 10px; }
+.sanasto-group h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.sanasto-group h3::before { content: ""; width: 14px; height: 4px; border-radius: 2px; background: var(--tc); }
+.sanasto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 6px; }
+.sanasto-tile { display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 10px; border-radius: 14px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; text-align: left;
+  cursor: pointer; transition: border-color .15s, transform .1s, background .15s; -webkit-tap-highlight-color: transparent; }
+.sanasto-tile:hover { border-color: color-mix(in srgb, var(--tc) 55%, var(--border)); }
+.sanasto-tile:active { transform: scale(.985); background: color-mix(in srgb, var(--tc) 6%, var(--surface)); }
+.sanasto-tile:focus-visible { outline: 2px solid var(--tc); outline-offset: 1px; }
+.st-ico { flex: none; width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--tc) 16%, transparent); color: var(--tc); }
+.st-ico svg { width: 22px; height: 22px; }
+.st-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.st-title { font-size: 15px; font-weight: 600; line-height: 1.25; }
+.st-prev { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-n { flex: none; min-width: 26px; padding: 2px 7px; border-radius: 999px; font-size: 12px; font-weight: 600; text-align: center;
+  color: var(--muted); background: var(--surface-alt); border: 1px solid var(--border); }
 .sanasto-hint { margin: 2px 0 4px; font-size: 13px; color: var(--muted); }
 .sanasto-row { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
 .sanasto-row.num { display: flex; align-items: center; gap: 8px; padding: 2px 8px; line-height: 1.2; }

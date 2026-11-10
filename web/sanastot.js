@@ -43,13 +43,33 @@ function closeSanastot() {
   return true;
 }
 
+// Yleisnäkymä: listat neljässä ryhmässä saamen lipun väreillä (sama kuin yläpalkin raita). Kortissa ikoni, nimi,
+// muutama saamen sana esimakuna ja sanojen määrä.
+const SANASTO_GROUPS = [
+  { id: "perus", color: "yellow", lists: ["luvut", "varit", "kysymykset"] },
+  { id: "aika", color: "blue", lists: ["viikonpaivat", "kuukaudet", "vuodenajat", "aika"] },
+  { id: "ihmiset", color: "red", lists: ["suku", "pronominit", "tervehdykset"] },
+  { id: "luonto", color: "green", lists: ["suunnat", "saa", "porot"] },
+];
+const sanastoPreview = (l) => l.rows.slice(0, 3).map((r) => (l.kind === "numbers" ? r.card : r.sme[0].w[0])).join(", ");
+
 function renderSanastoGrid() {
   const lang = sanastoLang();
   $("sanasto-title").textContent = t("sanastot");
   $("sanasto-back").hidden = true;
   $("sanasto-speak").hidden = true;
-  $("sanasto-body").innerHTML = `<div class="sanasto-grid">` + sanastot.map((l) =>
-    `<button type="button" class="sanasto-tile" data-list="${esc(l.id)}">${sanastoSvg(l.icon)}<span>${esc(l.title[lang])}</span></button>`).join("") + `</div>`;
+  const byId = Object.fromEntries(sanastot.map((l) => [l.id, l]));
+  const listed = new Set(SANASTO_GROUPS.flatMap((g) => g.lists));
+  const groups = SANASTO_GROUPS.map((g) => ({ ...g, lists: g.lists.filter((id) => byId[id]) }));
+  const rest = sanastot.filter((l) => !listed.has(l.id)).map((l) => l.id);  // uusi lista ilman ryhmää: viimeiseen
+  if (rest.length) groups[groups.length - 1].lists.push(...rest);
+  const words = sanastot.reduce((n, l) => n + l.rows.length, 0);
+  const tile = (l, color) => `<button type="button" class="sanasto-tile" data-list="${esc(l.id)}" style="--tc: var(--flag-${color})">` +
+    `<span class="st-ico">${sanastoSvg(l.icon)}</span><span class="st-txt"><span class="st-title">${esc(l.title[lang])}</span>` +
+    `<span class="st-prev">${esc(sanastoPreview(l))}</span></span><span class="st-n">${l.rows.length}</span></button>`;
+  $("sanasto-body").innerHTML = `<p class="sanasto-intro">${esc(t("sanastoIntro", sanastot.length, words))}</p>` +
+    groups.filter((g) => g.lists.length).map((g) => `<section class="sanasto-group" style="--tc: var(--flag-${g.color})">` +
+      `<h3>${esc(t("sanastoGroup_" + g.id))}</h3><div class="sanasto-grid">${g.lists.map((id) => tile(byId[id], g.color)).join("")}</div></section>`).join("");
   $("sanasto-body").scrollTop = 0;
 }
 
