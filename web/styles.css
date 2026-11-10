@@ -438,6 +438,32 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 /* Tekstintunnistus (Android-sovellus): kuva koko näytön kokoisena, sanakirjan sanat alleviivattuina samassa
    kohdassa ja asennossa kuin kuvassa; napautetun sanan päällä kupla (sana, käännös, linkki sanakirjaan) */
 .ocr-btn { font-size: 18px; padding: 6px 10px; line-height: 1.2; }
+.lause-view { position: fixed; inset: 0; z-index: 45; background: var(--bg); padding: 12px 16px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 10px; }
+.lause-view[hidden] { display: none; }
+.lause-head { display: flex; align-items: center; justify-content: space-between; }
+.lause-head h2 { margin: 0; font-size: 20px; }
+.lause-view > .small { margin: 0; }
+#lause-input { font: inherit; font-size: 17px; padding: 10px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); resize: vertical; }
+.lause-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.lause-chip { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 6px 10px; border-radius: 10px;
+  border: 1px solid transparent; background: var(--gd-bg); color: var(--text); font: inherit; cursor: pointer; text-align: left; }
+.lause-chip.approx { background: var(--chip); }
+.lause-chip.unk { background: var(--hd-bg); border-style: dashed; border-color: var(--hd); }
+.lc-fin { font-size: 12px; color: var(--muted); }
+.lc-sme { font-size: 17px; font-weight: 700; }
+.lc-base { font-size: 12px; color: var(--muted); }
+.lause-pop { padding: 10px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 6px; }
+.lause-pop .lp-head { margin: 0 0 2px; font-weight: 600; font-size: 14px; }
+.lause-pop label { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.lause-result { padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+.lause-result .small { margin: 0 0 4px; }
+.lause-sme-row { display: flex; align-items: center; gap: 12px; }
+.lause-sme-row .speak-btn { flex: none; }
+.lause-sme { margin: 0; flex: 1; font-size: 22px; font-weight: 700; }
+.lause-open { margin: 2px 0 8px; display: inline-flex; align-items: center; gap: 4px; }
 .ocr-view {
   position: fixed; inset: 0; z-index: 45; background: var(--bg); padding: 12px;
   display: flex; flex-direction: column;

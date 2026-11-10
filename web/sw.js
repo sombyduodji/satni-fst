@@ -1,8 +1,8 @@
 /* Service worker: sovellus ja sanakirja toimivat ilman verkkoyhteyttä ensimmäisen käynnin jälkeen.
    Kun tiedostoja päivitetään, kasvata VERSION, jolloin selaimet hakevat uudet tiedostot. */
-const VERSION = "satni-v25";
+const VERSION = "satni-v26";
 const APP_SHELL = [
-  "./", "index.html", "styles.css", "i18n.js", "app.js", "manifest.webmanifest",
+  "./", "index.html", "styles.css", "i18n.js", "app.js", "lauseet.js", "manifest.webmanifest",
   "vendor/sql-wasm.js", "vendor/sql-wasm.wasm",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/coffee.svg",
   "voices/biret.wav", "voices/mahtte.wav", "voices/sunna.wav",  // äänivalinnan näytteet

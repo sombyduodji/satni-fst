@@ -100,6 +100,9 @@
         <section id="experimental-section" class="experimental">
           <h3 data-i18n="experimental">Kokeelliset ominaisuudet</h3>
           <p class="muted small" data-i18n="experimentalHint"></p>
+          <!-- Lausekääntäjä (haara test-lauseet, lauseet.js): avaa oman näkymän -->
+          <button type="button" class="chip-btn lause-open" id="lause-open"><span data-i18n="lauseTitle">Lausekääntäjä</span>
+            <span class="unchecked-badge" data-i18n="lauseBadge">kokeilu</span></button>
           <div class="toggle-list">
             <label class="switch-row" id="exp-ocr-row" hidden>
               <span class="switch-text"><span data-i18n="expOcr">Valokuvahaku</span>
@@ -313,6 +316,26 @@
   </dialog>
 
   <!-- Tekstintunnistus: kuva ja sen sanat (app.js: openOcr, ocrResult) -->
+  <!-- Lausekääntäjä: suomenkielinen lause -> sanat laatikoina (saamen muoto ja perusmuoto) -> saamenkielinen lause -->
+  <div id="lause-view" class="lause-view" hidden>
+    <div class="lause-head">
+      <h2 data-i18n="lauseTitle">Lausekääntäjä</h2>
+      <button type="button" class="chip-btn" id="lause-close" data-i18n="close">Sulje</button>
+    </div>
+    <p class="muted small" data-i18n="lauseHint"></p>
+    <textarea id="lause-input" rows="2" data-i18n-placeholder="lausePlaceholder"></textarea>
+    <div id="lause-chips" class="lause-chips"></div>
+    <div id="lause-pop" class="lause-pop" hidden></div>
+    <div id="lause-result" class="lause-result" hidden>
+      <p class="muted small" data-i18n="lauseResult">Saameksi (likimääräinen, tarkista sanat)</p>
+      <div class="lause-sme-row">
+        <p id="lause-sme" class="lause-sme"></p>
+        <!-- Lause ääneen Divvunin puhesynteesillä (app.js: speak), samalla äänellä kuin sanat -->
+        <button id="lause-speak" class="speak-btn" data-i18n-title="listen" data-i18n-aria="listen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
+      </div>
+    </div>
+  </div>
+
   <div id="ocr-view" class="ocr-view" hidden>
     <div class="ocr-head">
       <button class="chip-btn" id="ocr-camera" data-i18n="ocrCamera">📷 Ota kuva</button>
@@ -353,5 +376,6 @@
   <script src="vendor/sql-wasm.js"></script>
   <script src="i18n.js"></script>
   <script src="app.js"></script>
+  <script src="lauseet.js"></script>
 </body>
 </html>
