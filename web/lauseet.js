@@ -160,6 +160,7 @@ function lauseParse(text) {
     const negq = [...LAUSE_CLITICS].find(([c]) => (c === "ko" || c === "kö") && word.endsWith(c) && LAUSE_NEG[word.slice(0, -c.length)]);
     if (negq) { tokens.push({ raw, word, neg: word.slice(0, -negq[0].length), clitic: negq[0], known: true }); continue; }
     const { analyses, clitic, stem, px } = lauseAnalyses(word, raw);
+    if (LAUSE_PROGRESSIVE[word]) analyses.unshift({ base: LAUSE_PROGRESSIVE[word], cell: "InfMa+Ine", pos: "V" });
     // Tulkintojen järjestys: sana itse perusmuotona (maksaa = maksaa, ei maksa-sanan partitiivi), yksikkö ennen monikkoa
     // Persoonapronomini ennen samannäköistä sanaa (häntä = hän, ei häntä "seaibi"); omistusliitteellä yksikkö ensin
     const pron = (a) => a.pos === "Pron" && !!LAUSE_PRONOUN[a.base];
@@ -262,6 +263,19 @@ function lauseParse(text) {
 
 // Luku, jonka jälkeen suomessa on partitiivi ja saamessa yksikön genetiivi: numero (200 kilometriä = 200 kilomehtera)
 // tai lukusana (kaksi, seitsemän, sata), ei yksi
+// Suomen -lla/-lta/-lle substantiivin oletusmuoto saameksi (ks. lauseSamiTag): place, means tai top
+const LAUSE_BOAT = /(fanas|vanas|láiva|bárku)$/;
+// olla tulossa / menossa / lähdössä = matkalla: saamen progressiivi (olen tulossa = lean boahtime), ei tulo-sanan inessiivi
+const LAUSE_PROGRESSIVE = { tulossa: "tulla", menossa: "mennä", lähdössä: "lähteä" };
+function lauseDefaultMuoto(choice, fcase, existential = false) {
+  if (choice.sem === "surf") return "top";
+  // Vene olla-lauseessa on paikka (olemme veneellä = leat fatnasis), muuten kulkuneuvolla liikutaan (menen veneellä = fatnasiin)
+  if (choice.sem === "com" && fcase === "Ade") return existential && LAUSE_BOAT.test(choice.sme_lemma) ? "place" : "means";
+  return "place";
+}
+// Muodon vaihtoehdot sijoittain (valikon Muoto-lista)
+const LAUSE_MUOTOT = { Ade: ["place", "means", "top"], Abl: ["place", "top"], All: ["place", "top"] };
+
 function lauseIsCount(tok) {
   if (!tok) return false;
   if (tok.num) return tok.value !== 1;
@@ -308,18 +322,22 @@ function lauseSamiTag(tokens, i) {
   if (next?.post && fcase === "Gen") return `${num || "Sg"}+Gen`;
   if (hasVerb && (fcase === "Gen" || fcase === "Par")) return `${num || "Sg"}+Acc`;
   if (fcase === "Nom") return `${num || "Sg"}+Nom`;
-  // Muut substantiivit (ei ihminen eikä nimi) merkitysluokan mukaan (semantics.py, dictionary.sem):
-  // -lle = illatiivi (lentokentälle = girdišilljui), paitsi tasolle genetiivi + ala (pöydälle = beavddi ala);
-  // -lla/-lta: paikka = lokatiivi (lentokentällä = girdišilljus), kulkuneuvo tai väline -lla = komitatiivi
-  // (autolla = biillain), taso = genetiivi + alde (pöydällä = beavddi alde); muuten lokatiivi arvauksena
+  // Muut substantiivit (ei ihminen eikä nimi): saamessa vähemmän sijoja kuin suomessa, joten -ssa/-sta/-lla/-lta =
+  // lokatiivi ja -Vn/-lle = illatiivi (talolla = viesus, kassalla ja kassassa = kássas). Poikkeukset (muoto):
+  //   means: -lla = keino, komitatiivi (autolla = biillain, kynällä = peannain); kulkuneuvo ja väline (dictionary.sem com)
+  //   top:   pöydän päällä, genetiivi + alde/ala (pöydällä = beavddi alde, pöydälle = beavddi ala); sem surf
+  // Vene tai laiva olla-lauseessa voi olla myös paikka (olemme veneellä), joten se näkyy arvauksena. Käyttäjä voi
+  // vaihtaa muodon sanan valikosta (tok.muoto, lauseOpenChip).
   if (pos === "N" && t.choice.subtype !== "Prop" && !t.choice.human && /^(All|Ade|Abl)$/.test(fcase)) {
-    const n = num || "Sg", sem = t.choice.sem;
-    if (sem === "surf") return { tag: `${n}+Gen`, post: fcase === "All" ? "ala" : "alde" };
-    if (fcase === "All") return `${n}+Ill`;
-    // Kulkuneuvolla liikutaan (tulen autolla = boađán biillain), mutta olla-lauseessa se on paikka (olen veneellä = lean fatnasis)
-    if (fcase === "Ade" && sem === "com" && !existential) return `${n}+Com`;
-    if (sem === "place" || sem === "com") return `${n}+Loc`;
-    return { tag: `${n}+Loc`, guess: true };
+    const n = num || "Sg";
+    // Omistus: -lla-sana ennen 3. persoonan olla-verbiä (helikopterilla oli vaikeuksia = helikopteris ledje) on paikka
+    const ollaAfter = tokens.slice(i + 1).find((x) => x.pick?.base === "olla" && /(Sg3|Pl3)$/.test(x.pick.cell || ""));
+    const owner = fcase === "Ade" && !!ollaAfter;
+    const muoto = t.muoto || (owner ? "place" : lauseDefaultMuoto(t.choice, fcase, existential));
+    const guess = !t.muoto && fcase === "Ade" && existential && t.choice.sem === "com" && LAUSE_BOAT.test(t.choice.sme_lemma);
+    if (muoto === "top") return { tag: `${n}+Gen`, post: fcase === "All" ? "ala" : "alde" };
+    if (muoto === "means" && fcase === "Ade") return { tag: `${n}+Com`, guess };
+    return guess ? { tag: `${n}+Loc`, guess } : `${n}+${fcase === "All" ? "Ill" : "Loc"}`;
   }
   // Paikannimi kuten ihmissana: Rovaniemellä = Roavvenjárggas, Rovaniemelle = Roavvenjárgii (sijat ovat nimellä aina samat)
   return samiTagOfFinCell(cell, pos, t.pick.base, !!t.choice.human || t.choice.subtype === "Prop");
@@ -391,7 +409,9 @@ function lauseSentence(tokens) {
   });
   let out = "";
   for (const p of parts) out += p.punct ? p.punct : (out && !/[\s(]$/.test(out) ? " " : "") + p.text;
-  return out.charAt(0).toUpperCase() + out.slice(1);
+  // Iso alkukirjain myös pisteen, huutomerkin ja kysymysmerkin jälkeen (useampi lause samassa kentässä)
+  // (ei järjestysluvun pisteen jälkeen: 79. jagis, mánu 12. beaivi)
+  return out.replace(/(^|(?<!\d)[.!?]\s+)(\p{Ll})/gu, (m, a, c) => a + c.toUpperCase());
 }
 
 // --- Näkymä ---
@@ -408,6 +428,7 @@ function lauseSave() {
     if (tok.analyses?.length > 1 && tok.pick !== tok.analyses[0]) p.r = tok.analyses.indexOf(tok.pick);
     if (tok.choice && tok.candidates?.[0] && tok.choice !== tok.candidates[0]) p.c = tok.choice.id;
     if (tok.skip) p.s = 1;
+    if (tok.muoto) p.m = tok.muoto;
     if (Object.keys(p).length) picks[i] = p;
   });
   lause.parsedText = text;
@@ -433,6 +454,7 @@ function lauseParseRestoring(text) {
       }
       if (p.c != null) tok.choice = tok.candidates?.find((c) => c.id === p.c) || tok.choice;
       if (p.s) { tok.skip = true; tok.known = true; }
+      if (p.m) tok.muoto = p.m;
     }
   }
   lause.parsedText = text;
@@ -473,6 +495,7 @@ function renderLause() {
          : `<span class="lc-sme">?</span><span class="lc-base">${esc(t("lauseUnknown"))}</span>`) + "</button>";
   }).join("");
   $("lause-clear").hidden = !$("lause-input").value;
+  lauseGrow();
   const ready = tokens.length && tokens.every((tok) => tok.punct || tok.neg || tok.name || tok.num || tok.post || tok.choice || tok.skip);
   $("lause-result").hidden = !ready;
   if (ready) $("lause-sme").textContent = lauseSentence(tokens.filter((tok) => !tok.skip));
@@ -487,9 +510,10 @@ function lauseOpenChip(i) {
     // Monitulkintainen muoto (tulen = tulla, 1. p. / tuli, genetiivi): tulkinnan voi vaihtaa
     const readings = (tok.analyses || []).length > 1
       ? `<p class="lp-sub">${esc(t("lauseReading"))}</p>` + tok.analyses.map((a, k) =>
-          `<label><input type="radio" name="lp-reading" value="${k}"${a === tok.pick ? " checked" : ""}> ${esc(a.base)} · ${esc(lauseCellLabel(a.cell))}</label>`).join("") +
-        `<p class="lp-sub">${esc(t("lauseSamiWord"))}</p>` : "";
-    html = lauseHead(`${esc(tok.raw)} = ${esc(tok.pick.base)}${esc(cell)}${tok.clitic ? " + -" + esc(tok.clitic) : ""}`) + readings +
+          `<label><input type="radio" name="lp-reading" value="${k}"${a === tok.pick ? " checked" : ""}> ${esc(a.base)} · ${esc(lauseCellLabel(a.cell))}</label>`).join("") : "";
+    const muoto = lauseMuotoHtml(i);
+    html = lauseHead(`${esc(tok.raw)} = ${esc(tok.pick.base)}${esc(cell)}${tok.clitic ? " + -" + esc(tok.clitic) : ""}`) + muoto + readings +
+      (muoto || readings ? `<p class="lp-sub">${esc(t("lauseSamiWord"))}</p>` : "") +
       tok.candidates.map((c, k) => `<div class="lp-row"><label><input type="radio" name="lp" value="${k}"${c === tok.choice ? " checked" : ""}>` +
         `<span><b>${esc(c.sme_lemma)}</b> <span class="muted small">${esc(c.pos)}</span>` +
         `<span class="lp-gloss">${esc(lauseGloss(c.id))}</span></span></label>` +
@@ -526,6 +550,32 @@ function lauseCellLabel(cell) {
     const m = part.match(/^(Sg|Pl)([123])$/);
     return m ? L.person(L[m[1]], m[2]) : L[part] || part;
   }).join(", ").replace(/^(yks\.|mon\.|ent\.|fl\.), /, "$1 ");
+}
+
+// Tekstikenttä kasvaa tekstin mukana (pitkä lause ei katkea), enintään 40 % näytön korkeudesta
+function lauseGrow() {
+  const el = $("lause-input");
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight + 2, window.innerHeight * 0.4) + "px";
+}
+
+// Muoto-lista substantiiville, jonka -lla/-lta/-lle voi tarkoittaa saamessa eri asioita: paikka (kassalla = kássas),
+// keino (autolla = biillain) tai päällä (pöydällä = beavddi alde). Jokaisen vaihtoehdon kohdalla näkyy valmis saamen muoto.
+function lauseMuotoHtml(i) {
+  const tok = lause.tokens[i];
+  const m = (tok.pick?.cell || "").match(/^(Sg|Pl)\+(Ade|Abl|All)$/);
+  if (!m || tok.pick.pos !== "N" || !tok.choice || tok.choice.subtype === "Prop" || tok.choice.human) return "";
+  const owner = m[2] === "Ade" && lause.tokens.slice(i + 1).some((x) => x.pick?.base === "olla" && /(Sg3|Pl3)$/.test(x.pick.cell || ""));
+  const current = tok.muoto || (owner ? "place" : lauseDefaultMuoto(tok.choice, m[2], lause.tokens.some((x) => x.pick?.base === "olla")));
+  const saved = tok.muoto;
+  const rows = LAUSE_MUOTOT[m[2]].map((opt) => {
+    tok.muoto = opt;
+    const form = lauseSamiForm(lause.tokens, i)?.form || "";
+    return `<label><input type="radio" name="lp-muoto" value="${opt}"${opt === current ? " checked" : ""}>` +
+      `<span><b>${esc(form)}</b> <span class="muted small">${esc(t("lauseForm_" + opt + "_" + m[2]))}</span></span></label>`;
+  });
+  tok.muoto = saved;
+  return `<p class="lp-sub">${esc(t("lauseForm"))}</p>` + rows.join("");
 }
 
 // Valikon otsikkorivi ja sulkemisrasti
@@ -621,7 +671,7 @@ function bindLause() {
     }, 300);
   };
   // Puhelimen näppäimistö: viimeinen sana voi olla vielä kesken (alleviivattu), joten luetaan myös sanan valmistuttua
-  $("lause-input").oninput = () => { $("lause-clear").hidden = !$("lause-input").value; reparse(); };
+  $("lause-input").oninput = () => { $("lause-clear").hidden = !$("lause-input").value; lauseGrow(); reparse(); };
   // × tyhjentää lauseen, sanojen valinnat ja tallennetun lauseen; kenttä saa kohdistuksen (näppäimistö auki)
   $("lause-clear").onclick = () => {
     clearTimeout(timer);
@@ -648,7 +698,15 @@ function bindLause() {
   });
   $("lause-pop").onchange = (e) => {
     const t = lause.tokens[Number($("lause-pop").dataset.i)], r = e.target;
+    if (r.name === "lp-muoto") {
+      t.muoto = r.value;
+      renderLause();
+      lauseSave();
+      lauseOpenChip(Number($("lause-pop").dataset.i));
+      return;
+    }
     if (r.name === "lp-reading") {
+      t.muoto = null;
       t.pick = t.analyses[Number(r.value)];
       t.candidates = lauseCandidates(t.pick.base, t.pick.pos);
       t.choice = t.candidates[0] || null;
