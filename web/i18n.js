@@ -30,7 +30,11 @@ const UI_TEXTS = {
     experimental: "Kokeelliset ominaisuudet", experimentalOn: "Käytössä", experimentalOff: "Pois käytöstä",
     experimentalHint: "Kokeiluversioita: voivat vielä muuttua tai poistua.",
     // Lausekääntäjä (test-lauseet, lauseet.js)
-    lauseTitle: "Lausekääntäjä", lauseBadge: "kokeilu",
+    lauseTitle: "Lausekääntäjä", lauseBadge: "kokeilu", lauseShort: "Lause", ocrShort: "Kuva", expLauseDesc: "Lyhyt suomenkielinen lause saameksi. Avataan haun vierestä.",
+    expLauseInfo: `<p>Haun viereen tulee painike, joka avaa lausekääntäjän: kirjoita lyhyt suomenkielinen lause, niin sovellus
+      tekee siitä pohjoissaamenkielisen lauseen sanakirjan sanoista ja taivutusmuodoista.</p>
+      <p>Jokainen sana näkyy omana laatikkonaan; napauttamalla voit vaihtaa tulkinnan tai saamen sanan. Lause on
+      likimääräinen: se sopii lyhyisiin arkilauseisiin, ei pitkiin tai vaikeisiin.</p>`,
     lauseHint: "Kirjoita lyhyt suomenkielinen lause. Napauta sanaa nähdäksesi tulkinnan tai vaihtaaksesi saamen sanan.",
     lausePlaceholder: "saisinko yhden kahvin ja voileivän?", lauseUnknown: "tuntematon", lauseDidYouMean: "tarkoititko",
     lauseSkip: "Ohita sana", lauseResult: "Saameksi (likimääräinen, tarkista sanat)",
@@ -242,7 +246,11 @@ const UI_TEXTS = {
     ocrDirSwitched: "retning byttet", ocrRotateLeft: "Roter bildet mot venstre", ocrRotateRight: "Roter bildet mot høyre",
     experimental: "Eksperimentelle funksjoner", experimentalOn: "På", experimentalOff: "Av",
     experimentalHint: "Prøveversjoner: kan fortsatt endres eller fjernes.",
-    lauseTitle: "Setningsoversetter", lauseBadge: "prøve",
+    lauseTitle: "Setningsoversetter", lauseBadge: "prøve", lauseShort: "Setning", ocrShort: "Bilde", expLauseDesc: "Kort finsk setning til samisk. Åpnes ved siden av søket.",
+    expLauseInfo: `<p>Ved siden av søket kommer en knapp som åpner setningsoversetteren: skriv en kort setning på finsk, så
+      lager appen en nordsamisk setning av ordboksordene og bøyningsformene.</p>
+      <p>Hvert ord vises i sin egen boks; trykk for å bytte tolkning eller samisk ord. Setningen er omtrentlig: den passer
+      for korte hverdagssetninger, ikke lange eller vanskelige.</p>`,
     lauseHint: "Skriv en kort setning på finsk. Trykk på et ord for å se tolkningen eller bytte det samiske ordet.",
     lausePlaceholder: "saisinko yhden kahvin ja voileivän?", lauseUnknown: "ukjent", lauseDidYouMean: "mente du",
     lauseSkip: "Hopp over ordet", lauseResult: "På samisk (omtrentlig, sjekk ordene)",

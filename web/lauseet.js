@@ -196,9 +196,25 @@ function lauseSentence(tokens) {
 
 // --- Näkymä ---
 
+// Avaus haun vierestä: haun teksti mukaan, jos siinä on useampi sana (saisinko yhden kahvin); muuten edellinen lause
 function openLause() {
+  const typed = $("search").value.trim();
+  if (typed.includes(" ")) $("lause-input").value = typed;
+  else if (!$("lause-input").value) {
+    try { $("lause-input").value = localStorage.getItem("satni-lause") || ""; } catch (e) { /* yksityinen tila */ }
+  }
   $("lause-view").hidden = false;
+  lause.tokens = lauseParse($("lause-input").value);
+  renderLause();
   $("lause-input").focus();
+}
+
+// Takaisin-ele ja Esc: ensin sanan valikko, sitten näkymä (MainActivity.goBackOrFinish kutsuu closeOcr:ia)
+function closeLause() {
+  if ($("lause-view").hidden) return false;
+  if (!$("lause-pop").hidden) $("lause-pop").hidden = true;
+  else $("lause-view").hidden = true;
+  return true;
 }
 
 function renderLause() {
@@ -243,13 +259,20 @@ function lauseOpenChip(i) {
 
 function bindLause() {
   if (!$("lause-view")) return;
-  $("lause-open").onclick = () => { closeDrawer(); openLause(); };
+  $("lause-btn").onclick = openLause;
   $("lause-close").onclick = () => { $("lause-view").hidden = true; };
+  const closeOcrBase = window.closeOcr;
+  window.closeOcr = () => closeLause() || (closeOcrBase ? closeOcrBase() : false);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeLause(); });
   $("lause-speak").onclick = () => speak($("lause-sme").textContent, $("lause-speak"));
   let timer = null;
   const reparse = () => {
     clearTimeout(timer);
-    timer = setTimeout(() => { lause.tokens = lauseParse($("lause-input").value); renderLause(); }, 300);
+    timer = setTimeout(() => {
+      lause.tokens = lauseParse($("lause-input").value);
+      renderLause();
+      try { localStorage.setItem("satni-lause", $("lause-input").value); } catch (e) { /* yksityinen tila */ }
+    }, 300);
   };
   // Puhelimen näppäimistö: viimeinen sana voi olla vielä kesken (alleviivattu), joten luetaan myös sanan valmistuttua
   $("lause-input").oninput = reparse;

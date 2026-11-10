@@ -57,7 +57,7 @@ const DEFAULT_SETTINGS = {
   skolt: false, skoltViaSme: false,
   // Kokeelliset ominaisuudet (valikon lopussa), kukin erikseen: ocr = kuvasta haku (Android-sovellus),
   // tableTr = muotojen käännökset taivutustaulukossa, apertium = Apertiumin norjan käännökset, pivotFin = suomennosehdotukset. experimental: vanha yhteinen kytkin (= ocr), siirretään exp.ocr:ään.
-  exp: { ocr: false, tableTr: false, apertium: false, pivotFin: false },
+  exp: { ocr: false, lause: false, tableTr: false, apertium: false, pivotFin: false },
   // Kuvasta haku: suunta ("sme" = saamen teksti, "ui" = käyttöliittymän kielen teksti), merkintätapa ja väri
   ocrFrom: "sme", ocrStyle: "frame", ocrColor: "#2563eb",
 };
@@ -2335,6 +2335,14 @@ function applyExperimental() {
   $("exp-ocr-row").hidden = !window.SatniOcr;
   $("ocr-btn").hidden = !(window.SatniOcr && settings.exp.ocr);
   if (!settings.exp.ocr) $("ocr-view").hidden = true;
+  // Lausekääntäjä (lauseet.js): painike haun viereen; kapealla näytöllä Hae-painike on silloin pelkkä kuvake
+  if ($("lause-btn")) {
+    $("lause-btn").hidden = !settings.exp.lause;
+    if (!settings.exp.lause) $("lause-view").hidden = true;
+  }
+  document.body.classList.toggle("extra-tools", !$("ocr-btn").hidden || !$("lause-btn")?.hidden);
+  // Molemmat (kamera ja lausekääntäjä): kapealla näytöllä omalle rivilleen haun alle (styles.css: .two-tools)
+  document.body.classList.toggle("two-tools", !$("ocr-btn").hidden && !$("lause-btn")?.hidden);
 }
 function bindExperimental() {
   let pending = null;
@@ -2352,9 +2360,9 @@ function bindExperimental() {
     if (!e.target.checked) { set(name, false); return; }
     e.target.checked = false;  // päälle vasta, kun käyttäjä hyväksyy
     pending = name;
-    const key = { ocr: "expOcr", tableTr: "expTableTr", apertium: "expApertium", pivotFin: "expPivotFin" }[name];
+    const key = { ocr: "expOcr", lause: "lauseTitle", tableTr: "expTableTr", apertium: "expApertium", pivotFin: "expPivotFin" }[name];
     $("exp-dlg-title").textContent = t(key);
-    $("exp-dlg-body").innerHTML = t(key + "Info");
+    $("exp-dlg-body").innerHTML = t(name === "lause" ? "expLauseInfo" : key + "Info");
     $("exp-dlg").showModal();
   });
   $("exp-ok").onclick = () => { $("exp-dlg").close(); if (pending) set(pending, true); pending = null; };

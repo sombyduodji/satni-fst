@@ -441,6 +441,10 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .lause-view { position: fixed; inset: 0; z-index: 45; background: var(--bg); padding: 12px 16px; overflow-y: auto;
   display: flex; flex-direction: column; gap: 10px; }
 .lause-view[hidden] { display: none; }
+/* Sisältö ei saa kutistua, kun se on näyttöä korkeampi (näppäimistö auki, pitkä lause): näkymä vierii.
+   Muuten tekstikenttä painuu matalaksi esim. kaiutinta painettaessa. */
+.lause-view > * { flex-shrink: 0; }
+#lause-input { min-height: 3.2em; }
 .lause-head { display: flex; align-items: center; justify-content: space-between; }
 .lause-head h2 { margin: 0; font-size: 20px; }
 .lause-view > .small { margin: 0; }
@@ -464,7 +468,26 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .lause-sme-row { display: flex; align-items: center; gap: 12px; }
 .lause-sme-row .speak-btn { flex: none; }
 .lause-sme { margin: 0; flex: 1; font-size: 22px; font-weight: 700; }
-.lause-open { margin: 2px 0 8px; display: inline-flex; align-items: center; gap: 4px; }
+.lause-btn { padding: 6px 10px; line-height: 0; align-self: stretch; display: inline-flex; align-items: center; }
+.ocr-btn { align-self: stretch; }
+.lause-btn svg { width: 22px; height: 22px; }
+.lause-btn[hidden] { display: none; }
+#search-btn .sb-icon { display: none; width: 20px; height: 20px; vertical-align: -4px; }
+/* Puhelin: hakukenttä lähes koko leveydeltä. Hae on pelkkä suurennuslasi samalla rivillä, ja kamera sekä
+   lausekääntäjä (kun päällä) ovat omalla rivillään nimen kanssa. 375 px näytöllä kenttä on noin 295 px. Raja 600 px:
+   puhelimet ilmoittavat leveydeksi 360-480 px näytön koon ja fonttikoon asetuksista riippuen. */
+.tool-label { display: none; }
+@media (max-width: 600px) {
+  #search-btn .sb-label { display: none; }
+  #search-btn .sb-icon { display: inline; }
+  #search-btn { padding-left: 12px; padding-right: 12px; }
+  .searchbar .search-box { flex: 1 1 calc(100% - 68px); min-width: 0; }
+  body.extra-tools .ocr-btn, body.extra-tools .lause-btn { flex: 1 1 calc(50% - 6px); justify-content: center; gap: 8px; line-height: 1.2;
+    display: inline-flex; align-items: center; padding: 8px 10px; font-size: 15px; }
+  body.extra-tools .ocr-btn[hidden], body.extra-tools .lause-btn[hidden] { display: none; }
+  body.extra-tools .tool-label { display: inline; font-weight: 600; }
+}
+}
 .ocr-view {
   position: fixed; inset: 0; z-index: 45; background: var(--bg); padding: 12px;
   display: flex; flex-direction: column;
