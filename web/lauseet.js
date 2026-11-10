@@ -83,8 +83,10 @@ function lauseSuggestions(word) {
 // Lause sanoiksi ja välimerkeiksi; jokaiselle sanalle tulkinta ja saamen ehdokkaat
 function lauseParse(text) {
   const tokens = [];
-  for (const m of text.matchAll(/[\p{L}-]+|[^\s\p{L}]+/gu)) {
+  for (const m of text.matchAll(/\d+(?:[.,:]\d+)*|[\p{L}-]+|[^\s\p{L}\d]+/gu)) {
     const raw = m[0];
+    // Numero sellaisenaan (200, 7,5, 12.30); arvo luvun jälkeisen sanan muotoa varten
+    if (/^\d/.test(raw)) { tokens.push({ raw, word: raw, num: true, value: parseFloat(raw.replace(",", ".")), known: true }); continue; }
     if (!/\p{L}/u.test(raw)) { tokens.push({ punct: raw }); continue; }
     const word = raw.toLowerCase();
     if (LAUSE_NEG[word]) { tokens.push({ raw, word, neg: word, known: true }); continue; }
@@ -121,7 +123,7 @@ function lauseParse(text) {
   tokens.forEach((t, i) => {
     const prev = tokens.slice(0, i).reverse().find((x) => !x.punct);
     const par = t.analyses?.find((a) => a.cell?.endsWith("Par") && a.pos !== "V");
-    if (par && prev?.pick && (prev.pick.pos === "Num" || LAUSE_SMALL_NUMBERS.includes(prev.pick.base))) {
+    if (par && lauseIsCount(prev)) {
       t.pick = par;
       t.candidates = lauseCandidates(par.base, par.pos);
       t.choice = t.candidates[0] || null;
@@ -156,6 +158,14 @@ function lauseParse(text) {
   return tokens;
 }
 
+// Luku, jonka jälkeen suomessa on partitiivi ja saamessa yksikön genetiivi: numero (200 kilometriä = 200 kilomehtera)
+// tai lukusana (kaksi, seitsemän, sata), ei yksi
+function lauseIsCount(tok) {
+  if (!tok) return false;
+  if (tok.num) return tok.value !== 1;
+  return !!tok.pick && (LAUSE_SMALL_NUMBERS.includes(tok.pick.base) || (tok.pick.pos === "Num" && tok.pick.base !== "yksi"));
+}
+
 // Saamen muoto sanalle lauseessa: tulkinnan solu + lauseen säännöt
 function lauseSamiTag(tokens, i) {
   const t = tokens[i], cell = t.pick.cell, pos = (t.pick.pos || t.choice.pos || "").toUpperCase();
@@ -174,7 +184,7 @@ function lauseSamiTag(tokens, i) {
   }
   if (t.pick.pos === "Pron" && LAUSE_PRONOUN[t.pick.base]) return samiCaseOfFinCell(cell, "PRON");
   // Luvun 2-6 jälkeen yksikön genetiivi (kaksi kahvia = guokte gáfe), samoin mittasanan jälkeen (palaa kakkua = bihtá gáhku)
-  if (fcase === "Par" && prev?.pick && (LAUSE_SMALL_NUMBERS.includes(prev.pick.base) || prev.pick.cell === "Sg+Par")) return "Sg+Gen";
+  if (fcase === "Par" && (lauseIsCount(prev) || prev?.pick?.cell === "Sg+Par")) return "Sg+Gen";
   // Lauseen objekti: suomen genetiivi tai partitiivi -> saamen akkusatiivi (yhden kahvin = ovtta gáfe)
   if (existential && fcase === "Par") return `${num || "Sg"}+Nom`;
   if (hasVerb && (fcase === "Gen" || fcase === "Par")) return `${num || "Sg"}+Acc`;
@@ -187,7 +197,7 @@ function lauseSamiForm(tokens, i) {
   const t = tokens[i];
   const clitic = t.clitic ? Object.fromEntries(LAUSE_CLITICS)[t.clitic] : "";
   if (t.neg) return { form: LAUSE_NEG[t.neg] + clitic, base: "ii", note: LAUSE_NEG_PERSON[t.neg] };
-  if (t.name) return { form: t.raw, base: t.raw, exact: true };
+  if (t.name || t.num) return { form: t.raw, base: t.raw, exact: true };
   if (!t.choice) return null;
   const tag = lauseSamiTag(tokens, i);
   let form = t.choice.sme_lemma, exact = !t.pick.cell;
@@ -293,7 +303,7 @@ function renderLause() {
       (s ? `<span class="lc-sme">${esc(s.form)}</span><span class="lc-base">${esc(s.base)}</span>`
          : `<span class="lc-sme">?</span><span class="lc-base">${esc(t("lauseUnknown"))}</span>`) + "</button>";
   }).join("");
-  const ready = tokens.length && tokens.every((tok) => tok.punct || tok.neg || tok.name || tok.choice || tok.skip);
+  const ready = tokens.length && tokens.every((tok) => tok.punct || tok.neg || tok.name || tok.num || tok.choice || tok.skip);
   $("lause-result").hidden = !ready;
   if (ready) $("lause-sme").textContent = lauseSentence(tokens.filter((tok) => !tok.skip));
   $("lause-pop").hidden = true;
@@ -423,6 +433,7 @@ function bindLause() {
     const b = e.target.closest(".lause-chip");
     if (!b) return;
     const i = Number(b.dataset.i);
+    if (lause.tokens[i]?.num) return;  // numerolla ei ole vaihtoehtoja
     if (!$("lause-pop").hidden && Number($("lause-pop").dataset.i) === i) lauseClosePop();
     else lauseOpenChip(i);
   };
