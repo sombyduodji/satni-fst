@@ -40,12 +40,6 @@ const UI_TEXTS = {
       <p>Käännökset muodostetaan automaattisesti sanan ensimmäisestä käännöksestä, joten ne eivät ole aina oikein.
       Muodolla, jolle käännöstä ei saada, ei näytetä mitään.</p>`,
     tableTrNote: "Käännökset on muodostettu automaattisesti.",
-    expSms: "Koltansaame", expSmsDesc: "Koltansaamen sanat sanakortissa.",
-    expSmsInfo: `<p>Sanakortissa näytetään koltansaamen sanoja GiellaLT:n koltansaamen sanakirjoista.</p>
-      <p>Kun haet suomeksi (esim. talo), koltan sanat ovat hakusanan vastineita suoraan sanakirjasta. Pohjoissaamen ja
-      koltansaamen välillä ei ole sanakirjaa, joten saamen sanalle ne haetaan sen suomennosten kautta ja merkitään
-      ”suomen kautta”. Ne voivat silloin kuulua sanan toiseen merkitykseen.</p>
-      <p>Koltansaamen osaaja ei ole vielä tarkistanut aineistoa.</p>`,
     expApertium: "Apertium-käännökset", expApertiumDesc: "Norjan käännös sanoille, joilla sitä ei ole sanakirjoissa.",
     expApertiumInfo: `<p>Kun käännöskielenä on norja ja sanalta puuttuu käännös, sanakortissa näytetään käännös
       Apertium-konekääntimen sanastosta (apertium-sme-nob).</p>
@@ -62,7 +56,14 @@ const UI_TEXTS = {
     wiktEngNote: "Wiktionary suomen ja norjan kautta, tarkistamaton",
     register: { vulgar: "alatyylinen", derogatory: "halventava", offensive: "loukkaava" },
     registerNote: "Wiktionaryn mukaan sanaa pidetään alatyylisenä, halventavana tai loukkaavana",
-    expEnable: "Ota käyttöön", cancel: "Peruuta", smsVia: "suomen kautta",
+    expEnable: "Ota käyttöön", cancel: "Peruuta", smsVia: "suomen kautta, likimääräinen",
+    // Koltansaame Muut kielet -kohdassa: varoitus päälle kytkettäessä ja valinta pohjoissaamen sanakorteille
+    smsUnchecked: "tarkistamaton", skoltDlgTitle: "Otetaanko koltansaame käyttöön?",
+    skoltDlgBody: `<p>Koltansaamen sanat tulevat GiellaLT:n suomi–koltansaame- ja norja–koltansaame-sanakirjoista.
+      Koltansaamen puhuja ei ole vielä tarkistanut niitä, joten ne voivat olla epätarkkoja. Sanat näkyvät, kun haet suomeksi.</p>`,
+    skoltViaLabel: "Näytä koltansaame myös pohjoissaamen sanakortissa",
+    skoltViaDesc: "Suomennoksen kautta, likimääräinen: noin joka kolmas voi olla väärä.",
+    skoltViaShort: "Myös pohjoissaamen sanoille (likimääräinen)",
     ocrError: "Kuvan käsittely ei onnistunut.", ocrNoApp: "Kamerasovellusta ei löytynyt.",
     showGrade: "Näytä astevaihtelu",
     settings: "Asetukset", otherLanguages: "Muut kielet",
@@ -173,7 +174,7 @@ const UI_TEXTS = {
     },
     elsewhere: "Sanasta muualla",
     gtTitle: "Sana Giellateknon Neahttadigisánit-sanakirjassa (käännökset, sanahistoria, esimerkit teksteistä)", satniTitle: "Sana sátni.org-sanakirjoissa",
-    langName: { fin: "suomi", nob: "norja", eng: "englanti", smn: "inarinsaame", smj: "luulajansaame", sma: "eteläsaame", spa: "espanja" },
+    langName: { fin: "suomi", nob: "norja", eng: "englanti", smn: "inarinsaame", smj: "luulajansaame", sma: "eteläsaame", sms: "koltansaame", spa: "espanja" },
     langIn: { fin: "Suomeksi", nob: "Norjaksi", eng: "Englanniksi", smn: "Inarinsaameksi", sms: "Koltansaameksi", smj: "Luulajansaameksi", sma: "Eteläsaameksi", spa: "Espanjaksi" },
     // Tietoa-ikkuna. Ääntämisen kuvaus on sovittu Divvunin kanssa (2026-10-29), älä muuta sisältöä.
     aboutWeb: (v) => (v ? `Versio ${v} (web)` : "Web-versio"), aboutDesktop: (v) => `Versio ${v} (työpöytä)`,
@@ -237,12 +238,6 @@ const UI_TEXTS = {
       <p>Oversettelsene lages automatisk fra ordets første oversettelse, så de er ikke alltid riktige.
       Former uten oversettelse viser ingenting.</p>`,
     tableTrNote: "Oversettelsene er laget automatisk.",
-    expSms: "Skoltesamisk", expSmsDesc: "Skoltesamiske ord på ordkortet.",
-    expSmsInfo: `<p>Ordkortet viser skoltesamiske ord fra GiellaLTs skoltesamiske ordbøker.</p>
-      <p>Når du søker på norsk (f.eks. hus), er de skoltesamiske ordene oversettelser av søkeordet rett fra ordboka. Det
-      finnes ingen ordbok mellom nordsamisk og skoltesamisk, så for et samisk ord hentes de via de finske oversettelsene
-      og merkes «via finsk». Da kan de høre til en annen betydning av ordet.</p>
-      <p>Materialet er ennå ikke kontrollert av noen som kan skoltesamisk.</p>`,
     expApertium: "Apertium-oversettelser", expApertiumDesc: "Norsk oversettelse av ord som ikke har det i ordbøkene.",
     expApertiumInfo: `<p>Når oversettelsesspråket er norsk og et ord mangler oversettelse, viser ordkortet en oversettelse
       fra ordlisten til maskinoversetteren Apertium (apertium-sme-nob).</p>
@@ -259,7 +254,13 @@ const UI_TEXTS = {
     wiktEngNote: "Wiktionary via finsk og norsk, ikke kontrollert",
     register: { vulgar: "vulgært", derogatory: "nedsettende", offensive: "støtende" },
     registerNote: "Ifølge Wiktionary regnes ordet som vulgært, nedsettende eller støtende",
-    expEnable: "Slå på", cancel: "Avbryt", smsVia: "via finsk",
+    expEnable: "Slå på", cancel: "Avbryt", smsVia: "via finsk, omtrentlig",
+    smsUnchecked: "ikke kontrollert", skoltDlgTitle: "Slå på skoltesamisk?",
+    skoltDlgBody: `<p>De skoltesamiske ordene kommer fra GiellaLTs finsk–skoltesamisk- og norsk–skoltesamisk-ordbøker.
+      De er ennå ikke kontrollert av noen som snakker skoltesamisk, så de kan være unøyaktige. Ordene vises når du søker på norsk.</p>`,
+    skoltViaLabel: "Vis skoltesamisk også på nordsamiske ordkort",
+    skoltViaDesc: "Via den finske oversettelsen, omtrentlig: omtrent hvert tredje ord kan være feil.",
+    skoltViaShort: "Også for nordsamiske ord (omtrentlig)",
     ocrError: "Kunne ikke behandle bildet.", ocrNoApp: "Fant ingen kameraapp.",
     showGrade: "Vis stadieveksling",
     settings: "Innstillinger", otherLanguages: "Andre språk",
@@ -368,7 +369,7 @@ const UI_TEXTS = {
     },
     elsewhere: "Ordet andre steder",
     gtTitle: "Ordet i Giellateknos ordbok Neahttadigisánit (oversettelser, ordhistorie, eksempler fra tekster)", satniTitle: "Ordet i ordbøkene på sátni.org",
-    langName: { fin: "finsk", nob: "norsk", eng: "engelsk", smn: "enaresamisk", smj: "lulesamisk", sma: "sørsamisk", spa: "spansk" },
+    langName: { fin: "finsk", nob: "norsk", eng: "engelsk", smn: "enaresamisk", smj: "lulesamisk", sma: "sørsamisk", sms: "skoltesamisk", spa: "spansk" },
     langIn: { fin: "På finsk", nob: "På norsk", eng: "På engelsk", smn: "På enaresamisk", sms: "På skoltesamisk", smj: "På lulesamisk", sma: "På sørsamisk", spa: "På spansk" },
     // Oversettelse av den finske teksten som er avtalt med Divvun (2026-10-29)
     aboutWeb: (v) => (v ? `Versjon ${v} (nett)` : "Nettversjon"), aboutDesktop: (v) => `Versjon ${v} (skrivebord)`,

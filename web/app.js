@@ -52,9 +52,12 @@ const DEFAULT_SETTINGS = {
   // Muut kielet (asetus valikossa): niiden käännökset näkyvät sanakortissa pääkäännöksen lisäksi; oletuksena
   // ei yhtään. Hakuun ne eivät vaikuta.
   extraLangs: [],
+  // Koltansaame Muut kielet -kohdassa (skoltFor): skolt = suomen/norjan hakusanan koltan vastineet,
+  // skoltViaSme = myös pohjoissaamen sanakortissa suomennoksen kautta (likimääräinen). Ennen 0.9.4 kokeellinen exp.sms.
+  skolt: false, skoltViaSme: false,
   // Kokeelliset ominaisuudet (valikon lopussa), kukin erikseen: ocr = kuvasta haku (Android-sovellus),
-  // sms = koltansaamen sanat sanakortissa, tableTr = muotojen käännökset taivutustaulukossa, apertium = Apertiumin norjan käännökset, pivotFin = suomennosehdotukset. experimental: vanha yhteinen kytkin (= ocr), siirretään exp.ocr:ään.
-  exp: { ocr: false, sms: false, tableTr: false, apertium: false, pivotFin: false },
+  // tableTr = muotojen käännökset taivutustaulukossa, apertium = Apertiumin norjan käännökset, pivotFin = suomennosehdotukset. experimental: vanha yhteinen kytkin (= ocr), siirretään exp.ocr:ään.
+  exp: { ocr: false, tableTr: false, apertium: false, pivotFin: false },
   // Kuvasta haku: suunta ("sme" = saamen teksti, "ui" = käyttöliittymän kielen teksti), merkintätapa ja väri
   ocrFrom: "sme", ocrStyle: "frame", ocrColor: "#2563eb",
 };
@@ -191,10 +194,33 @@ function closeDrawer() {
 }
 
 // Muut kielet valikossa: valittujen kielten käännökset näytetään sanakortissa (renderExtraTranslations)
+// Koltansaame eteläsaamen jälkeen omana kytkimenään: merkintä "tarkistamaton", ja päällä ollessa sen alla valinta
+// pohjoissaamen sanakorteille (suomennoksen kautta)
 function renderExtraLangs() {
-  $("extra-langs").innerHTML = Object.keys(LANGUAGES).filter((l) => !LANGUAGES[l].main).map((l) =>
-    `<label class="switch-row"><span>${esc(capitalize(langName(l)))}</span>` +
-    `<input type="checkbox" class="switch" role="switch" value="${l}"${settings.extraLangs.includes(l) ? " checked" : ""}></label>`).join("");
+  const row = (l) => `<label class="switch-row"><span>${esc(capitalize(langName(l)))}</span>` +
+    `<input type="checkbox" class="switch" role="switch" value="${l}"${settings.extraLangs.includes(l) ? " checked" : ""}></label>`;
+  const skolt = `<label class="switch-row"><span>${esc(capitalize(langName("sms")))}` +
+    `<span class="unchecked-badge">${esc(t("smsUnchecked"))}</span></span>` +
+    `<input type="checkbox" class="switch" role="switch" data-skolt="on"${settings.skolt ? " checked" : ""}></label>` +
+    (settings.skolt ? `<label class="skolt-sub"><input type="checkbox" data-skolt="via"${settings.skoltViaSme ? " checked" : ""}>` +
+      `<span>${esc(t("skoltViaShort"))}</span></label>` : "");
+  const langs = Object.keys(LANGUAGES).filter((l) => !LANGUAGES[l].main);
+  const at = langs.includes("sma") ? langs.indexOf("sma") + 1 : langs.length;
+  $("extra-langs").innerHTML = [...langs.slice(0, at).map(row), skolt, ...langs.slice(at).map(row)].join("");
+}
+
+function setSkolt(on, viaSme) {
+  settings.skolt = on;
+  settings.skoltViaSme = on && viaSme;  // pois kytkettäessä molemmat pois
+  saveSettings();
+  renderExtraLangs();
+  if (state.results.length) searchAgainKeepingWord();
+}
+
+// Päälle vasta, kun käyttäjä hyväksyy varoituksen; valinta pohjoissaamen sanakorteille alkaa tyhjänä
+function openSkoltDialog() {
+  $("skolt-via").checked = false;
+  $("skolt-dlg").showModal();
 }
 
 // Käännökset ovat aina käyttöliittymän kielellä (suomi -> suomi, norsk -> norja)
@@ -1021,7 +1047,8 @@ function renderExtraTranslations(w, groups) {
     return text && `<span class="muted">${esc(t("langIn")[lang])}:</span> ${labelledList(text, lang)}`;
   }).filter(Boolean);
   const sms = skoltFor(w);
-  if (sms) lines.push(`<span class="muted">${esc(t("langIn").sms)}${sms.via ? ` (${esc(t("smsVia"))})` : ""}:</span> ${esc(sms.text)}`);
+  if (sms) lines.push(`<span class="muted">${esc(t("langIn").sms)}${sms.via ? ` (${esc(t("smsVia"))})` : ""}:</span> ${esc(sms.text)}` +
+    ` <span class="unchecked-badge">${esc(t("smsUnchecked"))}</span>`);
   $("extra-translations").hidden = !lines.length;
   $("extra-translations").innerHTML = lines.join("<br>");
 }
@@ -1030,7 +1057,7 @@ function renderExtraTranslations(w, groups) {
 // koltansaamen välillä ei ole sanakirjaa: suomen- tai norjankielisellä haulla koltan sanat ovat hakusanan omia
 // vastineita (talo -> põrtt); muuten sanan suomennosten kautta (via: näytetään "suomen kautta").
 function skoltFor(w) {
-  if (!settings.exp.sms) return null;
+  if (!settings.skolt) return null;
   const lookup = (lang, word) => {
     try {
       return all("SELECT words FROM sms WHERE lang = ? AND fold = ? AND pos = ?", [lang, fold(word), w.pos])
@@ -1043,6 +1070,7 @@ function skoltFor(w) {
     const own = lookup(settings.lang, state.transWord);
     if (own.length) return { text: own.join(", ") };
   }
+  if (!settings.skoltViaSme) return null;
   // Ensimmäinen suomennos, jolle löytyy koltan sana (pääkäännös; muut suomennokset toisi muita merkityksiä:
   // oabbá = sisar, sisko -> vain sisar = vuäʹbb, ei "sisko"-tätisanoja)
   for (const f of splitList(w.finnish_translation).slice(0, 3)) {
@@ -2229,7 +2257,6 @@ function bindExperimental() {
     settings.exp = { ...settings.exp, [name]: on };
     saveSettings();
     applyExperimental();
-    if (name === "sms" && state.results.length) searchAgainKeepingWord();
     if (name === "tableTr" && state.word) renderTable();
     if (name === "apertium" && state.results.length) searchAgainKeepingWord();
     if (name === "pivotFin" && state.results.length) searchAgainKeepingWord();
@@ -2240,7 +2267,7 @@ function bindExperimental() {
     if (!e.target.checked) { set(name, false); return; }
     e.target.checked = false;  // päälle vasta, kun käyttäjä hyväksyy
     pending = name;
-    const key = { ocr: "expOcr", sms: "expSms", tableTr: "expTableTr", apertium: "expApertium", pivotFin: "expPivotFin" }[name];
+    const key = { ocr: "expOcr", tableTr: "expTableTr", apertium: "expApertium", pivotFin: "expPivotFin" }[name];
     $("exp-dlg-title").textContent = t(key);
     $("exp-dlg-body").innerHTML = t(key + "Info");
     $("exp-dlg").showModal();
@@ -2455,11 +2482,18 @@ function bindEvents() {
     if (b) setUiLanguage(b.dataset.lang);
   });
   $("extra-langs").onchange = (e) => {
+    if (e.target.dataset.skolt === "on") {
+      if (e.target.checked) { e.target.checked = false; openSkoltDialog(); } else setSkolt(false, false);
+      return;
+    }
+    if (e.target.dataset.skolt === "via") { setSkolt(true, e.target.checked); return; }
     const lang = e.target.value;
     settings.extraLangs = e.target.checked ? [...settings.extraLangs, lang] : settings.extraLangs.filter((l) => l !== lang);
     saveSettings();
     if (state.results.length) searchAgainKeepingWord();
   };
+  $("skolt-ok").onclick = () => { $("skolt-dlg").close(); setSkolt(true, $("skolt-via").checked); };
+  $("skolt-cancel").onclick = () => $("skolt-dlg").close();
   $("theme-select").value = settings.theme;
   $("theme-select").onchange = (e) => { settings.theme = e.target.value; saveSettings(); applyTheme(); };
 
@@ -2511,6 +2545,11 @@ async function main() {
   if (settings.experimental) {  // 0.8.1 ja aiemmat: yksi yhteinen kytkin = kuvasta haku
     settings.exp = { ...settings.exp, ocr: true };
     delete settings.experimental;
+  }
+  if (settings.exp && "sms" in settings.exp) {  // 0.9.3 ja aiemmat: kokeellinen koltansaame = molemmat reitit
+    if (settings.exp.sms) { settings.skolt = true; settings.skoltViaSme = true; }
+    const { sms, ...rest } = settings.exp;
+    settings.exp = rest;
   }
   settings.extraLangs = (settings.extraLangs || []).filter((l) => LANGUAGES[l] && !LANGUAGES[l].main);
   if (LANGUAGES[settings.lang] && !LANGUAGES[settings.lang].main && !settings.extraLangs.includes(settings.lang)) {

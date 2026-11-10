@@ -107,11 +107,6 @@
               <input type="checkbox" class="switch" role="switch" data-exp="ocr">
             </label>
             <label class="switch-row">
-              <span class="switch-text"><span data-i18n="expSms">Koltansaame</span>
-                <span class="muted small" data-i18n="expSmsDesc"></span></span>
-              <input type="checkbox" class="switch" role="switch" data-exp="sms">
-            </label>
-            <label class="switch-row">
               <span class="switch-text"><span data-i18n="expTableTr">Konekäännökset taulukossa</span>
                 <span class="muted small" data-i18n="expTableTrDesc"></span></span>
               <input type="checkbox" class="switch" role="switch" data-exp="tableTr">
@@ -270,6 +265,19 @@
     <div class="dialog-actions">
       <button type="button" class="chip-btn" id="exp-cancel" data-i18n="cancel">Peruuta</button>
       <button type="button" class="chip-btn primary" id="exp-ok" data-i18n="expEnable">Ota käyttöön</button>
+    </div>
+  </dialog>
+
+  <!-- Koltansaame Muut kielet -kohdassa: varoitus päälle kytkettäessä, ja siinä valinta pohjoissaamen sanakorteille
+       (app.js: openSkoltDialog). Pois kytkeminen poistaa molemmat. -->
+  <dialog id="skolt-dlg" class="exp-dlg">
+    <h2 data-i18n="skoltDlgTitle">Otetaanko koltansaame käyttöön?</h2>
+    <div data-i18n-html="skoltDlgBody"></div>
+    <label class="skolt-option"><input type="checkbox" id="skolt-via">
+      <span><span data-i18n="skoltViaLabel"></span><span class="muted small" data-i18n="skoltViaDesc"></span></span></label>
+    <div class="dialog-actions">
+      <button type="button" class="chip-btn" id="skolt-cancel" data-i18n="cancel">Peruuta</button>
+      <button type="button" class="chip-btn primary" id="skolt-ok" data-i18n="expEnable">Ota käyttöön</button>
     </div>
   </dialog>
 
