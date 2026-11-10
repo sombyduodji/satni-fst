@@ -24,19 +24,48 @@ const LAUSE_POSTPOS = {
   sisällä: "siste", sisälle: "sisa", sisään: "sisa", sisältä: "siste", lähellä: "lahka",
 };
 
+// Suomen omistusliite -> saamen omistuspronomini substantiivin edessä (talossani = mu viesus, isäänsä = su áhčči).
+// Saamessa on myös liitteelliset muodot (áhkkon), mutta pronomini on aina oikein eikä vaadi lisäaineistoa;
+// sanakirjan esimerkkilauseissa molemmat ovat yleisiä (2026-11-10: liite 53, pronomini 33, ei merkitty 19).
+const LAUSE_PX = [["nsa", "3"], ["nsä", "3"], ["mme", "Pl1"], ["nne", "Pl2"], ["ni", "Sg1"], ["si", "Sg2"]];
+const LAUSE_PX_PRONOUN = { Sg1: "mu", Sg2: "du", 3: "su", Pl1: "min", Pl2: "din" };
+
 let lause = { tokens: [] };
 
+// Välimuisti: lause luetaan uudelleen jokaisen näppäilyn jälkeen, ja haut ovat lähes koko ajan (2026-11-10 profiloitu:
+// 94 % ajasta SQL-kyselyissä). Sama sana haetaan vain kerran; palautetaan kopio, koska tulkintoja järjestetään ja täydennetään.
+const lauseCache = new Map();
+function lauseCached(key, fn) {
+  if (!lauseCache.has(key)) {
+    if (lauseCache.size > 5000) lauseCache.clear();
+    lauseCache.set(key, fn());
+  }
+  return [...lauseCache.get(key)];
+}
+const lauseFinForms = (w) => lauseCached("f\u0000" + w, () => translationFormsOf(w, "fin"));
+
 function lauseCandidates(base, pos, exactOnly = false) {
+  return lauseCached(`c\u0000${base}\u0000${pos}\u0000${exactOnly}`, () => lauseCandidatesUncached(base, pos, exactOnly));
+}
+function lauseCandidatesUncached(base, pos, exactOnly) {
   // Saamen sanat, joiden suomennos on base; sama sanaluokka ensin, sitten yleisin (korpusfrekvenssi)
   // Käännöslista on haussa yhtenä tekstinä ("mihin kellonaikaan, monelta, moneltako"): sana voi olla missä kohtaa
   // listaa tahansa, kuten hakukentässä
   const f = fold(base);
   // at = 0: käännös on tämä sana tai alkaa sillä (pääkäännös), 1: sana on listassa myöhemmin (galgat "täytyä, saada")
-  const rows = all(`SELECT DISTINCT d.id, d.sme_lemma, d.pos, d.subtype, d.freq, d.human, d.sem, MIN(COALESCE(t.nr, 9)) AS nr,
-    MIN(CASE WHEN t.fold = ? OR t.fold LIKE ? THEN 0 ELSE 1 END) AS at FROM trans_search t
-    JOIN dictionary d ON d.id = t.word_id WHERE t.lang = 'fin'
-    AND (t.fold = ? OR t.fold LIKE ? OR t.fold LIKE ? OR t.fold LIKE ?) GROUP BY d.id`,
-    [f, `${f}, %`, f, `${f}, %`, `%, ${f}`, `%, ${f}, %`]).filter((r) => !exactOnly || r.at === 0);
+  // fin_items (export_web_data.py) on sama lista sanoittain indeksoituna; vanhassa aineistossa LIKE-haku
+  let rows;
+  try {
+    rows = all(`SELECT d.id, d.sme_lemma, d.pos, d.subtype, d.freq, d.human, d.sem, MIN(COALESCE(i.nr, 9)) AS nr, MIN(i.first) AS at
+      FROM fin_items i JOIN dictionary d ON d.id = i.word_id WHERE i.item = ? GROUP BY d.id`, [f]);
+  } catch (e) {
+    rows = all(`SELECT DISTINCT d.id, d.sme_lemma, d.pos, d.subtype, d.freq, d.human, d.sem, MIN(COALESCE(t.nr, 9)) AS nr,
+      MIN(CASE WHEN t.fold = ? OR t.fold LIKE ? THEN 0 ELSE 1 END) AS at FROM trans_search t
+      JOIN dictionary d ON d.id = t.word_id WHERE t.lang = 'fin'
+      AND (t.fold = ? OR t.fold LIKE ? OR t.fold LIKE ? OR t.fold LIKE ?) GROUP BY d.id`,
+      [f, `${f}, %`, f, `${f}, %`, `%, ${f}`, `%, ${f}, %`]);
+  }
+  rows = rows.filter((r) => !exactOnly || r.at === 0);
   const want = LAUSE_POS[pos] || null;
   // Pienellä kirjoitettu sana ei saa isolla alkavaa saamen sanaa (kanssa ≠ Máhtiin), jos muitakin on
   const lower = !/^\p{Lu}/u.test(base) && rows.some((r) => !/^\p{Lu}/u.test(r.sme_lemma));
@@ -51,10 +80,10 @@ function lauseCandidates(base, pos, exactOnly = false) {
 // Suomen sanan tulkinnat: [{ base, cell, pos }] (saisinko -> saada Cond+Sg1 + -ko)
 function lauseAnalyses(word, raw = word) {
   let clitic = null, stem = word;
-  let out = translationFormsOf(word, "fin");
+  let out = lauseFinForms(word);
   // Erisnimet ovat taulukoissa isolla alkukirjaimella (Inariin = Inari, Sg+Ill)
   if (!out.length && raw !== word) {
-    out = translationFormsOf(raw, "fin");
+    out = lauseFinForms(raw);
     if (out.length) stem = raw;
   }
   if (!out.length) {
@@ -62,12 +91,35 @@ function lauseAnalyses(word, raw = word) {
       if (word.endsWith(c) && word.length >= c.length + 2) {  // myös lyhyt vartalo: onko = on + -ko
         const st = word.slice(0, -c.length);
         // Persoonapronominin perusmuoto ei ole taivutustaulukoissa (minäkin = minä + -kin = munnai)
-        const a = LAUSE_PRONOUN[st] ? [{ base: st, cell: "Nom", pos: "Pron" }] : translationFormsOf(st, "fin");
+        const a = LAUSE_PRONOUN[st] ? [{ base: st, cell: "Nom", pos: "Pron" }] : lauseFinForms(st);
         if (a.length) { out = a; clitic = c; stem = st; break; }
       }
     }
   }
-  return { analyses: out, clitic, stem };
+  // Omistusliite (vain muuten tuntemattomalle sanalle): liite pois ja loppu taivutustaulukosta. talossani -> talossa,
+  // taloni -> talo tai talon (genetiivin n katoaa), talooni -> taloon, talossaan -> talossa (3. persoonan -Vn).
+  // Tarkistettu GiellaLT lang-fin -analysaattoria vastaan 2026-11-10: oikea perusmuoto ja sija 79/80.
+  let px = null;
+  if (!out.length && !clitic) {
+    const tries = [];
+    for (const [suf, per] of LAUSE_PX) {
+      if (word.endsWith(suf) && word.length > suf.length + 2) tries.push([word.slice(0, -suf.length), per], [word.slice(0, -suf.length) + "n", per]);
+    }
+    const m = word.match(/^(.*([aeiouyäö]))\2n$/u);
+    if (m && word.length > 4) tries.push([m[1], "3"]);
+    for (const [st, per] of tries) {
+      const a = lauseFinForms(st).filter((x) => ["N", "A", "Num"].includes(x.pos));
+      if (a.length && (!px || px === per)) { out.push(...a.filter((x) => !out.some((y) => y.base === x.base && y.cell === x.cell))); px = per; stem = out[0].base; }
+    }
+    // Omistusliitteinen yksikön nominatiivi näyttää genetiiviltä (kaari -> kaareni = kaaren + -ni): genetiiville myös
+    // nominatiivitulkinta ensin; finiittiverbin jälkeen objektisääntö vaihtaa sen takaisin genetiiviksi (lauseParse)
+    if (px) {
+      for (const g of out.filter((x) => x.cell === "Sg+Gen")) {
+        if (!out.some((y) => y.base === g.base && y.cell === "Sg+Nom")) out.unshift({ base: g.base, cell: "Sg+Nom", pos: g.pos });
+      }
+    }
+  }
+  return { analyses: out, clitic, stem, px };
 }
 
 function lauseSuggestions(word) {
@@ -107,15 +159,18 @@ function lauseParse(text) {
     // Kieltoverbi kysymyksenä: eikö = iigo, etkö = itgo
     const negq = [...LAUSE_CLITICS].find(([c]) => (c === "ko" || c === "kö") && word.endsWith(c) && LAUSE_NEG[word.slice(0, -c.length)]);
     if (negq) { tokens.push({ raw, word, neg: word.slice(0, -negq[0].length), clitic: negq[0], known: true }); continue; }
-    const { analyses, clitic, stem } = lauseAnalyses(word, raw);
+    const { analyses, clitic, stem, px } = lauseAnalyses(word, raw);
     // Tulkintojen järjestys: sana itse perusmuotona (maksaa = maksaa, ei maksa-sanan partitiivi), yksikkö ennen monikkoa
-    analyses.sort((a, b) => ((b.base === stem) - (a.base === stem)) || (a.cell.startsWith("Pl") - b.cell.startsWith("Pl")));
+    // Persoonapronomini ennen samannäköistä sanaa (häntä = hän, ei häntä "seaibi"); omistusliitteellä yksikkö ensin
+    const pron = (a) => a.pos === "Pron" && !!LAUSE_PRONOUN[a.base];
+    analyses.sort((a, b) => (pron(b) - pron(a)) || (!px && ((b.base === stem) - (a.base === stem)))
+      || (a.cell.startsWith("Pl") - b.cell.startsWith("Pl")));
     let pick = analyses[0] || null;
     // Sanalla oma sanakirjan vastine, eikä se ole minkään sanan perusmuoto (missä = gos, kotiin = ruoktot): se ensin
     // Vain sanan oma pääkäännös, eikä nimi pienellä kirjoitetulle sanalle (anna = antaa, ei nimi Anne)
     const direct = !clitic && lauseCandidates(word, null, true)
       .some((c) => c.subtype !== "Prop" || /^\p{Lu}/u.test(raw));
-    if (direct && !(pick && pick.base === stem)) pick = { base: word, cell: null, pos: null };
+    if (direct && !(pick && (pick.base === stem || pron(pick)))) pick = { base: word, cell: null, pos: null };
     // Ei taivutusta eikä pääkäännöstä: myös käännöslistan myöhempi sana kelpaa (monelta = galles "mihin kellonaikaan, monelta")
     if (!pick && !clitic && lauseCandidates(word, null).some((c) => c.subtype !== "Prop" || /^\p{Lu}/u.test(raw))) {
       pick = { base: word, cell: null, pos: null };
@@ -131,7 +186,7 @@ function lauseParse(text) {
     if (!pick && /^\p{Lu}/u.test(raw) && (samiLetters || raw.length <= 6)) {
       tokens.push({ raw, word, name: true, guess: !samiLetters, known: true }); continue;
     }
-    tokens.push({ raw, word, stem, clitic, analyses, pick, known: !!pick });
+    tokens.push({ raw, word, stem, clitic, px, analyses, pick, known: !!pick });
   }
   // Kiellon jälkeen verbi on kieltomuodossa (en saa = in oaččo)
   tokens.forEach((t, i) => {
@@ -158,8 +213,15 @@ function lauseParse(text) {
     if (finite && !(prev?.pick?.pos === "V" || prev?.neg)) t.pick = finite;
   });
   // Lauseessa ei muuta verbiä: monitulkintainen sana verbinä (tulenkin huomenna = tulla, ei tuli "dolla")
-  tokens.forEach((t) => {
-    if (!t.analyses?.length || t.pick?.pos === "V" || tokens.some((x) => x !== t && (x.pick?.pos === "V" || x.neg))) return;
+  tokens.forEach((t, i) => {
+    // Vain finiittiverbi lasketaan (tulen kaupasta ostamasta = boađán, ei dola: ostamasta ei ole finiittiverbi), ja vain
+    // samasta lauseesta pilkkujen välissä (talo, jonka näin, on iso = jonka näin: nähdä, ei näin "nu")
+    const finite = (x) => x.neg || (x.pick?.pos === "V" && /^(Prs|Prt|Cond|Pot|Imprt|Pss)\+/.test(x.pick.cell || ""));
+    const isBreak = (x) => x.punct && /[,.;:!?]/.test(x.punct);
+    let a0 = i; while (a0 > 0 && !isBreak(tokens[a0 - 1])) a0--;
+    let b0 = i; while (b0 < tokens.length - 1 && !isBreak(tokens[b0 + 1])) b0++;
+    const clause = tokens.slice(a0, b0 + 1);
+    if (!t.analyses?.length || t.pick?.pos === "V" || clause.some((x) => x !== t && finite(x))) return;
     const verb = t.analyses.find((a) => a.pos === "V" && /^(Prs|Prt|Cond|Pot)\+(Sg|Pl)/.test(a.cell));
     if (verb) t.pick = verb;
   });
@@ -169,6 +231,14 @@ function lauseParse(text) {
       t.pick = t.analyses.find((a) => a.cell.startsWith("Prs+") && a.cell !== "Prs+ConNeg");
     }
   }
+  // Omistusliitteinen nominatiivi/genetiivi (työni, kirjani) finiittiverbin jälkeen on objekti: genetiivi, josta
+  // saamen akkusatiivi (olen tehnyt työni = lean bargan mu barggu); verbin edellä subjekti (äitini on = mu eadni lea)
+  tokens.forEach((t, i) => {
+    if (!t.px || !/(^|\+)Nom$/.test(t.pick?.cell || "")) return;
+    const verbBefore = tokens.slice(0, i).some((x) => x.neg || (x.pick?.pos === "V" && /^(Prs|Prt|Cond|Pot|Imprt)\+/.test(x.pick.cell || "")));
+    const gen = t.analyses.find((a) => a.base === t.pick.base && a.cell === t.pick.cell.replace("Nom", "Gen"));
+    if (verbBefore && gen) t.pick = gen;
+  });
   for (const t of tokens) {
     if (!t.pick) continue;
     const pron = LAUSE_PRONOUN[t.pick.base];
@@ -176,6 +246,17 @@ function lauseParse(text) {
       : lauseCandidates(t.pick.base, t.pick.pos);
     t.choice = t.candidates[0] || null;
   }
+  // joka: substantiivin edellä "jokainen" (joka päivä = juohke beaivi), muuten relatiivipronomini: ihmisen jälkeen gii
+  // (mies, joka tuli = olmmái, gii bođii), muuten mii (talo, jonka näin = viessu, man/maid oidnen)
+  tokens.forEach((t, i) => {
+    if (t.pick?.base !== "joka") return;
+    const next = tokens.slice(i + 1).find((x) => !x.punct);
+    if (next?.pick && ["N", "A"].includes(next.pick.pos)) return;
+    const prevNoun = tokens.slice(0, i).reverse().find((x) => x.choice && x.pick?.pos === "N");
+    const rel = all("SELECT id, sme_lemma, pos, subtype, freq, human, sem FROM dictionary WHERE sme_lemma = ? AND subtype = 'Rel'",
+      [prevNoun?.choice?.human ? "gii" : "mii"])[0];
+    if (rel) { t.candidates = [rel, ...t.candidates.filter((c) => c.id !== rel.id)]; t.choice = rel; }
+  });
   return tokens;
 }
 
@@ -201,6 +282,19 @@ function lauseSamiTag(tokens, i) {
     if (cell === "Prs+ConNeg") return "Ind+Prs+ConNeg";
     // Liikeverbin jälkeen tarkoitus: suomen 3. infinitiivin illatiivi = saamen infinitiivi (lähden juoksemaan = manan viehkat)
     if (cell === "InfMa+Ill") return "Inf";
+    // leikkimässä = stoahkamin (progressiivi), myymästä = vuovdimis, aavistamatta = ávaškeahttá (sanakirjan esimerkeistä)
+    if (cell === "InfMa+Ine") return "Actio+Ess";
+    if (cell === "InfMa+Ela") return "Actio+Loc";
+    if (cell === "InfMa+Abe") return "VAbess";
+    // olla + partisiippi on perfekti (olen tehnyt = lean dahkan, on tehty = lea dahkkojuvvon); muuten partisiipin
+    // käännös vaihtelee (johdokset, progressiivi), joten se näkyy arvauksena
+    const afterOlla = prev?.pick?.base === "olla" || prev?.neg;
+    if (cell === "PrfPrc") return afterOlla ? "PrfPrc" : { tag: "PrfPrc", guess: true };
+    if (cell === "PrsPrc") return { tag: "PrsPrc", guess: true };
+    // Passiivi: saamen -juvvo-passiivi (maksetaan = máksojuvvo); intransitiiviverbillä monikon 3. persoona (lauseSamiForm)
+    if (cell === "Pss+Prs") return { tag: "Ind+Prs+Sg3", passive: true };
+    if (cell === "Pss+Prt") return { tag: "Ind+Prt+Sg3", passive: true };
+    if (cell === "PssPrfPrc") return { tag: "PrfPrc", passive: true, guess: !afterOlla };
     return samiCaseOfFinCell(cell, "V");
   }
   if (t.pick.pos === "Pron" && LAUSE_PRONOUN[t.pick.base]) return samiCaseOfFinCell(cell, "PRON");
@@ -239,18 +333,49 @@ function lauseSamiForm(tokens, i) {
   if (t.withPost) return { form: "", base: "", tag: "Com", exact: true };
   if (t.post) return { form: t.post, base: t.post, tag: "Po", exact: true };
   if (!t.choice) return null;
-  let tag = lauseSamiTag(tokens, i), post = "", guess = false;
-  if (tag && typeof tag === "object") ({ tag, post = "", guess = false } = tag);
+  let tag = lauseSamiTag(tokens, i), post = "", guess = false, passive = false;
+  if (tag && typeof tag === "object") ({ tag, post = "", guess = false, passive = false } = tag);
   let form = t.choice.sme_lemma, exact = !t.pick.cell;
-  if (tag) {
+  if (passive) {
+    let pf = null;
+    try { pf = all("SELECT surface FROM sme_passive WHERE word_id = ? AND tag = ?", [t.choice.id, tag])[0]?.surface; } catch (e) { /* vanha aineisto */ }
+    if (pf) { form = pf; exact = !guess; tag = "Pass+" + tag; }
+    else {
+      // Ei passiivia (mannat): monikon 3. persoona (käsitellään = gieđahallet), arvauksena
+      guess = true;
+      tag = tag.replace("Sg3", "Pl3");
+    }
+  }
+  if (tag && !tag.startsWith("Pass+")) {
     let forms = loadWord(t.choice.id).paradigm.get(tag);
     // Konditionaalin rinnakkaismuodoista -š- (sáhtášin, boađášin, oččošin) eikä -l- (sáhtálin), jotta valinta on aina sama
     if (forms?.length > 1 && tag.startsWith("Cond")) forms = [...forms].sort((a, b) => b.includes("š") - a.includes("š"));
+    // Rinnakkaismuodoista sanakirjan esimerkkilauseissa yleisin (lei eikä leai), sitten perusmuodon kanssa sama (mun eikä mon)
+    if (forms?.length > 1) {
+      let seen = {};
+      try {
+        seen = Object.fromEntries(all(`SELECT form, n FROM sme_seen WHERE form IN (${forms.map(() => "?").join(",")})`,
+          forms.map((f) => f.toLowerCase())).map((r) => [r.form, r.n]));
+      } catch (e) { /* vanha aineisto */ }
+      forms = [...forms].sort((a, b) => (seen[b.toLowerCase()] || 0) - (seen[a.toLowerCase()] || 0));
+    }
     // Rinnakkaismuodoista perusmuodon kanssa sama ensin (mun eikä mon)
     if (forms?.length > 1 && forms.includes(t.choice.sme_lemma)) forms = [t.choice.sme_lemma, ...forms.filter((f) => f !== t.choice.sme_lemma)];
     if (forms?.length) { form = forms[0]; exact = true; }
   }
   form += clitic;
+  // Omistusliite: pronomini eteen (talossani = mu viesus)
+  // 3. persoona muualla kuin subjektina on refleksiivinen (hän rakastaa lapsiaan = son ráhkista iežas mánáid);
+  // monikon subjektilla iežaset (he menivät koteihinsa)
+  // Edellä jo genetiivi (hänen talonsa = su viessu, äidin kotiin): ei toista pronominia
+  const before = tokens.slice(0, i).reverse().find((x) => !x.punct);
+  if (t.px && !(before?.pick && /(^|\+)Gen$/.test(before.pick.cell || ""))) {
+    let pron = LAUSE_PX_PRONOUN[t.px];
+    if (t.px === "3" && !/(^|\+)Nom$/.test(t.pick.cell || "")) {
+      pron = tokens.some((x) => x.pick?.pos === "V" && /Pl3$/.test(x.pick.cell || "") || x.pick?.base === "he") ? "iežaset" : "iežas";
+    }
+    form = pron + " " + form;
+  }
   // Taso: genetiivi + postpositio (pöydälle = beavddi ala); arvaus näkyy harmaana (likimääräinen)
   if (post) { form += " " + post; tag += " + " + post; }
   return { form, base: t.choice.sme_lemma, tag, exact: exact && !guess };
@@ -357,11 +482,11 @@ function lauseOpenChip(i) {
   const tok = lause.tokens[i], pop = $("lause-pop");
   let html = "";
   if (tok.known && tok.candidates?.length) {
-    const cell = tok.pick.cell ? ` · ${tok.pick.cell}` : "";
+    const cell = tok.pick.cell ? ` · ${lauseCellLabel(tok.pick.cell)}` : "";
     // Monitulkintainen muoto (tulen = tulla, 1. p. / tuli, genetiivi): tulkinnan voi vaihtaa
     const readings = (tok.analyses || []).length > 1
       ? `<p class="lp-sub">${esc(t("lauseReading"))}</p>` + tok.analyses.map((a, k) =>
-          `<label><input type="radio" name="lp-reading" value="${k}"${a === tok.pick ? " checked" : ""}> ${esc(a.base)} · ${esc(a.cell)}</label>`).join("") +
+          `<label><input type="radio" name="lp-reading" value="${k}"${a === tok.pick ? " checked" : ""}> ${esc(a.base)} · ${esc(lauseCellLabel(a.cell))}</label>`).join("") +
         `<p class="lp-sub">${esc(t("lauseSamiWord"))}</p>` : "";
     html = lauseHead(`${esc(tok.raw)} = ${esc(tok.pick.base)}${esc(cell)}${tok.clitic ? " + -" + esc(tok.clitic) : ""}`) + readings +
       tok.candidates.map((c, k) => `<div class="lp-row"><label><input type="radio" name="lp" value="${k}"${c === tok.choice ? " checked" : ""}>` +
@@ -378,6 +503,28 @@ function lauseOpenChip(i) {
   pop.dataset.i = i;
   pop.hidden = false;
   for (const b of document.querySelectorAll(".lause-chip")) b.classList.toggle("open", Number(b.dataset.i) === i);
+}
+
+// Suomen taivutusmuodon nimi tulkintalistaan (Sg+Par = yks. partitiivi, Prs+ConNeg = preesens, kieltomuoto)
+const LAUSE_LABELS = {
+  fi: { Sg: "yks.", Pl: "mon.", Nom: "nominatiivi", Gen: "genetiivi", Acc: "akkusatiivi", Par: "partitiivi", Ine: "inessiivi",
+        Ela: "elatiivi", Ill: "illatiivi", Ade: "adessiivi", Abl: "ablatiivi", All: "allatiivi", Ess: "essiivi", Tra: "translatiivi",
+        Prs: "preesens", Prt: "imperfekti", Cond: "konditionaali", Pot: "potentiaali", Imprt: "imperatiivi", ConNeg: "kieltomuoto",
+        Inf: "perusmuoto", PrfPrc: "perfektin partisiippi", PrsPrc: "preesensin partisiippi", PssPrfPrc: "passiivin partisiippi",
+        Pss: "passiivi", InfMa: "3. infinitiivi", Comp: "komparatiivi", Superl: "superlatiivi", person: (n, p) => `${p}. persoona ${n}` },
+  nb: { Sg: "ent.", Pl: "fl.", Nom: "nominativ", Gen: "genitiv", Acc: "akkusativ", Par: "partitiv", Ine: "inessiv", Ela: "elativ",
+        Ill: "illativ", Ade: "adessiv", Abl: "ablativ", All: "allativ", Ess: "essiv", Tra: "translativ", Prs: "presens",
+        Prt: "preteritum", Cond: "kondisjonalis", Pot: "potensialis", Imprt: "imperativ", ConNeg: "nektende form", Inf: "infinitiv",
+        PrfPrc: "perfektum partisipp", PrsPrc: "presens partisipp", PssPrfPrc: "passiv partisipp", Pss: "passiv",
+        InfMa: "3. infinitiv", Comp: "komparativ", Superl: "superlativ", person: (n, p) => `${p}. person ${n}` },
+};
+function lauseCellLabel(cell) {
+  if (!cell) return "";
+  const L = LAUSE_LABELS[settings.uiLang] || LAUSE_LABELS.fi;
+  return cell.split("+").map((part) => {
+    const m = part.match(/^(Sg|Pl)([123])$/);
+    return m ? L.person(L[m[1]], m[2]) : L[part] || part;
+  }).join(", ").replace(/^(yks\.|mon\.|ent\.|fl\.), /, "$1 ");
 }
 
 // Valikon otsikkorivi ja sulkemisrasti

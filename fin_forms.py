@@ -44,6 +44,15 @@ CELLS = {
         "Inf": "Act+InfA+Sg+Lat",
         # 3. infinitiivin illatiivi (lähden juoksemaan): lausekääntäjässä saamen infinitiivi (manan viehkat)
         "InfMa+Ill": "Act+InfMa+Sg+Ill",
+        # Lausekääntäjää varten (web/lauseet.js): leikkimässä = stoahkamin, myymästä = vuovdimis, aavistamatta = ávaškeahttá,
+        # tekevä = dahkki, passiivi (tehdään, tehtiin, tehty) = saamen passiivi (sme_passive.py). Haku ei käytä näitä.
+        "InfMa+Ine": "Act+InfMa+Sg+Ine",
+        "InfMa+Ela": "Act+InfMa+Sg+Ela",
+        "InfMa+Abe": "Act+InfMa+Sg+Abe",
+        "PrsPrc": "Act+PrsPrc+Sg+Nom",
+        "Pss+Prs": "Pss+Ind+Prs+Pe4",
+        "Pss+Prt": "Pss+Ind+Prt+Pe4",
+        "PssPrfPrc": "Pss+PrfPrc+Sg+Nom",
         **{f"Prs+{p}": f"Act+Ind+Prs+{p}" for p in PERSONS},
         **{f"Prt+{p}": f"Act+Ind+Prt+{p}" for p in PERSONS},
         **{f"Cond+{p}": f"Act+Cond+{p}" for p in PERSONS},
