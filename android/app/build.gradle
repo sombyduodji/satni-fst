@@ -14,6 +14,8 @@ android {
         // build_apk.sh antaa nämä version.py:stä (0.7.3.20261030.6 -> 2026103006)
         versionCode((project.findProperty("satniVersionCode") ?: "1") as int)
         versionName(project.findProperty("satniVersionName") ?: "dev")
+        // Sovelluksen nimi aloitusnäytössä ja sovellusvalikossa (AndroidManifest.xml: ${appLabel})
+        manifestPlaceholders = [appLabel: "Sátni FST"]
         // Tekstintunnistuksen natiivikirjasto on ~11 Mt suoritintyyppiä kohden: APK:hon vain puhelimien ARM-versiot.
         // Debug-versioon (emulaattori) build_apk.sh --debug lisää x86_64:n: -PsatniAbis=x86_64,arm64-v8a.
         ndk { abiFilters.addAll((project.findProperty("satniAbis") ?: "arm64-v8a,armeabi-v7a").split(",")) }
@@ -49,6 +51,12 @@ android {
         }
     }
     buildTypes {
+        // Kehitysversio (build_apk.sh --debug): oma sovellustunnus ja nimi, joten se asentuu julkaistun version
+        // rinnalle eikä korvaa sitä (tiedostojen jakaminen käyttää tunnusta: ${applicationId}.files)
+        debug {
+            applicationIdSuffix ".dev"
+            manifestPlaceholders = [appLabel: "Sátni FST DEV"]
+        }
         release {
             minifyEnabled false
             if (signingProps?.exists()) {

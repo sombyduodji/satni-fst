@@ -209,6 +209,64 @@ function renderExtraLangs() {
   $("extra-langs").innerHTML = [...langs.slice(0, at).map(row), skolt, ...langs.slice(at).map(row)].join("");
 }
 
+// --- Virheilmoitus sanakortista ---
+// Lomake valmistelee sähköpostin osoitteeseen satni@somby.fi käyttäjän omaan sovellukseen (mailto; Android-sovellus
+// avaa oletussovelluksen, MainActivity.shouldOverrideUrlLoading). Mitään ei lähetetä automaattisesti.
+const REPORT_ADDRESS = "satni@somby.fi";
+const PUBLIC_APP_URL = "https://sombyduodji.github.io/satni-fst/app/";
+
+// Sanakortissa näkyvät kielet ja niiden käännökset: pääkieli, Muut kielet ja koltansaame
+function reportLanguages() {
+  const w = state.word;
+  const out = [[settings.lang, $("translation").textContent.trim()]];
+  for (const l of settings.extraLangs) {
+    const text = LANGUAGES[l] && w[LANGUAGES[l].col];
+    if (text) out.push([l, text]);
+  }
+  const sms = skoltFor(w);
+  if (sms) out.push(["sms", sms.text]);
+  return out;
+}
+
+function openReport() {
+  if (!state.word) return;
+  const langs = reportLanguages();
+  $("report-lang").innerHTML = langs.map(([l]) => `<option value="${l}">${esc(langName(l))}</option>`).join("");
+  $("report-about").textContent = `${shownLemma(state.word)} (${$("pos-badge").textContent}) · ` +
+    `${t("reportLabels").search}: ${state.query}`;
+  $("report-text").value = "";
+  $("report-dlg").querySelector('input[value="trans"]').checked = true;
+  $("report-dlg").showModal();
+}
+
+function sendReport() {
+  const w = state.word, L = t("reportLabels");
+  const kind = $("report-dlg").querySelector('input[name="report-kind"]:checked').value;
+  const lang = $("report-lang").value || settings.lang;
+  const shown = Object.fromEntries(reportLanguages())[lang] || "";
+  const kindText = { trans: t("reportKindTrans"), word: t("reportKindWord"), form: t("reportKindForm"), other: t("reportKindOther") }[kind];
+  const lemma = shownLemma(w);
+  const subject = `${t("reportSubject")} – ${lemma} (${t("reportSubjectKind")[kind]}${kind === "trans" ? ", " + langName(lang) : ""})`;
+  const others = [...settings.extraLangs.filter((l) => LANGUAGES[l]), ...(settings.skolt ? ["sms"] : [])].map(langName);
+  const link = `${PUBLIC_APP_URL}#/sana/${encodeURIComponent(state.query)}${state.index ? "/" + state.index : ""}`;
+  const body = [
+    $("report-text").value.trim().slice(0, 1200), "",
+    `--- ${t("reportDetails")} ---`,
+    `${L.error}: ${kindText}${kind === "trans" ? ` (${langName(lang)})` : ""}`,
+    `${L.word}: ${lemma} (${w.pos})`,
+    kind === "trans" && shown ? `${L.shown}: ${shown}` : "",
+    `${L.search}: ${state.query}`,
+    `${L.ui}: ${UI_LANGUAGES[settings.uiLang].name}${others.length ? ` · ${L.other}: ${others.join(", ")}` : ""}`,
+    `${L.version}: ${$("about-version").textContent}`,
+    `${L.link}: ${link}`,
+  ].filter((line, i) => line !== "" || i === 1).join("\n");
+  $("report-dlg").close();
+  // Linkki napsautetaan, jotta sähköpostisovellus avautuu samoin kuin palautelinkissä (myös työpöytä- ja Android-sovelluksessa)
+  const a = document.createElement("a");
+  a.href = `mailto:${REPORT_ADDRESS}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  a.click();
+}
+
 function setSkolt(on, viaSme) {
   settings.skolt = on;
   settings.skoltViaSme = on && viaSme;  // pois kytkettäessä molemmat pois
@@ -2493,6 +2551,11 @@ function bindEvents() {
     if (state.results.length) searchAgainKeepingWord();
   };
   $("skolt-ok").onclick = () => { $("skolt-dlg").close(); setSkolt(true, $("skolt-via").checked); };
+  $("report-btn").onclick = (e) => { e.preventDefault(); openReport(); };
+  $("report-cancel").onclick = () => $("report-dlg").close();
+  $("report-send").onclick = sendReport;
+  // Kielivalinta koskee vain käännösvirhettä: valinnan muutos valitsee sen
+  $("report-lang").onchange = () => { $("report-dlg").querySelector('input[value="trans"]').checked = true; };
   $("skolt-cancel").onclick = () => $("skolt-dlg").close();
   $("theme-select").value = settings.theme;
   $("theme-select").onchange = (e) => { settings.theme = e.target.value; saveSettings(); applyTheme(); };

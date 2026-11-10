@@ -22,6 +22,7 @@ cd "$(dirname "$0")" || exit 1
 WORK="${XDG_CACHE_HOME:-$HOME/.cache}/satni-fst-build/android"
 SYSTEM_IMAGE="system-images;android-35;google_apis;x86_64"
 PACKAGE=fi.somby.satnifst
+package() { [ "$1" = dev ] && echo "$PACKAGE.dev" || echo "$PACKAGE"; }  # dev-laitteella kehitysversio (build_apk.sh --debug)
 ADB=/work/emu/sdk/platform-tools/adb
 
 usage() { sed -n '/^# Käyttö:/,/^#$/p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
@@ -76,7 +77,8 @@ start() {
     # Kaatuneen ajon lukot estäisivät käynnistyksen ("Running multiple emulators with the same AVD")
     rm -f "$WORK/emu/avd/satni-$1.avd/"*.lock
     mkdir -p "$WORK/emu/home-$1"
-    docker run -d --name "$(device "$1")" --device /dev/kvm --user "$(id -u):$(id -g)" --entrypoint "" \
+    docker run -d --name "$(device "$1")" --device /dev/kvm --user "$(id -u):$(id -g)" \
+        --group-add "$(stat -c %g /dev/kvm)" --entrypoint "" \
         -e HOME="/work/emu/home-$1" -e ANDROID_HOME=/work/emu/sdk -e ANDROID_SDK_ROOT=/work/emu/sdk \
         -e ANDROID_AVD_HOME=/work/emu/avd \
         -v "$WORK":/work satni-fst-android-emu \
@@ -108,11 +110,11 @@ install_apk() {
     echo "$out" | tail -1
     if echo "$out" | grep -q UPDATE_INCOMPATIBLE; then
         echo "Allekirjoitusavain ei ole sama kuin laitteen versiossa: dev on debug-avaimelle, main julkaisuavaimelle."
-        echo "Poista vanha versio tarvittaessa: ./emulaattori.sh adb $name uninstall $PACKAGE"
+        echo "Poista vanha versio tarvittaessa: ./emulaattori.sh adb $name uninstall $(package "$name")"
         exit 1
     fi
     echo "$out" | grep -q Success || exit 1
-    adb "$name" shell dumpsys package "$PACKAGE" | grep -m1 versionName | sed 's/^ */  /'
+    adb "$name" shell dumpsys package "$(package "$name")" | grep -m1 versionName | sed 's/^ */  /'
 }
 
 [ $# -ge 1 ] || usage
@@ -123,7 +125,7 @@ case "$cmd" in
     jaa)
         [ $# -ge 2 ] || usage
         adb "$1" shell am start -a android.intent.action.SEND -t text/plain \
-            --es android.intent.extra.TEXT "'$2'" -n "$PACKAGE/.MainActivity" >/dev/null 2>&1 ;;
+            --es android.intent.extra.TEXT "'$2'" -n "$(package "$1")/$PACKAGE.MainActivity" >/dev/null 2>&1 ;;
     kuva)
         [ $# -ge 1 ] || usage
         out=${2:-$WORK/kuvat/$1-$(date +%Y%m%d-%H%M%S).png}
@@ -142,7 +144,7 @@ case "$cmd" in
     tila)
         for name in dev main; do
             if running "$name"; then
-                v=$(docker exec "$(device "$name")" "$ADB" shell dumpsys package "$PACKAGE" 2>/dev/null | grep -m1 versionName | tr -d ' ')
+                v=$(docker exec "$(device "$name")" "$ADB" shell dumpsys package "$(package "$name")" 2>/dev/null | grep -m1 versionName | tr -d ' ')
                 echo "$name: käynnissä ${v:-(sovellusta ei asennettu)}"
             else
                 echo "$name: pysäytetty"

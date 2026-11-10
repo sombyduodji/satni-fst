@@ -58,6 +58,14 @@ const UI_TEXTS = {
     registerNote: "Wiktionaryn mukaan sanaa pidetään alatyylisenä, halventavana tai loukkaavana",
     expEnable: "Ota käyttöön", cancel: "Peruuta", smsVia: "suomen kautta, likimääräinen",
     // Koltansaame Muut kielet -kohdassa: varoitus päälle kytkettäessä ja valinta pohjoissaamen sanakorteille
+    // Virheilmoitus sanakortista (app.js: openReport, sendReport)
+    reportError: "Ilmoita virheestä", reportWhat: "Mikä on väärin?", reportKindTrans: "Käännös on väärä tai huono",
+    reportKindWord: "Haku toi kokonaan väärän sanan", reportKindForm: "Taivutusmuoto on väärin", reportKindOther: "Muu",
+    reportFix: "Mikä olisi oikein? (valinnainen)", reportSend: "Valmistele sähköposti", reportSubject: "Sátni FST: virheilmoitus",
+    reportSubjectKind: { trans: "käännös", word: "väärä sana", form: "taivutus", other: "muu" },
+    reportDetails: "Tiedot ilmoituksesta",
+    reportLabels: { error: "Virhe", word: "Sana", shown: "Näytetty käännös", search: "Hakusana", ui: "Käyttöliittymä",
+      other: "muut kielet", version: "Versio", link: "Linkki" },
     smsUnchecked: "tarkistamaton", skoltDlgTitle: "Otetaanko koltansaame käyttöön?",
     skoltDlgBody: `<p>Koltansaamen sanat tulevat GiellaLT:n suomi–koltansaame- ja norja–koltansaame-sanakirjoista.
       Koltansaamen puhuja ei ole vielä tarkistanut niitä, joten ne voivat olla epätarkkoja. Sanat näkyvät, kun haet suomeksi.</p>`,
@@ -255,6 +263,13 @@ const UI_TEXTS = {
     register: { vulgar: "vulgært", derogatory: "nedsettende", offensive: "støtende" },
     registerNote: "Ifølge Wiktionary regnes ordet som vulgært, nedsettende eller støtende",
     expEnable: "Slå på", cancel: "Avbryt", smsVia: "via finsk, omtrentlig",
+    reportError: "Meld fra om feil", reportWhat: "Hva er feil?", reportKindTrans: "Oversettelsen er feil eller dårlig",
+    reportKindWord: "Søket ga et helt feil ord", reportKindForm: "En bøyningsform er feil", reportKindOther: "Annet",
+    reportFix: "Hva ville vært riktig? (valgfritt)", reportSend: "Lag e-post", reportSubject: "Sátni FST: feilmelding",
+    reportSubjectKind: { trans: "oversettelse", word: "feil ord", form: "bøyning", other: "annet" },
+    reportDetails: "Opplysninger om meldingen",
+    reportLabels: { error: "Feil", word: "Ord", shown: "Vist oversettelse", search: "Søkeord", ui: "Brukergrensesnitt",
+      other: "andre språk", version: "Versjon", link: "Lenke" },
     smsUnchecked: "ikke kontrollert", skoltDlgTitle: "Slå på skoltesamisk?",
     skoltDlgBody: `<p>De skoltesamiske ordene kommer fra GiellaLTs finsk–skoltesamisk- og norsk–skoltesamisk-ordbøker.
       De er ennå ikke kontrollert av noen som snakker skoltesamisk, så de kan være unøyaktige. Ordene vises når du søker på norsk.</p>`,
