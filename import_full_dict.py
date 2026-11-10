@@ -159,8 +159,8 @@ def fix_finnish_text(text):
 
 
 # Muiden kielten kirjoitusvirheet: offline-tarkistus 2026-11-10 (Hunspell nb/nn/en/es, Norsk ordbank, yhdyssanojen
-# jako tunnettuihin osiin, Divvunin oikolukijat), jokainen luettu käsin. Englannissa myös dict-sme-eng:n saksa
-# (arve: Regen, cumme: Kuss) sekä Nielsenin vanhat kirjoitusasut rince ja trambled.
+# jako tunnettuihin osiin, Divvunin oikolukijat), jokainen luettu käsin. Englannissa myös
+# Nielsenin vanhat kirjoitusasut rince ja trambled.
 OTHER_TYPOS = {
     "nob": {"utjevningsmadat": "utjevningsmandat", "stemmeseddelkonvoutt": "stemmeseddelkonvolutt",
             "statsmetereolog": "statsmeteorolog", "dokumetasjonsarbeid": "dokumentasjonsarbeid",
@@ -170,7 +170,7 @@ OTHER_TYPOS = {
             "strukturmeldning": "strukturmelding", "rehabilieringsstipend": "rehabiliteringsstipend",
             "semuljegryn": "semulegryn", "ultraviolett": "ultrafiolett",
             "kulturminneregistreingsprosjekt": "kulturminneregistreringsprosjekt"},
-    "eng": {"lenght": "length", "rince": "rinse", "wich": "which", "trambled": "trampled", "Regen": "rain", "Kuss": "kiss"},
+    "eng": {"lenght": "length", "rince": "rinse", "wich": "which", "trambled": "trampled"},
     "sma": {"paramentarihkere": "parlamentarihkere"},
 }
 _OTHER_TYPO_RE = {lang: re.compile(r"\b(" + "|".join(sorted(t, key=len, reverse=True)) + r")\b") for lang, t in OTHER_TYPOS.items()}
@@ -258,6 +258,9 @@ NOT_ENGLISH = {
     "Larve der Rachenbremse", "Männchen", "Nähnadel", "Riefe (der Büchse)", "Stange im Heuschober", "Sünde",
     "Türseite (der Lappenhütte od. Stube)", "Zelttuch für den Unterstand (meistens aus Sackleinwand)",
     "auf einem Pfahl / vier Pfählen stehender Speicher", "den Schlucken haben",
+    # 2026-11-10: saksaa sanoilla, joilla on jo englanti (viellja: Bruder, brother; ákšu: Axt, axe; náskál: Ahle, awl;
+    # nábár: Bohrer, drill ...)
+    "Bruder", "Axt", "Ahle", "Bohrer",
     "dunkle Pelzeinfassung an der Wintermütze der Männer", "dünn werden", "dürre Föhre", "eine offene Stelle (im Eis)",
     "einen Schnitt od. Riß machen", "kalt (von Wasser)", "krächzen", "kurz- und glatthaarig", "männlich", "fremd",
     "nicht verwandt", "nicht zur Sache gehörig", "schmale Pelzeinfassung an der Öffnung des ledernen Fausthandschuhs",
@@ -265,7 +268,10 @@ NOT_ENGLISH = {
     "winseln (von Hunden und jungen Hündchen)", "wünschen", "aussen-", "brauner Tonkrug", "damit", "dann", "dass",
     "denn", "drohen", "geneigt (z.B. Baum)", "gezimmerte Ecke", "jung", "schlank", "sie zwei", "weibliches Renkalb",
     "beröm", "säga", "storsåte", "minuutti", "spekefisk"}
-ENGLISH_TYPOS = {"motherlesss": "motherless", "selfrighteous": "self-righteous"}
+ENGLISH_TYPOS = {"motherlesss": "motherless", "selfrighteous": "self-righteous",
+                 # 2026-11-10: Nielsenin saksa ainoana englantina (vársá, áisá, spižá, olgo-) ja latinan suku (boska)
+                 "Fohlen": "foal", "Deichsel": "shaft (of a sledge or cart)", "Pferdepeitsche": "whip",
+                 "Aussenluft": "outside, outer", "Archangelica": "angelica (Angelica archangelica)"}
 
 
 def clean_nielsen_english(text):

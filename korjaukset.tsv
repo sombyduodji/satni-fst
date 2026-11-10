@@ -124,3 +124,19 @@ ministeriija	N	ministeriö		departement
 # dict-sme-eng:n englanninkielisessä sarakkeessa oli saksaa (Elch, Name eines Sternbildes; Streit, Eigensinn)
 sarvva	N		moose, elk, a constellation
 nággu	N		quarrel, dispute, obstinacy
+# Nielsenin lainasanamuistiinpanot (dict-sme-eng X_smeeng.xml, sanaluokka Xxx -> "?"): saamen vartalo ja saksan
+# lähtösana englannin paikalla (ullo: Wolle, silkke: Seide, viste: Zimmer). Ei suomennosta eikä norjannosta, ja
+# analysaattori tulkitsee ne toisen sanan muodoiksi; varsinaiset sanat (ullu, silki, visti, arvi, cummá ...) ovat
+# sanakirjassa. Poistettu 2026-11-10 käyttäjän luvalla.
+ullo	?	-
+silkke	?	-
+rukko	?	-
+rohke	?	-
+nuovve	?	-
+náhpe	?	-
+rátká	?	-
+silde	?	-
+viste	?	-
+čivle	?	-
+arve	?	-
+cumme	?	-
