@@ -1,6 +1,6 @@
 /* Service worker: sovellus ja sanakirja toimivat ilman verkkoyhteyttä ensimmäisen käynnin jälkeen.
    Kun tiedostoja päivitetään, kasvata VERSION, jolloin selaimet hakevat uudet tiedostot. */
-const VERSION = "satni-v44";
+const VERSION = "satni-v45";
 const APP_SHELL = [
   "./", "index.html", "styles.css", "i18n.js", "app.js", "lauseet.js", "manifest.webmanifest",
   "vendor/sql-wasm.js", "vendor/sql-wasm.wasm",
@@ -15,7 +15,7 @@ const DATA = "data/satni-web.db.gz";
 // v5: astevaihtelun korjaus, dilli ll ~ l, v6: taivutusluokat,
 // v7: muiden saamenkielten käännöksiä lisää ja suomennosehdotukset, v8: espanja, v9: haku ilman sulkeissa olevia tarkenteita,
 // v10: Tarkoititko-hakusanat muille kielille, v11: englantia Wiktionarysta)
-const DATA_CACHE = "satni-data-v26";
+const DATA_CACHE = "satni-data-v27";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(VERSION).then((cache) => cache.addAll(APP_SHELL)));

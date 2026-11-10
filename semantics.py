@@ -36,7 +36,8 @@ def people_lemmas():
 
 
 # Lausekääntäjän sijasäännöt (web/lauseet.js: lauseSamiTag) muille kuin ihmissanoille, dictionary.sem:
-#   surf  = huonekalu tai taso: pöydälle = beavddi ala, pöydällä/pöydältä = beavddi alde (genetiivi + postpositio)
+#   surf  = pöytä (beavdi ja sen yhdyssanat): pöydälle = beavddi ala, pöydällä/pöydältä = beavddi alde (genetiivi + postpositio);
+#           muut huonekalut ovat paikkoja (sängyllä = seaŋggas)
 #   com   = kulkuneuvo tai väline: autolla = biillain, vasaralla = veahčiriin (komitatiivi)
 #   place = paikka, organisaatio tai rakennus: lentokentälle = girdišilljui, lentokentällä = girdišilljus
 # Tarkistettu 2026-11-10 sanakirjan esimerkkilauseista: paikat ja organisaatiot -lle = illatiivi 15/17, -lla = lokatiivi 16/23
@@ -60,6 +61,15 @@ def sem_classes():
         if "Body" in bases:  # oaivi (pää; myös paikka): oaivvi ala = päähän, ei *oivii
             continue
         for name, wanted in SEM_CLASSES:
+            # Säilytyshuonekalu (kássa "laatikko, kassa", girjeskábe, gietkka) ei ole taso: kassalla = kássas eikä
+            # kássa alde "laatikon päällä" (käyttäjä huomasi 2026-11-10)
+            if name == "surf" and "Ctain" in bases:
+                continue
+            # Vain pöytä on taso (beavddi alde 12 / beavddis 6 esimerkeissä); muut huonekalut paikkoja kuten ennen:
+            # seaŋggas 19 / seaŋgga alde 0, soffás 7 / 0, beaŋkkas 6 / 2, stuolus 4 / 2 (tarkistettu 2026-11-10)
+            if name == "surf" and "Furn" in bases and not lemma.endswith("beavdi"):
+                out[lemma] = "place"
+                break
             if bases & set(wanted):
                 out[lemma] = name
                 break
