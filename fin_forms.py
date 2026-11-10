@@ -42,6 +42,8 @@ CELLS = {
     "A": {**NOMINAL_CELLS, "Comp": "Comp+Sg+Nom", "Superl": "Superl+Sg+Nom"},
     "V": {
         "Inf": "Act+InfA+Sg+Lat",
+        # 3. infinitiivin illatiivi (lähden juoksemaan): lausekääntäjässä saamen infinitiivi (manan viehkat)
+        "InfMa+Ill": "Act+InfMa+Sg+Ill",
         **{f"Prs+{p}": f"Act+Ind+Prs+{p}" for p in PERSONS},
         **{f"Prt+{p}": f"Act+Ind+Prt+{p}" for p in PERSONS},
         **{f"Cond+{p}": f"Act+Cond+{p}" for p in PERSONS},

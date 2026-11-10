@@ -168,6 +168,8 @@ function lauseSamiTag(tokens, i) {
   const [num, fcase] = cell.includes("+") ? cell.split("+") : [null, cell];
   if (pos === "V") {
     if (cell === "Prs+ConNeg") return "Ind+Prs+ConNeg";
+    // Liikeverbin jälkeen tarkoitus: suomen 3. infinitiivin illatiivi = saamen infinitiivi (lähden juoksemaan = manan viehkat)
+    if (cell === "InfMa+Ill") return "Inf";
     return samiCaseOfFinCell(cell, "V");
   }
   if (t.pick.pos === "Pron" && LAUSE_PRONOUN[t.pick.base]) return samiCaseOfFinCell(cell, "PRON");
