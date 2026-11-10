@@ -445,6 +445,8 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .ocr-view[hidden] { display: none; }
 .ocr-head { display: flex; flex-wrap: wrap; gap: 8px; }
 .ocr-head #ocr-close { margin-left: auto; }
+.ocr-rotate { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); font-size: 20px; line-height: 1; cursor: pointer; flex: none; }
 #ocr-status { margin: 8px 2px; }
 .ocr-stage {
   position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none;

@@ -2020,7 +2020,7 @@ function ocrResult(r) {
   if (!r) { $("ocr-status").textContent = ocr ? ocr.status : t("ocrIntro"); return; }  // kuvan otto peruttiin
   if (r.error) { $("ocr-status").textContent = t(r.error === "noApp" ? "ocrNoApp" : "ocrError"); return; }
   for (const w of r.words) w.clean = w.t.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, "");
-  ocr = { r, view: null, words: [], status: t("ocrFinding") };
+  ocr = { r, view: null, words: [], status: t("ocrFinding"), autoDir: true };
   ocrReturnHash = null;
   // Kuva näkyviin heti; merkinnät tulevat sanojen haun jälkeen
   $("ocr-photo").innerHTML = `<img src="${r.image}" alt="">`;
@@ -2036,9 +2036,8 @@ async function findOcrWords() {
 }
 
 // Kuvan sanat valitun suunnan mukaan; suunnan vaihto laskee ne uudelleen samasta kuvasta
-function analyzeOcr() {
-  const { r } = ocr;
-  const corrector = settings.ocrFrom === "sme" ? ocrCorrector() : null;
+function ocrMatches(r, from) {
+  const corrector = from === "sme" ? ocrCorrector() : null;
   const cache = new Map();
   const match = (clean) => {
     if (clean.length < 2) return null;
@@ -2048,10 +2047,32 @@ function analyzeOcr() {
   };
   const words = r.words.map((w) => ({ ...w, word: match(w.clean) })).filter((w) => w.word);
   corrector?.free();
+  return words;
+}
+
+function analyzeOcr() {
+  const { r } = ocr;
+  let words = ocrMatches(r, settings.ocrFrom), switched = false;
+  // Uusi kuva: kokeillaan myös toista suuntaa ja vaihdetaan siihen, jos se löytää selvästi enemmän sanoja (vähintään 3
+  // ja kolminkertaisesti): saamenkielinen kirja, kun suunta on Suomi -> Saame (sattumaosuma "varas" ei riitä).
+  // Käyttäjän oma suunnan vaihto ei käännä takaisin.
+  const count = (ws) => new Set(ws.map((w) => w.word)).size;
+  if (ocr.autoDir && r.words.length) {
+    const other = settings.ocrFrom === "ui" ? "sme" : "ui";
+    const alt = ocrMatches(r, other);
+    if (count(alt) >= 3 && count(alt) >= 3 * count(words)) {
+      settings.ocrFrom = other;
+      saveSettings();
+      words = alt;
+      switched = true;
+    }
+  }
+  ocr.autoDir = false;
   const found = new Set(words.map((w) => w.word)).size;
   ocr.words = words;
   ocr.picked = null;
-  ocr.status = !r.words.length ? t("ocrNoText") : found ? t("ocrFound", found) : t("ocrNoWords");
+  ocr.status = (!r.words.length ? t("ocrNoText") : found ? t("ocrFound", found) : t("ocrNoWords")) +
+    (switched ? ` · ${t("ocrDirSwitched")}` : "");
   $("ocr-bubble").hidden = true;
   $("ocr-photo").innerHTML = `<img src="${r.image}" alt="">`
     + words.map((w, i) => `<div class="ocr-word" data-i="${i}"></div>`).join("");
@@ -2347,6 +2368,11 @@ function bindOcr() {
   $("ocr-btn").onclick = openOcr;
   $("ocr-camera").onclick = () => scanPhoto("camera");
   $("ocr-gallery").onclick = () => scanPhoto("gallery");
+  // Kääntö 90 astetta (Ocr.java: rotate): kuva tunnistetaan uudelleen. Sivuttain oleva teksti käännetään myös
+  // automaattisesti, joten painikkeita tarvitaan vain, jos automaattinen kääntö ei osu.
+  for (const [id, deg] of [["ocr-rotate-left", -90], ["ocr-rotate-right", 90]]) {
+    $(id).onclick = () => { if (!ocr || !window.SatniOcr.rotate) return; setOcrBusy(t("ocrWorking")); window.SatniOcr.rotate(deg); };
+  }
   $("ocr-close").onclick = () => { if (ocr) pickOcrWord(null); $("ocr-view").hidden = true; };
   $("ocr-swatches").innerHTML = OCR_COLORS.map((c) =>
     `<button data-color="${c}" style="--c:${c}" aria-label="${c}"></button>`).join("");

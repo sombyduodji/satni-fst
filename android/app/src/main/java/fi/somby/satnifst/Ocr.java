@@ -43,6 +43,10 @@ import java.util.concurrent.Executors;
  * {width, height, image: JPEG data-URL, words: [{t, cx, cy, w, h, a}]} (sanan keskipiste, leveys ja korkeus
  * tekstin suunnassa sekä kulma asteina), peruttaessa null, virheessä {error}.
  *
+ * Kuvan voi kääntää 90 astetta (SatniOcr.rotate(±90), web-näkymän kääntöpainikkeet), ja sivuttain olevan tekstin
+ * kuva käännetään automaattisesti oikein päin: jos useimmat sanat ovat noin 90 tai 180 asteen kulmassa, kuva käännetään
+ * ja tunnistetaan uudelleen (kuva kirjasta sivuttain ilman EXIF-tietoa).
+ *
  * Lupia ei tarvita: kuvan ottaa järjestelmän kamerasovellus (tallentaa sen FileProviderin kautta
  * välimuistiin), ja kuvan valinta tehdään järjestelmän kuvanvalitsimella (Android 13+) tai tiedostovalitsimella.
  */
@@ -56,6 +60,8 @@ final class Ocr {
     private final WebView web;
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private TextRecognizer recognizer;
+    /** Viimeisin tunnistettu kuva kääntöpainikkeita varten. */
+    private Bitmap last;
 
     Ocr(Activity activity, WebView web) {
         this.activity = activity;
@@ -110,14 +116,73 @@ final class Ocr {
                 sendError("image");
                 return;
             }
-            if (recognizer == null) {
-                recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
-            }
-            recognizer.process(InputImage.fromBitmap(bitmap, 0))
-                    .addOnSuccessListener(worker, text -> send(toJson(bitmap, text)))
-                    .addOnFailureListener(worker, e -> sendError("ocr"));
+            recognize(bitmap, true);
         });
         return true;
+    }
+
+    /** Web-näkymän kääntöpainikkeet: viimeisin kuva käännettynä (90 = myötäpäivään) ja uusi tunnistus. */
+    @JavascriptInterface
+    public void rotate(int degrees) {
+        worker.execute(() -> {
+            if (last == null) {
+                sendError("image");
+                return;
+            }
+            recognize(rotated(last, degrees), false);
+        });
+    }
+
+    /** Tunnistus; autoRotate: sivuttain tai ylösalaisin oleva teksti käännetään kerran oikein päin. */
+    private void recognize(Bitmap bitmap, boolean autoRotate) {
+        if (recognizer == null) {
+            recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+        }
+        recognizer.process(InputImage.fromBitmap(bitmap, 0))
+                .addOnSuccessListener(worker, text -> {
+                    int turn = autoRotate ? uprightTurn(text) : 0;
+                    if (turn != 0) {
+                        recognize(rotated(bitmap, turn), false);
+                        return;
+                    }
+                    last = bitmap;
+                    send(toJson(bitmap, text));
+                })
+                .addOnFailureListener(worker, e -> sendError("ocr"));
+    }
+
+    /** Kääntö, jolla teksti on vaakasuorassa: sanojen kulmat pyöristettyinä 90 asteeseen, yleisin kulma (vähintään
+     *  kolmen merkin sanat ja yli puolet niistä), jottei yksittäinen vino sana käännä kuvaa. 0 = kuva on jo oikein. */
+    private static int uprightTurn(Text text) {
+        int[] counts = new int[4];
+        int total = 0;
+        for (Text.TextBlock block : text.getTextBlocks()) {
+            for (Text.Line line : block.getLines()) {
+                for (Text.Element element : line.getElements()) {
+                    Point[] p = element.getCornerPoints();
+                    if (p == null || p.length != 4 || element.getText().length() < 3) {
+                        continue;
+                    }
+                    double a = Math.toDegrees(Math.atan2(p[1].y - p[0].y, p[1].x - p[0].x));
+                    counts[(int) (Math.round(((a % 360) + 360) % 360 / 90.0) % 4)]++;
+                    total++;
+                }
+            }
+        }
+        int best = 0;
+        for (int i = 1; i < 4; i++) {
+            if (counts[i] > counts[best]) {
+                best = i;
+            }
+        }
+        // Teksti kulmassa best * 90 astetta: kuvaa käännetään saman verran vastapäivään
+        return best != 0 && total >= 3 && counts[best] * 2 > total ? -best * 90 : 0;
+    }
+
+    private static Bitmap rotated(Bitmap bitmap, int degrees) {
+        Matrix matrix = new Matrix();
+        matrix.postRotate(degrees);
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
     }
 
     /** Kuva pienennettynä (pidempi sivu enintään MAX_SIDE) ja EXIF-tiedon mukaan oikein päin käännettynä. */
