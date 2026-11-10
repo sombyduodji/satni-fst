@@ -149,7 +149,9 @@ def main():
             -- dial_same: saman sanan toinen kirjoitusasu (dialects.py), jolla sanakin löytyy
             lemma_fold TEXT, variant_fold TEXT,
             -- human: ihmistä tarkoittava substantiivi (semantics.py): suomen -lle/-lla/-lta saa saamen muodon
-            human INTEGER
+            human INTEGER,
+            -- sem: lausekääntäjän sijasäännöt muille substantiiveille (semantics.py): surf, com tai place
+            sem TEXT
         );
         -- nr: käänteisen sanakirjan (dict-fin-sme, dict-nob-sme) järjestys, 0 = ensisijainen saamennos;
         -- NULL = sanan oma käännös (dict-sme-*)
@@ -185,11 +187,11 @@ def main():
     rows = src.execute(
         f"SELECT id, sme_lemma, pos, subtype, {trans_cols}, notes, gradation, gd_cluster, hd_cluster, "
         "gradation_group, gradation_row, inflection_class, freq, dialect, dial_same, dial_other, "
-        f"{'human' if 'human' in src_cols else 'NULL'} FROM dictionary"
+        f"{'human' if 'human' in src_cols else 'NULL'}, {'sem' if 'sem' in src_cols else 'NULL'} FROM dictionary"
     ).fetchall()
-    # human viimeisenä (lemma_fold ja variant_fold ennen sitä, kuten taulussa)
+    # human ja sem viimeisinä (lemma_fold ja variant_fold ennen niitä, kuten taulussa); r[-4] = dial_same
     dst.executemany(f"INSERT INTO dictionary VALUES ({', '.join('?' * (len(rows[0]) + 2))})",
-                    [r[:-1] + (fold(r[1]), fold(r[-3]) if r[-3] else None, r[-1]) for r in rows])
+                    [r[:-2] + (fold(r[1]), fold(r[-4]) if r[-4] else None) + r[-2:] for r in rows])
     # Hakuun käännös sellaisenaan ja toisena rivinä ilman sulkeissa olevia tarkenteita, jotta naida löytää sanan,
     # jonka käännös on "naida (kerran)" (koko haun tarkistus 2026-11-06: noin 3 400 sanaa ei muuten löytynyt)
     search_rows = []

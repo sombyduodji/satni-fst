@@ -15,6 +15,14 @@ const LAUSE_PRONOUN = { minä: "mun", sinä: "don", hän: "son", me: "mii", te: 
 // Luvut, joiden jälkeen saamen substantiivi on yksikön genetiivissä (guokte gáfe); 7- ei ole vielä tarkistettu
 const LAUSE_SMALL_NUMBERS = ["kaksi", "kolme", "neljä", "viisi", "kuusi"];
 const LAUSE_POS = { N: ["N"], V: ["V"], A: ["A"], Num: ["Num"], Pron: ["Pron"] };
+// Suomen postpositio -> saamen (sanakirjan Po-sanat); edeltävä substantiivi genetiivissä kummassakin kielessä
+// (auton alla = biilla vuolde, pöydän päälle = beavddi ala)
+const LAUSE_POSTPOS = {
+  päällä: "alde", päälle: "ala", päältä: "alde", alla: "vuolde", alle: "vuollái", alta: "vuolde",
+  vieressä: "bálddas", viereen: "báldii", vierestä: "bálddas", takana: "duohken", taakse: "duohkái", takaa: "duohken",
+  edessä: "ovddas", eteen: "ovdii", edestä: "ovddas", luona: "luhtte", luo: "lusa", luokse: "lusa", luota: "luhtte",
+  sisällä: "siste", sisälle: "sisa", sisään: "sisa", sisältä: "siste", lähellä: "lahka",
+};
 
 let lause = { tokens: [] };
 
@@ -24,7 +32,7 @@ function lauseCandidates(base, pos, exactOnly = false) {
   // listaa tahansa, kuten hakukentässä
   const f = fold(base);
   // at = 0: käännös on tämä sana tai alkaa sillä (pääkäännös), 1: sana on listassa myöhemmin (galgat "täytyä, saada")
-  const rows = all(`SELECT DISTINCT d.id, d.sme_lemma, d.pos, d.subtype, d.freq, MIN(COALESCE(t.nr, 9)) AS nr,
+  const rows = all(`SELECT DISTINCT d.id, d.sme_lemma, d.pos, d.subtype, d.freq, d.human, d.sem, MIN(COALESCE(t.nr, 9)) AS nr,
     MIN(CASE WHEN t.fold = ? OR t.fold LIKE ? THEN 0 ELSE 1 END) AS at FROM trans_search t
     JOIN dictionary d ON d.id = t.word_id WHERE t.lang = 'fin'
     AND (t.fold = ? OR t.fold LIKE ? OR t.fold LIKE ? OR t.fold LIKE ?) GROUP BY d.id`,
@@ -90,6 +98,7 @@ function lauseParse(text) {
     if (!/\p{L}/u.test(raw)) { tokens.push({ punct: raw }); continue; }
     const word = raw.toLowerCase();
     if (LAUSE_NEG[word]) { tokens.push({ raw, word, neg: word, known: true }); continue; }
+    if (LAUSE_POSTPOS[word] && tokens.some((x) => !x.punct)) { tokens.push({ raw, word, post: LAUSE_POSTPOS[word], known: true }); continue; }
     // Kieltoverbi kysymyksenä: eikö = iigo, etkö = itgo
     const negq = [...LAUSE_CLITICS].find(([c]) => (c === "ko" || c === "kö") && word.endsWith(c) && LAUSE_NEG[word.slice(0, -c.length)]);
     if (negq) { tokens.push({ raw, word, neg: word.slice(0, -negq[0].length), clitic: negq[0], known: true }); continue; }
@@ -187,8 +196,24 @@ function lauseSamiTag(tokens, i) {
   if (fcase === "Par" && (lauseIsCount(prev) || prev?.pick?.cell === "Sg+Par")) return "Sg+Gen";
   // Lauseen objekti: suomen genetiivi tai partitiivi -> saamen akkusatiivi (yhden kahvin = ovtta gáfe)
   if (existential && fcase === "Par") return `${num || "Sg"}+Nom`;
+  // Postposition edellä genetiivi (auton alla = biilla vuolde), ei objektin akkusatiivi
+  const next = tokens.slice(i + 1).find((x) => !x.punct);
+  if (next?.post && fcase === "Gen") return `${num || "Sg"}+Gen`;
   if (hasVerb && (fcase === "Gen" || fcase === "Par")) return `${num || "Sg"}+Acc`;
   if (fcase === "Nom") return `${num || "Sg"}+Nom`;
+  // Muut substantiivit (ei ihminen eikä nimi) merkitysluokan mukaan (semantics.py, dictionary.sem):
+  // -lle = illatiivi (lentokentälle = girdišilljui), paitsi tasolle genetiivi + ala (pöydälle = beavddi ala);
+  // -lla/-lta: paikka = lokatiivi (lentokentällä = girdišilljus), kulkuneuvo tai väline -lla = komitatiivi
+  // (autolla = biillain), taso = genetiivi + alde (pöydällä = beavddi alde); muuten lokatiivi arvauksena
+  if (pos === "N" && t.choice.subtype !== "Prop" && !t.choice.human && /^(All|Ade|Abl)$/.test(fcase)) {
+    const n = num || "Sg", sem = t.choice.sem;
+    if (sem === "surf") return { tag: `${n}+Gen`, post: fcase === "All" ? "ala" : "alde" };
+    if (fcase === "All") return `${n}+Ill`;
+    // Kulkuneuvolla liikutaan (tulen autolla = boađán biillain), mutta olla-lauseessa se on paikka (olen veneellä = lean fatnasis)
+    if (fcase === "Ade" && sem === "com" && !existential) return `${n}+Com`;
+    if (sem === "place" || sem === "com") return `${n}+Loc`;
+    return { tag: `${n}+Loc`, guess: true };
+  }
   // Paikannimi kuten ihmissana: Rovaniemellä = Roavvenjárggas, Rovaniemelle = Roavvenjárgii (sijat ovat nimellä aina samat)
   return samiTagOfFinCell(cell, pos, t.pick.base, !!t.choice.human || t.choice.subtype === "Prop");
 }
@@ -196,10 +221,12 @@ function lauseSamiTag(tokens, i) {
 function lauseSamiForm(tokens, i) {
   const t = tokens[i];
   const clitic = t.clitic ? Object.fromEntries(LAUSE_CLITICS)[t.clitic] : "";
-  if (t.neg) return { form: LAUSE_NEG[t.neg] + clitic, base: "ii", note: LAUSE_NEG_PERSON[t.neg] };
+  if (t.neg) return { form: LAUSE_NEG[t.neg] + clitic, base: "ii", note: LAUSE_NEG_PERSON[t.neg], exact: true };
   if (t.name || t.num) return { form: t.raw, base: t.raw, exact: true };
+  if (t.post) return { form: t.post, base: t.post, tag: "Po", exact: true };
   if (!t.choice) return null;
-  const tag = lauseSamiTag(tokens, i);
+  let tag = lauseSamiTag(tokens, i), post = "", guess = false;
+  if (tag && typeof tag === "object") ({ tag, post = "", guess = false } = tag);
   let form = t.choice.sme_lemma, exact = !t.pick.cell;
   if (tag) {
     let forms = loadWord(t.choice.id).paradigm.get(tag);
@@ -210,7 +237,9 @@ function lauseSamiForm(tokens, i) {
     if (forms?.length) { form = forms[0]; exact = true; }
   }
   form += clitic;
-  return { form, base: t.choice.sme_lemma, tag, exact };
+  // Taso: genetiivi + postpositio (pöydälle = beavddi ala); arvaus näkyy harmaana (likimääräinen)
+  if (post) { form += " " + post; tag += " + " + post; }
+  return { form, base: t.choice.sme_lemma, tag, exact: exact && !guess };
 }
 
 function lauseSentence(tokens) {
@@ -303,7 +332,7 @@ function renderLause() {
       (s ? `<span class="lc-sme">${esc(s.form)}</span><span class="lc-base">${esc(s.base)}</span>`
          : `<span class="lc-sme">?</span><span class="lc-base">${esc(t("lauseUnknown"))}</span>`) + "</button>";
   }).join("");
-  const ready = tokens.length && tokens.every((tok) => tok.punct || tok.neg || tok.name || tok.num || tok.choice || tok.skip);
+  const ready = tokens.length && tokens.every((tok) => tok.punct || tok.neg || tok.name || tok.num || tok.post || tok.choice || tok.skip);
   $("lause-result").hidden = !ready;
   if (ready) $("lause-sme").textContent = lauseSentence(tokens.filter((tok) => !tok.skip));
   $("lause-pop").hidden = true;
@@ -433,7 +462,7 @@ function bindLause() {
     const b = e.target.closest(".lause-chip");
     if (!b) return;
     const i = Number(b.dataset.i);
-    if (lause.tokens[i]?.num) return;  // numerolla ei ole vaihtoehtoja
+    if (lause.tokens[i]?.num || lause.tokens[i]?.post) return;  // numerolla ja postpositiolla ei ole vaihtoehtoja
     if (!$("lause-pop").hidden && Number($("lause-pop").dataset.i) === i) lauseClosePop();
     else lauseOpenChip(i);
   };
