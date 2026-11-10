@@ -107,6 +107,18 @@ select {
 .sanasto-row.num { display: flex; align-items: center; gap: 8px; padding: 2px 8px; line-height: 1.2; }
 .sanasto-body:has(.sanasto-row.num) { gap: 4px; }
 .sanasto-n { font-size: 16px; font-weight: 700; min-width: 2.1em; text-align: right; color: var(--accent); }
+/* Lukutaulukko: numero | perusluku | järjestysluku, ohuet viivat rivien välissä */
+.num-table { display: grid; grid-template-columns: 1.9em minmax(0, 1fr) minmax(0, 1fr); column-gap: 8px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px 10px; }
+.num-table > * { padding: 5px 0; border-top: 1px solid var(--border); min-width: 0; }
+.num-table > .nt-head, .num-table > .nt-head + .nt-head, .num-table > :first-child { border-top: 0; font-size: 12px; color: var(--muted); padding-bottom: 2px; }
+.nt-n { font-size: 15px; font-weight: 700; color: var(--accent); display: flex; align-items: center; justify-content: flex-end; }
+.nt-cell { display: flex; flex-direction: column; justify-content: center; font-size: 14px; line-height: 1.2; }
+.nt-cell .num-fi { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 1.2em; }
+.nt-ico { display: inline-flex; gap: 2px; }
+.nt-sub { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.nt-cell .sw-ico { width: 22px; height: 22px; }
+.nt-cell .sw-ico svg { width: 13px; height: 13px; }
 .num-words { display: flex; flex-wrap: wrap; align-items: center; column-gap: 10px; row-gap: 0; min-width: 0; }
 .num-words .sw-ico { width: 22px; height: 22px; }
 .num-words .sw-ico svg { width: 13px; height: 13px; }

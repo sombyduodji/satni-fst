@@ -42,7 +42,7 @@ const UI_TEXTS = {
     lauseForm_place_Ade: "paikassa (missä?)", lauseForm_means_Ade: "keinona (millä?)", lauseForm_top_Ade: "päällä",
     lauseForm_place_Abl: "paikasta (mistä?)", lauseForm_top_Abl: "päältä",
     lauseForm_place_All: "paikkaan (mihin?)", lauseForm_top_All: "päälle",
-    sanastot: "Sanastot", back: "Takaisin", sanastoHelp: "Kaiutin lukee sanan ääneen, nuoli avaa sanakortin.", sanastoCard: "Avaa sanakortti",
+    sanastot: "Sanastot", back: "Takaisin", sanastoHelp: "Kaiutin lukee sanan ääneen, nuoli avaa sanakortin.", sanastoCard: "Avaa sanakortti", sanastoCardinal: "perusluku (yksi)", sanastoOrdinal: "järjestysluku (ensimmäinen)",
     lauseClear: "Tyhjennä lause", lauseCheckWord: "Näytä sanan tiedot", lauseInSentence: "Tässä lauseessa", lauseChoose: "Valitse tämä", lauseFullCard: "Koko sanakortti",
     expOcr: "Valokuvahaku", expOcrDesc: "Tunnistaa valokuvan tekstistä sanakirjan sanat. Käynnistys 📷-painikkeesta.",
     expOcrInfo: `<p>Hakukentän viereen tulee 📷-painike. Ota kuva tekstistä tai valitse kuva, ja sanakirjan sanat merkitään
@@ -263,7 +263,7 @@ const UI_TEXTS = {
     lauseForm_place_Ade: "sted (hvor?)", lauseForm_means_Ade: "middel (med hva?)", lauseForm_top_Ade: "oppå",
     lauseForm_place_Abl: "fra sted (hvorfra?)", lauseForm_top_Abl: "ned fra",
     lauseForm_place_All: "til sted (hvor hen?)", lauseForm_top_All: "opp på",
-    sanastot: "Ordlister", back: "Tilbake", sanastoHelp: "Høyttaleren leser ordet, pilen åpner ordkortet.", sanastoCard: "Åpne ordkortet",
+    sanastot: "Ordlister", back: "Tilbake", sanastoHelp: "Høyttaleren leser ordet, pilen åpner ordkortet.", sanastoCard: "Åpne ordkortet", sanastoCardinal: "grunntall (en)", sanastoOrdinal: "ordenstall (første)",
     lauseClear: "Tøm setningen", lauseCheckWord: "Vis opplysninger om ordet", lauseInSentence: "I denne setningen", lauseChoose: "Velg dette", lauseFullCard: "Hele ordkortet",
     expOcr: "Bildesøk", expOcrDesc: "Finner ordene fra ordboka i teksten på et bilde. Starter med 📷-knappen.",
     expOcrInfo: `<p>En 📷-knapp vises ved søkefeltet. Ta et bilde av tekst eller velg et bilde, så blir ordene fra ordboka

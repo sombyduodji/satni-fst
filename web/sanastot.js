@@ -70,14 +70,19 @@ function renderSanasto(listId) {
   $("sanasto-speak").hidden = false;
   let html = l.hint ? `<p class="sanasto-hint">${esc(l.hint[lang])}</p>` : "";
   if (l.kind === "numbers") {
-    // Tiivis rivi: numero, perusluku ja järjestysluku vierekkäin (kapealla näytöllä rivittyy)
-    html += l.rows.map((r) => {
-      const ord = lang === "nb" ? r.nb_ord : r.fi_ord;
-      return `<div class="sanasto-row num"><span class="sanasto-n">${r.n}</span><div class="num-words">` +
-        `<span class="num-card">${sanastoWord(r.card, r.card_id, true)}</span>` +
-        `<span class="num-ord"><span class="muted">${r.n}.</span> ${r.ord ? sanastoWord(r.ord, r.ord_id) : ""}` +
-        `${ord ? ` <span class="num-fi">${esc(ord)}</span>` : ""}</span></div></div>`;
-    }).join("");
+    // Taulukko: numero | perusluku | järjestysluku; solussa sana ja sen alla kaiutin ja sanakortti, joten jokainen rivi on
+    // samanmuotoinen. Suomen järjestyslukua ei toisteta riveillä: esimerkki on sarakeotsikossa (järjestysluku (ensimmäinen))
+    // Pitkä yhdysluku saa rivittyä vain osien välistä (guokte|nuppelohkái, čuođi|guoktelogi), ei kesken osan
+    const parts = (w) => esc(w).replace(/(.)(nuppe|logi|logát|vuosttaš|nubbi)/g, "$1<wbr>$2").replace(/^(čuođi)(.)/, "$1<wbr>$2");
+    const icons = (w, id) => `<span class="nt-ico"><button type="button" class="sw-ico" data-say="${esc(w)}" aria-label="${esc(t("listen"))}">${SPEAK_ICON}</button>` +
+      (id ? `<button type="button" class="sw-ico" data-open="${id}" data-word="${esc(w)}" aria-label="${esc(t("sanastoCard"))}">${OPEN_ICON}</button>` : "") + `</span>`;
+    html += `<div class="num-table"><span></span><span class="nt-head">${esc(t("sanastoCardinal"))}</span><span class="nt-head">${esc(t("sanastoOrdinal"))}</span>` +
+      l.rows.map((r) => {
+        return `<span class="nt-n">${r.n}</span>` +
+          `<span class="nt-cell"><span class="sw main" data-say="${esc(r.card)}"${r.card_id ? ` data-id="${r.card_id}"` : ""}>${parts(r.card)}</span>${icons(r.card, r.card_id)}</span>` +
+          `<span class="nt-cell">${r.ord ? `<span class="sw" data-say="${esc(r.ord)}"${r.ord_id ? ` data-id="${r.ord_id}"` : ""}>${parts(r.ord)}</span>` +
+            `${icons(r.ord, r.ord_id)}` : ""}</span>`;
+      }).join("") + `</div>`;
   } else {
     // Taulukko: suomen (norjan) muodot sarakeotsikoina saamen muotojen yläpuolella (maanantai | maanantaina),
     // murremerkintä omassa sarakkeessaan vasemmalla; sarakkeet samoissa kohdissa kaikissa laatikoissa
