@@ -364,6 +364,21 @@ def pronoun_rows():
     return [(word, "Pron", ";".join(c)) for word, c in cells.items()]
 
 
+PROPER_RE = re.compile(r"[A-ZÄÖÅ][a-zäöå]+(-[A-ZÄÖÅa-zäöå][a-zäöå]+)?")
+
+
+def proper_names(cursor):
+    """Erisnimisanojen (subtype Prop) suomennokset, jotka ovat nimiä itsessään: {(nimi, "N")}. Selitykset
+    (miehen nimi, naisen nimi) eivät ole nimiä, joten ne jäävät pois."""
+    names = set()
+    for (text,) in cursor.execute("SELECT finnish_translation FROM dictionary WHERE subtype = 'Prop' AND pos = 'N'"):
+        for w in re.split(r"[,;]", re.sub(r"\(.*?\)", "", text or "")):
+            w = w.strip()
+            if PROPER_RE.fullmatch(w):
+                names.add((w, "N"))
+    return names
+
+
 def add_fin_forms(cursor):
     print("Taivutetaan suomenkieliset käännökset (GiellaLT lang-fin)...")
     cursor.execute("DROP TABLE IF EXISTS fin_forms")
@@ -373,6 +388,9 @@ def add_fin_forms(cursor):
         return
     words = sorted(w for w in translation_words(cursor, "fin", "finnish_translation", ("N", "V", "A", "Num"))
                    if not (w[1] == "Num" and w[0] in APPROXIMATE_NUMERALS))
+    # Erisnimet (Anár = Inari, Roavvenjárga = Rovaniemi): isolla alkavat yksisanaiset suomennokset, jotta taivutettu
+    # nimi tunnistetaan (Inariin -> Anárii); translation_words ottaa vain pienellä alkavat
+    words = sorted(set(words) | proper_names(cursor))
     analyses = lookup(ANALYSER, sorted({w for w, _ in words}))
     requests = {}
     for word, pos in words:

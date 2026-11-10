@@ -18,22 +18,34 @@ const LAUSE_POS = { N: ["N"], V: ["V"], A: ["A"], Num: ["Num"], Pron: ["Pron"] }
 
 let lause = { tokens: [] };
 
-function lauseCandidates(base, pos) {
+function lauseCandidates(base, pos, exactOnly = false) {
   // Saamen sanat, joiden suomennos on base; sama sanaluokka ensin, sitten yleisin (korpusfrekvenssi)
-  const rows = all(`SELECT DISTINCT d.id, d.sme_lemma, d.pos, d.freq, MIN(COALESCE(t.nr, 9)) AS nr FROM trans_search t
-    JOIN dictionary d ON d.id = t.word_id WHERE t.lang = 'fin' AND t.fold = ? GROUP BY d.id`, [fold(base)]);
+  // Käännöslista on haussa yhtenä tekstinä ("mihin kellonaikaan, monelta, moneltako"): sana voi olla missä kohtaa
+  // listaa tahansa, kuten hakukentässä
+  const f = fold(base);
+  // at = 0: käännös on tämä sana tai alkaa sillä (pääkäännös), 1: sana on listassa myöhemmin (galgat "täytyä, saada")
+  const rows = all(`SELECT DISTINCT d.id, d.sme_lemma, d.pos, d.subtype, d.freq, MIN(COALESCE(t.nr, 9)) AS nr,
+    MIN(CASE WHEN t.fold = ? OR t.fold LIKE ? THEN 0 ELSE 1 END) AS at FROM trans_search t
+    JOIN dictionary d ON d.id = t.word_id WHERE t.lang = 'fin'
+    AND (t.fold = ? OR t.fold LIKE ? OR t.fold LIKE ? OR t.fold LIKE ?) GROUP BY d.id`,
+    [f, `${f}, %`, f, `${f}, %`, `%, ${f}`, `%, ${f}, %`]).filter((r) => !exactOnly || r.at === 0);
   const want = LAUSE_POS[pos] || null;
   return rows
     .filter((r) => !r.sme_lemma.includes(" ") || rows.length === 1)
-    .sort((a, b) => ((want && !want.includes(a.pos)) - (want && !want.includes(b.pos)))
+    .sort((a, b) => ((want && !want.includes(a.pos)) - (want && !want.includes(b.pos))) || (a.at - b.at)
       || ((b.freq || 0) - (a.freq || 0)) || (a.nr - b.nr))
     .slice(0, 6);
 }
 
 // Suomen sanan tulkinnat: [{ base, cell, pos }] (saisinko -> saada Cond+Sg1 + -ko)
-function lauseAnalyses(word) {
+function lauseAnalyses(word, raw = word) {
   let clitic = null, stem = word;
   let out = translationFormsOf(word, "fin");
+  // Erisnimet ovat taulukoissa isolla alkukirjaimella (Inariin = Inari, Sg+Ill)
+  if (!out.length && raw !== word) {
+    out = translationFormsOf(raw, "fin");
+    if (out.length) stem = raw;
+  }
   if (!out.length) {
     for (const [c] of LAUSE_CLITICS) {
       if (word.endsWith(c) && word.length >= c.length + 2) {  // myös lyhyt vartalo: onko = on + -ko
@@ -79,13 +91,19 @@ function lauseParse(text) {
     // Kieltoverbi kysymyksenä: eikö = iigo, etkö = itgo
     const negq = [...LAUSE_CLITICS].find(([c]) => (c === "ko" || c === "kö") && word.endsWith(c) && LAUSE_NEG[word.slice(0, -c.length)]);
     if (negq) { tokens.push({ raw, word, neg: word.slice(0, -negq[0].length), clitic: negq[0], known: true }); continue; }
-    const { analyses, clitic, stem } = lauseAnalyses(word);
+    const { analyses, clitic, stem } = lauseAnalyses(word, raw);
     // Tulkintojen järjestys: sana itse perusmuotona (maksaa = maksaa, ei maksa-sanan partitiivi), yksikkö ennen monikkoa
     analyses.sort((a, b) => ((b.base === stem) - (a.base === stem)) || (a.cell.startsWith("Pl") - b.cell.startsWith("Pl")));
     let pick = analyses[0] || null;
     // Sanalla oma sanakirjan vastine, eikä se ole minkään sanan perusmuoto (missä = gos, kotiin = ruoktot): se ensin
-    const direct = !clitic && lauseCandidates(word, null).length;
+    // Vain sanan oma pääkäännös, eikä nimi pienellä kirjoitetulle sanalle (anna = antaa, ei nimi Anne)
+    const direct = !clitic && lauseCandidates(word, null, true)
+      .some((c) => c.subtype !== "Prop" || /^\p{Lu}/u.test(raw));
     if (direct && !(pick && pick.base === stem)) pick = { base: word, cell: null, pos: null };
+    // Ei taivutusta eikä pääkäännöstä: myös käännöslistan myöhempi sana kelpaa (monelta = galles "mihin kellonaikaan, monelta")
+    if (!pick && !clitic && lauseCandidates(word, null).some((c) => c.subtype !== "Prop" || /^\p{Lu}/u.test(raw))) {
+      pick = { base: word, cell: null, pos: null };
+    }
     // Iso alkukirjain lauseen keskellä ja tuntematon sana: nimi, joka säilyy sellaisenaan (Juha)
     if (!pick && tokens.some((x) => !x.punct) && /^\p{Lu}/u.test(raw)) {
       tokens.push({ raw, word, name: true, known: true }); continue;
@@ -159,7 +177,8 @@ function lauseSamiTag(tokens, i) {
   if (existential && fcase === "Par") return `${num || "Sg"}+Nom`;
   if (hasVerb && (fcase === "Gen" || fcase === "Par")) return `${num || "Sg"}+Acc`;
   if (fcase === "Nom") return `${num || "Sg"}+Nom`;
-  return samiTagOfFinCell(cell, pos, t.pick.base, !!t.choice.human);
+  // Paikannimi kuten ihmissana: Rovaniemellä = Roavvenjárggas, Rovaniemelle = Roavvenjárgii (sijat ovat nimellä aina samat)
+  return samiTagOfFinCell(cell, pos, t.pick.base, !!t.choice.human || t.choice.subtype === "Prop");
 }
 
 function lauseSamiForm(tokens, i) {
@@ -197,22 +216,67 @@ function lauseSentence(tokens) {
 // --- Näkymä ---
 
 // Avaus haun vierestä: haun teksti mukaan, jos siinä on useampi sana (saisinko yhden kahvin); muuten edellinen lause
-function openLause() {
-  const typed = $("search").value.trim();
-  if (typed.includes(" ")) $("lause-input").value = typed;
-  else if (!$("lause-input").value) {
-    try { $("lause-input").value = localStorage.getItem("satni-lause") || ""; } catch (e) { /* yksityinen tila */ }
-  }
-  $("lause-view").hidden = false;
-  lause.tokens = lauseParse($("lause-input").value);
-  renderLause();
-  $("lause-input").focus();
+// Kirjoitettu lause ja sanojen valinnat (tulkinta, saamen sana, korjattu sana, ohitus) muistetaan: näkymästä
+// vahingossa poistuminen (takaisin-ele, Sulje, sanakortti) tai sovelluksen sulkeminen ei hävitä niitä.
+function lauseSave() {
+  const text = $("lause-input").value;
+  const picks = {};
+  lause.tokens.forEach((tok, i) => {
+    const p = {};
+    if (tok.fixed) p.w = tok.raw;
+    if (tok.analyses?.length > 1 && tok.pick !== tok.analyses[0]) p.r = tok.analyses.indexOf(tok.pick);
+    if (tok.choice && tok.candidates?.[0] && tok.choice !== tok.candidates[0]) p.c = tok.choice.id;
+    if (tok.skip) p.s = 1;
+    if (Object.keys(p).length) picks[i] = p;
+  });
+  lause.parsedText = text;
+  try {
+    localStorage.setItem("satni-lause", text);
+    localStorage.setItem("satni-lause-picks", JSON.stringify({ text, picks }));
+  } catch (e) { /* yksityinen tila */ }
 }
 
-// Takaisin-ele ja Esc: ensin sanan valikko, sitten näkymä (MainActivity.goBackOrFinish kutsuu closeOcr:ia)
+function lauseParseRestoring(text) {
+  const tokens = lauseParse(text);
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem("satni-lause-picks") || "null"); } catch (e) { /* ei tallennettua */ }
+  if (saved && saved.text === text) {
+    for (const [i, p] of Object.entries(saved.picks || {})) {
+      const tok = tokens[Number(i)];
+      if (!tok) continue;
+      if (p.w) Object.assign(tok, lauseParse(p.w)[0], { raw: p.w, fixed: true });
+      if (p.r != null && tok.analyses?.[p.r]) {
+        tok.pick = tok.analyses[p.r];
+        tok.candidates = lauseCandidates(tok.pick.base, tok.pick.pos);
+        tok.choice = tok.candidates[0] || null;
+      }
+      if (p.c != null) tok.choice = tok.candidates?.find((c) => c.id === p.c) || tok.choice;
+      if (p.s) { tok.skip = true; tok.known = true; }
+    }
+  }
+  lause.parsedText = text;
+  return tokens;
+}
+
+function openLause() {
+  const typed = $("search").value.trim(), input = $("lause-input");
+  // Haussa kirjoitettu lause tulee mukaan vain kerran: palatessa oma muokattu lause säilyy
+  if (typed.includes(" ") && typed !== lause.carried) { input.value = typed; lause.carried = typed; }
+  else if (!input.value) {
+    try { input.value = localStorage.getItem("satni-lause") || ""; } catch (e) { /* yksityinen tila */ }
+  }
+  $("lause-view").hidden = false;
+  if (input.value !== lause.parsedText || !lause.tokens.length) lause.tokens = lauseParseRestoring(input.value);
+  renderLause();
+  // Valmiin lauseen kohdalla ei avata näppäimistöä sanojen päälle
+  if (!input.value.trim()) input.focus();
+}
+
+// Takaisin-ele ja Esc: ensin pieni sanakortti, sitten sanan valikko, sitten näkymä (MainActivity.goBackOrFinish kutsuu closeOcr:ia)
 function closeLause() {
   if ($("lause-view").hidden) return false;
-  if (!$("lause-pop").hidden) $("lause-pop").hidden = true;
+  if (!$("lause-card").hidden) $("lause-card").hidden = true;
+  else if (!$("lause-pop").hidden) $("lause-pop").hidden = true;
   else $("lause-view").hidden = true;
   return true;
 }
@@ -244,8 +308,10 @@ function lauseOpenChip(i) {
           `<label><input type="radio" name="lp-reading" value="${k}"${a === tok.pick ? " checked" : ""}> ${esc(a.base)} · ${esc(a.cell)}</label>`).join("") +
         `<p class="lp-sub">${esc(t("lauseSamiWord"))}</p>` : "";
     html = `<p class="lp-head">${esc(tok.raw)} = ${esc(tok.pick.base)}${esc(cell)}${tok.clitic ? " + -" + esc(tok.clitic) : ""}</p>` + readings +
-      tok.candidates.map((c, k) => `<label><input type="radio" name="lp" value="${k}"${c === tok.choice ? " checked" : ""}> ${esc(c.sme_lemma)}` +
-        ` <span class="muted small">${esc(c.pos)}</span></label>`).join("");
+      tok.candidates.map((c, k) => `<div class="lp-row"><label><input type="radio" name="lp" value="${k}"${c === tok.choice ? " checked" : ""}>` +
+        `<span><b>${esc(c.sme_lemma)}</b> <span class="muted small">${esc(c.pos)}</span>` +
+        `<span class="lp-gloss">${esc(lauseGloss(c.id))}</span></span></label>` +
+        `<button type="button" class="lp-info" data-k="${k}" aria-label="${esc(t("lauseCheckWord"))}" title="${esc(t("lauseCheckWord"))}">i</button></div>`).join("");
   } else {
     const sug = lauseSuggestions(tok.word);
     html = `<p class="lp-head">${esc(tok.raw)}: ${esc(t("lauseDidYouMean"))}</p>` +
@@ -257,21 +323,82 @@ function lauseOpenChip(i) {
   pop.hidden = false;
 }
 
+// Saamen sanan lyhyt käännös valikkoon (käyttöliittymän kieli, varalla suomi): galles  mihin kellonaikaan, monelta
+function lauseGloss(id) {
+  const rows = all(`SELECT lang, translations FROM meanings WHERE word_id = ? AND lang IN (?, 'fin') ORDER BY rowid`, [id, settings.lang]);
+  const pick = rows.filter((r) => r.lang === settings.lang);
+  const list = (pick.length ? pick : rows).flatMap((r) => splitList(r.translations));
+  return [...new Set(list)].slice(0, 3).join(", ");
+}
+
+// Pieni sanakortti vaihtoehdon tarkistamiseen lausekääntäjästä poistumatta: merkitykset (enintään 4, kustakin
+// yksi esimerkki), muoto tässä lauseessa, kaiutin; "Valitse" vaihtaa sanan, "Koko sanakortti" avaa sanakirjan
+// (takaisin-ele palaa lauseeseen).
+function lauseShowCard(i, k) {
+  const tok = lause.tokens[i], c = tok.candidates[k], card = $("lause-card");
+  const { word, meanings } = loadWord(c.id);
+  const groups = meaningsByLanguage(meanings).slice(0, 2);
+  const chosen = c === tok.choice;
+  const s = chosen ? lauseSamiForm(lause.tokens, i) : null;
+  const body = groups.map(([lang, ms]) => `<p class="lp-sub">${esc(capitalize(langName(lang) || lang))}</p>` +
+    ms.slice(0, 4).map((m) => meaningHtml({ ...m, examples: m.examples.slice(0, 1) }, ms.length > 1)).join("") +
+    (ms.length > 4 ? `<p class="muted small">+ ${ms.length - 4}</p>` : "")).join("");
+  card.innerHTML = `<div class="lcard-box" role="dialog" aria-label="${esc(word.sme_lemma)}">` +
+    `<div class="lcard-head"><span class="lcard-lemma">${esc(word.sme_lemma)}</span>` +
+    `<span class="muted small">${esc(wordClassLabel(word.pos, word.subtype))}</span>` +
+    `<button type="button" class="speak-btn lcard-speak" aria-label="${esc(t("listen"))}">${SPEAK_ICON}</button></div>` +
+    (s && s.form !== word.sme_lemma ? `<p class="small lcard-form">${esc(t("lauseInSentence"))}: <b>${esc(s.form)}</b>` +
+      (s.tag ? ` <span class="muted">(${esc(s.tag)})</span>` : "") + `</p>` : "") +
+    `<div class="lcard-body">${body || `<p class="muted">${esc(t("lauseUnknown"))}</p>`}</div>` +
+    `<div class="lcard-actions">${chosen ? "" : `<button type="button" class="chip-btn lcard-pick">${esc(t("lauseChoose"))}</button>`}` +
+    `<button type="button" class="chip-btn lcard-open">${esc(t("lauseFullCard"))}</button>` +
+    `<button type="button" class="chip-btn lcard-close">${esc(t("close"))}</button></div></div>`;
+  card.hidden = false;
+  card.querySelector(".lcard-speak").onclick = (e) => speak(word.sme_lemma, e.currentTarget);
+  card.querySelector(".lcard-close").onclick = () => { card.hidden = true; };
+  card.onclick = (e) => { if (e.target === card) card.hidden = true; };
+  const pick = card.querySelector(".lcard-pick");
+  if (pick) pick.onclick = () => { tok.choice = c; card.hidden = true; renderLause(); lauseSave(); lauseOpenChip(i); };
+  card.querySelector(".lcard-open").onclick = () => {
+    card.hidden = true;
+    $("lause-view").hidden = true;
+    const index = queryDatabase(word.sme_lemma).findIndex((r) => r.id === c.id);
+    search(word.sme_lemma, Math.max(index, 0));
+    lauseReturnHash = location.hash;
+  };
+}
+
+let lauseReturnHash = null;  // lauseesta avatun sanakortin osoite: takaisin-ele palaa siitä lauseeseen
+
 function bindLause() {
   if (!$("lause-view")) return;
   $("lause-btn").onclick = openLause;
   $("lause-close").onclick = () => { $("lause-view").hidden = true; };
   const closeOcrBase = window.closeOcr;
   window.closeOcr = () => closeLause() || (closeOcrBase ? closeOcrBase() : false);
+  const backToOcrBase = window.backToOcr;
+  window.backToOcr = () => {
+    if (lauseReturnHash && location.hash === lauseReturnHash) {
+      lauseReturnHash = null;
+      $("lause-view").hidden = false;
+      renderLause();
+      return true;
+    }
+    return backToOcrBase ? backToOcrBase() : false;
+  };
+  $("lause-pop").addEventListener("click", (e) => {
+    const b = e.target.closest(".lp-info");
+    if (b) lauseShowCard(Number($("lause-pop").dataset.i), Number(b.dataset.k));
+  });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeLause(); });
   $("lause-speak").onclick = () => speak($("lause-sme").textContent, $("lause-speak"));
   let timer = null;
   const reparse = () => {
     clearTimeout(timer);
     timer = setTimeout(() => {
-      lause.tokens = lauseParse($("lause-input").value);
+      lause.tokens = lauseParseRestoring($("lause-input").value);
       renderLause();
-      try { localStorage.setItem("satni-lause", $("lause-input").value); } catch (e) { /* yksityinen tila */ }
+      lauseSave();
     }, 300);
   };
   // Puhelimen näppäimistö: viimeinen sana voi olla vielä kesken (alleviivattu), joten luetaan myös sanan valmistuttua
@@ -289,15 +416,17 @@ function bindLause() {
       t.candidates = lauseCandidates(t.pick.base, t.pick.pos);
       t.choice = t.candidates[0] || null;
       renderLause();
+      lauseSave();
       lauseOpenChip(Number($("lause-pop").dataset.i));
       return;
     }
     if (r.dataset.skip) { t.skip = true; t.known = true; }
     else if (r.dataset.word) {
       const fresh = lauseParse(r.dataset.word)[0];
-      Object.assign(t, fresh, { raw: r.dataset.word });
+      Object.assign(t, fresh, { raw: r.dataset.word, fixed: true });
     } else t.choice = t.candidates[Number(r.value)];
     renderLause();
+    lauseSave();
   };
 }
 

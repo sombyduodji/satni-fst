@@ -47,6 +47,10 @@ in	V	en
 ean	V	emme (2)
 eahppi	V	ette (2)
 eaba	V	eivät (2)
+# galles / gallis "mihin kellonaikaan": dict-sme-fin kirjoittaa "moneltako?" kysymysmerkin kanssa, joten haku löysi vain
+# sen; monelta (ilman -ko) puuttui (lausekääntäjä: monelta kauppa menee kiinni?), 2026-11-10
+galles	Adv	mihin kellonaikaan, monelta, moneltako
+gallis	Adv	mihin kellonaikaan, monelta, moneltako
 # risku = saamelaisnaisen pyöreä rintasolki (Sammallahti: liinasolki, rintasolki, risku; Giellagáldu: brosch, sølje),
 # käyttäjän tarkistama 2026-11-10; pelkkä "risku" ei kerro suomalaiselle lukijalle, mikä sana on
 risku	N	risku, rintasolki
