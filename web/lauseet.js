@@ -278,7 +278,7 @@ function openLause() {
 function closeLause() {
   if ($("lause-view").hidden) return false;
   if (!$("lause-card").hidden) $("lause-card").hidden = true;
-  else if (!$("lause-pop").hidden) $("lause-pop").hidden = true;
+  else if (!$("lause-pop").hidden) lauseClosePop();
   else $("lause-view").hidden = true;
   return true;
 }
@@ -309,20 +309,32 @@ function lauseOpenChip(i) {
       ? `<p class="lp-sub">${esc(t("lauseReading"))}</p>` + tok.analyses.map((a, k) =>
           `<label><input type="radio" name="lp-reading" value="${k}"${a === tok.pick ? " checked" : ""}> ${esc(a.base)} · ${esc(a.cell)}</label>`).join("") +
         `<p class="lp-sub">${esc(t("lauseSamiWord"))}</p>` : "";
-    html = `<p class="lp-head">${esc(tok.raw)} = ${esc(tok.pick.base)}${esc(cell)}${tok.clitic ? " + -" + esc(tok.clitic) : ""}</p>` + readings +
+    html = lauseHead(`${esc(tok.raw)} = ${esc(tok.pick.base)}${esc(cell)}${tok.clitic ? " + -" + esc(tok.clitic) : ""}`) + readings +
       tok.candidates.map((c, k) => `<div class="lp-row"><label><input type="radio" name="lp" value="${k}"${c === tok.choice ? " checked" : ""}>` +
         `<span><b>${esc(c.sme_lemma)}</b> <span class="muted small">${esc(c.pos)}</span>` +
         `<span class="lp-gloss">${esc(lauseGloss(c.id))}</span></span></label>` +
         `<button type="button" class="lp-info" data-k="${k}" aria-label="${esc(t("lauseCheckWord"))}" title="${esc(t("lauseCheckWord"))}">i</button></div>`).join("");
   } else {
     const sug = lauseSuggestions(tok.word);
-    html = `<p class="lp-head">${esc(tok.raw)}: ${esc(t("lauseDidYouMean"))}</p>` +
+    html = lauseHead(`${esc(tok.raw)}: ${esc(t("lauseDidYouMean"))}`) +
       sug.map((w) => `<label><input type="radio" name="lp" data-word="${esc(w)}"> ${esc(w)}</label>`).join("") +
       `<label><input type="radio" name="lp" data-skip="1"> ${esc(t("lauseSkip"))}</label>`;
   }
   pop.innerHTML = html;
   pop.dataset.i = i;
   pop.hidden = false;
+  for (const b of document.querySelectorAll(".lause-chip")) b.classList.toggle("open", Number(b.dataset.i) === i);
+}
+
+// Valikon otsikkorivi ja sulkemisrasti
+function lauseHead(html) {
+  return `<div class="lp-top"><p class="lp-head">${html}</p><button type="button" class="lp-close" aria-label="${esc(t("close"))}" title="${esc(t("close"))}">×</button></div>`;
+}
+
+// Sanan valikko kiinni: sama sana uudelleen, rasti, tekstikenttä tai tyhjä kohta näkymässä
+function lauseClosePop() {
+  $("lause-pop").hidden = true;
+  for (const b of document.querySelectorAll(".lause-chip.open")) b.classList.remove("open");
 }
 
 // Saamen sanan lyhyt käännös valikkoon (käyttöliittymän kieli, varalla suomi): galles  mihin kellonaikaan, monelta
@@ -409,8 +421,16 @@ function bindLause() {
   $("lause-input").addEventListener("change", reparse);
   $("lause-chips").onclick = (e) => {
     const b = e.target.closest(".lause-chip");
-    if (b) lauseOpenChip(Number(b.dataset.i));
+    if (!b) return;
+    const i = Number(b.dataset.i);
+    if (!$("lause-pop").hidden && Number($("lause-pop").dataset.i) === i) lauseClosePop();
+    else lauseOpenChip(i);
   };
+  $("lause-input").addEventListener("focus", lauseClosePop);
+  $("lause-view").addEventListener("click", (e) => {
+    if (e.target.closest(".lp-close")) { lauseClosePop(); return; }
+    if (!e.target.closest(".lause-chip, .lause-pop, .lause-card")) lauseClosePop();
+  });
   $("lause-pop").onchange = (e) => {
     const t = lause.tokens[Number($("lause-pop").dataset.i)], r = e.target;
     if (r.name === "lp-reading") {
