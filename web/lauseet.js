@@ -7,6 +7,9 @@
 // Kieltoverbi persoonittain (sanakirjan kieltoverbeillä ei ole paradigmaa)
 const LAUSE_NEG = { en: "in", et: "it", ei: "ii", emme: "eat", ette: "ehpet", eivät: "eai" };
 const LAUSE_NEG_PERSON = { en: "Sg1", et: "Sg2", ei: "Sg3", emme: "Pl1", ette: "Pl2", eivät: "Pl3" };
+// Suomen liitepartikkeli -> saamen: -ko/-kö = -go (tuletko = boađátgo), -kin = -nai (minäkin = munnai),
+// -kaan/-kään = -ge (kielteisessä lauseessa), -han/-hän = -han (onhan = leahan). Pisin ensin.
+const LAUSE_CLITICS = [["kään", "ge"], ["kaan", "ge"], ["kin", "nai"], ["han", "han"], ["hän", "han"], ["ko", "go"], ["kö", "go"]];
 // Suomen persoonapronomini -> saamen (mii = me on persoonapronomini, ei kysymyssana mii = mikä)
 const LAUSE_PRONOUN = { minä: "mun", sinä: "don", hän: "son", me: "mii", te: "dii", he: "sii" };
 // Luvut, joiden jälkeen saamen substantiivi on yksikön genetiivissä (guokte gáfe); 7- ei ole vielä tarkistettu
@@ -32,10 +35,12 @@ function lauseAnalyses(word) {
   let clitic = null, stem = word;
   let out = translationFormsOf(word, "fin");
   if (!out.length) {
-    for (const c of ["ko", "kö"]) {
-      if (word.endsWith(c) && word.length > c.length + 2) {
-        const a = translationFormsOf(word.slice(0, -c.length), "fin");
-        if (a.length) { out = a; clitic = c; stem = word.slice(0, -c.length); break; }
+    for (const [c] of LAUSE_CLITICS) {
+      if (word.endsWith(c) && word.length >= c.length + 2) {  // myös lyhyt vartalo: onko = on + -ko
+        const st = word.slice(0, -c.length);
+        // Persoonapronominin perusmuoto ei ole taivutustaulukoissa (minäkin = minä + -kin = munnai)
+        const a = LAUSE_PRONOUN[st] ? [{ base: st, cell: "Nom", pos: "Pron" }] : translationFormsOf(st, "fin");
+        if (a.length) { out = a; clitic = c; stem = st; break; }
       }
     }
   }
@@ -71,6 +76,9 @@ function lauseParse(text) {
     if (!/\p{L}/u.test(raw)) { tokens.push({ punct: raw }); continue; }
     const word = raw.toLowerCase();
     if (LAUSE_NEG[word]) { tokens.push({ raw, word, neg: word, known: true }); continue; }
+    // Kieltoverbi kysymyksenä: eikö = iigo, etkö = itgo
+    const negq = [...LAUSE_CLITICS].find(([c]) => (c === "ko" || c === "kö") && word.endsWith(c) && LAUSE_NEG[word.slice(0, -c.length)]);
+    if (negq) { tokens.push({ raw, word, neg: word.slice(0, -negq[0].length), clitic: negq[0], known: true }); continue; }
     const { analyses, clitic, stem } = lauseAnalyses(word);
     // Tulkintojen järjestys: sana itse perusmuotona (maksaa = maksaa, ei maksa-sanan partitiivi), yksikkö ennen monikkoa
     analyses.sort((a, b) => ((b.base === stem) - (a.base === stem)) || (a.cell.startsWith("Pl") - b.cell.startsWith("Pl")));
@@ -108,6 +116,12 @@ function lauseParse(text) {
     const finite = t.analyses.find((a) => a.cell.startsWith("Prs+") && a.cell !== "Prs+ConNeg");
     if (finite && !(prev?.pick?.pos === "V" || prev?.neg)) t.pick = finite;
   });
+  // Lauseessa ei muuta verbiä: monitulkintainen sana verbinä (tulenkin huomenna = tulla, ei tuli "dolla")
+  tokens.forEach((t) => {
+    if (!t.analyses?.length || t.pick?.pos === "V" || tokens.some((x) => x !== t && (x.pick?.pos === "V" || x.neg))) return;
+    const verb = t.analyses.find((a) => a.pos === "V" && /^(Prs|Prt|Cond|Pot)\+(Sg|Pl)/.test(a.cell));
+    if (verb) t.pick = verb;
+  });
   // Verbi mieluummin indikatiivina kuin imperatiivina (saa = Prs+Sg3)
   for (const t of tokens) {
     if (t.pick?.cell?.startsWith("Imprt") && t.analyses.some((a) => a.cell.startsWith("Prs+") && a.cell !== "Prs+ConNeg")) {
@@ -129,6 +143,9 @@ function lauseSamiTag(tokens, i) {
   const t = tokens[i], cell = t.pick.cell, pos = (t.pick.pos || t.choice.pos || "").toUpperCase();
   if (!cell) return null;
   const hasVerb = tokens.some((x) => x.pick?.pos === "V" || x.neg);
+  // Olla-verbin lause (onko täällä vessaa, on kahvia): suomen partitiivi on olemassaolon subjekti, saamessa nominatiivi
+  // (Leago dáppe hivsset?), ei objektin akkusatiivi
+  const existential = tokens.some((x) => x.pick?.base === "olla");
   const prev = tokens.slice(0, i).reverse().find((x) => !x.punct);
   const [num, fcase] = cell.includes("+") ? cell.split("+") : [null, cell];
   if (pos === "V") {
@@ -139,6 +156,7 @@ function lauseSamiTag(tokens, i) {
   // Luvun 2-6 jälkeen yksikön genetiivi (kaksi kahvia = guokte gáfe), samoin mittasanan jälkeen (palaa kakkua = bihtá gáhku)
   if (fcase === "Par" && prev?.pick && (LAUSE_SMALL_NUMBERS.includes(prev.pick.base) || prev.pick.cell === "Sg+Par")) return "Sg+Gen";
   // Lauseen objekti: suomen genetiivi tai partitiivi -> saamen akkusatiivi (yhden kahvin = ovtta gáfe)
+  if (existential && fcase === "Par") return `${num || "Sg"}+Nom`;
   if (hasVerb && (fcase === "Gen" || fcase === "Par")) return `${num || "Sg"}+Acc`;
   if (fcase === "Nom") return `${num || "Sg"}+Nom`;
   return samiTagOfFinCell(cell, pos, t.pick.base, !!t.choice.human);
@@ -146,16 +164,21 @@ function lauseSamiTag(tokens, i) {
 
 function lauseSamiForm(tokens, i) {
   const t = tokens[i];
-  if (t.neg) return { form: LAUSE_NEG[t.neg], base: "ii", note: LAUSE_NEG_PERSON[t.neg] };
+  const clitic = t.clitic ? Object.fromEntries(LAUSE_CLITICS)[t.clitic] : "";
+  if (t.neg) return { form: LAUSE_NEG[t.neg] + clitic, base: "ii", note: LAUSE_NEG_PERSON[t.neg] };
   if (t.name) return { form: t.raw, base: t.raw, exact: true };
   if (!t.choice) return null;
   const tag = lauseSamiTag(tokens, i);
   let form = t.choice.sme_lemma, exact = !t.pick.cell;
   if (tag) {
-    const forms = loadWord(t.choice.id).paradigm.get(tag);
+    let forms = loadWord(t.choice.id).paradigm.get(tag);
+    // Konditionaalin rinnakkaismuodoista -š- (sáhtášin, boađášin, oččošin) eikä -l- (sáhtálin), jotta valinta on aina sama
+    if (forms?.length > 1 && tag.startsWith("Cond")) forms = [...forms].sort((a, b) => b.includes("š") - a.includes("š"));
+    // Rinnakkaismuodoista perusmuodon kanssa sama ensin (mun eikä mon)
+    if (forms?.length > 1 && forms.includes(t.choice.sme_lemma)) forms = [t.choice.sme_lemma, ...forms.filter((f) => f !== t.choice.sme_lemma)];
     if (forms?.length) { form = forms[0]; exact = true; }
   }
-  if (t.clitic) form += "go";
+  form += clitic;
   return { form, base: t.choice.sme_lemma, tag, exact };
 }
 
@@ -199,7 +222,12 @@ function lauseOpenChip(i) {
   let html = "";
   if (tok.known && tok.candidates?.length) {
     const cell = tok.pick.cell ? ` · ${tok.pick.cell}` : "";
-    html = `<p class="lp-head">${esc(tok.raw)} = ${esc(tok.pick.base)}${esc(cell)}${tok.clitic ? " + -" + esc(tok.clitic) : ""}</p>` +
+    // Monitulkintainen muoto (tulen = tulla, 1. p. / tuli, genetiivi): tulkinnan voi vaihtaa
+    const readings = (tok.analyses || []).length > 1
+      ? `<p class="lp-sub">${esc(t("lauseReading"))}</p>` + tok.analyses.map((a, k) =>
+          `<label><input type="radio" name="lp-reading" value="${k}"${a === tok.pick ? " checked" : ""}> ${esc(a.base)} · ${esc(a.cell)}</label>`).join("") +
+        `<p class="lp-sub">${esc(t("lauseSamiWord"))}</p>` : "";
+    html = `<p class="lp-head">${esc(tok.raw)} = ${esc(tok.pick.base)}${esc(cell)}${tok.clitic ? " + -" + esc(tok.clitic) : ""}</p>` + readings +
       tok.candidates.map((c, k) => `<label><input type="radio" name="lp" value="${k}"${c === tok.choice ? " checked" : ""}> ${esc(c.sme_lemma)}` +
         ` <span class="muted small">${esc(c.pos)}</span></label>`).join("");
   } else {
@@ -219,16 +247,28 @@ function bindLause() {
   $("lause-close").onclick = () => { $("lause-view").hidden = true; };
   $("lause-speak").onclick = () => speak($("lause-sme").textContent, $("lause-speak"));
   let timer = null;
-  $("lause-input").oninput = () => {
+  const reparse = () => {
     clearTimeout(timer);
     timer = setTimeout(() => { lause.tokens = lauseParse($("lause-input").value); renderLause(); }, 300);
   };
+  // Puhelimen näppäimistö: viimeinen sana voi olla vielä kesken (alleviivattu), joten luetaan myös sanan valmistuttua
+  $("lause-input").oninput = reparse;
+  $("lause-input").addEventListener("compositionend", reparse);
+  $("lause-input").addEventListener("change", reparse);
   $("lause-chips").onclick = (e) => {
     const b = e.target.closest(".lause-chip");
     if (b) lauseOpenChip(Number(b.dataset.i));
   };
   $("lause-pop").onchange = (e) => {
     const t = lause.tokens[Number($("lause-pop").dataset.i)], r = e.target;
+    if (r.name === "lp-reading") {
+      t.pick = t.analyses[Number(r.value)];
+      t.candidates = lauseCandidates(t.pick.base, t.pick.pos);
+      t.choice = t.candidates[0] || null;
+      renderLause();
+      lauseOpenChip(Number($("lause-pop").dataset.i));
+      return;
+    }
     if (r.dataset.skip) { t.skip = true; t.known = true; }
     else if (r.dataset.word) {
       const fresh = lauseParse(r.dataset.word)[0];
