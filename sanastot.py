@@ -165,7 +165,7 @@ def fi_ord(n):
 
 
 def numbers():
-    nums = list(range(1, 22)) + [30, 40, 50, 60, 70, 80, 90, 100] + list(range(101, 111)) + [120, 130, 1000]
+    nums = list(range(1, 22)) + [30, 40, 50, 60, 70, 80, 90, 100] + list(range(101, 111)) + list(range(120, 131)) + [1000]
     gen = look(GEN, [card(n) + "+Num+Sg+Nom" for n in nums])
     cands = {n: ord_candidates(n) for n in nums}
     ana = look(ANA, sorted({c for v in cands.values() for c in v}))

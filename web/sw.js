@@ -1,6 +1,6 @@
 /* Service worker: sovellus ja sanakirja toimivat ilman verkkoyhteyttä ensimmäisen käynnin jälkeen.
    Kun tiedostoja päivitetään, kasvata VERSION, jolloin selaimet hakevat uudet tiedostot. */
-const VERSION = "satni-v63";
+const VERSION = "satni-v64";
 const APP_SHELL = [
   "./", "index.html", "styles.css", "i18n.js", "app.js", "lauseet.js", "sanastot.js", "data/sanastot.json", "manifest.webmanifest",
   "vendor/sql-wasm.js", "vendor/sql-wasm.wasm",
