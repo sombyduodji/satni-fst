@@ -178,7 +178,9 @@ function renderSanasto(listId) {
       // Kaksi tai kolme muotoa (viikonpäivät, kuukaudet, vuodenajat, ilmansuunnat): perusmuoto lihavoituna ja suomeksi
       // oikealla, toisella rivillä muut muodot pienemmin. Murremuodot rinnakkain (vuossárga it · mánnodat lä)
       const tap = (x, w, main) => `<span class="sw${main ? " main" : ""}" data-say="${esc(w)}"${x.id ? ` data-id="${x.id}"` : ""}>${esc(w)}</span>`;
-      const main = r.sme.map((x) => tap(x, x.w[0], true) + (x.dial ? `<span class="mr-dial">${esc(x.dial)}</span>` : "")).join(`<span class="mr-sep">·</span>`);
+      // Murremerkintä käyttöliittymän kielellä (it/lä, norjaksi ø/v), selite listan lopussa
+      const dial = (d) => t(d === "it" ? "dialEast" : "dialWest");
+      const main = r.sme.map((x) => tap(x, x.w[0], true) + (x.dial ? `<span class="mr-dial">${esc(dial(x.dial))}</span>` : "")).join(`<span class="mr-sep">·</span>`);
       const forms = r.sme.flatMap((x) => x.w.slice(1).map((w) => tap(x, w))).join(" · ");
       const note = r.note && r.note[lang] ? `<span class="mr-note">${esc(r.note[lang])}</span>` : "";
       return `<div class="sanasto-row mrow"><span class="mr-main">${main}</span><span class="mr-fi">${esc(ui[0] || "")}</span>` +
@@ -399,6 +401,7 @@ function renderSanasto(listId) {
       return `<section class="sl-sec">${sec[lang] ? `<h3>${esc(sec[lang])}</h3>` : ""}<div class="sl-card">${rows.map((r, k) => rowHtml(r, wide[k])).join("")}</div></section>`;
     }).join("");
   }
+  if (l.rows.some((r) => r.sme.some((x) => x.dial))) html += `<p class="sanasto-hint">${esc(t("dialLegend"))}</p>`;
   html += `<p class="sanasto-hint">${esc(t("sanastoHelp"))}</p>`;
   $("sanasto-body").innerHTML = html;
   $("sanasto-body").scrollTop = 0;
