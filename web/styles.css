@@ -1230,6 +1230,7 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 .peli-new svg { width: 14px; height: 14px; color: var(--flag-yellow); }
 .peli-correct { margin: 4px 0 0; color: var(--muted); }
 .peli-correct b { color: var(--text); }
+.peli-correct s { color: var(--flag-red); text-decoration-thickness: 2px; }
 .peli-tops { margin: 16px auto 0; max-width: 320px; text-align: left; }
 .peli-tops h4 { margin: 0 0 6px; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); text-align: center; }
 /* Palkintokoroke: 2. vasemmalla, 1. keskellä korkein, 3. oikealla */

@@ -5,7 +5,8 @@
 let peli = null;        // { words, cats } ladattuna
 let peliRun = null;     // käynnissä oleva peli: { mode, score, deck, pos, q }
 let peliBusy = false;   // vastaus näkyy hetken ennen seuraavaa kysymystä
-let peliLast = null;    // viimeisin kysymys { mode, q }: virheilmoitus myös pelin päätyttyä
+let peliLast = null;
+let peliShownAt = 0;    // kysymyksen piirtohetki: heti sen jälkeen tulleet napautukset (edellisen kysymyksen tuplanapautus) ohitetaan    // viimeisin kysymys { mode, q }: virheilmoitus myös pelin päätyttyä
 
 const PELI_TEXTS = {
   fi: {
@@ -17,7 +18,7 @@ const PELI_TEXTS = {
     groups: { words: "Sanat", cats: "Aiheet" },
     askSme: "Mitä tämä on suomeksi?", askUi: "Mikä on saameksi", over: "Peli päättyi", correctWas: "Oikea vastaus:",
     again: "Pelaa uudelleen", menu: "Valitse toinen peli", home: "Etusivulle", top: "Parhaat tulokset",
-    newBest: "Uusi ennätys!", resumeQ: "Jatketaanko keskeneräistä peliä?", resume: "Jatka", fresh: "Uusi peli",
+    newBest: "Uusi ennätys!", youAnswered: "Vastasit:", resumeQ: "Jatketaanko keskeneräistä peliä?", resume: "Jatka", fresh: "Uusi peli",
     report: "Ilmoita virheestä", streak: "Putki", mute: "Mykistä pelin äänet", unmute: "Pelin äänet päälle",
   },
   nb: {
@@ -29,7 +30,7 @@ const PELI_TEXTS = {
     groups: { words: "Ord", cats: "Emner" },
     askSme: "Hva er dette på norsk?", askUi: "Hva heter det på samisk", over: "Spillet er over", correctWas: "Riktig svar:",
     again: "Spill igjen", menu: "Velg et annet spill", home: "Til forsiden", top: "Beste resultater",
-    newBest: "Ny rekord!", resumeQ: "Vil du fortsette spillet du ikke ble ferdig med?", resume: "Fortsett", fresh: "Nytt spill",
+    newBest: "Ny rekord!", youAnswered: "Du svarte:", resumeQ: "Vil du fortsette spillet du ikke ble ferdig med?", resume: "Fortsett", fresh: "Nytt spill",
     report: "Meld fra om feil", streak: "Rekke", mute: "Slå av lyden i spillet", unmute: "Slå på lyden i spillet",
   },
 };
@@ -156,6 +157,7 @@ function renderPeliQuestion() {
       `<span class="po-key">${"ABCD"[i]}</span><span class="po-txt${o.split(/\s/).some((x) => x.length > 11) ? " long" : ""}"${q.toSme ? ' lang="se"' : ""}>${esc(o)}</span>` +
       `<span class="po-mark"></span></button>`).join("")}</div></div>` +
     `<p class="peli-report"><a href="#" class="report-link peli-report-link"><span aria-hidden="true">⚑</span> ${esc(T.report)}</a></p>`;
+  peliShownAt = performance.now();
 }
 
 // Parhaat tulokset: kolme parasta korokkeella (🥈 vasemmalla, 🥇 keskellä korkeimpana, 🥉 oikealla)
@@ -195,7 +197,7 @@ function renderPeliOver(chosen) {
   sheet.innerHTML = `<div class="peli-sheet-in" role="dialog" aria-label="${esc(T.over)}">` +
     `<div class="peli-ring"><b>${score}</b><span>${esc(T.score(score).replace(/^\d+\s*/, ""))}</span></div>` +
     `<h3>${esc(T.over)}${isNew ? ` <span class="peli-new">${PELI_CUP}${esc(T.newBest)}</span>` : ""}</h3>` +
-    `<p class="peli-correct">${esc(T.correctWas)} <b${q.toSme ? ' lang="se"' : ""}>${esc(q.answer)}</b></p>` +
+    `<p class="peli-correct">${esc(T.youAnswered)} <s${q.toSme ? ' lang="se"' : ""}>${esc(chosen)}</s> · ${esc(T.correctWas)} <b${q.toSme ? ' lang="se"' : ""}>${esc(q.answer)}</b></p>` +
     `<div class="peli-tops"><h4>${esc(T.top)}</h4>${peliPodium(top, isNew)}</div>` +
     `<div class="peli-actions"><button type="button" class="peli-primary" data-act="again" data-mode="${mode}">${esc(T.again)}</button>` +
     `<div class="peli-row"><button type="button" class="peli-secondary" data-act="menu">${esc(T.menu)}</button>` +
@@ -235,7 +237,7 @@ function peliVoice(q, ok) {
 }
 
 function peliAnswer(btn) {
-  if (peliBusy || !peliRun) return;
+  if (peliBusy || !peliRun || performance.now() - peliShownAt < 450) return;
   const q = peliRun.q;
   peliVoice(q, btn.dataset.o === q.answer);
   if (btn.dataset.o === q.answer) {
@@ -244,13 +246,23 @@ function peliAnswer(btn) {
     peliRun.score++;
     const s = document.querySelector(".peli-score");
     if (s) { s.textContent = peliRun.score; s.classList.remove("pop"); void s.offsetWidth; s.classList.add("pop"); }
-    setTimeout(() => {
+    // Seuraava kysymys vasta, kun Biret on sanonut lauseensa loppuun (enintään 3,5 s), muuten ääni puhuisi edellisestä
+    // sanasta uuden kysymyksen aikana
+    const next = () => {
+      if (!peliBusy) return;
       peliBusy = false;
       if (!peliRun) return;
       peliRun.q = peliQuestion(peliRun);
       peliSave();
       renderPeliQuestion();
-    }, q.voice == null ? 550 : 1600);  // äänen kanssa hetki aikaa kuulla vastaus
+    };
+    if (peliAudio && !settings.gameMute) {
+      peliAudio.addEventListener("ended", () => setTimeout(next, 250), { once: true });
+      peliAudio.addEventListener("error", next, { once: true });
+      setTimeout(next, 3500);
+    } else {
+      setTimeout(next, 550);
+    }
   } else {
     renderPeliOver(btn.dataset.o);
   }
