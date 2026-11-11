@@ -37,6 +37,7 @@ async function loadSanastot() {
 }
 
 function openSanastot() {
+  stopTts();  // sanakortin ääntämys ei jatku sanastojen päällä
   $("sanasto-view").hidden = false;
   loadSanastot().then(() => (sanastoAuki ? renderSanasto(sanastoAuki) : renderSanastoGrid()))
     .catch(() => { $("sanasto-body").textContent = t("loadFailed", "sanastot.json"); });
@@ -54,6 +55,7 @@ function closeSanastot() {
 // Näkymä kiinni. Jos listaan palattiin sanakortilta (Androidin takaisin-ele ei muuta osoitetta), kortti korvataan
 // aloitussivulla, jottei sulkeminen näytä vanhaa korttia.
 function hideSanastot() {
+  sanastoStopAudio();
   $("sanasto-view").hidden = true;
   const card = sanastoCardHash;
   sanastoCardHash = null;
@@ -75,6 +77,7 @@ const SANASTO_GROUPS = [
 const sanastoPreview = (l) => l.rows.slice(0, 3).map((r) => (l.kind === "numbers" ? r.card : r.sme[0].w[0])).join(", ");
 
 function renderSanastoGrid() {
+  sanastoStopAudio();
   closeFormPop();
   const lang = sanastoLang();
   $("sanasto-title").textContent = t("sanastot");
@@ -473,7 +476,10 @@ function sanastoStopAudio() {
   if (!sanastoAudio) return;
   const a = sanastoAudio, b = sanastoAudioBtn;
   sanastoAudio = sanastoAudioBtn = null;
+  // Puhepalvelun haku kesken (lista ilman valmista äänitettä): perutaan
+  if (a === ttsAudio && ttsRequest) ttsRequest.abort();
   a.pause();
+  if (a.src.startsWith("blob:")) URL.revokeObjectURL(a.src);
   // Vapautetaan mediasoitin heti (Android WebView sallii vain rajallisen määrän soittimia ennen roskienkeruuta)
   a.removeAttribute("src");
   a.load();
@@ -482,28 +488,58 @@ function sanastoStopAudio() {
   b.setAttribute("aria-label", b.dataset.label || t("listen"));
 }
 
-function sanastoPlayAudio(src, b) {
-  // Norjankielinen käyttöliittymä: pelkkä saame (…-sme.ogg), ei suomenkielistä sanaa ennen saamea
-  if (sanastoLang() === "nb") src = src.replace(/\.ogg$/, "-sme.ogg");
-  const a = new Audio(src);
+// Painike soittotilaan: pysäytyskuvake ja kehä (odottaessa kehä pyörii, soidessa se täyttyy)
+function sanastoBeginAudio(a, b, pending) {
   sanastoAudio = a;
   sanastoAudioBtn = b;
   const host = b.querySelector(".pl-ico") || b;
   sanastoAudioHtml = host.innerHTML;
   b.dataset.label = b.getAttribute("aria-label") || t("listen");
   host.innerHTML = STOP_ICON + RING;
+  if (pending) host.querySelector(".play-ring").classList.add("pending");
   b.classList.add("playing");
   b.setAttribute("aria-label", t("stop"));
-  const ring = host.querySelector(".play-ring circle");
+}
+
+// Soitto ja edistymiskehä. Käsittelijät ominaisuuksina (onended), koska puhepalvelun soitin on yhteinen eikä
+// kuuntelijoita saa kertyä siihen.
+function sanastoRunAudio(a, b, durKey) {
+  const ring = b.querySelector(".play-ring");
+  ring.classList.remove("pending");
+  const circle = ring.querySelector("circle");
   const tick = () => {
     if (sanastoAudio !== a) return;
-    const d = Number.isFinite(a.duration) && a.duration > 0 ? a.duration : sanastoDur[src];
-    if (d) ring.style.strokeDashoffset = String(Math.max(0, 100 - (100 * a.currentTime) / d));
+    const d = Number.isFinite(a.duration) && a.duration > 0 ? a.duration : sanastoDur[durKey];
+    if (d) circle.style.strokeDashoffset = String(Math.max(0, 100 - (100 * a.currentTime) / d));
     requestAnimationFrame(tick);
   };
-  a.addEventListener("ended", () => { if (sanastoAudio === a) sanastoStopAudio(); });
-  a.addEventListener("error", () => { if (sanastoAudio === a) sanastoStopAudio(); });
+  a.onended = a.onerror = () => { if (sanastoAudio === a) sanastoStopAudio(); };
   a.play().then(tick).catch(() => { if (sanastoAudio === a) sanastoStopAudio(); });
+}
+
+function sanastoPlayAudio(src, b) {
+  // Norjankielinen käyttöliittymä: pelkkä saame (…-sme.ogg), ei suomenkielistä sanaa ennen saamea
+  if (sanastoLang() === "nb") src = src.replace(/\.ogg$/, "-sme.ogg");
+  const a = new Audio(src);
+  sanastoBeginAudio(a, b, false);
+  sanastoRunAudio(a, b, src);
+}
+
+// Lista ilman valmista äänitettä: saamen sanat Divvunin puhepalvelulta (yhteinen soitin, avataan jo napautuksessa)
+function sanastoPlayTts(text, b) {
+  const signal = startTtsRequest();
+  unlockTtsAudio();
+  const a = ttsAudio || new Audio();
+  sanastoBeginAudio(a, b, true);
+  ttsBlob(text, signal).then((blob) => {
+    if (sanastoAudio !== a || !blob) return;
+    a.src = URL.createObjectURL(blob);
+    sanastoRunAudio(a, b, null);
+  }).catch((e) => {
+    if (sanastoAudio !== a) return;
+    sanastoStopAudio();
+    toast(t("ttsFailed", e.message));
+  });
 }
 
 function sanastoSpeakAll() {
@@ -516,7 +552,7 @@ function sanastoSpeakAll() {
   }
   if (l.audio && canOpus) return sanastoPlayAudio(l.audio, $("sanasto-speak"));
   const words = l.kind === "numbers" ? l.rows.map((r) => r.card) : l.rows.map((r) => r.sme[0].w[0]);
-  speak(words.join(", "), $("sanasto-speak"));
+  sanastoPlayTts(words.join(", "), $("sanasto-speak"));
 }
 
 function sanastoOpenCard(id, word) {
@@ -555,6 +591,7 @@ function bindSanastot() {
   };
   // Selaimen takaisin-painike (verkkosovellus): Android hoitaa saman backToOcr:llä ennen historiaa
   window.addEventListener("popstate", () => {
+    sanastoStopAudio();
     if (sanastoReturnHash && location.hash !== sanastoReturnHash) { sanastoReturnHash = null; openSanastot(); }
   });
   let press = null, longDone = false;

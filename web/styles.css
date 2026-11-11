@@ -555,6 +555,10 @@ main > * + * { margin-top: 12px; }
 .pl-ico svg:not(.play-ring) { width: 14px; height: 14px; }
 .pl-ico .play-ring { inset: -2px; width: calc(100% + 4px); height: calc(100% + 4px); }
 .nt-play.playing .pl-ico svg:not(.play-ring) { width: 13px; height: 13px; }
+/* Puhepalvelun haku kesken: kehä pyörii osittaisena, kunnes ääni alkaa ja kehä täyttyy soiton mukaan */
+.play-ring.pending { animation: ring-wait .9s linear infinite; }
+.play-ring.pending circle { stroke-dashoffset: 72; }
+@keyframes ring-wait { from { transform: rotate(-90deg); } to { transform: rotate(270deg); } }
 .play-ring circle { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 100; }
 .speak-btn:hover { background: var(--speak-hover); }
 .speak-btn:active { transform: scale(.88); filter: brightness(.9); }

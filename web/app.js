@@ -1777,6 +1777,13 @@ function startTtsRequest() {
   if (ttsAudio) ttsAudio.pause();
   return ttsRequest.signal;
 }
+// Kaikki soitto pois: kesken oleva haku perutaan ja soitin pysähtyy (sivun vaihto, takaisin-ele, sanastot)
+function stopTts() {
+  if (ttsRequest) ttsRequest.abort();
+  if (ttsAudio) ttsAudio.pause();
+  if (window.sanastoStopAudio) sanastoStopAudio();
+}
+
 async function playTtsBlob(blob) {
   const audio = ttsAudio || new Audio();
   if (audio.src.startsWith("blob:")) URL.revokeObjectURL(audio.src);
@@ -1784,40 +1791,47 @@ async function playTtsBlob(blob) {
   await audio.play();
 }
 
+// Puhutun tekstin ääni (WAV): muistista, selaimen välimuistista tai Divvunin puhepalvelusta. Palauttaa null, jos haku
+// peruttiin; verkkovirheessä heittää virheen, jonka viesti näytetään käyttäjälle.
+async function ttsBlob(text, signal, voiceName = settings.voice) {
+  const voice = VOICES[voiceName] || "biret";
+  const key = `tts-cache/${voice}/${encodeURIComponent(text)}`;
+  let blob = memoryCache.get(key);
+  // Selaimen välimuisti vain verkkosivulla: Cache Storage hyväksyy vain http(s)-osoitteet.
+  // Työpöytäsovelluksessa Python tallentaa äänet levylle (~/.cache/satni-fst/tts).
+  const cache = !IS_DESKTOP && "caches" in window ? await caches.open("satni-tts") : null;
+  if (!blob && cache) {
+    const hit = await cache.match(key);
+    if (hit) blob = await hit.blob();
+  }
+  if (signal.aborted) return null;
+  if (!blob) {
+    let res;
+    try {
+      res = IS_DESKTOP
+        ? await fetch(`tts/${voice}?text=${encodeURIComponent(text)}`, { signal })
+        : await fetch(TTS_URL + voice, {
+            method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }), signal,
+          });
+    } catch (e) {
+      if (e.name === "AbortError") return null;
+      throw new Error(t("ttsOffline"));
+    }
+    if (!res.ok) throw new Error(IS_DESKTOP ? t("ttsOffline") : t("ttsStatus", res.status));
+    blob = await res.blob();
+    if (cache) cache.put(key, new Response(blob, { headers: { "Content-Type": "audio/wav" } })).catch(() => {});
+  }
+  memoryCache.set(key, blob);
+  return signal.aborted ? null : blob;
+}
+
 async function speak(text, button, voiceName = settings.voice) {
   const signal = startTtsRequest();
   unlockTtsAudio();  // ennen ensimmäistä awaitia: vielä napautuksen sisällä
-  const voice = VOICES[voiceName] || "biret";
-  const key = `tts-cache/${voice}/${encodeURIComponent(text)}`;
   if (button) { button.disabled = true; button.classList.add("loading"); }  // pyörivä kehä (styles.css)
   try {
-    let blob = memoryCache.get(key);
-    // Selaimen välimuisti vain verkkosivulla: Cache Storage hyväksyy vain http(s)-osoitteet.
-    // Työpöytäsovelluksessa Python tallentaa äänet levylle (~/.cache/satni-fst/tts).
-    const cache = !IS_DESKTOP && "caches" in window ? await caches.open("satni-tts") : null;
-    if (!blob && cache) {
-      const hit = await cache.match(key);
-      if (hit) blob = await hit.blob();
-    }
-    if (signal.aborted) return;
-    if (!blob) {
-      let res;
-      try {
-        res = IS_DESKTOP
-          ? await fetch(`tts/${voice}?text=${encodeURIComponent(text)}`, { signal })
-          : await fetch(TTS_URL + voice, {
-              method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }), signal,
-            });
-      } catch (e) {
-        if (e.name === "AbortError") return;
-        throw new Error(t("ttsOffline"));
-      }
-      if (!res.ok) throw new Error(IS_DESKTOP ? t("ttsOffline") : t("ttsStatus", res.status));
-      blob = await res.blob();
-      if (cache) cache.put(key, new Response(blob, { headers: { "Content-Type": "audio/wav" } })).catch(() => {});
-    }
-    memoryCache.set(key, blob);
-    if (signal.aborted) return;
+    const blob = await ttsBlob(text, signal, voiceName);
+    if (!blob) return;
     try {
       await playTtsBlob(blob);
     } catch (e) {
@@ -2592,6 +2606,7 @@ function openShared(text) {
 }
 
 function routeFromHash() {
+  stopTts();  // edellisen sanan ääntämys ei jatku uudella sivulla
   const m = location.hash.match(/^#\/sana\/([^/]+)(?:\/(\d+))?/);
   if (m) search(decodeURIComponent(m[1]), Number(m[2] || 0));
   else { showOnly("welcome"); $("search").value = ""; $("did-you-mean").hidden = true; }
