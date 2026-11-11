@@ -48,7 +48,7 @@ const state = { query: "", results: [], index: 0, word: null, paradigm: null, gr
 // --- Asetukset, historia ja suosikit (selaimen localStorage) ---
 
 const DEFAULT_SETTINGS = {
-  theme: "auto", voice: "Biret", uiLang: "fi", lang: "fin", showGrade: true, game: true, history: [], favourites: [],
+  theme: "auto", voice: "Biret", uiLang: "fi", lang: "fin", showGrade: true, game: true, gameMute: false, history: [], favourites: [],
   // Muut kielet (asetus valikossa): niiden käännökset näkyvät sanakortissa pääkäännöksen lisäksi; oletuksena
   // ei yhtään. Hakuun ne eivät vaikuta.
   extraLangs: [],

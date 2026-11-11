@@ -1145,6 +1145,10 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 
 /* --- Minipeli (minipeli.js) ---------------------------------------------------------------------------- */
 .report-dlg:not(.game-mode) .report-game-only, .report-dlg.game-mode .report-nogame { display: none; }
+#peli-title { flex: 1; min-width: 0; }
+.peli-mute { display: grid; place-items: center; width: 40px; padding: 0; }
+.peli-mute svg { width: 20px; height: 20px; }
+.peli-mute.muted { color: var(--muted); }
 .peli-body { flex: 1; overflow-y: auto; padding: 14px 16px 28px; display: flex; flex-direction: column; gap: 14px;
   max-width: 640px; width: 100%; margin: 0 auto; box-sizing: border-box; }
 .peli-lead { margin: 0; color: var(--muted); }

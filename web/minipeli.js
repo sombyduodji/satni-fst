@@ -18,7 +18,7 @@ const PELI_TEXTS = {
     askSme: "Mitä tämä on suomeksi?", askUi: "Mikä on saameksi", over: "Peli päättyi", correctWas: "Oikea vastaus:",
     again: "Pelaa uudelleen", menu: "Valitse toinen peli", home: "Etusivulle", top: "Parhaat tulokset",
     newBest: "Uusi ennätys!", resumeQ: "Jatketaanko keskeneräistä peliä?", resume: "Jatka", fresh: "Uusi peli",
-    report: "Ilmoita virheestä", streak: "Putki",
+    report: "Ilmoita virheestä", streak: "Putki", mute: "Mykistä pelin äänet", unmute: "Pelin äänet päälle",
   },
   nb: {
     title: "Minispill", pick: "Velg spill", best: "Best", none: "–", score: (n) => `${n} riktige`,
@@ -30,7 +30,7 @@ const PELI_TEXTS = {
     askSme: "Hva er dette på norsk?", askUi: "Hva heter det på samisk", over: "Spillet er over", correctWas: "Riktig svar:",
     again: "Spill igjen", menu: "Velg et annet spill", home: "Til forsiden", top: "Beste resultater",
     newBest: "Ny rekord!", resumeQ: "Vil du fortsette spillet du ikke ble ferdig med?", resume: "Fortsett", fresh: "Nytt spill",
-    report: "Meld fra om feil", streak: "Rekke",
+    report: "Meld fra om feil", streak: "Rekke", mute: "Slå av lyden i spillet", unmute: "Slå på lyden i spillet",
   },
 };
 const pt = () => PELI_TEXTS[sanastoLang()];
@@ -106,6 +106,7 @@ function peliQuestion(run) {
 
 // --- Näkymät ---
 function peliHead(title, back) {
+  renderPeliMute();  // kielen mukainen nimi
   $("peli-title").textContent = title;
   $("peli-back").hidden = !back;
 }
@@ -227,7 +228,7 @@ function peliStopAudio() {
   peliAudio = null;
 }
 function peliVoice(q, ok) {
-  if (q.voice == null || !canOpus) return;
+  if (q.voice == null || !canOpus || settings.gameMute) return;
   peliStopAudio();
   peliAudio = new Audio(`audio/peli/${PELI_VOICE[peliRun.mode]}-${q.voice}-${ok ? "ok" : "no"}.ogg`);
   peliAudio.play().catch(() => {});
@@ -273,6 +274,24 @@ function closePeli() {
   hidePeli();
   return true;
 }
+// Mykistys koskee kaikkia pelejä ja säilyy asetuksissa, kunnes äänet kytketään takaisin
+const PELI_SOUND_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const PELI_SOUND_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></svg>';
+function renderPeliMute() {
+  const muted = !!settings.gameMute, b = $("peli-mute");
+  b.innerHTML = muted ? PELI_SOUND_OFF : PELI_SOUND_ON;
+  b.setAttribute("aria-pressed", String(muted));
+  b.setAttribute("aria-label", muted ? pt().unmute : pt().mute);
+  b.title = muted ? pt().unmute : pt().mute;
+  b.classList.toggle("muted", muted);
+}
+function togglePeliMute() {
+  settings.gameMute = !settings.gameMute;
+  saveSettings();
+  if (settings.gameMute) peliStopAudio();
+  renderPeliMute();
+}
+
 function applyPeliButton() {
   const on = settings.game !== false;
   $("peli-btn").hidden = !on;
@@ -317,6 +336,8 @@ function bindPeli() {
   $("peli-btn").innerHTML = PELI_ICON;
   $("peli-btn").onclick = openPeli;
   $("peli-close").onclick = hidePeli;
+  $("peli-mute").onclick = togglePeliMute;
+  renderPeliMute();
   $("peli-back").onclick = () => renderPeliMenu();
   if ($("game-toggle")) {
     $("game-toggle").onchange = (e) => { settings.game = e.target.checked; saveSettings(); applyPeliButton(); };
