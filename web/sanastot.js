@@ -266,7 +266,7 @@ function renderSanasto(listId) {
           `<div class="cv-chip"><span class="cv-sme">${tapX(r.sme[0], r.sme[0].w[0], true)}</span><span class="cv-fi">${esc(uiOf(r)[0] || "")}</span></div>`).join("")}</div>`;
       return finish();
     }
-    // Porot: poron elämä vasasta aikuiseksi kahdella kaistalla (urokset | naaraat), alla porot ja tokka
+    // Porot: poron elämä vasasta aikuiseksi (vasa, ensimmäinen talvi, sitten kaksi kaistaa urokset | naaraat), alla porot ja tokka
     if (l.id === "porot") {
       const by = byLemma();
       const node = (lemma) => {
@@ -275,8 +275,10 @@ function renderSanasto(listId) {
       };
       const CAP = { life: ["Vasasta aikuiseksi", "Fra kalv til voksen"], m: ["Urokset", "Hanndyr"], f: ["Naaraat", "Hunndyr"], herd: ["Porot ja tokka", "Rein og flokk"] };
       html += `<section class="sl-sec"><h3>${esc(CAP.life[nbi])}</h3><div class="rd-life"><div class="rd-calf">${node("miessi")}</div>` +
+        // čearpmat = vasa ensimmäisenä talvenaan (kumpaa tahansa sukupuolta), sitten toisen ikävuoden varit | vuonjal
+        `<div class="rd-calf">${node("čearpmat")}</div>` +
         `<span class="rd-lane m">♂ ${esc(CAP.m[nbi])}</span><span class="rd-lane f">♀ ${esc(CAP.f[nbi])}</span>` +
-        `${node("čearpmat")}${node("vuonjal")}${node("varit")}<div></div>${node("sarvvis")}${node("áldu")}${node("heargi")}${node("rotnu")}</div></section>` +
+        `${node("varit")}${node("vuonjal")}${node("sarvvis")}${node("áldu")}${node("heargi")}${node("rotnu")}</div></section>` +
         `<section class="sl-sec"><h3>${esc(CAP.herd[nbi])}</h3><div class="ico-grid">${["boazu", "eallu", "gárdi"].map((w) => node(w).replace("rd-node", "ico-tile rd-herd")).join("")}</div></section>`;
       return finish();
     }

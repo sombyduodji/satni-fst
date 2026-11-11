@@ -289,8 +289,8 @@ def lists():
               "rows": [dict(row([first(entry(s, "A")[3])], [first(entry(s, "A")[4])], [sme(s, "A", ["Attr"])]), ex=COLOUR_EX[s]) for s in colours]})
 
     deer = [("boazu", None), ("eallu", "tokka, porokarja"), ("áldu", None), ("sarvvis", "hirvas, kuohitsematon urosporo"),
-            ("heargi", "ajoporo, kuohittu urosporo"), ("miessi", "vasa"), ("čearpmat", "vuoden vanha urosporo"),
-            ("vuonjal", "vuoden vanha naarasporo"), ("varit", "kahden vuoden vanha urosporo"), ("rotnu", "maho vaadin"),
+            ("heargi", "ajoporo, kuohittu urosporo"), ("miessi", "vasa"), ("čearpmat", "vasa ensimmäisenä talvenaan"),
+            ("vuonjal", "vuonelo, naarasporo toisella ikävuodella"), ("varit", "urakka, urosporo toisella ikävuodella"), ("rotnu", "maho vaadin"),
             ("gárdi", "aitaus, poroerotusaita")]
     L.append({"id": "porot", "icon": "deer", "title": {"fi": "Porot", "nb": "Rein"},
               "rows": [row([fi or first(entry(s, "N")[3])], [first(entry(s, "N")[4])], [sme(s, "N", [])]) for s, fi in deer]})
