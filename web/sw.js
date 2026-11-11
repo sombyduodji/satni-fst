@@ -1,9 +1,10 @@
 /* Service worker: sovellus ja sanakirja toimivat ilman verkkoyhteyttä ensimmäisen käynnin jälkeen.
    Kun tiedostoja päivitetään, kasvata VERSION, jolloin selaimet hakevat uudet tiedostot. */
-const VERSION = "satni-v91";
+const VERSION = "satni-v92";
 // Sanastojen äänilistat (suomi + saame ja pelkkä saame): välimuistiin erikseen, jottei puuttuva tiedosto kaada asennusta
 const AUDIO = [
   "audio/kuukaudet.ogg", "audio/kuukaudet-sme.ogg", "audio/viikonpaivat.ogg", "audio/viikonpaivat-sme.ogg", "audio/vuodenajat.ogg", "audio/vuodenajat-sme.ogg", "audio/luvut-1.ogg", "audio/luvut-1-sme.ogg", "audio/luvut-2.ogg", "audio/luvut-2-sme.ogg", "audio/luvut-3.ogg", "audio/luvut-3-sme.ogg", "audio/jarjestysluvut-1.ogg", "audio/jarjestysluvut-1-sme.ogg", "audio/jarjestysluvut-2.ogg", "audio/jarjestysluvut-2-sme.ogg", "audio/jarjestysluvut-3.ogg", "audio/jarjestysluvut-3-sme.ogg",
+  "audio/varit.ogg", "audio/varit-sme.ogg", "audio/kysymykset.ogg", "audio/kysymykset-sme.ogg", "audio/aika.ogg", "audio/aika-sme.ogg", "audio/suku.ogg", "audio/suku-sme.ogg", "audio/pronominit.ogg", "audio/pronominit-sme.ogg", "audio/tervehdykset.ogg", "audio/tervehdykset-sme.ogg", "audio/suunnat.ogg", "audio/suunnat-sme.ogg", "audio/saa.ogg", "audio/saa-sme.ogg", "audio/porot.ogg", "audio/porot-sme.ogg",
 ];
 const APP_SHELL = [
   "./", "index.html", "styles.css", "i18n.js", "app.js", "lauseet.js", "sanastot.js", "data/sanastot.json", "manifest.webmanifest",
