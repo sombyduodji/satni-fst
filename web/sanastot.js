@@ -6,6 +6,7 @@ let sanastot = null;          // listat, ladataan ensimmäisellä avauksella
 let sanastoDur = {};          // äänilistojen kestot sekunteina (Android WebView ilmoittaa keston äärettömäksi)
 let sanastoAuki = null;       // avoimen listan id tai null (yleisnäkymä)
 let sanastoReturnHash = null; // listasta avatun sanakortin osoite: takaisin-ele palaa listaan
+let sanastoCardHash = null;   // sanakortti, jolta palattiin listaan: näkymän sulkeminen vie aloitussivulle, ei kortille
 
 const SANASTO_ICON = {
   numbers: '<path d="M4 9l2-2v10M10 8.5c.5-1 1.5-1.5 2.5-1.5 1.5 0 2.5 1 2.5 2.3 0 2.2-5 3.7-5 7.7h5M17.5 7h3l-2 3.5c1.5 0 2.5 1 2.5 2.3S20 15 18.7 15c-.7 0-1.4-.3-1.9-.8"/>',
@@ -46,8 +47,21 @@ function closeSanastot() {
   if ($("sanasto-view").hidden) return false;
   sanastoStopAudio();
   if (closeFormPop()) return true;  // takaisin-ele sulkee ensin sanan kuplan
-  if (sanastoAuki) { sanastoAuki = null; renderSanastoGrid(); } else $("sanasto-view").hidden = true;
+  if (sanastoAuki) { sanastoAuki = null; renderSanastoGrid(); } else hideSanastot();
   return true;
+}
+
+// Näkymä kiinni. Jos listaan palattiin sanakortilta (Androidin takaisin-ele ei muuta osoitetta), kortti korvataan
+// aloitussivulla, jottei sulkeminen näytä vanhaa korttia.
+function hideSanastot() {
+  $("sanasto-view").hidden = true;
+  const card = sanastoCardHash;
+  sanastoCardHash = null;
+  if (card && location.hash === card) {
+    history.replaceState(null, "", location.pathname + location.search);
+    routeFromHash();
+    window.scrollTo(0, 0);
+  }
 }
 
 // Yleisnäkymä: listat neljässä ryhmässä saamen lipun väreillä (sama kuin yläpalkin raita). Kortissa ikoni, nimi,
@@ -456,6 +470,7 @@ function sanastoOpenCard(id, word) {
   sanastoStopAudio();
   closeFormPop();
   const index = queryDatabase(word).findIndex((r) => r.id === Number(id));
+  sanastoCardHash = null;
   $("sanasto-view").hidden = true;
   search(word, Math.max(index, 0));
   sanastoReturnHash = location.hash;
@@ -464,7 +479,7 @@ function sanastoOpenCard(id, word) {
 function bindSanastot() {
   if (!$("sanasto-view")) return;
   $("sanasto-btn").onclick = openSanastot;
-  $("sanasto-close").onclick = () => { sanastoStopAudio(); closeFormPop(); $("sanasto-view").hidden = true; };
+  $("sanasto-close").onclick = () => { sanastoStopAudio(); closeFormPop(); hideSanastot(); };
   $("sanasto-back").onclick = () => { sanastoStopAudio(); sanastoAuki = null; renderSanastoGrid(); };
   $("sanasto-speak").onclick = sanastoSpeakAll;
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSanastot(); });
@@ -475,6 +490,7 @@ function bindSanastot() {
   const backBase = window.backToOcr;
   window.backToOcr = () => {
     if (sanastoReturnHash && location.hash === sanastoReturnHash) {
+      sanastoCardHash = sanastoReturnHash;
       sanastoReturnHash = null;
       openSanastot();
       return true;
