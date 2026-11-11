@@ -86,18 +86,22 @@ const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math
 
 function peliQuestion(run) {
   const pool = peliPool(run.mode);
-  if (run.pos >= run.deck.length) { run.deck = shuffle(pool.map((_, i) => i)); run.pos = 0; }
+  // Uusi pakka myös, jos tallennettu pakka on eri mittainen kuin sanalista (minipeli.json muuttui päivityksessä)
+  if (run.pos >= run.deck.length || run.deck.length !== pool.length) { run.deck = shuffle(pool.map((_, i) => i)); run.pos = 0; }
   const item = pool[run.deck[run.pos++]];
   const ui = sanastoLang() === "nb" ? 2 : 1;
   const toSme = Math.random() < 0.5;  // puolet kysymyksistä käännöksestä saameksi
   const shown = (w) => (toSme ? w[0] : w[ui]);
-  // Väärät vaihtoehdot samasta ryhmästä (sanaluokka tai aihe), ei samaa näkyvää tekstiä kahdesti
+  // Väärät vaihtoehdot samasta ryhmästä (sanaluokka tai aihe), ei samaa näkyvää tekstiä kahdesti eikä sanaa, jolla on
+  // yhteinen käännös oikean kanssa (ajatella: jurddašit ja smiehttat "miettiä, ajatella" olisivat molemmat oikein)
+  const terms = (w) => w[ui].split(",").map((x) => x.trim());
+  const itemTerms = terms(item);
   const same = shuffle(pool.filter((w) => w[3] === item[3] && w[0] !== item[0]));
   const rest = shuffle(pool.filter((w) => w[3] !== item[3]));
   const opts = [item], seen = new Set([shown(item)]);
   for (const w of same.concat(rest)) {
     if (opts.length === 4) break;
-    if (seen.has(shown(w)) || w[ui] === item[ui]) continue;
+    if (seen.has(shown(w)) || terms(w).some((x) => itemTerms.includes(x))) continue;
     seen.add(shown(w));
     opts.push(w);
   }
@@ -225,6 +229,7 @@ function renderPeliOver(chosen) {
 
 function peliStart(mode) {
   peliStopAudio();
+  peliBusy = false;  // edellisen pelin peukalon ajastin ei estä uuden pelin vastauksia
   peliRun = { mode, score: 0, deck: [], pos: 0, q: null };
   peliRun.q = peliQuestion(peliRun);
   peliSave();
@@ -264,8 +269,10 @@ function peliAnswer(btn) {
     if (s) { s.textContent = peliRun.score; s.classList.remove("pop"); void s.offsetWidth; s.classList.add("pop"); }
     // Seuraava kysymys vasta, kun Biret on sanonut lauseensa loppuun (enintään 3,5 s), muuten ääni puhuisi edellisestä
     // sanasta uuden kysymyksen aikana
+    // Vain tämän kysymyksen ajastimet: edellisen kysymyksen 3,5 s:n varmistus ei saa ohittaa uutta peukaloa
+    const answered = q;
     const next = () => {
-      if (!peliBusy) return;
+      if (!peliBusy || (peliRun && peliRun.q !== answered)) return;
       peliBusy = false;
       if (!peliRun) return;
       peliRun.q = peliQuestion(peliRun);
