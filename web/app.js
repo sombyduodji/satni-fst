@@ -874,11 +874,12 @@ function renderSun(now) {
     .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.1" class="sun-star"/>`).join("") : "";
   const ticks = [6, 12, 18].map((h) => `<line x1="${h / 24 * W}" x2="${h / 24 * W}" y1="${horizonY - 3}" y2="${horizonY + 3}" class="sun-tick"/>`).join("");
   $("sun-card").className = `sun-card ${sky}${polarNight ? " polar" : ""}`;
-  $("sun-card").innerHTML = `<svg viewBox="0 ${top} ${W} ${H - top}" preserveAspectRatio="none" aria-hidden="true">${stars}` +
+  // Matala nauha: teksti ylhäällä, kaari alla (pysty puristettu, pallo pysyy pyöreänä erillisenä elementtinä)
+  $("sun-card").innerHTML = `<div class="sun-text"><span class="sun-place">${SUN_PLACE.name}</span> ${esc(text)}</div>` +
+    `<div class="sun-sky"><svg viewBox="0 ${top} ${W} ${H - top}" preserveAspectRatio="none" aria-hidden="true">${stars}` +
     `<polyline points="${pts}" class="sun-path"/>` +
-    `<line x1="0" x2="${W}" y1="${horizonY}" y2="${horizonY}" class="sun-horizon"/>${ticks}` +
-    `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="6.5" class="sun-dot${up ? "" : " below"}"/></svg>` +
-    `<div class="sun-text"><span class="sun-place">${SUN_PLACE.name}</span><span>${esc(text)}</span></div>`;
+    `<line x1="0" x2="${W}" y1="${horizonY}" y2="${horizonY}" class="sun-horizon"/>${ticks}</svg>` +
+    `<span class="sun-dot${up ? "" : " below"}" style="left:${(sx / W * 100).toFixed(1)}%;top:${((sy - top) / (H - top) * 100).toFixed(1)}%"></span></div>`;
 }
 
 function renderToday() {
