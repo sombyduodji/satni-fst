@@ -99,6 +99,18 @@ function renderSanastoGrid() {
   $("sanasto-body").scrollTop = 0;
 }
 
+// Tervehdysten puhujat: pieni saamelaispoika ja -tyttö gáktissa (sininen, punainen ja keltainen reunus, tytöllä solki)
+const FACE_PARTS = (hair, extra) => '<svg viewBox="3.5 5 33 33">' +
+  '<path d="M17.6 24h4.8v6h-4.8z" fill="#e3b48f"/><path d="M5 41c1-9 7-13 15-13s14 4 15 13z" fill="#1e4fc2"/>' +
+  '<path d="M7 34.6h26" stroke="#d62828" stroke-width="2.6"/><path d="M7.5 37.6h25" stroke="#f4c20d" stroke-width="2"/>' +
+  hair + '<circle cx="20" cy="18.5" r="8" fill="#f0c7a2"/>' +
+  '<circle cx="17.2" cy="18.6" r="1.05" fill="#1f2937"/><circle cx="22.8" cy="18.6" r="1.05" fill="#1f2937"/>' +
+  '<circle cx="15.6" cy="21.4" r="1.3" fill="#f29b8f" opacity=".55"/><circle cx="24.4" cy="21.4" r="1.3" fill="#f29b8f" opacity=".55"/>' +
+  '<ellipse cx="20" cy="22.6" rx="1.7" ry="1.2" fill="#9b1c31"/>' + extra + "</svg>";
+const FACE_BOY = FACE_PARTS('<path d="M11.6 17.5c-.3-6.2 3.6-9.6 8.4-9.6s8.8 3.4 8.4 9.6c-1.6-2.8-4.6-4.4-8.4-4.4s-6.8 1.6-8.4 4.4z" fill="#4a2f22"/>', "");
+const FACE_GIRL = FACE_PARTS('<path d="M10.8 29c-1.5-4-1.9-8.2-1.5-11.5.7-6.2 5-9.6 10.7-9.6s10 3.4 10.7 9.6c.4 3.3 0 7.5-1.5 11.5-1.2-3.3-1.4-6-1.3-9.2-2-2.6-4.8-4.6-7.9-4.6s-5.9 2-7.9 4.6c.1 3.2-.1 5.9-1.3 9.2z" fill="#6b3f26"/>',
+  '<circle cx="20" cy="30.6" r="1.9" fill="#d9dee6" stroke="#9aa3b0" stroke-width=".6"/>');
+
 // Listan loppu: ohje ja virheilmoitus (sama lomake kuin sanakortissa, app.js: report-dlg)
 const sanastoFoot = () => `<p class="sanasto-hint">${esc(t("sanastoHelp"))}</p>` +
   `<p class="report-line sanasto-report"><a href="#" class="report-link sanasto-report-link"><span aria-hidden="true">⚑</span> ` +
@@ -309,10 +321,13 @@ function renderSanasto(listId) {
         }
         return r ? `<div class="cv-b ${side}"><span class="cv-sme">${tapX(r.sme[0], lemma, true)}</span><span class="cv-fi">${esc(uiOf(r)[0] || "")}</span></div>` : "";
       };
+      // Puhujat: vasemmalla poika (äänilistassa Máhtte), oikealla tyttö (Biret), molemmilla gákti
+      const face = (side) => `<span class="cv-face ${side}" aria-hidden="true">${side === "l" ? FACE_BOY : FACE_GIRL}</span>`;
+      const line = (lemma, side) => { const b = bubble(lemma, side); return b ? `<div class="cv-line ${side}">${face(side)}${b}</div>` : ""; };
       const DIALOG = [["Bures!", "Bures bures!", "Tavatessa", "Når man møtes"], ["Mo manná?", "Bures manná", "Kuulumiset", "Hvordan går det"],
         ["Bures boahtin", "Giitu", "Vieraan tullessa", "Når noen kommer"], ["Báze dearvan", "Mana dearvan", "Lähtiessä: lähtijä ja jäävä", "Ved avskjed: den som går og den som blir"]];
       const used = new Set(DIALOG.flatMap((d) => [d[0], d[1]]));
-      html += DIALOG.map((d) => `<div class="cv"><span class="kt-cap">${esc(d[2 + nbi])}</span>${bubble(d[0], "l")}${bubble(d[1], "r")}</div>`).join("") +
+      html += DIALOG.map((d) => `<div class="cv"><span class="kt-cap">${esc(d[2 + nbi])}</span>${line(d[0], "l")}${line(d[1], "r")}</div>`).join("") +
         `<div class="cv-more">${l.rows.filter((r) => !used.has(r.sme[0].w[0])).map((r) =>
           `<div class="cv-chip"><span class="cv-sme">${tapX(r.sme[0], r.sme[0].w[0], true)}</span><span class="cv-fi">${esc(uiOf(r)[0] || "")}</span></div>`).join("")}</div>`;
       return finish();

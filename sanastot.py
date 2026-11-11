@@ -353,7 +353,9 @@ def lists():
              ("Bures manná", "hyvin menee", "det går bra"), ("Giitu", "kiitos", "takk"), ("Ollu giitu", "paljon kiitoksia", "tusen takk"),
              ("Bures boahtin", "tervetuloa", "velkommen"), ("Báze dearvan", "näkemiin (jäävälle)", "ha det (til den som blir)"),
              ("Mana dearvan", "näkemiin (lähtevälle)", "ha det (til den som går)"), ("Oaidnaleapmái", "näkemiin, nähdään", "på gjensyn"),
-             ("Dearvvuođat", "terveisiä", "hilsener")]
+             ("Dearvvuođat", "terveisiä", "hilsener"),
+             # Syntymäpäivä ja muut juhlapäivät (Omniglot: Lihkku beivviin! = gratulerer med dagen)
+             ("Lihkku beivviin!", "hyvää syntymäpäivää, onnea päivän johdosta", "gratulerer med dagen")]
     grows = []
     for s, fi, nb in greet:
         lemma = s.rstrip("!?").lower()
@@ -389,7 +391,8 @@ SECTIONS = {
                    ("Miksi, miten, montako", "Hvorfor, hvordan, hvor mange", ["manne", "mo", "galle"])],
     "tervehdykset": [("Tervehdys", "Hilsen", ["Bures!", "Buorre iđit", "Buorre beaivi", "Buorre eahket"]),
                      ("Kuulumiset ja kiitos", "Hvordan går det, takk", ["Mo manná?", "Bures manná", "Giitu", "Ollu giitu", "Bures boahtin"]),
-                     ("Hyvästit", "Avskjed", ["Báze dearvan", "Mana dearvan", "Oaidnaleapmái", "Dearvvuođat"])],
+                     ("Hyvästit", "Avskjed", ["Báze dearvan", "Mana dearvan", "Oaidnaleapmái", "Dearvvuođat"]),
+                     ("Juhlapäivä", "Merkedag", ["Lihkku beivviin!"])],
 }
 
 

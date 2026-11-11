@@ -456,6 +456,14 @@ main > * + * { margin-top: 12px; }
 .cv-b { max-width: 78%; display: flex; flex-direction: column; padding: 8px 13px; border-radius: 16px; }
 .cv-b.l { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
 .cv-b.r { align-self: flex-end; background: color-mix(in srgb, var(--tc, var(--accent)) 16%, var(--surface)); border-bottom-right-radius: 4px; text-align: right; }
+/* Puhuja kuplan vieressä: poika vasemmalla, tyttö oikealla */
+.cv-line { display: flex; align-items: flex-end; gap: 7px; }
+.cv-line.r { flex-direction: row-reverse; }
+.cv-line .cv-b { max-width: calc(100% - 50px); }
+.cv-face { flex: none; width: 38px; height: 38px; border-radius: 50%; overflow: hidden; display: block;
+  background: #dbe4f5; box-shadow: 0 0 0 1.5px var(--border); }
+.cv-face.r { background: #f5dbe0; }
+.cv-face svg { width: 100%; height: 100%; display: block; }
 .cv-sme { font-size: 17px; font-weight: 700; }
 .cv-fi { font-size: 12.5px; color: var(--muted); }
 .cv-more { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; flex-shrink: 0; }
