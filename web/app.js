@@ -788,9 +788,24 @@ function loadWord(id) {
 
 // --- Näkymät ---
 
+// Tämä päivä saameksi aloitussivulla kaikilla käyttöliittymäkielillä: "Odne lea gaskavahkku, skábmamánu 11. beaivi."
+// (itäiset viikonpäivät kuten sanastoissa)
+const SME_WEEKDAYS = ["sotnabeaivi", "vuossárga", "maŋŋebárga", "gaskavahkku", "duorastat", "bearjadat", "lávvordat"];
+const SME_MONTHS_GEN = ["ođđajagemánu", "guovvamánu", "njukčamánu", "cuoŋománu", "miessemánu", "geassemánu",
+  "suoidnemánu", "borgemánu", "čakčamánu", "golggotmánu", "skábmamánu", "juovlamánu"];
+function renderToday() {
+  const d = new Date();
+  $("today").textContent = `Odne lea ${SME_WEEKDAYS[d.getDay()]}, ${SME_MONTHS_GEN[d.getMonth()]} ${d.getDate()}. beaivi.`;
+}
+
 function showOnly(view) {
   closeFormPop();
   $("welcome").hidden = view !== "welcome";
+  if (view === "welcome") {
+    renderToday();
+    // Kielen valinta vain uudelle käyttäjälle: kun on hakuja tai suosikkeja, kieli vaihdetaan valikosta
+    $("welcome-lang").hidden = settings.history.length > 0 || settings.favourites.length > 0;
+  }
   $("loading").hidden = view !== "loading";
   for (const id of ["results", "word", "tabs"]) $(id).hidden = view !== "word";
   for (const t of ["table", "meanings", "raw"]) $("panel-" + t).hidden = view !== "word" || state.tab !== t;
