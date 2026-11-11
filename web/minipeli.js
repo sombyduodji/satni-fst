@@ -13,7 +13,7 @@ const PELI_TEXTS = {
     lead: "Valitse oikea käännös neljästä. Yksi väärä vastaus päättää pelin.",
     modes: { beginner: ["Aloittelija", "Yleisimmät sanat"], advanced: ["Edistynyt", "Kaikki 1 089 sanaa"],
       ordinals: ["Järjestysluvut", "1.–100."], time: ["Viikonpäivät, vuodenajat ja kuukaudet", "Biret sanoo oikean vastauksen"],
-      colours: ["Värit", "9 väriä"], questions: ["Kysymyssanat", "gii, mii, goas …"], animals: ["Eläimet", "23 eläintä"] },
+      colours: ["Värit", "9 väriä"], questions: ["Kysymyssanat", "Biret sanoo oikean vastauksen"], animals: ["Eläimet", "23 eläintä"] },
     groups: { words: "Sanat", cats: "Aiheet" },
     askSme: "Mitä tämä on suomeksi?", askUi: "Mikä on saameksi", over: "Peli päättyi", correctWas: "Oikea vastaus:",
     again: "Pelaa uudelleen", menu: "Valitse toinen peli", home: "Etusivulle", top: "Parhaat tulokset",
@@ -25,7 +25,7 @@ const PELI_TEXTS = {
     lead: "Velg riktig oversettelse av fire. Ett feil svar avslutter spillet.",
     modes: { beginner: ["Nybegynner", "De vanligste ordene"], advanced: ["Viderekommen", "Alle 1 089 ord"],
       ordinals: ["Ordenstall", "1.–100."], time: ["Ukedager, årstider og måneder", "Biret sier riktig svar"],
-      colours: ["Farger", "9 farger"], questions: ["Spørreord", "gii, mii, goas …"], animals: ["Dyr", "23 dyr"] },
+      colours: ["Farger", "9 farger"], questions: ["Spørreord", "Biret sier riktig svar"], animals: ["Dyr", "23 dyr"] },
     groups: { words: "Ord", cats: "Emner" },
     askSme: "Hva er dette på norsk?", askUi: "Hva heter det på samisk", over: "Spillet er over", correctWas: "Riktig svar:",
     again: "Spill igjen", menu: "Velg et annet spill", home: "Til forsiden", top: "Beste resultater",
@@ -101,7 +101,7 @@ function peliQuestion(run) {
     opts.push(w);
   }
   return { sme: item[0], prompt: toSme ? item[ui] : item[0], toSme, opts: shuffle(opts.map(shown)), answer: shown(item),
-    voice: run.mode === "time" ? item[4] : null };
+    voice: PELI_VOICE[run.mode] ? item[4] : null };
 }
 
 // --- Näkymät ---
@@ -214,8 +214,10 @@ function peliStart(mode) {
 }
 const peliSave = () => peliStore.set("satni-peli-run", peliRun);
 
-// Viikonpäivät, vuodenajat ja kuukaudet: Biret sanoo saameksi oikean vastauksen ("Riekta, dat lei …" / "Boasttu. Rievttes
+// Viikonpäivät, vuodenajat ja kuukaudet sekä kysymyssanat: Biret sanoo saameksi oikean vastauksen ("Riekta, dat lei …" / "Boasttu. Rievttes
 // vástádus lea …"). Valmiit äänitteet (välimuistissa kuten sanastojen äänilistat), muissa peleissä ei ääntä.
+// Ääniaiheet ja tiedostojen etuliite: aika = kokonaiset lauseet, kysymyssanat = Biretin lause + sanan oma äänite yhdistettynä
+const PELI_VOICE = { time: "aika", questions: "kysy" };
 let peliAudio = null;
 function peliStopAudio() {
   if (!peliAudio) return;
@@ -227,7 +229,7 @@ function peliStopAudio() {
 function peliVoice(q, ok) {
   if (q.voice == null || !canOpus) return;
   peliStopAudio();
-  peliAudio = new Audio(`audio/peli/aika-${q.voice}-${ok ? "ok" : "no"}.ogg`);
+  peliAudio = new Audio(`audio/peli/${PELI_VOICE[peliRun.mode]}-${q.voice}-${ok ? "ok" : "no"}.ogg`);
   peliAudio.play().catch(() => {});
 }
 
