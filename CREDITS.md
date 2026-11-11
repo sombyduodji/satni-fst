@@ -25,17 +25,17 @@ combines their work into one offline app.
 | Finnish → Inari Sámi | Finnish suggestions (experimental) | [giellalt/dict-fin-smn](https://github.com/giellalt/dict-fin-smn) |
 | North Sámi → Spanish | Spanish translations, meanings and examples (by Ángel Díaz de Rada and Kjell Kemi) | [giellalt/dict-sme-spa](https://github.com/giellalt/dict-sme-spa) |
 | Spanish → North Sámi | Missing Spanish translations (by Ángel Díaz de Rada and Kjell Kemi) | [giellalt/dict-spa-sme](https://github.com/giellalt/dict-spa-sme) |
-
-**English from Wiktionary:** for words with no English in GiellaLT's dictionary, [`wiktionary_eng.py`](wiktionary_eng.py)
-uses English Wiktionary (© Wiktionary contributors, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)),
-read from the machine-readable extract at [kaikki.org](https://kaikki.org) (wiktextract by Tatu Ylönen). Only two
-direct sources become translations: Wiktionary's own North Sámi entries, and English entries whose translation table
-lists the North Sámi word. When the Wiktionary explanations of a word's first Finnish and first Norwegian translation
-give the same English, it is shown as an unchecked suggestion. Under CC BY-SA, this extracted data is shared under the
-same licence (it is used in this GPL-3.0 app as CC BY-SA 4.0 allows).
 | Skolt Sámi → Finnish, Norwegian … | Skolt Sámi words (experimental) | [giellalt/dict-sms-mul](https://github.com/giellalt/dict-sms-mul) |
 | Finnish → Skolt Sámi | Skolt Sámi words (experimental) | [giellalt/dict-fin-sms](https://github.com/giellalt/dict-fin-sms) (CC BY 3.0) |
 | Norwegian → Skolt Sámi | Skolt Sámi words (experimental) | [giellalt/dict-nob-sms](https://github.com/giellalt/dict-nob-sms) |
+
+All are © GiellaLT / Divvun / Giellatekno and their contributors, licensed under
+[Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/), except
+`dict-fin-sms`, which is under [CC BY 3.0 Unported](https://creativecommons.org/licenses/by/3.0/).
+As the dictionaries' own attribution texts specify, they are also the work of **Nils Jernsletten** (North Sámi ↔
+Norwegian, and part of North Sámi → Finnish), **Kotus – Institute for the Languages of Finland** (Finnish ↔ North Sámi),
+**Marja-Liisa Olthuis and Taarna Valtonen** (Finnish ↔ Inari Sámi), **AKU and the Kone Foundation** (Finnish and
+Norwegian → Skolt Sámi), and of members of the language communities.
 
 **Skolt Sámi word frequencies** (`sms_frekvenssit.tsv`): counts of dictionary words in the texts marked free in GiellaLT's [corpus-sms](https://github.com/giellalt/corpus-sms), used only to order words. No corpus text is included.
 
@@ -44,11 +44,16 @@ one through Inari Sámi (the word's Inari Sámi translation and its Finnish tran
 `dict-fin-smn`) or, failing that, the Finnish translation other words have for the same Norwegian word. Finnish words
 are checked with the GiellaLT lang-fin analyser. The suggestions are marked as unchecked in the app.
 
-**Apertium Norwegian translations (experimental):** the bilingual dictionary of [apertium/apertium-sme-nob](https://github.com/apertium/apertium-sme-nob) (GPL-2.0-or-later, © Apertium contributors), used for words with no Norwegian translation in GiellaLT and marked as unchecked (`apertium_data.py`).
+**Apertium Norwegian translations (experimental):** the bilingual dictionary of [apertium/apertium-sme-nob](https://github.com/apertium/apertium-sme-nob) (GPL-2.0-or-later, © Francis M. Tyers, Kevin Brubeck Unhammer, Trond Trosterud and the Apertium contributors; most of the bilingual dictionary comes from Giellatekno), used for words with no Norwegian translation in GiellaLT and marked as unchecked (`apertium_data.py`).
 
-All are © GiellaLT / Divvun / Giellatekno and their contributors, licensed under
-[Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/), except
-`dict-fin-sms`, which is under [CC BY 3.0 Unported](https://creativecommons.org/licenses/by/3.0/).
+**English from Wiktionary:** for words with no English in GiellaLT's dictionary, [`wiktionary_eng.py`](wiktionary_eng.py)
+uses English Wiktionary (© Wiktionary contributors, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)),
+read from the machine-readable extract at [kaikki.org](https://kaikki.org) (wiktextract by Tatu Ylönen). Only two
+direct sources become translations: Wiktionary's own North Sámi entries, and English entries whose translation table
+lists the North Sámi word. When the Wiktionary explanations of a word's first Finnish and first Norwegian translation
+give the same English, it is shown as an unchecked suggestion. The adapted data is licensed under GPL-3.0 with the rest of
+the app, which CC BY-SA 4.0 allows as a compatible licence.
+
 `dict-sme-fin` is included in this repository as an unmodified copy ([dict-sme-fin/SOURCE.md](dict-sme-fin/SOURCE.md));
 the others are downloaded from GiellaLT by [`hae_sanakirjat.sh`](hae_sanakirjat.sh) and are not part
 of this repository.
@@ -87,7 +92,8 @@ lang-sme contributors. The compiled models are in [`src/fst/`](src/fst/SOURCE.md
 
 The inflected forms of the Finnish translations (*talo – talossa – taloon*, *tehdä – teen – tekisin*)
 are generated with the Finnish analyser and generator from [giellalt/lang-fin](https://github.com/giellalt/lang-fin)
-(GiellaLT / Giellatekno, UiT The Arctic University of Norway; based on the Omorfi lexicon), licensed under the
+(GiellaLT / Giellatekno, UiT The Arctic University of Norway; based on the Omorfi lexicon by Tommi A. Pirinen,
+Inari Listenmaa, Ryan Johnson, Francis M. Tyers and others), licensed under the
 [GNU General Public License v3.0](LICENSE). The compiled models come from GiellaLT's nightly
 package `giella-fin` (currently `0.2.20120821+g2928~d16e00e3-1~sid1`, lang-fin commit `d16e00e3`) and are downloaded by
 [`hae_sanakirjat.sh`](hae_sanakirjat.sh); they are not part of this repository. [`fin_forms.py`](fin_forms.py) keeps only the forms of words used as translations and drops
@@ -126,6 +132,25 @@ audio files ([`web/voices/`](web/voices/), made with [`hae_aaninaytteet.sh`](hae
 same service) so that it plays without a network connection. Divvun (UiT The Arctic University of Norway)
 has given permission (2026-10-30) to keep generated samples in the app.
 
+## Spoken word lists — Chatterbox Finnish and Divvun
+
+The word lists' audio ([`web/audio/`](web/audio/)) says the Finnish word and then the North Sámi word (the Norwegian
+interface plays the North Sámi only). The Finnish was synthesised offline with
+[Chatterbox Finnish](https://huggingface.co/Finnish-NLP/Chatterbox-Finnish) (Finnish-NLP, MIT; fine-tuned from Resemble
+AI's Chatterbox, MIT; its training data and attribution are listed in the model card). The voice is modelled on a
+[LibriVox recording](https://archive.org/details/salmelan_heinatalkoot_1509_librivox) read by **Harri Tapani Ylilammi**
+(public domain). The generated audio carries Resemble AI's inaudible Perth watermark. The North Sámi is Divvun's and
+Giellatekno's speech synthesis, voices Biret and Máhtte, with Divvun's permission (see Pronunciation).
+
+## Mini game
+
+The mini game's everyday word list ([`minipeli_sanat.tsv`](minipeli_sanat.tsv), [`minipeli.py`](minipeli.py)) was
+chosen from the dictionary by ranking words that are common both in the North Sámi corpus and in Finnish film and TV
+subtitles. The ranking used [FrequencyWords](https://github.com/hermitdave/FrequencyWords) (Hermit Dave,
+OpenSubtitles 2018 frequency lists, content CC BY-SA 4.0); the lists themselves are not included. The animal words
+are the same as in the Máhtte learning game. The spoken feedback for weekdays, seasons, months and question words is
+Divvun's speech synthesis, voice Biret, with Divvun's permission.
+
 ## Other links
 
 The "Neahttadigisánit" button opens the word in Giellatekno's online dictionary
@@ -143,6 +168,9 @@ Linux app, the Debian copyright files of the bundled system libraries.
 | [sql.js](https://github.com/sql-js/sql.js) 1.10.3 (SQLite compiled to WebAssembly) | `web/vendor/` | MIT ([LICENSE-sql.js.txt](web/vendor/LICENSE-sql.js.txt)); SQLite itself is public domain |
 | [Qt for Python / PySide6](https://doc.qt.io/qtforpython/) 6.9.3 (incl. Qt WebEngine) | desktop builds only, not in this repository | LGPL-3.0 |
 | [PyInstaller](https://pyinstaller.org/) | builds the desktop apps | GPL-2.0 with bootloader exception |
+| [Python](https://www.python.org/) 3.12 | desktop builds only (bundled runtime) | PSF License Agreement |
+| [certifi](https://github.com/certifi/python-certifi) | desktop builds only | MPL-2.0 |
+| [ICU](https://icu.unicode.org/) (inside Qt) | desktop builds only | Unicode License |
 | [HFST](https://hfst.github.io/) (`hfst-lookup`) | used when building the database, not distributed | see HFST |
 | [Google ML Kit Text Recognition v2](https://developers.google.com/ml-kit/vision/text-recognition/v2) 16.0.1 (bundled model) | Android app only (experimental photo search), downloaded by Gradle, not in this repository | [ML Kit Terms of Service](https://developers.google.com/ml-kit/terms); closed source, free to use. Runs on the phone: photos are not sent anywhere. According to Google, ML Kit sends anonymous usage and performance statistics to Google and may download model updates (only when the photo search is used) |
 | [AndroidX Core](https://developer.android.com/jetpack/androidx/releases/core) 1.13.1 (FileProvider) | Android app only, downloaded by Gradle | Apache-2.0 |

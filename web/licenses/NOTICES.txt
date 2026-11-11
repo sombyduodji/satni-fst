@@ -36,6 +36,12 @@ dict-sme-spa and dict-spa-sme (Spanish)
   © GiellaLT / Divvun / Giellatekno, UiT The Arctic University of Norway,
   and contributors. The North Sámi–Spanish dictionaries are written by
   Ángel Díaz de Rada (UNED) and Kjell Kemi.
+  As the dictionaries' own attribution texts specify, they are also the
+  work of Nils Jernsletten (North Sámi–Norwegian and Norwegian–North Sámi,
+  and part of North Sámi–Finnish), Kotus – Institute for the Languages of
+  Finland (Finnish–North Sámi and North Sámi–Finnish), Marja-Liisa Olthuis
+  and Taarna Valtonen (Finnish–Inari Sámi and Inari Sámi–Finnish), and of
+  members of the language communities.
   Licence: Creative Commons Attribution 4.0 International
   (CC-BY-4.0.txt, https://creativecommons.org/licenses/by/4.0/)
   Source: https://github.com/giellalt
@@ -53,7 +59,8 @@ dict-sme-spa and dict-spa-sme (Spanish)
 Skolt Sámi (experimental): GiellaLT dict-sms-mul, dict-fin-sms and
 dict-nob-sms
   © GiellaLT / Divvun / Giellatekno, UiT The Arctic University of Norway,
-  and contributors.
+  and contributors; dict-fin-sms and dict-nob-sms are also the work of
+  AKU and the Kone Foundation and members of the language communities.
   Licence: CC BY 4.0 (CC-BY-4.0.txt); dict-fin-sms: Creative Commons
   Attribution 3.0 Unported (CC-BY-3.0.txt,
   https://creativecommons.org/licenses/by/3.0/)
@@ -61,9 +68,14 @@ dict-nob-sms
   Changes: for each Finnish and Norwegian word, at most three Skolt Sámi
   words are kept (same word class, main meaning, both sources agreeing).
   For a North Sámi word they are found through its Finnish translation.
+  Word order uses counts of dictionary words in the texts marked free in
+  GiellaLT corpus-sms (https://github.com/giellalt/corpus-sms); no corpus
+  text is included.
 
 Norwegian translations (experimental): Apertium apertium-sme-nob
-  © 2010-2019 Apertium contributors.
+  © 2010-2019 Francis M. Tyers, Kevin Brubeck Unhammer, Trond Trosterud
+  and the Apertium contributors; most of the bilingual dictionary comes
+  from Giellatekno (UiT).
   Licence: GPL-2.0-or-later, used here under GPL-3.0 (GPL-3.0.txt).
   https://github.com/apertium/apertium-sme-nob
   Changes: only the bilingual dictionary is used, for nouns, verbs,
@@ -78,7 +90,8 @@ North Sámi morphology: GiellaLT lang-sme
   The inflection tables were generated with it.
 
 Finnish inflection: GiellaLT lang-fin, based on the Omorfi lexicon
-(Tommi A. Pirinen and others)
+(Tommi A. Pirinen, Inari Listenmaa, Ryan Johnson, Francis M. Tyers and
+others)
   Licence: GNU GPL version 3 (GPL-3.0.txt)
   Source: https://github.com/giellalt/lang-fin
 
@@ -87,13 +100,13 @@ English translations from Wiktionary (where GiellaLT has no English)
   Machine-readable extract from kaikki.org (wiktextract, Tatu Ylönen)
   Licence: Creative Commons Attribution-ShareAlike 4.0 International
   (CC-BY-SA-4.0.txt, https://creativecommons.org/licenses/by-sa/4.0/),
-  used here under GPL-3.0 as CC BY-SA 4.0 allows
+  The adapted data is licensed under GPL-3.0, which CC BY-SA 4.0 allows
+  as a compatible licence.
   Changes: only words without English get one: Wiktionary's own North
   Sámi entries and English entries that list a Northern Sámi
   translation. Where the Finnish and the Norwegian translation give the
   same English in Wiktionary, it is shown as an unchecked suggestion.
   Notes in brackets and "synonym of"-type explanations are left out.
-  The extracted data is shared under the same licence.
 
 Norwegian inflection: Norsk ordbank – bokmål 2005 (dump of 2022-02-01)
   © Språkbanken / Nasjonalbiblioteket
@@ -143,7 +156,8 @@ Logo: the Sámi flag (designed by Astrid Båhl, 1986) drawn as a drop.
 Software in all versions
 ------------------------
 sql.js 1.10.3 (SQLite compiled to WebAssembly)
-  Licence: MIT (sql.js.txt). SQLite itself is in the public domain.
+  Licence: MIT (vendor/LICENSE-sql.js.txt). SQLite itself is in the
+  public domain.
   Source: https://github.com/sql-js/sql.js
 
 
