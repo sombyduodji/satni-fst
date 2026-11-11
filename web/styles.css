@@ -328,6 +328,9 @@ select {
 .toggle-list .switch-row { align-items: flex-start; }
 .toggle-list .switch { margin-top: 2px; }
 .extra-translations { font-size: 15px; margin: -4px 0 10px; }
+/* Saamenkielinen määritelmä (dict-sme) sanakortissa käännöksen alla */
+.sme-def { font-size: 15px; margin: -4px 0 10px; font-style: italic; color: var(--muted); }
+.sme-def b { font-style: normal; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; margin-right: 6px; }
 .word-list .empty { color: var(--subtle); font-size: 13px; padding: 4px 8px; }
 
 .card {

@@ -26,6 +26,7 @@ import dialects
 import gradation
 import inflection_class
 import semantics
+import sme_definitions
 import fin_forms
 import sme_passive
 import nob_forms
@@ -1159,6 +1160,7 @@ def main():
     # taulukossa ovat molempien asujen muodot (oambealle ja oarpmealle), ja luokka näytetään vain, jos ne sopivat
     inflection_class.apply(cursor)
     semantics.apply(cursor)
+    sme_definitions.apply(cursor)
     nob_forms.add_nob_forms(cursor)
     fin_forms.add_fin_forms(cursor)
     sme_passive.apply(cursor)
@@ -1200,6 +1202,12 @@ if __name__ == "__main__":
         # Päivittää vain ihmistä tarkoittavien substantiivien merkinnän (semantics.py; nopea, ei FST-ajoa)
         conn = sqlite3.connect(DB_FILE)
         semantics.apply(conn.cursor())
+        conn.commit()
+        conn.close()
+    elif "--vain-maaritelmat" in sys.argv:
+        # Päivittää vain saamenkieliset määritelmät (sme_definitions.py, dict-sme; nopea, ei FST-ajoa)
+        conn = sqlite3.connect(DB_FILE)
+        sme_definitions.apply(conn.cursor())
         conn.commit()
         conn.close()
     elif "--vain-suoman" in sys.argv:

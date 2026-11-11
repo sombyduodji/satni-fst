@@ -16585,18 +16585,6 @@ For the full license text, see the link above.</lic>
 
   <e>
     <lg>
-      <l pos="N">eavttuhus</l>
-    </lg>
-
-    <mg>
-      <tg xml:lang="fin">
-        <t pos="N">ehdotus</t>
-      </tg>
-    </mg>
-  </e>
-
-  <e>
-    <lg>
       <l pos="N">eaškáleapmi</l>
     </lg>
 
@@ -23255,7 +23243,7 @@ For the full license text, see the link above.</lic>
 
     <mg>
       <tg xml:lang="fin">
-        <t pos="N">veripaltto</t>
+        <t pos="N">veripalttu</t>
       </tg>
     </mg>
   </e>
@@ -23493,7 +23481,7 @@ For the full license text, see the link above.</lic>
 
     <mg>
       <tg xml:lang="fin">
-        <t pos="N">veripaltto</t>
+        <t pos="N">veripalttu</t>
       </tg>
     </mg>
   </e>
@@ -26097,7 +26085,7 @@ For the full license text, see the link above.</lic>
 
     <mg>
       <tg xml:lang="fin">
-        <t pos="N">termimaito</t>
+        <t pos="N">ternimaito</t>
 
         <t pos="N">korvavaha</t>
       </tg>
@@ -47512,18 +47500,6 @@ For the full license text, see the link above.</lic>
 
   <e>
     <lg>
-      <l pos="N">riikarádji</l>
-    </lg>
-
-    <mg>
-      <tg xml:lang="fin">
-        <t pos="N">valtionraja</t>
-      </tg>
-    </mg>
-  </e>
-
-  <e>
-    <lg>
       <l pos="N">riikkajoavku</l>
     </lg>
 
@@ -57939,7 +57915,7 @@ For the full license text, see the link above.</lic>
 
     <mg>
       <tg xml:lang="fin">
-        <t pos="N">sulakala</t>
+        <t pos="N">suolakala</t>
 
         <t t_type="phrase">suolattu kala</t>
       </tg>
@@ -72564,23 +72540,7 @@ For the full license text, see the link above.</lic>
     </mg>
   </e>
 
-  <e>
-    <lg>
-      <l pos="N">jođiheapmi</l>
-    </lg>
 
-    <mg>
-      <tg xml:lang="fin">
-        <t pos="N">luistamaton</t>
-      </tg>
-    </mg>
-
-    <mg>
-      <tg xml:lang="fin">
-        <t pos="N">kaupaksikäymätön</t>
-      </tg>
-    </mg>
-  </e>
 
   <e>
     <lg>
@@ -75390,7 +75350,7 @@ For the full license text, see the link above.</lic>
 
     <mg>
       <tg xml:lang="fin">
-        <t pos="N">selvityminen</t>
+        <t pos="N">selviytyminen</t>
       </tg>
     </mg>
 
@@ -81980,7 +81940,7 @@ For the full license text, see the link above.</lic>
 
     <mg>
       <tg xml:lang="fin">
-        <t pos="N">leviättäytyminen</t>
+        <t pos="N">levittäytyminen</t>
       </tg>
     </mg>
 
@@ -81998,7 +81958,7 @@ For the full license text, see the link above.</lic>
 
     <mg>
       <tg xml:lang="fin">
-        <t pos="N">legitiimys</t>
+        <t pos="N">legitiimiys</t>
       </tg>
     </mg>
 
@@ -85136,7 +85096,7 @@ For the full license text, see the link above.</lic>
 
     <mg>
       <tg xml:lang="fin">
-        <t pos="N">petrooli</t>
+        <t pos="N">petroli</t>
       </tg>
     </mg>
   </e>
@@ -86288,7 +86248,7 @@ For the full license text, see the link above.</lic>
 
     <mg>
       <tg xml:lang="fin">
-        <t pos="N">kaivosyitys</t>
+        <t pos="N">kaivosyritys</t>
       </tg>
     </mg>
   </e>
@@ -87934,7 +87894,7 @@ For the full license text, see the link above.</lic>
 
     <mg>
       <tg xml:lang="fin">
-        <t pos="N">tendessi</t>
+        <t pos="N">tendenssi</t>
       </tg>
     </mg>
 
@@ -214744,7 +214704,7 @@ For the full license text, see the link above.</lic>
       <tg xml:lang="fin">
         <t pos="N">suomalaisnainen</t>
 
-        <t pos="N" re="lotnasátni">lannanriuku</t>
+        <t pos="N">lannanriuku</t>
       </tg>
     </mg>
   </e>

@@ -10,6 +10,7 @@ combines their work into one offline app.
 
 | Dictionary | Used for | Source |
 |---|---|---|
+| North Sámi (monolingual) | North Sámi definitions on the word card and in Meanings | [giellalt/dict-sme](https://github.com/giellalt/dict-sme) |
 | North Sámi → Finnish | Finnish translations, meanings and examples | [giellalt/dict-sme-fin](https://github.com/giellalt/dict-sme-fin) |
 | North Sámi → Norwegian | Norwegian translations, meanings and examples | [giellalt/dict-sme-nob](https://github.com/giellalt/dict-sme-nob) |
 | North Sámi → English | English translations | [giellalt/dict-sme-eng](https://github.com/giellalt/dict-sme-eng) |
@@ -95,7 +96,7 @@ are generated with the Finnish analyser and generator from [giellalt/lang-fin](h
 (GiellaLT / Giellatekno, UiT The Arctic University of Norway; based on the Omorfi lexicon by Tommi A. Pirinen,
 Inari Listenmaa, Ryan Johnson, Francis M. Tyers and others), licensed under the
 [GNU General Public License v3.0](LICENSE). The compiled models come from GiellaLT's nightly
-package `giella-fin` (currently `0.2.20120821+g2928~d16e00e3-1~sid1`, lang-fin commit `d16e00e3`) and are downloaded by
+package `giella-fin` (currently `0.2.20120821+g2929~0e76a788-1~sid1`, lang-fin commit `0e76a788`) and are downloaded by
 [`hae_sanakirjat.sh`](hae_sanakirjat.sh); they are not part of this repository. [`fin_forms.py`](fin_forms.py) keeps only the forms of words used as translations and drops
 archaic and dialectal variants (*vaattehien*, *taloin*, *kirkko-laissa*).
 

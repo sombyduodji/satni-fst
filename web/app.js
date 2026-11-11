@@ -784,7 +784,12 @@ function loadWord(id) {
   } catch (e) { /* vanha aineisto ilman passiivia */ }
   const meanings = all(`SELECT * FROM meanings WHERE word_id = ? ORDER BY rowid`, [id])
     .map((m) => ({ ...m, examples: examples.get(m.lang + m.nr) || [] }));
-  return { word, paradigm, grades, meanings };
+  // Pohjoissaamenkieliset määritelmät (sme_definitions.py, GiellaLT dict-sme)
+  let definitions = [];
+  try {
+    definitions = all(`SELECT nr, definition, synonyms, examples FROM sme_definitions WHERE word_id = ? ORDER BY nr`, [id]);
+  } catch (e) { /* vanha aineisto ilman määritelmiä */ }
+  return { word, paradigm, grades, meanings, definitions };
 }
 
 // --- Näkymät ---
@@ -1038,6 +1043,11 @@ function selectResult(i, pushHistory = true) {
   renderApertium(w, trans);
   renderPivotFin(w, trans);
   renderExtraTranslations(w, groups);
+  // Ensimmäinen saamenkielinen määritelmä kortissa, kaikki Merkitykset-välilehdellä
+  state.definitions = data.definitions || [];
+  const def = state.definitions[0];
+  $("sme-def").hidden = !def;
+  $("sme-def").innerHTML = def ? `<b>${esc(t("smeDef"))}</b>${esc(def.definition)}` : "";
   $("more-meanings").textContent = ownGroup.length > 1 ? t("moreMeanings", ownGroup.length - 1) :
     groups.some(([lang]) => lang !== settings.lang) ? t("otherLangs") : "";
 
@@ -1746,7 +1756,17 @@ function renderMeanings(meanings) {
     if (groups.length > 1 || lang !== settings.lang) html += `<h3 class="lang-head">${esc(t("langIn")[lang])}</h3>`;
     html += ms.map((m) => meaningHtml(m, ms.length > 1)).join("");
   }
-  if (!meanings.length) html += `<p class="muted">${esc(t("noMeanings"))}</p>`;
+  const defs = state.definitions || [];
+  // dict-sme:n esimerkit ovat yleensä jo käännösten alla (sama lähde): vain uudet näytetään
+  const shownEx = new Set(meanings.flatMap((m) => m.examples.map((ex) => ex.sme)));
+  if (defs.length) {
+    html += `<h3 class="lang-head">${esc(t("smeDef"))}</h3><div lang="se">`;
+    html += defs.map((d) => `<div class="meaning"><div class="head">${defs.length > 1 ? `<span class="nr">${d.nr}.</span>` : ""}` +
+      `${esc(d.definition)}${d.synonyms ? ` <span class="expl">(${esc(t("smeDefSyn"))} ${esc(d.synonyms)})</span>` : ""}</div>` +
+      (d.examples || "").split("\n").filter((x) => x && !shownEx.has(x)).map((x) => `<div class="example"><span class="sme">${esc(x)}</span></div>`).join("") +
+      `</div>`).join("") + `</div>`;
+  }
+  if (!meanings.length && !defs.length) html += `<p class="muted">${esc(t("noMeanings"))}</p>`;
   $("panel-meanings").innerHTML = html;
   const examples = meanings.reduce((n, m) => n + m.examples.length, 0);
   $("meanings-tab").textContent = t("tabMeanings", meanings.length, examples);

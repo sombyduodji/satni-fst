@@ -32,7 +32,8 @@ Language data (all versions)
 Dictionaries: GiellaLT dict-sme-fin, dict-sme-nob, dict-sme-eng,
 dict-sme-smn, dict-sme-smj, dict-sme-sma, dict-fin-sme, dict-nob-sme,
 dict-smn-sme, dict-smj-sme, dict-sma-sme, dict-smn-fin, dict-fin-smn,
-dict-sme-spa and dict-spa-sme (Spanish)
+dict-sme-spa and dict-spa-sme (Spanish), and the monolingual North Sámi
+dictionary dict-sme (North Sámi definitions)
   © GiellaLT / Divvun / Giellatekno, UiT The Arctic University of Norway,
   and contributors. The North Sámi–Spanish dictionaries are written by
   Ángel Díaz de Rada (UNED) and Kjell Kemi.
@@ -55,6 +56,8 @@ dict-sme-spa and dict-spa-sme (Spanish)
   dict-smn-fin, dict-fin-smn) or through Norwegian, marked as unchecked.
   The Spanish dictionaries are read from their Excel sources; synonym rows
   are merged and grammar notes are kept apart from the translations.
+  From dict-sme, the definitions, synonyms and examples are shown; examples
+  already shown with a translation are left out.
 
 Skolt Sámi (experimental): GiellaLT dict-sms-mul, dict-fin-sms and
 dict-nob-sms

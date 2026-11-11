@@ -166,6 +166,8 @@ def main():
                                restrictions TEXT, labels TEXT, geo TEXT);
         CREATE TABLE examples (word_id INTEGER, lang TEXT, meaning_nr INTEGER, sme TEXT, translation TEXT,
                                source TEXT);
+        -- Pohjoissaamenkieliset määritelmät (sme_definitions.py, GiellaLT dict-sme): synonyms pilkuin, examples rivinvaihdoin
+        CREATE TABLE sme_definitions (word_id INTEGER, nr INTEGER, definition TEXT, synonyms TEXT, examples TEXT);
         -- Käännösten taivutus: norja (Norsk ordbank, nob_forms.py) ja suomi (GiellaLT lang-fin, fin_forms.py).
         -- WITHOUT ROWID: avain toimii hakemistona, eikä erillistä indeksiä (sanojen kopiota) tarvita
         CREATE TABLE nob_forms (word TEXT, pos TEXT, forms TEXT, PRIMARY KEY (word, pos)) WITHOUT ROWID;
@@ -250,6 +252,9 @@ def main():
         "ORDER BY word_id, rowid"))
     dst.executemany("INSERT INTO examples VALUES (?,?,?,?,?,?)", src.execute(
         "SELECT word_id, lang, meaning_nr, sme, translation, source FROM examples ORDER BY word_id, rowid"))
+    if src.execute("SELECT 1 FROM sqlite_master WHERE name = 'sme_definitions'").fetchone():
+        dst.executemany("INSERT INTO sme_definitions VALUES (?,?,?,?,?)", src.execute(
+            "SELECT word_id, nr, definition, synonyms, examples FROM sme_definitions ORDER BY word_id, nr"))
 
     if src.execute("SELECT 1 FROM sqlite_master WHERE name = 'nob_forms'").fetchone():
         dst.executemany("INSERT INTO nob_forms VALUES (?,?,?)",
@@ -294,6 +299,7 @@ def main():
         CREATE INDEX idx_trans_bare ON trans_bare(bare);
         CREATE INDEX idx_sme_passive_surface ON sme_passive(surface);
         CREATE INDEX idx_examples_word ON examples(word_id);
+        CREATE INDEX idx_sme_definitions_word ON sme_definitions(word_id);
     """)
     dst.commit()
     dst.execute("VACUUM")
