@@ -142,6 +142,9 @@ const PELI_CUP = PI('<path d="M8 4h8v4.5a4 4 0 0 1-8 0z"/><path d="M8 6H5.5a2.5 
 const PELI_OK = PI('<path d="M5 12.5l4.5 4.5L19 7.5"/>');
 const PELI_NO = PI('<path d="M7 7l10 10M17 7L7 17"/>');
 
+// Pitkä yksittäinen sana pienemmällä, jottei se katkea kesken (bearjadat, gaskavahkku, jievjaskuolfi)
+const peliLongClass = (o) => { const n = Math.max(...o.split(/\s/).map((x) => x.length)); return n > 11 ? " xlong" : n > 8 ? " long" : ""; };
+
 function renderPeliQuestion() {
   const T = pt(), run = peliRun, q = run.q;
   peliLast = { mode: run.mode, q };
@@ -154,7 +157,7 @@ function renderPeliQuestion() {
     `<p class="peli-q">${esc(q.toSme ? `${T.askUi}?` : T.askSme)}</p>` +
     `<p class="peli-word"${q.toSme ? "" : ' lang="se"'}>${esc(q.prompt)}</p></div>` +
     `<div class="peli-opts">${q.opts.map((o, i) => `<button type="button" class="peli-opt" data-o="${esc(o)}">` +
-      `<span class="po-key">${"ABCD"[i]}</span><span class="po-txt${o.split(/\s/).some((x) => x.length > 11) ? " long" : ""}"${q.toSme ? ' lang="se"' : ""}>${esc(o)}</span>` +
+      `<span class="po-key">${"ABCD"[i]}</span><span class="po-txt${peliLongClass(o)}"${q.toSme ? ' lang="se"' : ""}>${esc(o)}</span>` +
       `<span class="po-mark"></span></button>`).join("")}</div></div>` +
     `<p class="peli-report"><a href="#" class="report-link peli-report-link"><span aria-hidden="true">⚑</span> ${esc(T.report)}</a></p>`;
   peliShownAt = performance.now();
@@ -170,6 +173,17 @@ function peliPodium(top, isNew) {
       `<span class="pd-block">${i + 1}</span></div>`;
   };
   return `<div class="peli-podium">${step(1)}${step(0)}${step(2)}</div>`;
+}
+
+// Oikea vastaus: iso peukalo kasvaa kysymyksen päälle, alla oikea saamen sana ja sen käännös
+function peliSplash(q) {
+  const item = peliPool(peliRun.mode).find((w) => w[0] === q.sme);
+  const ui = item ? (sanastoLang() === "nb" ? item[2] : item[1]) : "";
+  const el = document.createElement("div");
+  el.className = "peli-splash";
+  el.setAttribute("aria-hidden", "true");
+  el.innerHTML = `<div class="ps-in"><span class="ps-thumb">👍</span><b lang="se">${esc(q.sme)}</b><span>${esc(ui)}</span></div>`;
+  document.querySelector(".peli-play")?.appendChild(el);
 }
 
 function peliMark(btn, ok) {
@@ -204,6 +218,7 @@ function renderPeliOver(chosen) {
     `<button type="button" class="peli-secondary" data-act="home">${esc(T.home)}</button></div></div>` +
     `<p class="peli-report"><a href="#" class="report-link peli-report-link"><span aria-hidden="true">⚑</span> ${esc(T.report)}</a></p></div>`;
   $("peli-body").querySelector(":scope > .peli-report")?.remove();
+  document.querySelector(".peli-splash")?.remove();
   $("peli-body").appendChild(sheet);
   sheet.querySelector(".peli-primary").focus({ preventScroll: true });
 }
@@ -243,6 +258,7 @@ function peliAnswer(btn) {
   if (btn.dataset.o === q.answer) {
     peliBusy = true;
     peliMark(btn, true);
+    peliSplash(q);
     peliRun.score++;
     const s = document.querySelector(".peli-score");
     if (s) { s.textContent = peliRun.score; s.classList.remove("pop"); void s.offsetWidth; s.classList.add("pop"); }
@@ -261,7 +277,7 @@ function peliAnswer(btn) {
       peliAudio.addEventListener("error", next, { once: true });
       setTimeout(next, 3500);
     } else {
-      setTimeout(next, 550);
+      setTimeout(next, 1000);  // peukalo ehtii näkyä
     }
   } else {
     renderPeliOver(btn.dataset.o);

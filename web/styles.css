@@ -1171,7 +1171,18 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 .peli-mode { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; }
 
 /* Kysymys: värillinen näyttämö ja sen alla neljä vastauskorttia */
-.peli-play { display: flex; flex-direction: column; gap: 12px; }
+.peli-play { position: relative; display: flex; flex-direction: column; gap: 12px; }
+/* Oikein: iso peukalo kasvaa näkyviin, alla oikea sana */
+.peli-splash { position: absolute; inset: -6px; z-index: 2; display: grid; place-items: center; border-radius: 26px;
+  background: color-mix(in srgb, var(--surface) 78%, transparent); backdrop-filter: blur(3px); animation: peli-fade .18s ease-out; }
+.ps-in { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+.ps-thumb { font-size: 120px; line-height: 1; filter: drop-shadow(0 8px 18px rgb(0 0 0 / .25));
+  animation: ps-grow .55s cubic-bezier(.2, 1.4, .4, 1) both; }
+.ps-in b { margin-top: 10px; font-size: 32px; font-weight: 800; letter-spacing: -.01em; color: var(--flag-green); animation: ps-rise .4s .15s both; }
+.ps-in span:last-child { color: var(--muted); font-size: 16px; animation: ps-rise .4s .22s both; }
+@keyframes ps-grow { 0% { transform: scale(.2) rotate(-25deg); opacity: 0; } 60% { transform: scale(1.18) rotate(6deg); opacity: 1; } 100% { transform: scale(1) rotate(0); } }
+@keyframes ps-rise { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .ps-thumb, .ps-in b, .ps-in span:last-child, .peli-splash { animation: none; } }
 .peli-stage { position: relative; border-radius: 24px; padding: 14px 16px 22px; text-align: center; overflow: hidden;
   background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--tc) 26%, var(--surface)) 0%,
     color-mix(in srgb, var(--tc) 8%, var(--surface)) 60%, var(--surface) 100%);
@@ -1195,11 +1206,14 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
   transition: transform .1s, border-color .15s, background .2s; }
 .po-key { flex: none; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font-size: 12.5px;
   font-weight: 800; color: var(--tc); background: color-mix(in srgb, var(--tc) 14%, var(--surface)); }
-.po-txt { flex: 1; min-width: 0; overflow-wrap: anywhere; line-height: 1.25; }
-.po-txt.long { font-size: 13.5px; letter-spacing: -.01em; }  /* pitkä sana (jievjaskuolfi) mahtuu riville */
-.po-mark { flex: none; width: 22px; height: 22px; }
-.po-mark:empty { width: 0; }
-.po-mark svg { width: 22px; height: 22px; }
+.po-txt { flex: 1; min-width: 0; overflow-wrap: break-word; hyphens: manual; line-height: 1.25; }
+.po-txt.long { font-size: 14px; letter-spacing: -.01em; }
+.po-txt.xlong { font-size: 12.5px; letter-spacing: -.015em; }  /* pitkä sana (jievjaskuolfi) mahtuu riville */
+/* ✓/✗ pienenä merkkinä kortin kulmassa, ei vie tekstin leveyttä */
+.po-mark { position: absolute; top: -8px; right: -6px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--surface); box-shadow: 0 1px 4px rgb(0 0 0 / .2); }
+.po-mark:empty { display: none; }
+.po-mark svg { width: 16px; height: 16px; }
 .peli-opt:hover:not(:disabled) { border-color: var(--tc); }
 .peli-opt:active:not(:disabled) { transform: scale(.97); }
 .peli-opt:focus-visible { outline: 2px solid var(--tc); outline-offset: 2px; }
