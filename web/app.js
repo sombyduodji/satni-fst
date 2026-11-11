@@ -842,44 +842,27 @@ function sunDay(d) {
 }
 const fmtTime = (d) => d.toLocaleTimeString("fi-FI", { timeZone: SUN_PLACE.tz, hour: "numeric", minute: "2-digit" });
 
+// Gáregasnjárgga aurinko yhtenä pienenä rivinä: nousu ja lasku, skábma ja gaskaijabeaivváš
 function renderSun(now) {
   const day = sunDay(now);
-  const polarNight = day.max < HORIZON, midnightSun = day.min >= HORIZON;
   let text;
-  if (polarNight) {
-    // Seuraava päivä, jona aurinko nousee
+  if (day.max < HORIZON) {
+    // Skábma: seuraava päivä, jona aurinko nousee
     let next = null;
     for (let k = 1; k < 80 && !next; k++) {
       const d = new Date(now.getTime() + k * 86400000);
       if (sunDay(d).max >= HORIZON) next = d;
     }
-    text = `Skábma – beaivváš ii badján odne.` + (next ? ` Beaivváš badjána fas ${smeDate(next, true)}.` : "");
-  } else if (midnightSun) {
-    text = "Gaskaijabeaivváš – beaivváš ii luoitát odne.";
+    text = "Skábma – Gáregasnjárggas beaivváš ii badján odne." + (next ? ` Beaivváš badjána fas ${smeDate(next, true)}.` : "");
+  } else if (day.min >= HORIZON) {
+    text = "Gaskaijabeaivváš – Gáregasnjárggas beaivváš ii luoitát odne.";
+  } else if (day.rise && day.set && day.set < day.rise) {
+    // Yöttömän yön lopulla aurinko laskee puolenyön jälkeen ja nousee pian uudelleen
+    text = `Gáregasnjárggas beaivváš luoitáda ${fmtTime(day.set)} ja badjána fas ${fmtTime(day.rise)}.`;
   } else {
-    // Yöttömän yön lopulla aurinko laskee puolenyön jälkeen ja nousee pian uudelleen: järjestys kellonaikojen mukaan
-    text = day.rise && day.set && day.set < day.rise
-      ? `Beaivváš luoitáda ${fmtTime(day.set)} ja badjána fas ${fmtTime(day.rise)}.`
-      : `Beaivváš badjána ${day.rise ? fmtTime(day.rise) : "–"} ja luoitáda ${day.set ? fmtTime(day.set) : "–"}.`;
+    text = `Gáregasnjárggas beaivváš badjána ${day.rise ? fmtTime(day.rise) : "–"} ja luoitáda ${day.set ? fmtTime(day.set) : "–"}.`;
   }
-  // Kuva: vuorokauden auringonkaari (x = kello 0–24, y = korkeus), horisontti, aurinko nyt
-  const W = 320, H = 100, top = 0, horizonY = 50, scale = 1.0;  // 1 aste = 1 px: Gáregasnjárgassa korkeus −44…+44°
-  const yOf = (alt) => Math.max(2, Math.min(H - 2, horizonY - (alt - HORIZON) * scale));
-  const pts = day.alts.map((a, k) => `${(k / 288 * W).toFixed(1)},${yOf(a).toFixed(1)}`).join(" ");
-  const nowK = (now - day.start) / (5 * 60000), nowAlt = sunAltitude(now, SUN_PLACE.lat, SUN_PLACE.lon);
-  const sx = Math.max(0, Math.min(W, nowK / 288 * W)), sy = yOf(nowAlt);
-  const up = nowAlt >= HORIZON;
-  const sky = nowAlt >= 6 ? "day" : nowAlt >= -6 ? "dusk" : "night";
-  const stars = sky === "night" ? [[24, 14], [70, 30], [118, 12], [170, 26], [214, 10], [262, 22], [300, 36]]
-    .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.1" class="sun-star"/>`).join("") : "";
-  const ticks = [6, 12, 18].map((h) => `<line x1="${h / 24 * W}" x2="${h / 24 * W}" y1="${horizonY - 3}" y2="${horizonY + 3}" class="sun-tick"/>`).join("");
-  $("sun-card").className = `sun-card ${sky}${polarNight ? " polar" : ""}`;
-  // Matala nauha: teksti ylhäällä, kaari alla (pysty puristettu, pallo pysyy pyöreänä erillisenä elementtinä)
-  $("sun-card").innerHTML = `<div class="sun-text"><span class="sun-place">${SUN_PLACE.name}</span> ${esc(text)}</div>` +
-    `<div class="sun-sky"><svg viewBox="0 ${top} ${W} ${H - top}" preserveAspectRatio="none" aria-hidden="true">${stars}` +
-    `<polyline points="${pts}" class="sun-path"/>` +
-    `<line x1="0" x2="${W}" y1="${horizonY}" y2="${horizonY}" class="sun-horizon"/>${ticks}</svg>` +
-    `<span class="sun-dot${up ? "" : " below"}" style="left:${(sx / W * 100).toFixed(1)}%;top:${((sy - top) / (H - top) * 100).toFixed(1)}%"></span></div>`;
+  $("sun-line").textContent = text;
 }
 
 function renderToday() {
