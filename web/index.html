@@ -37,6 +37,7 @@
     <div class="header-tools">
     <button class="chip-btn head-btn ocr-btn" id="ocr-btn" data-i18n-title="ocrTitle" data-i18n-aria="ocrTitle" hidden disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
     <button class="chip-btn head-btn lause-btn" id="lause-btn" data-i18n-title="lauseTitle" data-i18n-aria="lauseTitle" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg></button>
+    <button class="chip-btn head-btn peli-btn" id="peli-btn" data-i18n-aria="minipeli" data-i18n-title="minipeli"></button>
     <button class="chip-btn head-btn sanasto-btn" id="sanasto-btn" data-i18n-aria="sanastot" data-i18n-title="sanastot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5.6 4 9 4 12 6c3-2 6.4-2 9-.5V19c-2.6-1.5-6-1.5-9 .5-3-2-6.4-2-9-.5z"/><path d="M12 6v13.5"/><path d="M15.5 5.2v5.3l1.5-1.2 1.5 1.2V4.9"/></svg></button>
     </div>
   </header>
@@ -93,6 +94,8 @@
             </select></div>
           <label class="switch-row" id="grade-option"><span data-i18n="showGrade">Näytä astevaihtelu</span>
             <input type="checkbox" class="switch" role="switch" id="grade-toggle" checked></label>
+          <label class="switch-row" id="game-option"><span data-i18n="gameButton">Minipeli yläpalkissa</span>
+            <input type="checkbox" class="switch" role="switch" id="game-toggle" checked></label>
           <div class="setting-row voice-head"><span data-i18n="voice">Ääni</span></div>
           <div id="voice-list" class="voice-list" role="radiogroup" data-i18n-aria="voice"></div>
         </section>
@@ -296,8 +299,9 @@
       <!-- Sanakortti: väärä sana ja taivutus; sanastolista (sanastot.js): saamen sana tai muoto ja äänite -->
       <label class="report-card-only"><input type="radio" name="report-kind" value="word"><span data-i18n="reportKindWord"></span></label>
       <label class="report-card-only"><input type="radio" name="report-kind" value="form"><span data-i18n="reportKindForm"></span></label>
-      <label class="report-list-only"><input type="radio" name="report-kind" value="sme"><span data-i18n="reportKindSme"></span></label>
-      <label class="report-list-only"><input type="radio" name="report-kind" value="audio"><span data-i18n="reportKindAudio"></span></label>
+      <label class="report-list-only report-nogame"><input type="radio" name="report-kind" value="sme"><span data-i18n="reportKindSme"></span></label>
+      <label class="report-list-only report-nogame"><input type="radio" name="report-kind" value="audio"><span data-i18n="reportKindAudio"></span></label>
+      <label class="report-game-only"><input type="radio" name="report-kind" value="inappropriate"><span data-i18n="reportKindBad"></span></label>
       <label><input type="radio" name="report-kind" value="other"><span data-i18n="reportKindOther"></span></label>
     </fieldset>
     <label class="report-text report-list-only"><span data-i18n="reportWhichWord"></span><input type="text" id="report-word"></label>
@@ -332,6 +336,17 @@
   <!-- Tekstintunnistus: kuva ja sen sanat (app.js: openOcr, ocrResult) -->
   <!-- Lausekääntäjä: suomenkielinen lause -> sanat laatikoina (saamen muoto ja perusmuoto) -> saamenkielinen lause -->
   <!-- Sanastot: yleisnäkymä (ruudukko) ja lista; sanastot.js -->
+  <!-- Minipeli (minipeli.js): neljän vaihtoehdon sanapeli, sama koko näytön näkymä kuin sanastoissa -->
+  <div id="peli-view" class="sanasto-view peli-view" hidden>
+    <div class="sanasto-head">
+      <button type="button" class="chip-btn" id="peli-back" data-i18n-aria="back" hidden>←</button>
+      <h2 id="peli-title"></h2>
+      <button type="button" class="chip-btn" id="peli-close" data-i18n="close">Sulje</button>
+    </div>
+    <div class="stripe"><span></span><span></span><span></span><span></span></div>
+    <div id="peli-body" class="peli-body"></div>
+  </div>
+
   <div id="sanasto-view" class="sanasto-view" hidden>
     <div class="sanasto-head">
       <button type="button" class="chip-btn" id="sanasto-back" data-i18n-aria="back" hidden>←</button>
@@ -410,5 +425,6 @@
   <script src="app.js"></script>
   <script src="lauseet.js"></script>
   <script src="sanastot.js"></script>
+  <script src="minipeli.js"></script>
 </body>
 </html>

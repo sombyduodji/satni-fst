@@ -48,7 +48,7 @@ const state = { query: "", results: [], index: 0, word: null, paradigm: null, gr
 // --- Asetukset, historia ja suosikit (selaimen localStorage) ---
 
 const DEFAULT_SETTINGS = {
-  theme: "auto", voice: "Biret", uiLang: "fi", lang: "fin", showGrade: true, history: [], favourites: [],
+  theme: "auto", voice: "Biret", uiLang: "fi", lang: "fin", showGrade: true, game: true, history: [], favourites: [],
   // Muut kielet (asetus valikossa): niiden käännökset näkyvät sanakortissa pääkäännöksen lisäksi; oletuksena
   // ei yhtään. Hakuun ne eivät vaikuta.
   extraLangs: [],
@@ -241,12 +241,13 @@ function openReport() {
   $("report-about").textContent = `${shownLemma(state.word)} (${$("pos-badge").textContent}) · ` +
     `${t("reportLabels").search}: ${state.query}`;
   $("report-text").value = "";
-  $("report-dlg").classList.remove("list-mode");
+  $("report-dlg").classList.remove("list-mode", "game-mode");
   $("report-dlg").querySelector('input[value="trans"]').checked = true;
   $("report-dlg").showModal();
 }
 
 function sendReport() {
+  if ($("report-dlg").classList.contains("game-mode")) return peliSendReport();  // minipeli (minipeli.js)
   if ($("report-dlg").classList.contains("list-mode")) return sanastoSendReport();  // sanastolista (sanastot.js)
   const w = state.word, L = t("reportLabels");
   const kind = $("report-dlg").querySelector('input[name="report-kind"]:checked').value;

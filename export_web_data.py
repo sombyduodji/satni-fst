@@ -307,6 +307,8 @@ def main():
     print(f"web/data/satni-web.db.gz: {packed / 1e6:.1f} Mt (purettuna {raw / 1e6:.1f} Mt)")
     # Sanastot (aihekohtaiset sanalistat) samasta tietokannasta: web/data/sanastot.json (gitignore, kuten tietokanta)
     subprocess.run(["python3", os.path.join(SCRIPT_DIR, "sanastot.py")], check=False)
+    # Minipelin sanat ja kategoriat sanastoista ja sanakirjasta: web/data/minipeli.json
+    subprocess.run(["python3", os.path.join(SCRIPT_DIR, "minipeli.py")], check=False)
 
 
 if __name__ == "__main__":

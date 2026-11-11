@@ -1142,3 +1142,63 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 }
 .first-run-lang svg { width: 32px; height: 22px; border-radius: 3px; }
 .base-link { color: var(--accent); font-weight: 600; }
+
+/* --- Minipeli (minipeli.js) ---------------------------------------------------------------------------- */
+.report-dlg:not(.game-mode) .report-game-only, .report-dlg.game-mode .report-nogame { display: none; }
+.peli-body { flex: 1; overflow-y: auto; padding: 14px 16px 28px; display: flex; flex-direction: column; gap: 14px;
+  max-width: 640px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+.peli-lead { margin: 0; color: var(--muted); }
+.peli-group h3 { margin: 4px 0 8px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.peli-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.peli-tile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; text-align: left;
+  padding: 14px 14px 12px; border-radius: 16px; border: 1px solid var(--border); cursor: pointer; font: inherit; color: var(--text);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tc) 18%, var(--surface)) 0%, var(--surface) 70%);
+  box-shadow: var(--card-shadow); overflow: hidden; transition: transform .12s; }
+.peli-tile::before { content: ""; position: absolute; inset: 0 0 auto; height: 4px; background: var(--tc); }
+.peli-tile:active { transform: scale(.97); }
+.pt-name { font-weight: 700; font-size: 16px; line-height: 1.25; }
+.pt-sub { font-size: 13px; color: var(--muted); }
+.pt-best { margin-top: 6px; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pt-best b { color: var(--text); }
+.peli-card { position: relative; border-radius: 20px; border: 1px solid var(--border); background: var(--surface);
+  padding: 18px 18px 20px; box-shadow: var(--card-shadow); overflow: hidden; }
+.peli-card::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--tc, var(--accent)); }
+.peli-meta { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.peli-score b { display: inline-block; color: var(--text); font-size: 18px; margin-left: 4px; }
+.peli-score b.pop { animation: peli-pop .35s ease-out; }
+@keyframes peli-pop { 0% { transform: scale(1); } 40% { transform: scale(1.45); color: var(--flag-green); } 100% { transform: scale(1); } }
+.peli-q { margin: 18px 0 4px; color: var(--muted); font-size: 14px; text-align: center; }
+.peli-word { margin: 0 0 18px; text-align: center; font-size: clamp(26px, 8vw, 38px); font-weight: 800; letter-spacing: -.01em;
+  line-height: 1.15; overflow-wrap: anywhere; text-wrap: balance; }
+.peli-opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.peli-opt { min-height: 58px; padding: 10px 12px; border-radius: 14px; border: 2px solid var(--border); background: var(--surface-alt);
+  color: var(--text); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; overflow-wrap: anywhere;
+  transition: transform .1s, border-color .15s, background .15s; }
+.peli-opt:hover:not(:disabled) { border-color: var(--tc, var(--accent)); }
+.peli-opt:active:not(:disabled) { transform: scale(.97); }
+.peli-opt.right { background: color-mix(in srgb, var(--flag-green) 22%, var(--surface)); border-color: var(--flag-green); }
+.peli-opt.wrong { background: color-mix(in srgb, var(--flag-red) 20%, var(--surface)); border-color: var(--flag-red); }
+.peli-opt:disabled { cursor: default; }
+.peli-report { margin: 0; text-align: center; }
+.peli-over h3, .peli-ask h3 { margin: 6px 0 4px; font-size: 20px; }
+.peli-final { margin: 0; font-size: 17px; }
+.peli-new { display: inline-block; margin-left: 6px; padding: 2px 9px; border-radius: 99px; font-size: 13px; font-weight: 700;
+  background: color-mix(in srgb, var(--flag-yellow) 35%, var(--surface)); }
+.peli-correct { margin: 6px 0 0; color: var(--muted); }
+.peli-correct b { color: var(--text); }
+.peli-over h4 { margin: 14px 0 6px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.peli-top { margin: 0; padding-left: 22px; font-variant-numeric: tabular-nums; }
+.peli-top li { padding: 2px 0; }
+.peli-top span { color: var(--muted); font-size: 13px; margin-left: 6px; }
+.peli-mode { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; }
+.peli-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.peli-primary, .peli-secondary { font: inherit; font-weight: 600; padding: 10px 16px; border-radius: 12px; cursor: pointer; border: 1px solid var(--border); }
+.peli-primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.peli-secondary { background: var(--surface-alt); color: var(--text); }
+@media (max-width: 330px) { .peli-opts { grid-template-columns: 1fr; } }
+.pt-ico { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 6px;
+  color: var(--tc); background: color-mix(in srgb, var(--tc) 16%, var(--surface)); }
+.pt-ico svg { width: 22px; height: 22px; }
+.pt-ico.small { display: inline-grid; width: 24px; height: 24px; border-radius: 7px; margin: 0 6px -6px 0; }
+.pt-ico.small svg { width: 15px; height: 15px; }
+@media (prefers-reduced-motion: reduce) { .peli-score b.pop { animation: none; } .peli-tile, .peli-opt { transition: none; } }

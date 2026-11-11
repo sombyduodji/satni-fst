@@ -126,6 +126,16 @@ the North Sámi word; the Norwegian interface plays the North Sámi words only.
   Máhtte (the greetings conversation), with Divvun's permission (see
   Pronunciation above).
 
+Mini game (data/minipeli.json): the everyday word list was chosen from the
+dictionary by ranking words that are common both in the North Sámi corpus
+and in Finnish film and TV subtitles. The ranking used FrequencyWords
+(Hermit Dave, OpenSubtitles 2018 frequency lists, content CC BY-SA 4.0);
+the lists themselves are not included.
+  https://github.com/hermitdave/FrequencyWords
+  The animal words are the same as in the Máhtte learning game. The spoken
+  feedback for weekdays, seasons and months is Divvun's and Giellatekno's
+  speech synthesis, voice Biret, with Divvun's permission.
+
 Logo: the Sámi flag (designed by Astrid Båhl, 1986) drawn as a drop.
 
 
