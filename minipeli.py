@@ -3,7 +3,7 @@
 Sanat ja tasot ovat tiedostossa minipeli_sanat.tsv (koottu ja tarkistettu 2026-11-11), käännökset sanakirjasta
 (satni.db) tai sanastoista (web/data/sanastot.json). Erikoiskategoriat:
 - järjestysluvut 1–100: GiellaLT lang-sme -analysaattorilla vahvistetut (sanastot.py:n apufunktiot),
-- viikonpäivät, vuodenajat ja kuukaudet sekä värit sanastoista,
+- viikonpäivät, vuodenajat ja kuukaudet, värit ja kysymyssanat sanastoista,
 - eläimet: samat 23 kuin Máhtte-pelissä (~/Git/mahtte, data/starter-words.js).
 
 Aja: python3 minipeli.py   (sanastot.py ja export_web_data.py ensin, koska käännökset tulevat niistä)
@@ -45,8 +45,15 @@ def nb_ord(n):
 
 def first(text, k=2):
     """Pilkkulistan k ensimmäistä (sulkeiden sisäiset pilkut eivät erota), sulkeet pois"""
-    items = [re.sub(r"\s*\([^)]*\)", "", x).strip() for x in re.split(r",\s*(?![^()]*\))", text or "")]
-    return ", ".join([x for x in items if x][:k])
+    # "minä · minun · minulle" (pronominien sijamuodot) -> vain perusmuoto
+    items = [re.sub(r"\s*\([^)]*\)", "", x).split(" · ")[0].strip() for x in re.split(r",\s*(?![^()]*\))", text or "")]
+    items = [x for x in items if x][:k]
+    if len(items) > 1 and len(items[0]) > 30:  # ensimmäinen on selitys, toinen tavallinen sana: vain toinen
+        items = items[1:]
+    # Toinen merkitys vain lyhyenä: pitkä selitys ("tavallisesti naaraspuolinen talvikko") sotkisi vaihtoehdot
+    if len(items) > 1 and len(items[1]) > 22:
+        items = items[:1]
+    return ", ".join(items)
 
 
 def ordinals():
@@ -93,13 +100,15 @@ def main():
         for r in lists[lid]["rows"]:
             time.append([r["sme"][0]["w"][0], first(r["fi"][0], 1), first(r["nb"][0], 1), sub])
     colours = [[r["sme"][0]["w"][0], r["fi"][0], r["nb"][0]] for r in lists["varit"]["rows"]]
-    data = {"words": words, "cats": {"ordinals": ordinals(), "time": time, "colours": colours,
+    # Tarkenne jää (galles = "når (klokka)", goas = "når"), muuten norjassa kaksi samaa vastausta
+    questions = [[r["sme"][0]["w"][0], r["fi"][0], r["nb"][0]] for r in lists["kysymykset"]["rows"]]
+    data = {"words": words, "cats": {"ordinals": ordinals(), "time": time, "colours": colours, "questions": questions,
                                      "animals": [list(a) for a in ANIMALS]}}
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
     lv = [w[4] for w in words]
     print(f"{OUT}: {len(words)} sanaa ({lv.count(1)} aloittelija), järjestysluvut {len(data['cats']['ordinals'])}, "
-          f"aika {len(time)}, värit {len(colours)}, eläimet {len(ANIMALS)}, {os.path.getsize(OUT)} tavua")
+          f"aika {len(time)}, värit {len(colours)}, kysymyssanat {len(questions)}, eläimet {len(ANIMALS)}, {os.path.getsize(OUT)} tavua")
     if missing:
         print("HUOM: ei sanakirjassa:", missing)
 
