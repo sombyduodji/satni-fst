@@ -23,8 +23,8 @@ combines their work into one offline app.
 | Southern Sámi → North Sámi | Missing Southern Sámi translations | [giellalt/dict-sma-sme](https://github.com/giellalt/dict-sma-sme) |
 | Inari Sámi → Finnish | Finnish suggestions (experimental) | [giellalt/dict-smn-fin](https://github.com/giellalt/dict-smn-fin) |
 | Finnish → Inari Sámi | Finnish suggestions (experimental) | [giellalt/dict-fin-smn](https://github.com/giellalt/dict-fin-smn) |
-| North Sámi → Spanish | Spanish translations, meanings and examples (by Ángel) | [giellalt/dict-sme-spa](https://github.com/giellalt/dict-sme-spa) |
-| Spanish → North Sámi | Missing Spanish translations (by Ángel) | [giellalt/dict-spa-sme](https://github.com/giellalt/dict-spa-sme) |
+| North Sámi → Spanish | Spanish translations, meanings and examples (by Ángel Díaz de Rada and Kjell Kemi) | [giellalt/dict-sme-spa](https://github.com/giellalt/dict-sme-spa) |
+| Spanish → North Sámi | Missing Spanish translations (by Ángel Díaz de Rada and Kjell Kemi) | [giellalt/dict-spa-sme](https://github.com/giellalt/dict-spa-sme) |
 
 **English from Wiktionary:** for words with no English in GiellaLT's dictionary, [`wiktionary_eng.py`](wiktionary_eng.py)
 uses English Wiktionary (© Wiktionary contributors, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)),

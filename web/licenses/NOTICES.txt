@@ -32,9 +32,10 @@ Language data (all versions)
 Dictionaries: GiellaLT dict-sme-fin, dict-sme-nob, dict-sme-eng,
 dict-sme-smn, dict-sme-smj, dict-sme-sma, dict-fin-sme, dict-nob-sme,
 dict-smn-sme, dict-smj-sme, dict-sma-sme, dict-smn-fin, dict-fin-smn,
-dict-sme-spa and dict-spa-sme (Spanish, by Ángel)
+dict-sme-spa and dict-spa-sme (Spanish)
   © GiellaLT / Divvun / Giellatekno, UiT The Arctic University of Norway,
-  and contributors.
+  and contributors. The North Sámi–Spanish dictionaries are written by
+  Ángel Díaz de Rada (UNED) and Kjell Kemi.
   Licence: Creative Commons Attribution 4.0 International
   (CC-BY-4.0.txt, https://creativecommons.org/licenses/by/4.0/)
   Source: https://github.com/giellalt
