@@ -14,10 +14,13 @@ import xml.etree.ElementTree as ET
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(SCRIPT_DIR, "dict-sme", "src")
 MAX_EXAMPLES = 3
+# Lähteen kirjoitusvirheet (Divvunin oikoluin ja käsin tarkistettu 2026-11-11), korjataan kokonaisina sanoina
+TYPOS = {"girjiid": "girjjiid", "spiinniiid": "spiinniid", "sávvzza": "sávzza", "nžuorat": "nuorat"}
 
 
 def _text(el):
-    return re.sub(r"\s+", " ", "".join(el.itertext())).strip()
+    text = re.sub(r"\s+", " ", "".join(el.itertext())).strip()
+    return re.sub(r"\w+", lambda m: TYPOS.get(m.group(0), m.group(0)), text)
 
 
 def parse():
@@ -50,15 +53,23 @@ def apply(cursor):
     if not os.path.isdir(SRC):
         print("Saamenkieliset määritelmät: dict-sme puuttuu (hae_sanakirjat.sh)")
         return
-    rows, words, missing = [], 0, 0
+    per_word, variants, words, missing = {}, {}, 0, 0
     for (lemma, pos), senses in parse().items():
         ids = [r[0] for r in cursor.execute("SELECT id FROM dictionary WHERE sme_lemma = ? AND pos = ?", (lemma, pos))]
+        target = per_word
+        if not ids:  # toinen kirjoitusasu, joka on yhdistetty samaan sanakorttiin (dialects.py: lávvardat = lávvordat)
+            ids = [r[0] for r in cursor.execute("SELECT id FROM dictionary WHERE dial_same = ? AND pos = ?", (lemma, pos))]
+            target = variants
         if not ids:
             missing += 1
             continue
         words += 1
         for wid in ids:
-            rows += [(wid, nr, d, s, x) for nr, (d, s, x) in enumerate(senses, 1)]
+            target.setdefault(wid, []).extend(senses)
+    # Toisen kirjoitusasun määritelmät vain, jos kortin omalla asulla ei ole omia (muuten sama merkitys kahdesti)
+    for wid, senses in variants.items():
+        per_word.setdefault(wid, senses)
+    rows = [(wid, nr, d, s, x) for wid, senses in per_word.items() for nr, (d, s, x) in enumerate(senses, 1)]
     cursor.executemany("INSERT INTO sme_definitions VALUES (?,?,?,?,?)", rows)
     cursor.execute("CREATE INDEX idx_sme_definitions_word ON sme_definitions(word_id)")
     print(f"Saamenkieliset määritelmät (dict-sme): {words} sanaa, {len(rows)} merkitystä; {missing} sanaa ei sovelluksessa")
