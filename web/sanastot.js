@@ -100,15 +100,20 @@ function renderSanastoGrid() {
 }
 
 // Tervehdysten puhujat: pieni saamelaispoika ja -tyttö gáktissa (sininen, punainen ja keltainen reunus, tytöllä solki)
-const FACE_PARTS = (hair, extra) => '<svg viewBox="3.5 5 33 33">' +
+const FACE_PARTS = (back, front, extra) => '<svg viewBox="3.5 5 33 33">' +
   '<path d="M17.6 24h4.8v6h-4.8z" fill="#e3b48f"/><path d="M5 41c1-9 7-13 15-13s14 4 15 13z" fill="#1e4fc2"/>' +
   '<path d="M7 34.6h26" stroke="#d62828" stroke-width="2.6"/><path d="M7.5 37.6h25" stroke="#f4c20d" stroke-width="2"/>' +
-  hair + '<circle cx="20" cy="18.5" r="8" fill="#f0c7a2"/>' +
-  '<circle cx="17.2" cy="18.6" r="1.05" fill="#1f2937"/><circle cx="22.8" cy="18.6" r="1.05" fill="#1f2937"/>' +
-  '<circle cx="15.6" cy="21.4" r="1.3" fill="#f29b8f" opacity=".55"/><circle cx="24.4" cy="21.4" r="1.3" fill="#f29b8f" opacity=".55"/>' +
-  '<ellipse cx="20" cy="22.6" rx="1.7" ry="1.2" fill="#9b1c31"/>' + extra + "</svg>";
-const FACE_BOY = FACE_PARTS('<path d="M11.6 17.5c-.3-6.2 3.6-9.6 8.4-9.6s8.8 3.4 8.4 9.6c-1.6-2.8-4.6-4.4-8.4-4.4s-6.8 1.6-8.4 4.4z" fill="#4a2f22"/>', "");
-const FACE_GIRL = FACE_PARTS('<path d="M10.8 29c-1.5-4-1.9-8.2-1.5-11.5.7-6.2 5-9.6 10.7-9.6s10 3.4 10.7 9.6c.4 3.3 0 7.5-1.5 11.5-1.2-3.3-1.4-6-1.3-9.2-2-2.6-4.8-4.6-7.9-4.6s-5.9 2-7.9 4.6c.1 3.2-.1 5.9-1.3 9.2z" fill="#6b3f26"/>',
+  back + '<circle cx="20" cy="18.5" r="8" fill="#f0c7a2"/>' + front +
+  '<circle cx="17.2" cy="19.4" r="1.05" fill="#1f2937"/><circle cx="22.8" cy="19.4" r="1.05" fill="#1f2937"/>' +
+  '<circle cx="15.6" cy="22" r="1.3" fill="#f29b8f" opacity=".55"/><circle cx="24.4" cy="22" r="1.3" fill="#f29b8f" opacity=".55"/>' +
+  '<ellipse cx="20" cy="23.3" rx="1.7" ry="1.2" fill="#9b1c31"/>' + extra + "</svg>";
+// Hiukset: otsatukka kasvojen päällä (ei näytä kaljulta tummalla pohjalla), tytöllä pitkät hiukset kasvojen takana
+const HAIR = "#8a5532";
+const FACE_BOY = FACE_PARTS("",
+  `<path d="M11.2 20.5C10.4 12 14.3 7.6 20 7.6s9.6 4.4 8.8 12.9c-.6-2.6-1.6-4.4-2.9-5.4-1.8 1.1-4.6 1.6-7.4 1.3-2.2-.2-3.8-.9-5-1.8-1.1 1.4-1.9 3.2-2.3 5.9z" fill="${HAIR}"/>`, "");
+const FACE_GIRL = FACE_PARTS(
+  `<path d="M10.6 30c-1.6-4.2-2-8.6-1.5-12 .8-6.3 5.1-9.8 10.9-9.8s10.1 3.5 10.9 9.8c.5 3.4.1 7.8-1.5 12-1.3-3.4-1.6-6.3-1.5-9.6H12.1c.1 3.3-.2 6.2-1.5 9.6z" fill="${HAIR}"/>`,
+  `<path d="M11.6 18.6C11.5 12 15.2 8.5 20 8.5s8.5 3.5 8.4 10.1c-1.4-2.4-3.2-3.6-5.4-4.1-1.4 1-3.3 1.4-5.3 1.2-1.6-.1-2.7-.6-3.5-1.2-1.2.9-2 2.2-2.6 4.1z" fill="${HAIR}"/>`,
   '<circle cx="20" cy="30.6" r="1.9" fill="#d9dee6" stroke="#9aa3b0" stroke-width=".6"/>');
 
 // Listan loppu: ohje ja virheilmoitus (sama lomake kuin sanakortissa, app.js: report-dlg)
