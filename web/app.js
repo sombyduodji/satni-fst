@@ -789,87 +789,17 @@ function loadWord(id) {
 // --- Näkymät ---
 
 // Aloitussivun otsikko ja tämä päivä saameksi kaikilla käyttöliittymäkielillä:
-// tervehdys vuorokaudenajan mukaan, "Odne lea gaskavahkku, skábmamánu 11. beaivi." ja Gáregasnjárgga aurinko
+// tervehdys vuorokaudenajan mukaan ja "Odne lea gaskavahkku, skábmamánu 11. beaivi."
 const SME_WEEKDAYS = ["sotnabeaivi", "vuossárga", "maŋŋebárga", "gaskavahkku", "duorastat", "bearjadat", "lávvordat"];
 const SME_MONTHS_GEN = ["ođđajagemánu", "guovvamánu", "njukčamánu", "cuoŋománu", "miessemánu", "geassemánu",
   "suoidnemánu", "borgemánu", "čakčamánu", "golggotmánu", "skábmamánu", "juovlamánu"];
 const smeGreeting = (h) => (h >= 5 && h < 10 ? "Buorre iđit!" : h < 17 && h >= 10 ? "Buorre beaivi!" : h >= 17 && h < 22 ? "Buorre eahket!" : "Buorre idja!");
-// "skábmamánu 11. beaivi" (Odne lea …), ajanilmauksena "… 11. beaivvi" (badjána fas ođđajagemánu 14. beaivvi)
-const smeDate = (d, when) => `${SME_MONTHS_GEN[d.getMonth()]} ${d.getDate()}. ${when ? "beaivvi" : "beaivi"}`;
-
-// Auringon korkeus (astetta) paikassa ja hetkessä: NOAA:n likiarvokaavat (tarkkuus noin minuutti), ei verkkoa tarvita
-function sunAltitude(date, lat, lon) {
-  const rad = Math.PI / 180;
-  const jc = (date.getTime() / 86400000 + 2440587.5 - 2451545) / 36525;
-  const l0 = (280.46646 + jc * (36000.76983 + jc * 0.0003032)) % 360;
-  const m = 357.52911 + jc * (35999.05029 - 0.0001537 * jc);
-  const e = 0.016708634 - jc * (0.000042037 + 0.0000001267 * jc);
-  const c = Math.sin(m * rad) * (1.914602 - jc * (0.004817 + 0.000014 * jc)) + Math.sin(2 * m * rad) * (0.019993 - 0.000101 * jc)
-    + Math.sin(3 * m * rad) * 0.000289;
-  const lambda = l0 + c - 0.00569 - 0.00478 * Math.sin((125.04 - 1934.136 * jc) * rad);
-  const eps = 23 + (26 + (21.448 - jc * (46.815 + jc * (0.00059 - jc * 0.001813))) / 60) / 60 + 0.00256 * Math.cos((125.04 - 1934.136 * jc) * rad);
-  const decl = Math.asin(Math.sin(eps * rad) * Math.sin(lambda * rad));
-  const y = Math.tan(eps * rad / 2) ** 2;
-  const eqTime = 4 / rad * (y * Math.sin(2 * l0 * rad) - 2 * e * Math.sin(m * rad) + 4 * e * y * Math.sin(m * rad) * Math.cos(2 * l0 * rad)
-    - 0.5 * y * y * Math.sin(4 * l0 * rad) - 1.25 * e * e * Math.sin(2 * m * rad));
-  const minutes = date.getUTCHours() * 60 + date.getUTCMinutes() + date.getUTCSeconds() / 60;
-  const ha = ((minutes + eqTime + 4 * lon) / 4 - 180) * rad;
-  return Math.asin(Math.sin(lat * rad) * Math.sin(decl) + Math.cos(lat * rad) * Math.cos(decl) * Math.cos(ha)) / rad;
-}
-
-// Gáregasnjárga (Karigasniemi). Vuorokausi Suomen aikaa riippumatta laitteen aikavyöhykkeestä.
-const SUN_PLACE = { name: "Gáregasnjárga", lat: 69.398, lon: 25.844, tz: "Europe/Helsinki" };
-const HORIZON = -0.833;  // auringon yläreuna ja ilmakehän taittuminen
-function helsinkiMidnight(d) {
-  // Paikallisen vuorokauden alku UTC-hetkenä: haetaan aikavyöhykkeen siirtymä Intl-muotoilusta
-  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: SUN_PLACE.tz, year: "numeric", month: "2-digit",
-    day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(d).map((p) => [p.type, p.value]));
-  const local = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute);
-  const offset = local - Math.floor(d.getTime() / 60000) * 60000;
-  return new Date(Date.UTC(+parts.year, +parts.month - 1, +parts.day) - offset);
-}
-function sunDay(d) {
-  const start = helsinkiMidnight(d), step = 5 * 60000, alts = [];
-  for (let k = 0; k <= 288; k++) alts.push(sunAltitude(new Date(start.getTime() + k * step), SUN_PLACE.lat, SUN_PLACE.lon));
-  let rise = null, set = null;
-  for (let k = 1; k < alts.length; k++) {
-    const t = (frac) => new Date(start.getTime() + (k - 1 + frac) * step);
-    const f = (HORIZON - alts[k - 1]) / (alts[k] - alts[k - 1]);
-    if (rise === null && alts[k - 1] < HORIZON && alts[k] >= HORIZON) rise = t(f);
-    if (alts[k - 1] >= HORIZON && alts[k] < HORIZON) set = t(f);
-  }
-  return { start, alts, rise, set, max: Math.max(...alts), min: Math.min(...alts) };
-}
-const fmtTime = (d) => d.toLocaleTimeString("fi-FI", { timeZone: SUN_PLACE.tz, hour: "numeric", minute: "2-digit" });
-
-// Gáregasnjárgga aurinko yhtenä pienenä rivinä: nousu ja lasku, skábma ja gaskaijabeaivváš
-function renderSun(now) {
-  const day = sunDay(now);
-  let text;
-  if (day.max < HORIZON) {
-    // Skábma: seuraava päivä, jona aurinko nousee
-    let next = null;
-    for (let k = 1; k < 80 && !next; k++) {
-      const d = new Date(now.getTime() + k * 86400000);
-      if (sunDay(d).max >= HORIZON) next = d;
-    }
-    text = "Skábma – Gáregasnjárggas beaivváš ii badján odne." + (next ? ` Beaivváš badjána fas ${smeDate(next, true)}.` : "");
-  } else if (day.min >= HORIZON) {
-    text = "Gaskaijabeaivváš – Gáregasnjárggas beaivváš ii luoitát odne.";
-  } else if (day.rise && day.set && day.set < day.rise) {
-    // Yöttömän yön lopulla aurinko laskee puolenyön jälkeen ja nousee pian uudelleen
-    text = `Gáregasnjárggas beaivváš luoitáda ${fmtTime(day.set)} ja badjána fas ${fmtTime(day.rise)}.`;
-  } else {
-    text = `Gáregasnjárggas beaivváš badjána ${day.rise ? fmtTime(day.rise) : "–"} ja luoitáda ${day.set ? fmtTime(day.set) : "–"}.`;
-  }
-  $("sun-line").textContent = text;
-}
+const smeDate = (d) => `${SME_MONTHS_GEN[d.getMonth()]} ${d.getDate()}. beaivi`;
 
 function renderToday() {
   const d = new Date();
   $("welcome-title").textContent = smeGreeting(d.getHours());
   $("today").textContent = `Odne lea ${SME_WEEKDAYS[d.getDay()]}, ${smeDate(d)}.`;
-  renderSun(d);
 }
 
 function showOnly(view) {
