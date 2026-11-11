@@ -1019,6 +1019,11 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .report-kinds input { margin-top: 3px; flex: none; }
 .report-kinds select { margin-top: 4px; font: inherit; font-size: 13px; padding: 3px 6px; border-radius: 6px;
   border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+/* Sama ilmoituslomake sanakortille ja sanastolistalle (sanastot.js: sanastoReport) */
+.report-dlg.list-mode .report-card-only, .report-dlg:not(.list-mode) .report-list-only { display: none; }
+.report-text input { font: inherit; font-size: 14px; padding: 8px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); }
+.sanasto-report { margin: 4px 0 0; }
 .report-text { display: flex; flex-direction: column; gap: 6px; margin: 0 0 14px; font-size: 14px; }
 .report-text textarea { font: inherit; font-size: 14px; padding: 8px; border-radius: 8px; border: 1px solid var(--border);
   background: var(--surface); color: var(--text); resize: vertical; }

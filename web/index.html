@@ -290,11 +290,15 @@
     <fieldset class="report-kinds">
       <legend data-i18n="reportWhat">Mikä on väärin?</legend>
       <label><input type="radio" name="report-kind" value="trans" checked>
-        <span><span data-i18n="reportKindTrans"></span> <select id="report-lang"></select></span></label>
-      <label><input type="radio" name="report-kind" value="word"><span data-i18n="reportKindWord"></span></label>
-      <label><input type="radio" name="report-kind" value="form"><span data-i18n="reportKindForm"></span></label>
+        <span><span data-i18n="reportKindTrans"></span> <select id="report-lang" class="report-card-only"></select></span></label>
+      <!-- Sanakortti: väärä sana ja taivutus; sanastolista (sanastot.js): saamen sana tai muoto ja äänite -->
+      <label class="report-card-only"><input type="radio" name="report-kind" value="word"><span data-i18n="reportKindWord"></span></label>
+      <label class="report-card-only"><input type="radio" name="report-kind" value="form"><span data-i18n="reportKindForm"></span></label>
+      <label class="report-list-only"><input type="radio" name="report-kind" value="sme"><span data-i18n="reportKindSme"></span></label>
+      <label class="report-list-only"><input type="radio" name="report-kind" value="audio"><span data-i18n="reportKindAudio"></span></label>
       <label><input type="radio" name="report-kind" value="other"><span data-i18n="reportKindOther"></span></label>
     </fieldset>
+    <label class="report-text report-list-only"><span data-i18n="reportWhichWord"></span><input type="text" id="report-word"></label>
     <label class="report-text"><span data-i18n="reportFix"></span><textarea id="report-text" rows="3"></textarea></label>
     <div class="dialog-actions">
       <button type="button" class="chip-btn" id="report-cancel" data-i18n="cancel">Peruuta</button>

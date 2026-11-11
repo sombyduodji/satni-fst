@@ -241,11 +241,13 @@ function openReport() {
   $("report-about").textContent = `${shownLemma(state.word)} (${$("pos-badge").textContent}) · ` +
     `${t("reportLabels").search}: ${state.query}`;
   $("report-text").value = "";
+  $("report-dlg").classList.remove("list-mode");
   $("report-dlg").querySelector('input[value="trans"]').checked = true;
   $("report-dlg").showModal();
 }
 
 function sendReport() {
+  if ($("report-dlg").classList.contains("list-mode")) return sanastoSendReport();  // sanastolista (sanastot.js)
   const w = state.word, L = t("reportLabels");
   const kind = $("report-dlg").querySelector('input[name="report-kind"]:checked').value;
   const lang = $("report-lang").value || settings.lang;
@@ -266,8 +268,12 @@ function sendReport() {
     `${L.version}: ${$("about-version").textContent}`,
     `${L.link}: ${link}`,
   ].filter((line, i) => line !== "" || i === 1).join("\n");
+  openReportMail(subject, body);
+}
+
+// Linkki napsautetaan, jotta sähköpostisovellus avautuu samoin kuin palautelinkissä (myös työpöytä- ja Android-sovelluksessa)
+function openReportMail(subject, body) {
   $("report-dlg").close();
-  // Linkki napsautetaan, jotta sähköpostisovellus avautuu samoin kuin palautelinkissä (myös työpöytä- ja Android-sovelluksessa)
   const a = document.createElement("a");
   a.href = `mailto:${REPORT_ADDRESS}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   a.click();

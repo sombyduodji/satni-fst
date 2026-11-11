@@ -96,6 +96,53 @@ function renderSanastoGrid() {
   $("sanasto-body").scrollTop = 0;
 }
 
+// Listan loppu: ohje ja virheilmoitus (sama lomake kuin sanakortissa, app.js: report-dlg)
+const sanastoFoot = () => `<p class="sanasto-hint">${esc(t("sanastoHelp"))}</p>` +
+  `<p class="report-line sanasto-report"><a href="#" class="report-link sanasto-report-link"><span aria-hidden="true">⚑</span> ` +
+  `<span>${esc(t("reportError"))}</span></a></p>`;
+let sanastoLastWord = null;  // viimeksi napautettu sana: virheilmoituksen Mikä sana? -kenttään valmiiksi
+
+function sanastoReport() {
+  const l = sanastot.find((x) => x.id === sanastoAuki);
+  if (!l) return;
+  sanastoStopAudio();
+  closeFormPop();
+  const dlg = $("report-dlg");
+  dlg.classList.add("list-mode");
+  $("report-about").textContent = `${t("reportList")}: ${l.title[sanastoLang()]}`;
+  $("report-word").value = sanastoLastWord || "";
+  // Äänitevaihtoehto vain listoilla, joilla on valmis äänilista (kuukaudet, viikonpäivät, vuodenajat, luvut)
+  dlg.querySelector('input[value="audio"]').closest("label").hidden = !(l.audio || l.numSections);
+  $("report-text").value = "";
+  dlg.querySelector('input[value="trans"]').checked = true;
+  dlg.showModal();
+}
+
+function sanastoSendReport() {
+  const l = sanastot.find((x) => x.id === sanastoAuki);
+  const L = t("reportLabels"), lang = sanastoLang();
+  const kind = $("report-dlg").querySelector('input[name="report-kind"]:checked').value;
+  const kindText = { trans: t("reportKindTrans"), sme: t("reportKindSme"), audio: t("reportKindAudio"), other: t("reportKindOther") }[kind];
+  const word = $("report-word").value.trim().slice(0, 80);
+  const title = l ? l.title[lang] : "";
+  // Sanan rivi listassa: näytetty käännös mukaan (saamen sana tai sen muoto, tai käännös)
+  const row = word && l && l.rows.find((r) => (r.sme || []).some((x) => x.w.includes(word)) || [...(r.fi || []), ...(r.nb || [])].includes(word));
+  const shown = row ? (lang === "nb" ? row.nb : row.fi).filter(Boolean).join(", ") : "";
+  const subject = `${t("reportSubject")} – ${title}${word ? ": " + word : ""} (${t("reportSubjectKind")[kind]})`;
+  const body = [
+    $("report-text").value.trim().slice(0, 1200), "",
+    `--- ${t("reportDetails")} ---`,
+    `${L.error}: ${kindText}`,
+    `${t("reportList")}: ${title}${l ? ` (${l.id})` : ""}`,
+    word ? `${L.word}: ${word}` : "",
+    shown ? `${L.shown}: ${shown}` : "",
+    `${L.ui}: ${UI_LANGUAGES[settings.uiLang].name}`,
+    `${L.version}: ${$("about-version").textContent}`,
+    `${L.link}: ${PUBLIC_APP_URL}`,
+  ].filter((line, i) => line !== "" || i === 1).join("\n");
+  openReportMail(subject, body);
+}
+
 // Saamen sana: perässä kaiutin ja sanakortti (myös taivutusmuodoilla: vuossárgga avaa sanan vuossárga kortin, jossa
 // muodon käännös). Sanan napautus lukee sen myös ääneen ja pitkä painallus avaa kortin. Ilman sanakirjan sanaa
 // (čuođiokta) vain kaiutin.
@@ -105,6 +152,7 @@ function renderSanasto(listId) {
   const lang = sanastoLang();
   const l = sanastot.find((x) => x.id === listId);
   if (!l) return renderSanastoGrid();
+  if (sanastoAuki !== listId) sanastoLastWord = null;
   sanastoAuki = listId;
   closeFormPop();
   const grp = SANASTO_GROUPS.find((g) => g.lists.includes(listId));
@@ -189,7 +237,7 @@ function renderSanasto(listId) {
     const tapX = (x, w, main) => `<span class="sw${main ? " main" : ""}" data-say="${esc(w)}"${x.id ? ` data-id="${x.id}"` : ""}>${esc(w)}</span>`;
     const uiOf = (r) => (lang === "nb" ? r.nb : r.fi).filter(Boolean);
     const finish = () => {
-      html += `<p class="sanasto-hint">${esc(t("sanastoHelp"))}</p>`;
+      html += `${sanastoFoot()}`;
       $("sanasto-body").innerHTML = html;
       $("sanasto-body").scrollTop = 0;
     };
@@ -350,7 +398,7 @@ function renderSanasto(listId) {
           `<span class="se-form">${x.w.slice(1).map((w) => tap(w)).join(" · ")}</span>${ui[1] ? `<span class="se-ui">${esc(ui[1])}</span>` : ""}` +
           (r.note && r.note[lang] ? `<span class="se-note">${esc(r.note[lang])}</span>` : "") + `</div>`;
       }).join("") + `</div>`;
-      html += `<p class="sanasto-hint">${esc(t("sanastoHelp"))}</p>`;
+      html += `${sanastoFoot()}`;
       $("sanasto-body").innerHTML = html;
       $("sanasto-body").scrollTop = 0;
       return;
@@ -403,8 +451,8 @@ function renderSanasto(listId) {
       return `<section class="sl-sec">${sec[lang] ? `<h3>${esc(sec[lang])}</h3>` : ""}<div class="sl-card">${rows.map((r, k) => rowHtml(r, wide[k])).join("")}</div></section>`;
     }).join("");
   }
-  if (l.rows.some((r) => r.sme.some((x) => x.dial))) html += `<p class="sanasto-hint">${esc(t("dialLegend"))}</p>`;
-  html += `<p class="sanasto-hint">${esc(t("sanastoHelp"))}</p>`;
+  if (l.rows.some((r) => (r.sme || []).some((x) => x.dial))) html += `<p class="sanasto-hint">${esc(t("dialLegend"))}</p>`;
+  html += `${sanastoFoot()}`;
   $("sanasto-body").innerHTML = html;
   $("sanasto-body").scrollTop = 0;
 }
@@ -487,11 +535,14 @@ function bindSanastot() {
   $("sanasto-close").onclick = () => { sanastoStopAudio(); closeFormPop(); hideSanastot(); };
   $("sanasto-back").onclick = () => { sanastoStopAudio(); sanastoAuki = null; renderSanastoGrid(); };
   $("sanasto-speak").onclick = sanastoSpeakAll;
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSanastot(); });
+  // Esc avoimessa ikkunassa (virheilmoitus) sulkee vain ikkunan, ei listaa sen takana
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !document.querySelector("dialog[open]")) closeSanastot(); });
   // Sovellus taustalle (kotinäppäin, näyttö kiinni): äänilista pysähtyy, ettei se jää soimaan ilman pysäytyspainiketta
   document.addEventListener("visibilitychange", () => { if (document.hidden) sanastoStopAudio(); });
   const closeOcrBase = window.closeOcr;
-  window.closeOcr = () => closeSanastot() || (closeOcrBase ? closeOcrBase() : false);
+  // Androidin takaisin-ele: ensin avoin ikkuna (esim. virheilmoitus), sitten sanastot
+  const closeDialog = () => { const d = document.querySelector("dialog[open]"); if (d) d.close(); return !!d; };
+  window.closeOcr = () => closeDialog() || closeSanastot() || (closeOcrBase ? closeOcrBase() : false);
   const backBase = window.backToOcr;
   window.backToOcr = () => {
     if (sanastoReturnHash && location.hash === sanastoReturnHash) {
@@ -522,6 +573,7 @@ function bindSanastot() {
   body.addEventListener("click", (e) => {
     const tile = e.target.closest(".sanasto-tile");
     if (tile) return renderSanasto(tile.dataset.list);
+    if (e.target.closest(".sanasto-report-link")) { e.preventDefault(); return sanastoReport(); }
     const play = e.target.closest(".nt-play");
     if (play) {
       const same = sanastoAudioBtn === play;
@@ -549,6 +601,7 @@ function sanastoOpenPop(w) {
   closeFormPop();
   const pop = $("form-pop");
   formPopTarget = w;
+  sanastoLastWord = w.dataset.say;
   w.dataset.speak = w.dataset.say;
   w.classList.add("picked");
   pop.innerHTML = `<span class="b-word">${esc(w.dataset.say)}</span>`
