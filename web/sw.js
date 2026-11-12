@@ -23,7 +23,7 @@ const DATA = "data/satni-web.db.gz";
 // v5: astevaihtelun korjaus, dilli ll ~ l, v6: taivutusluokat,
 // v7: muiden saamenkielten käännöksiä lisää ja suomennosehdotukset, v8: espanja, v9: haku ilman sulkeissa olevia tarkenteita,
 // v10: Tarkoititko-hakusanat muille kielille, v11: englantia Wiktionarysta)
-const DATA_CACHE = "satni-data-v34";
+const DATA_CACHE = "satni-data-v35";
 
 self.addEventListener("install", (event) => {
   // cache: "reload": sovelluksen tiedostot verkosta eikä selaimen HTTP-välimuistista (muuten vanha app.js voisi jäädä);

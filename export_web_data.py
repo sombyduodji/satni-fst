@@ -209,7 +209,8 @@ def main():
     for r in rows:
         for i, lang in enumerate(TRANSLATION_COLUMNS):
             if r[4 + i]:
-                text = DIALECT_MARK.sub("", r[4 + i])
+                # Puolipiste erottaa käännöksiä kuten pilkku ("leader; person who leads"): hakuun pilkuksi, näkyvä teksti ennallaan
+                text = DIALECT_MARK.sub("", r[4 + i]).replace(";", ",")
                 search_rows.append((r[0], lang, fold(text), None))
                 bare = without_brackets(text)
                 if bare:

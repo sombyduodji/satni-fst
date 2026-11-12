@@ -157,6 +157,8 @@ FINNISH_TYPOS = {
  "kerrallaa": "kerrallaan", "nimesmiestoimisto": "nimismiestoimisto", "vetaista": "vetäistä",
  "yrtysammatillinen": "yritysammatillinen", "tämänpäivinen": "tämänpäiväinen", "siihen astinen": "siihenastinen",
  "ammatti-alue": "ammattialue",
+ # täystesti 2026-11-12 (3 000 yleisimmän sanan suomennokset, Voikko): gilvit = kylvää, čielgat = selkiytyä
+ "kylvätä": "kylvää", "selkeentyä": "selkiytyä",
 }
 _FINNISH_TYPO_RE = re.compile(r"\b(" + "|".join(sorted(FINNISH_TYPOS, key=len, reverse=True)) + r")\b")
 
