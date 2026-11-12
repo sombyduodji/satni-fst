@@ -171,6 +171,8 @@ function peliHead(title, back) {
   renderPeliMute();  // kielen mukainen nimi
   $("peli-title").textContent = title;
   $("peli-back").hidden = !back;
+  // Äänipainike vain, kun pelissä on ääntä: inarinsaamessa Biret ei puhu (pelissä pelin kieli, valikossa valittu kieli)
+  $("peli-mute").hidden = !PELI_SAMI[back && peliRun ? peliSamiOf(peliRun) : peliMenuSami()].voice;
 }
 
 // Pelitapa: Vállje (valitse neljästä) tai Čále (kirjoita). Nimet saameksi, alla käyttöliittymän kielellä.
