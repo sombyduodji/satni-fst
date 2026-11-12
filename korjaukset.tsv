@@ -7,6 +7,8 @@
 # - neljäs sarake on valinnainen: se korvaa englannin käännökset (esim. väärän Wiktionary-käännöksen);
 #   jos suomennossarake on tyhjä, suomennos säilyy ennallaan
 # - viides sarake on valinnainen: se korvaa norjan käännökset (neljäs sarake voi olla tyhjä)
+# - sarakkeet 6–8 ovat valinnaisia: ne korvaavat inarin (6), luulajan (7) ja eteläsaamen (8) käännökset;
+#   väliin jäävät sarakkeet voivat olla tyhjiä
 #
 # - sanaluokka kuten tietokannassa: N, V, A, Adv, Num, Pron, Pcle, Po, Pr, CC, CS, Interj, Cmp, MWE
 # - suomennokset pilkulla eroteltuina; ne KORVAAVAT XML:n suomennokset
@@ -163,3 +165,8 @@ bajásšaddat	V	kasvaa aikuiseksi, varttua
 # merkitykseen "selkeä"; englanniksi "ready, prepared"), čuorvut: "huuhdella" on virhe (englanniksi "to call, to lure")
 gearggus	A	valmis, hanakka
 čuorvut	V	huutaa, huhuilla
+
+# dict-sme-smj (GiellaLT): luulajan keskiviikko ja torstai ristissä (gasskavahkko = keskiviikko, duorastahka = torstai);
+# korjattu täällä 2026-11-12; lähteeseen ilmoittamatta
+gaskavahkku	N					gasskavahkko
+duorastat	N					duorastahka

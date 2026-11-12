@@ -1119,6 +1119,8 @@ body.drawer-layout .icon-btn { display: inline-block; }
 .settings-section .check { display: flex; align-items: center; gap: 8px; padding: 6px 8px; }
 .settings-section > .switch-row { padding: 6px 8px; border-radius: 8px; font-size: 14px; font-weight: 400; }
 .settings-section > .switch-row:hover { background: var(--chip); }
+.setting-note { margin: -2px 8px 6px; font-size: 12.5px; line-height: 1.4; color: var(--muted); }
+.setting-note:empty { display: none; }
 /* ☰ vasempaan yläkulmaan; kieli, teema ja ääni ovat valikossa */
 body.drawer-layout .topbar { justify-content: flex-start; }
 body.drawer-layout .topbar .brand { flex: 1; }

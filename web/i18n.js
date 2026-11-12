@@ -83,7 +83,7 @@ const UI_TEXTS = {
     reportKindSme: "Saamen sana tai muoto on väärin", reportKindAudio: "Äänitteessä on virhe",
     reportWhichWord: "Mikä sana? (valinnainen)", reportList: "Sanasto",
     // Minipeli (minipeli.js)
-    minipeli: "Minipeli", gameButton: "Minipeli yläpalkissa", gameSmn: "Inarinsaame minipelissä (kokeellinen)", reportKindBad: "Sana on sopimaton",
+    minipeli: "Minipeli", gameButton: "Minipeli yläpalkissa", gameSmn: "Inarinsaame minipelissä (kokeellinen)", gameSmnNote: "", reportKindBad: "Sana on sopimaton",
     reportDetails: "Tiedot ilmoituksesta",
     reportLabels: { error: "Virhe", word: "Sana", shown: "Näytetty käännös", search: "Hakusana", ui: "Käyttöliittymä",
       other: "muut kielet", version: "Versio", link: "Linkki" },
@@ -309,7 +309,9 @@ const UI_TEXTS = {
     reportSubjectKind: { trans: "oversettelse", word: "feil ord", form: "bøyning", sme: "samisk ord", audio: "lydopptak", inappropriate: "upassende", other: "annet" },
     reportKindSme: "Et samisk ord eller en form er feil", reportKindAudio: "Det er feil i lydopptaket",
     reportWhichWord: "Hvilket ord? (valgfritt)", reportList: "Ordliste",
-    minipeli: "Minispill", gameButton: "Minispill i topplinjen", gameSmn: "Enaresamisk i minispillet (eksperimentelt)", reportKindBad: "Ordet er upassende",
+    minipeli: "Minispill", gameButton: "Minispill i topplinjen", gameSmn: "Enaresamisk i minispillet (eksperimentelt)",
+    // Inarin sanat on tarkistettu suomea vasten; norjannokset tulevat pohjoissaamen kautta (ei inari–norja-sanakirjaa)
+    gameSmnNote: "De enaresamiske ordene er kontrollert mot finsk. De norske oversettelsene går via nordsamisk og kan være mindre presise.", reportKindBad: "Ordet er upassende",
     reportDetails: "Opplysninger om meldingen",
     reportLabels: { error: "Feil", word: "Ord", shown: "Vist oversettelse", search: "Søkeord", ui: "Brukergrensesnitt",
       other: "andre språk", version: "Versjon", link: "Lenke" },
