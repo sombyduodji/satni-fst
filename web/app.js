@@ -301,6 +301,7 @@ function setUiLanguage(code) {
   settings.lang = UI_LANGUAGES[code].translationLang;
   saveSettings();
   applyStaticTexts();
+  applyExperimental();
   renderSidebar();
   // Vain kun sanakortti on näkyvissä: etusivulla kielen vaihto ei saa avata edellistä sanaa
   if (db && state.query && !$("word").hidden) searchAgainKeepingWord();
@@ -2473,10 +2474,13 @@ function applyExperimental() {
   $("exp-ocr-row").hidden = !window.SatniOcr;
   $("ocr-btn").hidden = !(window.SatniOcr && settings.exp.ocr);
   if (!settings.exp.ocr) $("ocr-view").hidden = true;
-  // Lausekääntäjä (lauseet.js): painike yläpalkkiin kameran ja sanastojen viereen
+  // Lausekääntäjä (lauseet.js): painike yläpalkkiin kameran ja sanastojen viereen. Toimii vain suomeksi, joten
+  // norjankielisessä käyttöliittymässä se piilotetaan kokonaan (asetus säilyy, palaa suomeksi vaihdettaessa).
   if ($("lause-btn")) {
-    $("lause-btn").hidden = !settings.exp.lause;
-    if (!settings.exp.lause) $("lause-view").hidden = true;
+    const fi = settings.uiLang === "fi";
+    $("exp-lause-row").hidden = !fi;
+    $("lause-btn").hidden = !(fi && settings.exp.lause);
+    if (!(fi && settings.exp.lause)) $("lause-view").hidden = true;
   }
 }
 function bindExperimental() {
