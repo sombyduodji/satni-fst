@@ -1289,3 +1289,50 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 .pt-ico.small { display: inline-grid; width: 24px; height: 24px; border-radius: 7px; margin: 0 6px -6px 0; }
 .pt-ico.small svg { width: 15px; height: 15px; }
 @media (prefers-reduced-motion: reduce) { .peli-score.pop, .peli-sheet, .peli-sheet-in { animation: none; } .peli-tile, .peli-opt { transition: none; } }
+/* Pelitapa: Vállje (valitse) / Čále (kirjoita) */
+.peli-style { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 16px; background: var(--surface-alt);
+  border: 1px solid var(--border); }
+.ps-opt { display: flex; align-items: center; justify-content: center; gap: 9px; padding: 8px 10px; border: 0; border-radius: 12px;
+  background: transparent; color: var(--muted); font: inherit; text-align: left; cursor: pointer; transition: background .15s, color .15s; }
+.ps-opt svg { width: 22px; height: 22px; flex: none; }
+.ps-opt b { display: block; font-size: 16px; line-height: 1.15; }
+.ps-opt small { display: block; font-size: 12px; color: var(--muted); }
+.ps-opt[aria-checked="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(15, 23, 42, .14); }
+.ps-opt[aria-checked="true"] svg { color: var(--accent); }
+.ps-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* Čále: kirjoituskenttä, vihjeet ja saamen kirjaimet */
+.peli-stage.compact { padding-bottom: 16px; }
+.peli-stage.compact .peli-word { font-size: clamp(24px, 7.5vw, 36px); }
+.pw-pattern { display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; margin: 12px 0 0; font-size: 22px; font-weight: 800; }
+.pw-pattern span { min-width: 1em; padding: 0 1px 2px; border-bottom: 3px solid var(--tc); line-height: 1.2; }
+.pw-pattern .gap { min-width: .5em; border: 0; }
+.pw-len { margin: 6px 0 0; font-size: 12.5px; color: var(--muted); }
+.pw-form { display: flex; gap: 8px; }
+.pw-in { flex: 1; min-width: 0; font: inherit; font-size: 22px; font-weight: 700; padding: 11px 14px; border-radius: 14px;
+  border: 2px solid var(--border); background: var(--surface); color: var(--text); }
+.pw-in:focus { outline: none; border-color: var(--tc); }
+.pw-in.right { border-color: var(--flag-green); }
+.pw-in.almost { border-color: var(--flag-yellow); }
+.pw-in.wrong { border-color: var(--flag-red); color: var(--flag-red); }
+.pw-check { flex: none; }
+.pw-letters { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
+.pw-key { font: inherit; font-size: 21px; font-weight: 700; padding: 9px 0; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); cursor: pointer; touch-action: manipulation; }
+.pw-key:active { transform: scale(.92); background: color-mix(in srgb, var(--tc) 14%, var(--surface)); }
+.pw-key.x { font-size: 14px; color: var(--muted); background: var(--surface-alt); }
+.pw-show { align-self: flex-start; font: inherit; font-size: 13px; border: 0; background: none; color: var(--accent); padding: 2px 0; cursor: pointer; }
+.pw-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.pw-hint-btn { display: inline-flex; align-items: center; gap: 7px; }
+.pw-hint-btn:disabled { opacity: .6; cursor: progress; }
+.pw-cost { font-size: 12px; font-weight: 800; padding: 1px 7px; border-radius: 99px; color: var(--flag-red);
+  background: color-mix(in srgb, var(--flag-red) 14%, transparent); }
+.pw-tip { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 9px 10px; border-radius: 12px; font-size: 13px;
+  color: var(--muted); background: var(--surface-alt); border: 1px solid var(--border); }
+.pw-tip > button { margin-left: auto; flex: none; border: 0; background: none; color: var(--muted); font-size: 15px; cursor: pointer; }
+.ps-pts { font-size: 22px; font-weight: 800; color: var(--flag-green); }
+.ps-almost { font-size: 18px; font-weight: 800; color: var(--flag-yellow); margin-top: 6px; }
+.peli-splash.almost .ps-in b { color: var(--text); }
+.ps-better { font-size: 14px; color: var(--muted); }
+.ps-better b { display: inline; margin: 0; font-size: 17px; color: var(--flag-green); animation: none; }
+.ps-in b mark { color: var(--flag-yellow); background: color-mix(in srgb, var(--flag-yellow) 18%, transparent); border-radius: 4px; padding: 0 1px; }
+@media (max-width: 360px) { .pw-key { font-size: 18px; padding: 8px 0; } .pw-in { font-size: 19px; } }

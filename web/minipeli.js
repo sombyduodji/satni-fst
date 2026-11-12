@@ -1,5 +1,6 @@
-// Minipeli: neljän vaihtoehdon sanapeli (data/minipeli.json, minipeli.py). Väärä vastaus päättää pelin; paras tulos
-// tallentuu tilakohtaisesti laitteelle. Kesken jäänyt peli jatkuu, kun näkymä avataan uudelleen ("Jatka vai uusi?").
+// Minipeli: sanapeli (data/minipeli.json, minipeli.py), kaksi tapaa: Vállje (valitse neljästä) ja Čále (kirjoita sana
+// saameksi; vihjeet maksavat pisteitä, puuttuvat tarkkeet -1 p). Väärä vastaus päättää pelin; parhaat tulokset
+// tallentuvat tila- ja tapakohtaisesti laitteelle. Kesken jäänyt peli jatkuu, kun näkymä avataan uudelleen ("Jatka vai uusi?").
 // Yläpalkin painike (oletuksena näkyvissä) piilotetaan asetuksista.
 
 let peli = null;        // { words, cats } ladattuna
@@ -20,6 +21,14 @@ const PELI_TEXTS = {
     again: "Pelaa uudelleen", menu: "Valitse toinen peli", home: "Etusivulle", top: "Parhaat tulokset",
     newBest: "Uusi ennätys!", youAnswered: "Vastasit:", resumeQ: "Jatketaanko keskeneräistä peliä?", resume: "Jatka", fresh: "Uusi peli",
     report: "Ilmoita virheestä", streak: "Putki", mute: "Mykistä pelin äänet", unmute: "Pelin äänet päälle",
+    style: "Pelitapa", choose: "valitse", write: "kirjoita", points: (n) => `${n} ${n === 1 ? "piste" : "pistettä"}`,
+    leadWrite: "Kirjoita sana saameksi. Vihje maksaa pisteen, samoin puuttuvat tarkkeet ja vain osin sopiva sana. Väärä sana päättää pelin.",
+    askWrite: "Kirjoita saameksi", check: "Tarkista", inputLabel: "Vastauksesi saameksi", almost: "Melkein!", nearly: "Lähellä!", better: "Tähän sopii paremmin:",
+    youWrote: "Kirjoitit:", letters: (n) => `${n} kirjainta`,
+    hints: ["Vihje: kirjainten määrä", "Vihje: ensimmäinen kirjain", "Vihje: Biret sanoo sanan"], listenAgain: "Kuuntele uudelleen",
+    keys: "Saamen kirjaimet", hideKeys: "Piilota saamen kirjaimet", showKeys: "Näytä saamen kirjaimet",
+    kbdTip: "Saamen näppäimistöllä kirjoitat saamea kaikissa sovelluksissa. iPhonessa se on valmiina (Asetukset → Yleiset → Näppäimistö), Androidiin ilmainen Divvun Keyboards.",
+    kbdLink: "Näin lisäät sen", close: "Sulje",
   },
   nb: {
     title: "Minispill", pick: "Velg spill", best: "Best", none: "–", score: (n) => `${n} riktige`,
@@ -32,6 +41,14 @@ const PELI_TEXTS = {
     again: "Spill igjen", menu: "Velg et annet spill", home: "Til forsiden", top: "Beste resultater",
     newBest: "Ny rekord!", youAnswered: "Du svarte:", resumeQ: "Vil du fortsette spillet du ikke ble ferdig med?", resume: "Fortsett", fresh: "Nytt spill",
     report: "Meld fra om feil", streak: "Rekke", mute: "Slå av lyden i spillet", unmute: "Slå på lyden i spillet",
+    style: "Spillmåte", choose: "velg", write: "skriv", points: (n) => `${n} poeng`,
+    leadWrite: "Skriv ordet på samisk. Et hint koster ett poeng, det samme gjør manglende diakritiske tegn og et ord som bare passer delvis. Feil ord avslutter spillet.",
+    askWrite: "Skriv på samisk", check: "Sjekk", inputLabel: "Svaret ditt på samisk", almost: "Nesten!", nearly: "Nesten riktig!", better: "Her passer bedre:",
+    youWrote: "Du skrev:", letters: (n) => `${n} bokstaver`,
+    hints: ["Hint: antall bokstaver", "Hint: første bokstav", "Hint: Biret sier ordet"], listenAgain: "Hør igjen",
+    keys: "Samiske bokstaver", hideKeys: "Skjul samiske bokstaver", showKeys: "Vis samiske bokstaver",
+    kbdTip: "Med samisk tastatur skriver du samisk i alle apper. På iPhone er det innebygd (Innstillinger → Generelt → Tastatur), til Android finnes gratis Divvun Keyboards.",
+    kbdLink: "Slik legger du det til", close: "Lukk",
   },
 };
 const pt = () => PELI_TEXTS[sanastoLang()];
@@ -59,9 +76,12 @@ const peliStore = {
   get(key, fallback) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; } },
   set(key, value) { try { if (value == null) localStorage.removeItem(key); else localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* ei tallennusta */ } },
 };
-const peliTop = (mode) => (peliStore.get("satni-peli-top", {})[mode] || []);
-function peliAddTop(mode, score) {
+// Kirjoituspelin tulokset omana listanaan ("beginner:w"): pisteet eivät ole verrattavissa oikeiden vastausten määrään
+const peliKey = (mode, write) => (write ? mode + ":w" : mode);
+const peliTop = (mode, write = false) => (peliStore.get("satni-peli-top", {})[peliKey(mode, write)] || []);
+function peliAddTop(mode, score, write = false) {
   const all = peliStore.get("satni-peli-top", {});
+  mode = peliKey(mode, write);
   const list = (all[mode] || []).concat([{ score, date: new Date().toISOString().slice(0, 10) }])
     .sort((a, b) => b.score - a.score).slice(0, 3);
   all[mode] = list;
@@ -90,6 +110,17 @@ function peliQuestion(run) {
   if (run.pos >= run.deck.length || run.deck.length !== pool.length) { run.deck = shuffle(pool.map((_, i) => i)); run.pos = 0; }
   const item = pool[run.deck[run.pos++]];
   const ui = sanastoLang() === "nb" ? 2 : 1;
+  if (run.write) {
+    // Täysin oikein: sana, jonka käännökset kattavat kaikki kysymyksen merkitykset (ajatella: jurddašit ja smiehttat;
+    // tuuli: biegga ja miella). Lähellä (-1 p): sana, jolla on vain osa merkityksistä (mieli, tuuli → biegga).
+    const terms = (w) => w[ui].split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
+    const itemTerms = terms(item);
+    const all = pool.concat(peli.words);
+    const accept = new Set([item[0], ...all.filter((w) => { const t = terms(w); return itemTerms.every((x) => t.includes(x)); }).map((w) => w[0])]);
+    const related = new Set(all.filter((w) => !accept.has(w[0]) && terms(w).some((x) => itemTerms.includes(x))).map((w) => w[0]));
+    return { sme: item[0], prompt: item[ui], toSme: true, write: true, accept: [...accept], related: [...related], answer: item[0], hints: 0,
+      voice: PELI_VOICE[run.mode] ? item[4] : null };
+  }
   const toSme = Math.random() < 0.5;  // puolet kysymyksistä käännöksestä saameksi
   const shown = (w) => (toSme ? w[0] : w[ui]);
   // Väärät vaihtoehdot samasta ryhmästä (sanaluokka tai aihe), ei samaa näkyvää tekstiä kahdesti eikä sanaa, jolla on
@@ -116,16 +147,30 @@ function peliHead(title, back) {
   $("peli-back").hidden = !back;
 }
 
+// Pelitapa: Vállje (valitse neljästä) tai Čále (kirjoita). Nimet saameksi, alla käyttöliittymän kielellä.
+let peliWrite = !!peliStore.get("satni-peli-write", false);
+const PELI_STYLE_ICON = {
+  choose: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+  write: '<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+};
+function peliStyleSwitch() {
+  const T = pt();
+  const b = (id, sme, ui) => `<button type="button" role="radio" class="ps-opt" data-style="${id}" aria-checked="${(id === "write") === peliWrite}">` +
+    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PELI_STYLE_ICON[id]}</svg>` +
+    `<span><b lang="se">${sme}</b><small>${esc(ui)}</small></span></button>`;
+  return `<div class="peli-style" role="radiogroup" aria-label="${esc(T.style)}">${b("choose", "Vállje", T.choose)}${b("write", "Čále", T.write)}</div>`;
+}
+
 function renderPeliMenu() {
   peliHead(pt().title, false);
   const T = pt();
   const tile = (m) => {
-    const best = peliTop(m.id)[0];
+    const best = peliTop(m.id, peliWrite)[0];
     return `<button type="button" class="peli-tile" data-mode="${m.id}" style="--tc: var(--flag-${m.color})">` +
       `<span class="pt-ico">${peliModeIcon(m.id)}</span><span class="pt-name">${esc(T.modes[m.id][0])}</span><span class="pt-sub">${esc(T.modes[m.id][1])}</span>` +
       `<span class="pt-best">${esc(T.best)}: <b>${best ? best.score : T.none}</b></span></button>`;
   };
-  $("peli-body").innerHTML = `<p class="peli-lead">${esc(T.lead)}</p>` +
+  $("peli-body").innerHTML = peliStyleSwitch() + `<p class="peli-lead">${esc(peliWrite ? T.leadWrite : T.lead)}</p>` +
     ["words", "cats"].map((g) => `<section class="peli-group"><h3>${esc(T.groups[g])}</h3><div class="peli-grid">` +
       PELI_MODES.filter((m) => m.group === g).map(tile).join("") + `</div></section>`).join("");
 }
@@ -134,7 +179,7 @@ function renderPeliResume() {
   const T = pt(), run = peliRun;
   peliHead(T.title, false);
   $("peli-body").innerHTML = `<div class="peli-card peli-ask" style="--tc: var(--flag-${PELI_MODES.find((m) => m.id === run.mode).color})">` +
-    `<p class="peli-mode"><span class="pt-ico small">${peliModeIcon(run.mode)}</span>${esc(T.modes[run.mode][0])} · ${esc(T.score(run.score))}</p><h3>${esc(T.resumeQ)}</h3>` +
+    `<p class="peli-mode"><span class="pt-ico small">${peliModeIcon(run.mode)}</span>${esc(T.modes[run.mode][0])}${run.write ? " · Čále" : ""} · ${esc(run.write ? T.points(run.score) : T.score(run.score))}</p><h3>${esc(T.resumeQ)}</h3>` +
     `<div class="peli-actions"><button type="button" class="peli-primary" data-act="resume">${esc(T.resume)}</button>` +
     `<button type="button" class="peli-secondary" data-act="fresh">${esc(T.fresh)}</button></div></div>`;
 }
@@ -152,6 +197,7 @@ const peliLongClass = (o) => { const n = Math.max(...o.split(/\s/).map((x) => x.
 function renderPeliQuestion() {
   const T = pt(), run = peliRun, q = run.q;
   peliLast = { mode: run.mode, q };
+  if (q.write) return renderPeliWrite();
   const color = PELI_MODES.find((m) => m.id === run.mode).color;
   peliHead(T.modes[run.mode][0], true);
   $("peli-body").innerHTML = `<div class="peli-play" style="--tc: var(--flag-${color})">` +
@@ -196,9 +242,9 @@ function peliMark(btn, ok) {
 }
 
 function renderPeliOver(chosen) {
-  const T = pt(), run = peliRun, q = run.q, score = run.score;
-  const prevBest = peliTop(run.mode)[0]?.score ?? 0;
-  const top = peliAddTop(run.mode, score);
+  const T = pt(), run = peliRun, q = run.q, score = run.score, write = !!run.write;
+  const prevBest = peliTop(run.mode, write)[0]?.score ?? 0;
+  const top = peliAddTop(run.mode, score, write);
   const isNew = score > 0 && score > prevBest;
   // Vastaukset näkyvissä: valittu väärä punaisella, oikea vihreällä
   for (const b of document.querySelectorAll(".peli-opt")) {
@@ -213,15 +259,16 @@ function renderPeliOver(chosen) {
   sheet.className = "peli-sheet";
   sheet.style.setProperty("--tc", `var(--flag-${PELI_MODES.find((m) => m.id === mode).color})`);
   sheet.innerHTML = `<div class="peli-sheet-in" role="dialog" aria-label="${esc(T.over)}">` +
-    `<div class="peli-ring"><b>${score}</b><span>${esc(T.score(score).replace(/^\d+\s*/, ""))}</span></div>` +
+    `<div class="peli-ring"><b>${score}</b><span>${esc((write ? T.points : T.score)(score).replace(/^\d+\s*/, ""))}</span></div>` +
     `<h3>${esc(T.over)}${isNew ? ` <span class="peli-new">${PELI_CUP}${esc(T.newBest)}</span>` : ""}</h3>` +
-    `<p class="peli-correct">${esc(T.youAnswered)} <s${q.toSme ? ' lang="se"' : ""}>${esc(chosen)}</s> · ${esc(T.correctWas)} <b${q.toSme ? ' lang="se"' : ""}>${esc(q.answer)}</b></p>` +
+    `<p class="peli-correct">${esc(write ? T.youWrote : T.youAnswered)} <s${q.toSme ? ' lang="se"' : ""}>${esc(chosen)}</s> · ${esc(T.correctWas)} <b${q.toSme ? ' lang="se"' : ""}>${esc(q.answer)}</b></p>` +
     `<div class="peli-tops"><h4>${esc(T.top)}</h4>${peliPodium(top, isNew)}</div>` +
     `<div class="peli-actions"><button type="button" class="peli-primary" data-act="again" data-mode="${mode}">${esc(T.again)}</button>` +
     `<div class="peli-row"><button type="button" class="peli-secondary" data-act="menu">${esc(T.menu)}</button>` +
     `<button type="button" class="peli-secondary" data-act="home">${esc(T.home)}</button></div></div>` +
     `<p class="peli-report"><a href="#" class="report-link peli-report-link"><span aria-hidden="true">⚑</span> ${esc(T.report)}</a></p></div>`;
   $("peli-body").querySelector(":scope > .peli-report")?.remove();
+  document.querySelector(".pw-in")?.blur();  // näppäimistö alas, tulokset näkyviin
   document.querySelector(".peli-splash")?.remove();
   $("peli-body").appendChild(sheet);
   sheet.querySelector(".peli-primary").focus({ preventScroll: true });
@@ -230,7 +277,7 @@ function renderPeliOver(chosen) {
 function peliStart(mode) {
   peliStopAudio();
   peliBusy = false;  // edellisen pelin peukalon ajastin ei estä uuden pelin vastauksia
-  peliRun = { mode, score: 0, deck: [], pos: 0, q: null };
+  peliRun = { mode, score: 0, deck: [], pos: 0, q: null, write: peliWrite };
   peliRun.q = peliQuestion(peliRun);
   peliSave();
   renderPeliQuestion();
@@ -269,25 +316,194 @@ function peliAnswer(btn) {
     if (s) { s.textContent = peliRun.score; s.classList.remove("pop"); void s.offsetWidth; s.classList.add("pop"); }
     // Seuraava kysymys vasta, kun Biret on sanonut lauseensa loppuun (enintään 3,5 s), muuten ääni puhuisi edellisestä
     // sanasta uuden kysymyksen aikana
-    // Vain tämän kysymyksen ajastimet: edellisen kysymyksen 3,5 s:n varmistus ei saa ohittaa uutta peukaloa
-    const answered = q;
-    const next = () => {
-      if (!peliBusy || (peliRun && peliRun.q !== answered)) return;
-      peliBusy = false;
-      if (!peliRun) return;
-      peliRun.q = peliQuestion(peliRun);
-      peliSave();
-      renderPeliQuestion();
-    };
-    if (peliAudio && !settings.gameMute) {
-      peliAudio.addEventListener("ended", () => setTimeout(next, 250), { once: true });
-      peliAudio.addEventListener("error", next, { once: true });
-      setTimeout(next, 3500);
-    } else {
-      setTimeout(next, 1000);  // peukalo ehtii näkyä
-    }
+    peliNext(q, 1000);
   } else {
     renderPeliOver(btn.dataset.o);
+  }
+}
+
+// Seuraava kysymys vasta, kun Biret on sanonut lauseensa loppuun (enintään 3,5 s) ja peukalo on näkynyt (wait ms).
+// Vain tämän kysymyksen ajastimet: edellisen kysymyksen 3,5 s:n varmistus ei saa ohittaa uutta peukaloa.
+function peliNext(answered, wait) {
+  const next = () => {
+    if (!peliBusy || (peliRun && peliRun.q !== answered)) return;
+    peliBusy = false;
+    if (!peliRun) return;
+    peliRun.q = peliQuestion(peliRun);
+    peliSave();
+    renderPeliQuestion();
+  };
+  if (peliAudio && !settings.gameMute) {
+    const t0 = performance.now();
+    peliAudio.addEventListener("ended", () => setTimeout(next, Math.max(250, wait - (performance.now() - t0))), { once: true });
+    peliAudio.addEventListener("error", () => setTimeout(next, Math.max(0, wait - (performance.now() - t0))), { once: true });
+    setTimeout(next, Math.max(3500, wait));
+  } else {
+    setTimeout(next, wait);
+  }
+}
+
+// --- Čále: kirjoita sana saameksi ---
+// Pisteet: 3 ilman vihjeitä, jokainen vihje -1; puuttuvat tarkkeet (cahci → čáhci) -1; ei koskaan alle nollan.
+// Vihjeet heikoimmasta: kirjainten määrä, ensimmäinen kirjain, Biret sanoo sanan (Divvunin puhepalvelu: vaatii verkon
+// tai aiemmin kuullun sanan; jos ääni ei onnistu, vihje ei maksa).
+const PELI_KEYS = ["á", "č", "đ", "ŋ", "š", "ŧ", "ž"];
+const PELI_FOLD = { á: "a", č: "c", đ: "d", ŋ: "n", š: "s", ŧ: "t", ž: "z" };
+const peliNorm = (s) => s.normalize("NFC").toLowerCase().replace(/[’ʼ´`]/g, "'").replace(/\s+/g, " ").trim().replace(/[?!.]+$/, "");
+const peliFold = (s) => s.replace(/[áčđŋšŧž]/g, (c) => PELI_FOLD[c]);
+const peliPoints = (q, r) => Math.max(0, 3 - q.hints - (r.almost ? 1 : 0) - (r.related ? 1 : 0));
+
+// { ok, almost, related, word }: oikein, tarkkeet puuttuvat, lähellä (vain osa merkityksistä) tai väärin;
+// null, jos kenttä on tyhjä
+function peliCheck(q, typed) {
+  const t = peliNorm(typed);
+  if (!t) return null;
+  for (const [list, related] of [[q.accept, false], [q.related || [], true]]) {
+    const n = list.map(peliNorm);
+    let i = n.indexOf(t);
+    if (i >= 0) return { ok: true, related, word: list[i], typed: t };
+    i = n.findIndex((a) => peliFold(a) === peliFold(t));
+    if (i >= 0) return { ok: true, almost: true, related, word: list[i], typed: t };
+  }
+  return { ok: false };
+}
+
+// Kirjainrivi: oletuksena näkyvissä; piiloutuu itsestään, kun käyttäjä kirjoittaa saamen kirjaimen omalla näppäimistöllään.
+// Käsin valittu näytä/piilota (satni-peli-keys: "show" | "hide") voittaa automaattisen.
+const peliKeysShown = () => { const m = peliStore.get("satni-peli-keys", null); return m ? m === "show" : !peliStore.get("satni-peli-kbd", false); };
+
+function peliHintHtml(q) {
+  const T = pt();
+  if (!q.hints) return "";
+  const word = q.sme;
+  const cells = [...word].map((c, i) => c === " " ? '<span class="gap"></span>' : `<span>${q.hints >= 2 && i === 0 ? esc(c) : "&nbsp;"}</span>`).join("");
+  return `<div class="pw-pattern" lang="se" aria-label="${esc(T.letters(word.replace(/ /g, "").length))}">${cells}</div>` +
+    `<p class="pw-len">${esc(T.letters(word.replace(/ /g, "").length))}</p>`;
+}
+
+function peliHintButton(q) {
+  const T = pt();
+  if (q.hints >= 3) return `<button type="button" class="peli-secondary pw-hint-btn" data-act="listen">🔊 ${esc(T.listenAgain)}</button>`;
+  return `<button type="button" class="peli-secondary pw-hint-btn" data-act="hint">💡 ${esc(T.hints[q.hints])} <span class="pw-cost">−1</span></button>`;
+}
+
+function renderPeliWrite() {
+  const T = pt(), run = peliRun, q = run.q;
+  const color = PELI_MODES.find((m) => m.id === run.mode).color;
+  peliHead(T.modes[run.mode][0], true);
+  const keys = peliKeysShown()
+    ? `<div class="pw-letters" role="group" aria-label="${esc(T.keys)}">${PELI_KEYS.map((k) => `<button type="button" class="pw-key" data-key="${k}" lang="se">${k}</button>`).join("")}` +
+      `<button type="button" class="pw-key x" data-act="keys-hide" aria-label="${esc(T.hideKeys)}" title="${esc(T.hideKeys)}">✕</button></div>`
+    : `<button type="button" class="pw-show" data-act="keys-show">${esc(T.showKeys)}</button>`;
+  const tip = peliStore.get("satni-peli-kbdtip", false) || peliStore.get("satni-peli-kbd", false) ? ""
+    : `<p class="pw-tip"><span>⌨️</span><span>${esc(T.kbdTip)} <a href="${/Android/i.test(navigator.userAgent)
+      ? "https://divvun.no/en/keyboards/installation_android.html" : "https://divvun.no/en/keyboards/mobileindex.html"}" target="_blank" rel="noopener">${esc(T.kbdLink)} ↗</a></span>` +
+      `<button type="button" data-act="tip-close" aria-label="${esc(T.close)}">✕</button></p>`;
+  $("peli-body").innerHTML = `<div class="peli-play" style="--tc: var(--flag-${color})">` +
+    `<div class="peli-stage compact"><div class="peli-meta">` +
+    `<span class="peli-pill streak" title="${esc(T.points(run.score))}">${PELI_FLAME}<b class="peli-score">${run.score}</b></span>` +
+    `<span class="peli-pill best" title="${esc(T.best)}">${PELI_CUP}<b>${peliTop(run.mode, true)[0]?.score ?? 0}</b></span></div>` +
+    `<p class="peli-q">${esc(T.askWrite)}</p><p class="peli-word">${esc(q.prompt)}</p>` +
+    `<div class="pw-hint" aria-live="polite">${peliHintHtml(q)}</div></div>` +
+    `<form class="pw-form" autocomplete="off"><input class="pw-in" type="text" lang="se" autocomplete="off" autocapitalize="none" autocorrect="off" ` +
+    `spellcheck="false" enterkeyhint="go" aria-label="${esc(T.inputLabel)}"><button type="submit" class="peli-primary pw-check">${esc(T.check)}</button></form>` +
+    keys + `<div class="pw-tools">${peliHintButton(q)}</div>` + tip + `</div>` +
+    `<p class="peli-report"><a href="#" class="report-link peli-report-link"><span aria-hidden="true">⚑</span> ${esc(T.report)}</a></p>`;
+  const inp = document.querySelector(".pw-in");
+  inp.addEventListener("input", (e) => {
+    // Saamen kirjain omalta näppäimistöltä: kirjainriviä ei enää tarvita (ellei käyttäjä ole valinnut toisin)
+    if (e.isTrusted && e.data && /[áčđŋšŧž]/i.test(e.data) && !peliStore.get("satni-peli-kbd", false)) {
+      peliStore.set("satni-peli-kbd", true);
+      if (!peliStore.get("satni-peli-keys", null)) { document.querySelector(".pw-letters")?.remove(); document.querySelector(".pw-tip")?.remove(); }
+    }
+  });
+  peliShownAt = performance.now();
+  inp.focus({ preventScroll: true });
+}
+
+function peliInsertKey(k) {
+  const inp = document.querySelector(".pw-in");
+  if (!inp || inp.disabled) return;
+  const a = inp.selectionStart ?? inp.value.length, b = inp.selectionEnd ?? a;
+  inp.setRangeText(k, a, b, "end");
+  inp.focus({ preventScroll: true });
+}
+
+// Oikea kirjoitusasu, korjatut kirjaimet korostettuna (cahci → čáhci)
+function peliDiffHtml(word, typed) {
+  const w = [...peliNorm(word)], t = [...typed];
+  if (w.length !== t.length) return esc(word);
+  return w.map((c, i) => (c !== t[i] ? `<mark>${esc(c)}</mark>` : esc(c))).join("");
+}
+
+function peliSubmit() {
+  if (peliBusy || !peliRun || !peliRun.q?.write) return;
+  const q = peliRun.q, inp = document.querySelector(".pw-in");
+  const r = peliCheck(q, inp.value);
+  if (!r) { inp.focus(); return; }
+  peliVoice(q, r.ok);
+  if (!r.ok) {
+    inp.classList.add("wrong");
+    inp.disabled = true;
+    return renderPeliOver(inp.value.trim());
+  }
+  const pts = peliPoints(q, r);
+  peliBusy = true;
+  inp.disabled = true;
+  inp.classList.add(r.almost ? "almost" : "right");
+  inp.blur();
+  peliRun.score += pts;
+  const s = document.querySelector(".peli-score");
+  if (s) { s.textContent = peliRun.score; s.classList.remove("pop"); void s.offsetWidth; s.classList.add("pop"); }
+  const item = peliPool(peliRun.mode).find((w) => w[0] === q.sme);
+  const ui = item ? (sanastoLang() === "nb" ? item[2] : item[1]) : "";
+  const el = document.createElement("div");
+  const soft = r.almost || r.related;
+  el.className = "peli-splash" + (soft ? " almost" : "");
+  el.setAttribute("aria-hidden", "true");
+  // Lähellä: kirjoitettu sana (tarkkeet korjattuina) ja tähän paremmin sopiva sana
+  const better = r.related ? `<span class="ps-better">${esc(pt().better)} <b lang="se">${esc(q.sme)}</b></span>` : "";
+  el.innerHTML = `<div class="ps-in"><span class="ps-thumb">${soft ? "👌" : "👍"}</span>` +
+    (soft ? `<span class="ps-almost">${esc(r.related ? pt().nearly : pt().almost)}</span>` : "") +
+    `<b lang="se">${r.almost ? peliDiffHtml(r.word, r.typed) : esc(r.word)}</b>${better}<span class="ps-pts">+${pts}</span><span>${esc(ui)}</span></div>`;
+  document.querySelector(".peli-play")?.appendChild(el);
+  peliNext(q, r.related ? 3000 : r.almost ? 2400 : 1200);
+}
+
+async function peliHint(btn) {
+  const q = peliRun?.q;
+  if (!q || !q.write || peliBusy) return;
+  if (q.hints < 2) {
+    q.hints++;
+    peliSave();
+    document.querySelector(".pw-hint").innerHTML = peliHintHtml(q);
+    btn.outerHTML = peliHintButton(q);
+    document.querySelector(".pw-in")?.focus({ preventScroll: true });
+    return;
+  }
+  // Kolmas vihje maksaa vain, jos ääni todella soi
+  if (await peliSayWord(q.sme, btn) && peliRun?.q === q && q.hints < 3) {
+    q.hints = 3;
+    peliSave();
+    document.querySelector(".pw-hint-btn").outerHTML = peliHintButton(q);
+  }
+}
+
+async function peliSayWord(word, btn) {
+  peliStopAudio();
+  const signal = startTtsRequest();
+  unlockTtsAudio();
+  if (btn) btn.disabled = true;
+  try {
+    const blob = await ttsBlob(word, signal);
+    if (!blob) return false;
+    await playTtsBlob(blob);
+    return true;
+  } catch (e) {
+    if (!signal.aborted && e.name !== "AbortError") toast(t("ttsFailed", e.message));
+    return false;
+  } finally {
+    if (btn && btn.isConnected) btn.disabled = false;
   }
 }
 
@@ -381,6 +597,10 @@ function bindPeli() {
   $("peli-body").addEventListener("click", (e) => {
     const tile = e.target.closest(".peli-tile");
     if (tile) return peliStart(tile.dataset.mode);
+    const style = e.target.closest(".ps-opt");
+    if (style) { peliWrite = style.dataset.style === "write"; peliStore.set("satni-peli-write", peliWrite); return renderPeliMenu(); }
+    const key = e.target.closest(".pw-key[data-key]");
+    if (key) return peliInsertKey(key.dataset.key);
     const opt = e.target.closest(".peli-opt");
     if (opt && !opt.disabled) return peliAnswer(opt);
     if (e.target.closest(".peli-report-link")) { e.preventDefault(); return peliReport(); }
@@ -389,8 +609,21 @@ function bindPeli() {
     else if (act === "fresh") { peliRun = null; peliSave(); renderPeliMenu(); }
     else if (act === "again") peliStart(e.target.closest("[data-act]").dataset.mode);
     else if (act === "menu") renderPeliMenu();
+    else if (act === "hint") peliHint(e.target.closest("[data-act]"));
+    else if (act === "listen") peliSayWord(peliRun?.q?.sme, e.target.closest("[data-act]"));
+    else if (act === "keys-hide" || act === "keys-show") {
+      peliStore.set("satni-peli-keys", act === "keys-show" ? "show" : "hide");
+      const inp = document.querySelector(".pw-in"), v = inp?.value ?? "";
+      renderPeliWrite();
+      document.querySelector(".pw-in").value = v;
+    } else if (act === "tip-close") { peliStore.set("satni-peli-kbdtip", true); e.target.closest(".pw-tip")?.remove(); }
     else if (act === "home") { hidePeli(); if (location.hash) { history.pushState(null, "", location.pathname + location.search); routeFromHash(); } }
   });
+  $("peli-body").addEventListener("submit", (e) => { e.preventDefault(); peliSubmit(); });
+  // Kirjainrivin napautus ei saa viedä kohdistusta kentästä (puhelimen näppäimistö pysyy auki)
+  for (const ev of ["pointerdown", "mousedown"]) {
+    $("peli-body").addEventListener(ev, (e) => { if (e.target.closest(".pw-key, .pw-hint-btn")) e.preventDefault(); });
+  }
   // Takaisin-ele (MainActivity: closeOcr) ja Esc: ensin avoin ikkuna, sitten peli
   const closeOcrBase = window.closeOcr;
   window.closeOcr = () => {
