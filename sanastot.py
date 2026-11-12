@@ -236,7 +236,7 @@ def lists():
             ("keskiyö", "midnatt", "gaskaidja", ["Sg+Loc"]), ("tänään", "i dag", "odne", []), ("huomenna", "i morgen", "ihttin", []),
             ("eilen", "i går", "ikte", []), ("nyt", "nå", "dál", []), ("viikko", "uke", "vahkku", []),
             ("kello, tunti", "klokke, time", "diibmu", []), ("minuutti", "minutt", "minuhtta", []),
-            ("monelta?", "når? (klokka)", "galles", [])]
+            ("monelta?", "hva tid?", "galles", [])]
     L.append({"id": "aika", "icon": "clock", "title": {"fi": "Vuorokausi ja kello", "nb": "Døgnet og klokka"},
               "rows": [row([fi] + ([fin_form(fi, "Sg+Ade")] if tags and fin_form(fi, "Sg+Ade") and fi not in ("keskipäivä", "keskiyö") else []),
                            [nb] + ([NB_WHEN[nb]] if nb in NB_WHEN else []), [sme(s, None, tags, fi=fi, nb=nb)]) for fi, nb, s, tags in time]})
@@ -345,7 +345,7 @@ def lists():
         if e:
             r["ex"] = {"sme": e[0], "fi": e[1], "nb": e[2]}
         if r["sme"][0]["w"][0] == "galles" and not r["nb"][0]:
-            r["nb"] = ["når (klokka)"]
+            r["nb"] = ["hva tid"]
     L.append({"id": "kysymykset", "icon": "question", "title": {"fi": "Kysymyssanat", "nb": "Spørreord"}, "rows": qrows})
 
     greet = [("Bures!", "hei, terve", "hei"), ("Buorre iđit", "hyvää huomenta", "god morgen"), ("Buorre beaivi", "hyvää päivää", "god dag"),

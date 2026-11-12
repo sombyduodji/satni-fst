@@ -152,6 +152,11 @@ FINNISH_TYPOS = {
  "nykyäys": "nykäys", "ylimistö": "ylimystö", "vähintäinkin": "vähintäänkin", "pöllyyttää": "pöllyttää",
  "suolisolbmu": "suolisolmu", "kurenuohtta": "kurenuotta", "interrogatiiviprononomini": "interrogatiivipronomini",
  "vistous": "viistous", "virtava": "virtaava",
+ # yötesti 2026-11-12 (5 000 yleisintä sanaa, Voikko tuntee vain korjatun): hávális, leansmánnekantuvra, rohttet,
+ # fidnofágalaš, otná, dassá/dassái, fágasuorgi
+ "kerrallaa": "kerrallaan", "nimesmiestoimisto": "nimismiestoimisto", "vetaista": "vetäistä",
+ "yrtysammatillinen": "yritysammatillinen", "tämänpäivinen": "tämänpäiväinen", "siihen astinen": "siihenastinen",
+ "ammatti-alue": "ammattialue",
 }
 _FINNISH_TYPO_RE = re.compile(r"\b(" + "|".join(sorted(FINNISH_TYPOS, key=len, reverse=True)) + r")\b")
 

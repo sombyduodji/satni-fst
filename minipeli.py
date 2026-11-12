@@ -100,7 +100,7 @@ def main():
         for r in lists[lid]["rows"]:
             time.append([r["sme"][0]["w"][0], first(r["fi"][0], 1), first(r["nb"][0], 1), sub])
     colours = [[r["sme"][0]["w"][0], r["fi"][0], r["nb"][0]] for r in lists["varit"]["rows"]]
-    # Tarkenne jää (galles = "når (klokka)", goas = "når"), muuten norjassa kaksi samaa vastausta
+    # galles = "hva tid", goas = "når": norjassa eri vastaukset (ei tarkennetta sulkeissa)
     questions = [[r["sme"][0]["w"][0], r["fi"][0], r["nb"][0]] for r in lists["kysymykset"]["rows"]]
     data = {"words": words, "cats": {"ordinals": ordinals(), "time": time, "colours": colours, "questions": questions,
                                      "animals": [list(a) for a in ANIMALS]}}
