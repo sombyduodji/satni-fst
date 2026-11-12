@@ -110,10 +110,11 @@ def _terms(text):
 
 
 def _smn_direct():
-    """({inarin sana: {suomennokset}}, {suomen sana: {inarin sanat}}) sanakirjoista dict-smn-fin ja dict-fin-smn"""
+    """({inarin sana: {suomennokset}}, {suomen sana: {inarin sanat}}, {inarin sana: {sanaluokat}})
+    sanakirjoista dict-smn-fin ja dict-fin-smn"""
     import glob
     import xml.etree.ElementTree as ET
-    smn_fin, fin_smn = {}, {}
+    smn_fin, fin_smn, smn_pos = {}, {}, {}
     for repo, forward in (("dict-smn-fin", True), ("dict-fin-smn", False)):
         for path in glob.glob(os.path.join(SCRIPT_DIR, repo, "src", "*.xml")):
             try:
@@ -125,7 +126,11 @@ def _smn_direct():
                 if l is None or not (l.text or "").strip():
                     continue
                 head = l.text.strip()
+                if forward and l.get("pos"):
+                    smn_pos.setdefault(head, set()).add(l.get("pos"))
                 for t in e.iter("t"):
+                    if not forward and t.get("pos") and (t.text or "").strip():
+                        smn_pos.setdefault(t.text.strip(), set()).add(t.get("pos"))
                     for x in _terms(t.text):
                         if forward:
                             smn_fin.setdefault(head, set()).add(x)
@@ -133,11 +138,11 @@ def _smn_direct():
                         else:
                             fin_smn.setdefault(head.lower(), set()).add((t.text or "").strip())
                             smn_fin.setdefault((t.text or "").strip(), set()).add(head.lower())
-    return smn_fin, fin_smn
+    return smn_fin, fin_smn, smn_pos
 
 
 def inari(db, data):
-    smn_fin, fin_smn = _smn_direct()
+    smn_fin, fin_smn, smn_pos = _smn_direct()
     if not smn_fin:
         print("Inarinsaame: dict-smn-fin puuttuu (hae_sanakirjat.sh), ohitetaan")
         return None
@@ -147,33 +152,41 @@ def inari(db, data):
             c = line.rstrip("\n").split("\t")
             if line.startswith("#") or len(c) < 6 or c[0] == "pohjoissaame":
                 continue
-            reviewed[c[0]] = c[5].strip()
+            if c[5].strip():  # tyhjä = ei vielä tarkistettu (jää listalle); "-" = ei peliin; sana = peliin
+                reviewed[c[0]] = c[5].strip()
     review, stats = [], {"kahdesta lähteestä": 0, "uudempi asu": 0, "suora molempiin suuntiin": 0, "tarkistettu": 0, "tarkistettavana": 0}
 
-    def pick(sme, fi):
+    def fits(cand, pos):
+        """Ei etu- tai jälkiliitettä (tiätu-), ja sanaluokka sama kuin kysymyksen sanalla, jos sanakirja sen kertoo
+        (uáinusân on adverbi 'esiin', ei adjektiivi 'näkyvä')."""
+        if not cand or cand.startswith("-") or cand.endswith("-"):
+            return False
+        return not (pos in ("N", "V", "A", "Adv") and smn_pos.get(cand) and pos not in smn_pos[cand])
+
+    def pick(sme, fi, pos=None):
         """(inarin sana tai None, syy, pivot, suoran sanakirjan ehdokkaat)"""
         r = db.execute("SELECT smn_translation FROM dictionary WHERE sme_lemma = ? ORDER BY freq DESC LIMIT 1", (sme,)).fetchone()
         piv = (_terms(r[0]) or [""])[0] if r and r[0] else ""
         concept = set(_terms(fi))
         direct = sorted(set().union(*[fin_smn.get(t, set()) for t in concept])) if concept else []
         if sme in reviewed:
-            return (reviewed[sme] or None), "tarkistettu", piv, direct
-        if piv and (smn_fin.get(piv, set()) & concept or piv in direct):
+            return (None if reviewed[sme] == "-" else reviewed[sme]), "tarkistettu", piv, direct
+        if piv and fits(piv, pos) and (smn_fin.get(piv, set()) & concept or piv in direct):
             return piv, "kahdesta lähteestä", piv, direct
         if piv:
-            near = [d for d in direct if _lev(d.lower(), piv.lower()) <= 2]
+            near = [d for d in direct if _lev(d.lower(), piv.lower()) <= 2 and fits(d, pos)]
             if len(near) == 1:
                 return near[0], "uudempi asu", piv, direct
         # Ei pivotia, mutta suora sanakirja yksiselitteinen molempiin suuntiin (suomi -> inari ja inari -> suomi)
-        if len(concept) == 1 and len(direct) == 1 and smn_fin.get(direct[0], set()) & concept:
+        if len(concept) == 1 and len(direct) == 1 and fits(direct[0], pos) and smn_fin.get(direct[0], set()) & concept:
             return direct[0], "suora molempiin suuntiin", piv, direct
         return None, "tarkistettavana", piv, direct
 
     def conv(items, fi_i=1):
         out = []
         for it in items:
-            smn, why, piv, direct = pick(it[0], it[fi_i])
-            stats[why if smn or why == "tarkistettavana" else "tarkistettavana"] += 1
+            smn, why, piv, direct = pick(it[0], it[fi_i], it[3] if len(it) > 3 and isinstance(it[3], str) else None)
+            stats[why] += 1
             if smn:
                 out.append([smn] + list(it[1:]))
             elif why == "tarkistettavana":
@@ -192,12 +205,11 @@ def inari(db, data):
             cats[k] = lst
     with open(SMN_REVIEW, "w", encoding="utf-8") as f:
         f.write("# Inarinsaamen minipelisanat, joita kaksi lähdettä ei vahvistanut (minipeli.py kirjoittaa tämän uudelleen).\n"
-                "# Kirjoita oikea inarinsaamen sana viimeiseen sarakkeeseen, niin se otetaan peliin; tyhjä = ei peliin.\n"
+                "# Viimeinen sarake: inarinsaamen sana = peliin, '-' = ei peliin (tarkistettu), tyhjä = vielä tarkistamatta.\n"
                 "# pivot = dict-sme-smn:n käännös pohjoissaamen sanalle; suora = dict-fin-smn/dict-smn-fin suomennoksen perusteella.\n")
         f.write("pohjoissaame\tsuomi\tnorja\tpivot\tsuora sanakirja\tinarinsaame (tarkistettu)\n")
         for sme, ok in sorted(reviewed.items()):
-            if ok:
-                f.write(f"{sme}\t\t\t\t\t{ok}\n")
+            f.write(f"{sme}\t\t\t\t\t{ok}\n")
         for r in review:
             f.write("\t".join(r) + "\t\n")
     lv = [w[4] for w in words]
