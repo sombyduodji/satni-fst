@@ -1323,6 +1323,7 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 @media (prefers-reduced-motion: reduce) { .peli-score.pop, .peli-sheet, .peli-sheet-in { animation: none; } .peli-tile, .peli-opt { transition: none; } }
 /* Pelattava kieli (inarinsaame asetuksista): kielten omat nimet sirupainikkeina */
 .peli-sami { display: flex; flex-wrap: wrap; gap: 6px; }
+.sanasto-sami { margin-bottom: 4px; }
 .pl-opt { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 99px; font: inherit; font-size: 14px;
   font-weight: 700; color: var(--muted); background: var(--surface); border: 1.5px solid var(--border); cursor: pointer; }
 .pl-opt small { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 99px; color: var(--flag-yellow);

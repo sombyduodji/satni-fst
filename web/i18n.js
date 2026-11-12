@@ -42,7 +42,7 @@ const UI_TEXTS = {
     lauseForm_place_Ade: "paikassa (missä?)", lauseForm_means_Ade: "keinona (millä?)", lauseForm_top_Ade: "päällä",
     lauseForm_place_Abl: "paikasta (mistä?)", lauseForm_top_Abl: "päältä",
     lauseForm_place_All: "paikkaan (mihin?)", lauseForm_top_All: "päälle",
-    sanastot: "Sanastot", back: "Takaisin", stop: "Pysäytä", sanastoIntro: (n, w) => `${n} aihetta, ${w} sanaa ääntämyksineen`, sanastoGroup_perus: "Perussanat", sanastoGroup_aika: "Aika", sanastoGroup_ihmiset: "Ihmiset", sanastoGroup_luonto: "Luonto", sanastoHelp: "Napauta sanaa: kuuntele, kopioi tai avaa sanakortti.", sanastoCard: "Avaa sanakortti", sanastoListenAll: "Kuuntele lista", sanastoListenHint: "suomi → saame", sanastoCardinal: "Perusluku", sanastoCardinalEx: "yksi, kaksi, kolme", sanastoOrdinal: "Järjestysluku", sanastoOrdinalEx: "ensimmäinen, toinen",
+    sanastot: "Sanastot", back: "Takaisin", stop: "Pysäytä", sanastoIntro: (n, w) => `${n} aihetta, ${w} sanaa ääntämyksineen`, sanastoIntroSmn: (n, w) => `${n} aihetta, ${w} sanaa inarinsaameksi (perusmuodot, ilman ääntämystä)`, sanastoGroup_perus: "Perussanat", sanastoGroup_aika: "Aika", sanastoGroup_ihmiset: "Ihmiset", sanastoGroup_luonto: "Luonto", sanastoHelp: "Napauta sanaa: kuuntele, kopioi tai avaa sanakortti.", sanastoHelpSmn: "Napauta sanaa kopioidaksesi sen.", sanastoCard: "Avaa sanakortti", sanastoListenAll: "Kuuntele lista", sanastoListenHint: "suomi → saame", sanastoCardinal: "Perusluku", sanastoCardinalEx: "yksi, kaksi, kolme", sanastoOrdinal: "Järjestysluku", sanastoOrdinalEx: "ensimmäinen, toinen",
     lauseClear: "Tyhjennä lause", lauseCheckWord: "Näytä sanan tiedot", lauseInSentence: "Tässä lauseessa", lauseChoose: "Valitse tämä", lauseFullCard: "Koko sanakortti",
     expOcr: "Valokuvahaku", expOcrDesc: "Tunnistaa valokuvan tekstistä sanakirjan sanat. Käynnistys yläpalkin kamerapainikkeesta.",
     expOcrInfo: `<p>Yläpalkkiin tulee <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg> kamerapainike. Ota kuva tekstistä tai valitse kuva, ja sanakirjan sanat merkitään
@@ -83,7 +83,7 @@ const UI_TEXTS = {
     reportKindSme: "Saamen sana tai muoto on väärin", reportKindAudio: "Äänitteessä on virhe",
     reportWhichWord: "Mikä sana? (valinnainen)", reportList: "Sanasto",
     // Minipeli (minipeli.js)
-    minipeli: "Minipeli", gameButton: "Minipeli yläpalkissa", gameSmn: "Inarinsaame minipelissä (kokeellinen)", gameSmnNote: "", reportKindBad: "Sana on sopimaton",
+    minipeli: "Minipeli", gameButton: "Minipeli yläpalkissa", gameSmn: "Inarinsaame minipelissä ja sanastoissa (kokeellinen)", gameSmnNote: "", reportKindBad: "Sana on sopimaton",
     reportDetails: "Tiedot ilmoituksesta",
     reportLabels: { error: "Virhe", word: "Sana", shown: "Näytetty käännös", search: "Hakusana", ui: "Käyttöliittymä",
       other: "muut kielet", version: "Versio", link: "Linkki" },
@@ -272,7 +272,7 @@ const UI_TEXTS = {
     lauseForm_place_Ade: "sted (hvor?)", lauseForm_means_Ade: "middel (med hva?)", lauseForm_top_Ade: "oppå",
     lauseForm_place_Abl: "fra sted (hvorfra?)", lauseForm_top_Abl: "ned fra",
     lauseForm_place_All: "til sted (hvor hen?)", lauseForm_top_All: "opp på",
-    sanastot: "Ordlister", back: "Tilbake", stop: "Stopp", sanastoIntro: (n, w) => `${n} emner, ${w} ord med uttale`, sanastoGroup_perus: "Grunnord", sanastoGroup_aika: "Tid", sanastoGroup_ihmiset: "Mennesker", sanastoGroup_luonto: "Natur", sanastoHelp: "Trykk på et ord: lytt, kopier eller åpne ordkortet.", sanastoCard: "Åpne ordkortet", sanastoListenAll: "Lytt til lista", sanastoListenHint: "på samisk", sanastoCardinal: "Grunntall", sanastoCardinalEx: "en, to, tre", sanastoOrdinal: "Ordenstall", sanastoOrdinalEx: "første, andre",
+    sanastot: "Ordlister", back: "Tilbake", stop: "Stopp", sanastoIntro: (n, w) => `${n} emner, ${w} ord med uttale`, sanastoIntroSmn: (n, w) => `${n} emner, ${w} ord på enaresamisk (grunnformer, uten uttale)`, sanastoGroup_perus: "Grunnord", sanastoGroup_aika: "Tid", sanastoGroup_ihmiset: "Mennesker", sanastoGroup_luonto: "Natur", sanastoHelp: "Trykk på et ord: lytt, kopier eller åpne ordkortet.", sanastoHelpSmn: "Trykk på et ord for å kopiere det.", sanastoCard: "Åpne ordkortet", sanastoListenAll: "Lytt til lista", sanastoListenHint: "på samisk", sanastoCardinal: "Grunntall", sanastoCardinalEx: "en, to, tre", sanastoOrdinal: "Ordenstall", sanastoOrdinalEx: "første, andre",
     lauseClear: "Tøm setningen", lauseCheckWord: "Vis opplysninger om ordet", lauseInSentence: "I denne setningen", lauseChoose: "Velg dette", lauseFullCard: "Hele ordkortet",
     expOcr: "Bildesøk", expOcrDesc: "Finner ordene fra ordboka i teksten på et bilde. Starter med kameraknappen i topplinjen.",
     expOcrInfo: `<p>I topplinjen kommer en <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg> kameraknapp. Ta et bilde av tekst eller velg et bilde, så blir ordene fra ordboka
@@ -309,7 +309,7 @@ const UI_TEXTS = {
     reportSubjectKind: { trans: "oversettelse", word: "feil ord", form: "bøyning", sme: "samisk ord", audio: "lydopptak", inappropriate: "upassende", other: "annet" },
     reportKindSme: "Et samisk ord eller en form er feil", reportKindAudio: "Det er feil i lydopptaket",
     reportWhichWord: "Hvilket ord? (valgfritt)", reportList: "Ordliste",
-    minipeli: "Minispill", gameButton: "Minispill i topplinjen", gameSmn: "Enaresamisk i minispillet (eksperimentelt)",
+    minipeli: "Minispill", gameButton: "Minispill i topplinjen", gameSmn: "Enaresamisk i minispillet og ordlistene (eksperimentelt)",
     // Inarin sanat on tarkistettu suomea vasten; norjannokset tulevat pohjoissaamen kautta (ei inari–norja-sanakirjaa)
     gameSmnNote: "De enaresamiske ordene er kontrollert mot finsk. De norske oversettelsene går via nordsamisk og kan være mindre presise.", reportKindBad: "Ordet er upassende",
     reportDetails: "Opplysninger om meldingen",

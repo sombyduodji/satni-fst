@@ -94,103 +94,25 @@ def variants(db, sme):
     return found + [x for x in EXTRA_VARIANTS.get(sme, []) if x not in found]
 
 
-# --- Inarinsaame ---
-# Sana hyväksytään vain, kun kaksi lähdettä täsmää: pohjoissaamen sanan inarinsaamen käännös (dict-sme-smn, satni.db)
-# ja suora sanakirja (dict-smn-fin inari -> suomi, dict-fin-smn suomi -> inari, CC BY 4.0) antaa sille saman suomennoksen.
-# Jos suora sanakirja antaa saman sanan uudemmalla kirjoitusasulla (poolitlâš -> pooliitlâš), käytetään sitä.
-# Ilman pivotia kelpaa sana, jonka suora sanakirja antaa yksiselitteisesti molempiin suuntiin (keskipäivä -> koskâpeivi).
-# Muut menevät tarkistuslistaan minipeli_smn_tarkistus.tsv; sen viimeiseen sarakkeeseen kirjoitettu inarinsaamen sana
-# otetaan peliin (tyhjä = ei peliin). Järjestysluvut puuttuvat (inarinsaamen analysaattoria ei ole käännetty).
+# --- Inarinsaame (smn_words.py: kahden lähteen tarkistus, sama kuin sanastoissa) ---
+# Tarkistamattomat sanat: minipeli_smn_tarkistus.tsv. Järjestysluvut puuttuvat (inarinsaamen generaattoria ei ole).
 SMN_REVIEW = os.path.join(SCRIPT_DIR, "minipeli_smn_tarkistus.tsv")
 SMN_MIN_CAT = 6  # aiheesta tehdään peli vain, jos sanoja on vähintään näin monta
 
 
-def _terms(text):
-    return [x.strip().lower() for x in re.split(r"[,;]\s*", re.sub(r"\([^)]*\)", "", text or "")) if x.strip()]
-
-
-def _smn_direct():
-    """({inarin sana: {suomennokset}}, {suomen sana: {inarin sanat}}, {inarin sana: {sanaluokat}})
-    sanakirjoista dict-smn-fin ja dict-fin-smn"""
-    import glob
-    import xml.etree.ElementTree as ET
-    smn_fin, fin_smn, smn_pos = {}, {}, {}
-    for repo, forward in (("dict-smn-fin", True), ("dict-fin-smn", False)):
-        for path in glob.glob(os.path.join(SCRIPT_DIR, repo, "src", "*.xml")):
-            try:
-                root = ET.parse(path).getroot()
-            except ET.ParseError:
-                continue
-            for e in root.iter("e"):
-                l = e.find("lg/l")
-                if l is None or not (l.text or "").strip():
-                    continue
-                head = l.text.strip()
-                if forward and l.get("pos"):
-                    smn_pos.setdefault(head, set()).add(l.get("pos"))
-                for t in e.iter("t"):
-                    if not forward and t.get("pos") and (t.text or "").strip():
-                        smn_pos.setdefault(t.text.strip(), set()).add(t.get("pos"))
-                    for x in _terms(t.text):
-                        if forward:
-                            smn_fin.setdefault(head, set()).add(x)
-                            fin_smn.setdefault(x, set()).add(head)
-                        else:
-                            fin_smn.setdefault(head.lower(), set()).add((t.text or "").strip())
-                            smn_fin.setdefault((t.text or "").strip(), set()).add(head.lower())
-    return smn_fin, fin_smn, smn_pos
-
-
 def inari(db, data):
-    smn_fin, fin_smn, smn_pos = _smn_direct()
-    if not smn_fin:
+    import smn_words
+    picker = smn_words.InariPicker(db, SMN_REVIEW, "minipelisanat")
+    if not picker.available:
         print("Inarinsaame: dict-smn-fin puuttuu (hae_sanakirjat.sh), ohitetaan")
         return None
-    reviewed = {}
-    if os.path.exists(SMN_REVIEW):
-        for line in open(SMN_REVIEW, encoding="utf-8"):
-            c = line.rstrip("\n").split("\t")
-            if line.startswith("#") or len(c) < 6 or c[0] == "pohjoissaame":
-                continue
-            if c[5].strip():  # tyhjä = ei vielä tarkistettu (jää listalle); "-" = ei peliin; sana = peliin
-                reviewed[c[0]] = c[5].strip()
-    review, stats = [], {"kahdesta lähteestä": 0, "uudempi asu": 0, "suora molempiin suuntiin": 0, "tarkistettu": 0, "tarkistettavana": 0}
-
-    def fits(cand, pos):
-        """Ei etu- tai jälkiliitettä (tiätu-), ja sanaluokka sama kuin kysymyksen sanalla, jos sanakirja sen kertoo
-        (uáinusân on adverbi 'esiin', ei adjektiivi 'näkyvä')."""
-        if not cand or cand.startswith("-") or cand.endswith("-"):
-            return False
-        return not (pos in ("N", "V", "A", "Adv") and smn_pos.get(cand) and pos not in smn_pos[cand])
-
-    def pick(sme, fi, pos=None):
-        """(inarin sana tai None, syy, pivot, suoran sanakirjan ehdokkaat)"""
-        r = db.execute("SELECT smn_translation FROM dictionary WHERE sme_lemma = ? ORDER BY freq DESC LIMIT 1", (sme,)).fetchone()
-        piv = (_terms(r[0]) or [""])[0] if r and r[0] else ""
-        concept = set(_terms(fi))
-        direct = sorted(set().union(*[fin_smn.get(t, set()) for t in concept])) if concept else []
-        if sme in reviewed:
-            return (None if reviewed[sme] == "-" else reviewed[sme]), "tarkistettu", piv, direct
-        if piv and fits(piv, pos) and (smn_fin.get(piv, set()) & concept or piv in direct):
-            return piv, "kahdesta lähteestä", piv, direct
-        if piv:
-            near = [d for d in direct if _lev(d.lower(), piv.lower()) <= 2 and fits(d, pos)]
-            if len(near) == 1:
-                return near[0], "uudempi asu", piv, direct
-        # Ei pivotia, mutta suora sanakirja yksiselitteinen molempiin suuntiin (suomi -> inari ja inari -> suomi)
-        if len(concept) == 1 and len(direct) == 1 and fits(direct[0], pos) and smn_fin.get(direct[0], set()) & concept:
-            return direct[0], "suora molempiin suuntiin", piv, direct
-        return None, "tarkistettavana", piv, direct
 
     def conv(items, fi_i=1):
         out = []
         for it in items:
-            smn, why, piv, direct = pick(it[0], it[fi_i], it[3] if len(it) > 3 and isinstance(it[3], str) else None)
-            stats[why] += 1
+            smn, why, piv = picker.pick(it[0], it[fi_i], it[3] if len(it) > 3 and isinstance(it[3], str) else None, it[2])
             if smn:
                 out.append([smn] + list(it[1:]))
-            elif why == "tarkistettavana":
-                review.append([it[0], it[1], it[2], piv, ", ".join(direct[:6])])
         return out
     # Sama inarinsaamen sana kahdelle pohjoissaamen sanalle (áddjá, áhčči -> äijih?): vain kerran, aloittelijataso ensin
     words, seen = [], set()
@@ -203,18 +125,10 @@ def inari(db, data):
         lst = conv(data["cats"][k])
         if len(lst) >= SMN_MIN_CAT:
             cats[k] = lst
-    with open(SMN_REVIEW, "w", encoding="utf-8") as f:
-        f.write("# Inarinsaamen minipelisanat, joita kaksi lähdettä ei vahvistanut (minipeli.py kirjoittaa tämän uudelleen).\n"
-                "# Viimeinen sarake: inarinsaamen sana = peliin, '-' = ei peliin (tarkistettu), tyhjä = vielä tarkistamatta.\n"
-                "# pivot = dict-sme-smn:n käännös pohjoissaamen sanalle; suora = dict-fin-smn/dict-smn-fin suomennoksen perusteella.\n")
-        f.write("pohjoissaame\tsuomi\tnorja\tpivot\tsuora sanakirja\tinarinsaame (tarkistettu)\n")
-        for sme, ok in sorted(reviewed.items()):
-            f.write(f"{sme}\t\t\t\t\t{ok}\n")
-        for r in review:
-            f.write("\t".join(r) + "\t\n")
+    picker.save()
     lv = [w[4] for w in words]
     print(f"Inarinsaame: {len(words)} sanaa ({lv.count(1)} aloittelija), aiheet {', '.join(f'{k} {len(v)}' for k, v in cats.items())}; "
-          + ", ".join(f"{k} {v}" for k, v in stats.items()) + f" -> {os.path.basename(SMN_REVIEW)}")
+          + picker.summary())
     return {"words": words, "cats": cats}
 
 

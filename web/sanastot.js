@@ -27,6 +27,25 @@ const sanastoSvg = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="curre
   stroke-linejoin="round" aria-hidden="true">${SANASTO_ICON[name] || ""}</svg>`;
 const sanastoLang = () => (settings.uiLang === "nb" ? "nb" : "fi");
 
+// Inarinsaame (kokeellinen): sama asetus ja kielivalinta kuin minipelissä (settings.gameSmn, satni-peli-sami). Listan sanat
+// inarinsaameksi vain perusmuotona (sanastot.py add_inari: kahden lähteen tarkistus); ei taivutusmuotoja, esimerkkejä,
+// murremuotoja, sanakorttia eikä ääntä (Biret ja äänilistat ovat pohjoissaamea). Lukulista ja tervehdykset puuttuvat.
+const sanastoSami = () => {
+  if (!settings.gameSmn) return "sme";
+  try { return JSON.parse(localStorage.getItem("satni-peli-sami") || '"sme"') === "smn" ? "smn" : "sme"; } catch (e) { return "sme"; }
+};
+function sanastoInari(l) {
+  if (l.kind === "numbers") return null;
+  const base = (a) => [(((a || [])[0]) || "").split(" · ")[0]];
+  const rows = l.rows.filter((r) => r.sme && r.sme[0] && r.sme[0].smn).map((r) => ({ ...r, fi: base(r.fi), nb: base(r.nb), ex: null,
+    sme: [{ w: [r.sme[0].smn], key: r.sme[0].w[0], fi: r.sme[0].fi, nb: r.sme[0].nb }] }));
+  return rows.length ? { ...l, rows, audio: null, hint: null, numSections: null } : null;
+}
+let sanastoInariCache = null;
+const sanastoLists = () => (sanastoSami() === "smn"
+  ? (sanastoInariCache || (sanastoInariCache = sanastot.map(sanastoInari).filter(Boolean))) : sanastot);
+const sanastoKey = (x) => x.key || x.w[0];  // pohjoissaamen perusmuoto: asettelujen hakuavain (sukupuu, kompassi, värit)
+
 async function loadSanastot() {
   if (!sanastot) {
     const d = await (await fetch("data/sanastot.json")).json();
@@ -76,6 +95,15 @@ const SANASTO_GROUPS = [
 ];
 const sanastoPreview = (l) => l.rows.slice(0, 3).map((r) => (l.kind === "numbers" ? r.card : r.sme[0].w[0])).join(", ");
 
+// Kielivalinta yleisnäkymässä, kun inarinsaame on otettu käyttöön asetuksista (sama ulkoasu kuin minipelissä)
+function sanastoSamiSwitch() {
+  if (!settings.gameSmn) return "";
+  const cur = sanastoSami(), exp = sanastoLang() === "nb" ? "eksperimentell" : "kokeellinen";
+  const b = (id, name) => `<button type="button" role="radio" class="pl-opt" data-sami="${id}" aria-checked="${id === cur}" lang="${id === "smn" ? "smn" : "se"}">` +
+    `${name}${id === "smn" ? ` <small lang="${sanastoLang()}">${exp}</small>` : ""}</button>`;
+  return `<div class="peli-sami sanasto-sami" role="radiogroup">${b("sme", "Davvisámegiella")}${b("smn", "Anarâškielâ")}</div>`;
+}
+
 function renderSanastoGrid() {
   sanastoStopAudio();
   closeFormPop();
@@ -84,16 +112,17 @@ function renderSanastoGrid() {
   $("sanasto-ico").hidden = true;
   $("sanasto-back").hidden = true;
   $("sanasto-speak").hidden = true;
-  const byId = Object.fromEntries(sanastot.map((l) => [l.id, l]));
+  const all = sanastoLists();
+  const byId = Object.fromEntries(all.map((l) => [l.id, l]));
   const listed = new Set(SANASTO_GROUPS.flatMap((g) => g.lists));
   const groups = SANASTO_GROUPS.map((g) => ({ ...g, lists: g.lists.filter((id) => byId[id]) }));
-  const rest = sanastot.filter((l) => !listed.has(l.id)).map((l) => l.id);  // uusi lista ilman ryhmää: viimeiseen
+  const rest = all.filter((l) => !listed.has(l.id)).map((l) => l.id);  // uusi lista ilman ryhmää: viimeiseen
   if (rest.length) groups[groups.length - 1].lists.push(...rest);
-  const words = sanastot.reduce((n, l) => n + l.rows.length, 0);
+  const words = all.reduce((n, l) => n + l.rows.length, 0);
   const tile = (l, color) => `<button type="button" class="sanasto-tile" data-list="${esc(l.id)}" style="--tc: var(--flag-${color})">` +
     `<span class="st-ico">${sanastoSvg(l.icon)}</span><span class="st-txt"><span class="st-title">${esc(l.title[lang])}</span>` +
     `<span class="st-prev">${esc(sanastoPreview(l))}</span></span><span class="st-n">${l.rows.length}</span></button>`;
-  $("sanasto-body").innerHTML = `<p class="sanasto-intro">${esc(t("sanastoIntro", sanastot.length, words))}</p>` +
+  $("sanasto-body").innerHTML = sanastoSamiSwitch() + `<p class="sanasto-intro">${esc(t(sanastoSami() === "smn" ? "sanastoIntroSmn" : "sanastoIntro", all.length, words))}</p>` +
     groups.filter((g) => g.lists.length).map((g) => `<section class="sanasto-group" style="--tc: var(--flag-${g.color})">` +
       `<h3>${esc(t("sanastoGroup_" + g.id))}</h3><div class="sanasto-grid">${g.lists.map((id) => tile(byId[id], g.color)).join("")}</div></section>`).join("");
   $("sanasto-body").scrollTop = 0;
@@ -117,13 +146,13 @@ const FACE_GIRL = FACE_PARTS(
   '<circle cx="20" cy="30.6" r="1.9" fill="#d9dee6" stroke="#9aa3b0" stroke-width=".6"/>');
 
 // Listan loppu: ohje ja virheilmoitus (sama lomake kuin sanakortissa, app.js: report-dlg)
-const sanastoFoot = () => `<p class="sanasto-hint">${esc(t("sanastoHelp"))}</p>` +
+const sanastoFoot = () => `<p class="sanasto-hint">${esc(t(sanastoSami() === "smn" ? "sanastoHelpSmn" : "sanastoHelp"))}</p>` +
   `<p class="report-line sanasto-report"><a href="#" class="report-link sanasto-report-link"><span aria-hidden="true">⚑</span> ` +
   `<span>${esc(t("reportError"))}</span></a></p>`;
 let sanastoLastWord = null;  // viimeksi napautettu sana: virheilmoituksen Mikä sana? -kenttään valmiiksi
 
 function sanastoReport() {
-  const l = sanastot.find((x) => x.id === sanastoAuki);
+  const l = sanastoLists().find((x) => x.id === sanastoAuki);
   if (!l) return;
   sanastoStopAudio();
   closeFormPop();
@@ -140,7 +169,7 @@ function sanastoReport() {
 }
 
 function sanastoSendReport() {
-  const l = sanastot.find((x) => x.id === sanastoAuki);
+  const l = sanastoLists().find((x) => x.id === sanastoAuki);
   const L = t("reportLabels"), lang = sanastoLang();
   const kind = $("report-dlg").querySelector('input[name="report-kind"]:checked').value;
   const kindText = { trans: t("reportKindTrans"), sme: t("reportKindSme"), audio: t("reportKindAudio"), other: t("reportKindOther") }[kind];
@@ -154,7 +183,7 @@ function sanastoSendReport() {
     $("report-text").value.trim().slice(0, 1200), "",
     `--- ${t("reportDetails")} ---`,
     `${L.error}: ${kindText}`,
-    `${t("reportList")}: ${title}${l ? ` (${l.id})` : ""}`,
+    `${t("reportList")}: ${title}${l ? ` (${l.id})` : ""}${sanastoSami() === "smn" ? " · Anarâškielâ" : ""}`,
     word ? `${L.word}: ${word}` : "",
     shown ? `${L.shown}: ${shown}` : "",
     `${L.ui}: ${UI_LANGUAGES[settings.uiLang].name}`,
@@ -171,8 +200,8 @@ const sanastoWord = (w, id, main) => `<span class="sw${main ? " main" : ""}" dat
 
 function renderSanasto(listId) {
   const lang = sanastoLang();
-  const l = sanastot.find((x) => x.id === listId);
-  if (!l) return renderSanastoGrid();
+  const l = sanastoLists().find((x) => x.id === listId);
+  if (!l) { sanastoAuki = null; return renderSanastoGrid(); }
   if (sanastoAuki !== listId) sanastoLastWord = null;
   sanastoAuki = listId;
   closeFormPop();
@@ -183,7 +212,8 @@ function renderSanasto(listId) {
   $("sanasto-ico").hidden = false;
   $("sanasto-back").hidden = false;
   sanastoStopAudio();
-  $("sanasto-speak").hidden = canOpus && !!(l.audio || (l.numSections && l.numSections.some((x) => x.card)));
+  // Inarinsaamessa ei ääntä: ei kaiutinta (Biret ja äänilistat ovat pohjoissaamea)
+  $("sanasto-speak").hidden = sanastoSami() === "smn" || (canOpus && !!(l.audio || (l.numSections && l.numSections.some((x) => x.card))));
   // Ohje esimerkkeinä riveittäin: "saame = suomi" -> saame lihavoituna, suomi harmaana; muu teksti sellaisenaan
   const hintLine = (x) => {
     const m = x.match(/^(.+?) = (.+)$/);
@@ -282,7 +312,7 @@ function renderSanasto(listId) {
       html += `<div class="colour-grid">` + l.rows.map((r) => {
         // Toisella rivillä esimerkki attribuuttimuodosta käännöksineen (vilges muohta · valkoinen lumi); koko ilmaus avaa kuplan
         const x = r.sme[0], ui = uiOf(r), ex = r.ex;
-        return `<div class="colour" style="--c:${SWATCH[x.w[0]] || "transparent"}"><span class="col-sw"></span><span class="col-txt">` +
+        return `<div class="colour" style="--c:${SWATCH[sanastoKey(x)] || "transparent"}"><span class="col-sw"></span><span class="col-txt">` +
           `<span class="col-sme">${tapX(x, x.w[0], true)}</span>` +
           (ex ? `<span class="col-ex"><span class="sw" data-say="${esc(ex.sme)}">${esc(ex.sme)}</span> <span class="col-ex-fi">${esc(ex[lang] || ex.fi)}</span></span>` : "") +
           `</span><span class="col-fi">${esc(ui[0] || "")}</span></div>`;
@@ -290,7 +320,7 @@ function renderSanasto(listId) {
       return finish();
     }
     const nbi = lang === "nb" ? 1 : 0;
-    const byLemma = () => Object.fromEntries(l.rows.map((r) => [r.sme[0].w[0], r]));
+    const byLemma = () => Object.fromEntries(l.rows.map((r) => [sanastoKey(r.sme[0]), r]));
     // Perhe ja suku sukupuuna: isovanhemmat, isän ja äidin puoli (omine sisarussanoineen), sinä ja sisarukset, lapset
     if (l.id === "suku") {
       const by = byLemma();
@@ -303,7 +333,7 @@ function renderSanasto(listId) {
         const r = by[lemma];
         if (!r) return "";
         const lab = KIN[lemma] ? KIN[lemma][nbi] : uiOf(r)[0];
-        return `<div class="kt-node ${cls}"><span class="kt-sme">${tapX(r.sme[0], lemma, true)}</span><span class="kt-fi">${esc(lab || "")}</span></div>`;
+        return `<div class="kt-node ${cls}"><span class="kt-sme">${tapX(r.sme[0], r.sme[0].w[0], true)}</span><span class="kt-fi">${esc(lab || "")}</span></div>`;
       };
       html += `<div class="kin-tree"><div class="kt-level">${cap("gp")}<div class="kt-row">${node("áhkku")}${node("áddjá")}</div></div>` +
         `<div class="kt-sides"><div class="kt-side f">${cap("fs")}${node("áhčči", "parent")}<div class="kt-sib">${node("siessá")}${node("eahki")}${node("čeahci")}</div></div>` +
@@ -321,11 +351,11 @@ function renderSanasto(listId) {
       const REPLY = { "Bures bures!": ["hei hei", "hei hei"] };
       const bubble = (lemma, side) => {
         const r = by[lemma];
-        if (!r && REPLY[lemma]) {
+        if (!r && REPLY[lemma] && sanastoSami() === "sme") {
           return `<div class="cv-b ${side}"><span class="cv-sme"><span class="sw main" data-say="${esc(lemma)}">${esc(lemma)}</span></span>` +
             `<span class="cv-fi">${esc(REPLY[lemma][nbi])}</span></div>`;
         }
-        return r ? `<div class="cv-b ${side}"><span class="cv-sme">${tapX(r.sme[0], lemma, true)}</span><span class="cv-fi">${esc(uiOf(r)[0] || "")}</span></div>` : "";
+        return r ? `<div class="cv-b ${side}"><span class="cv-sme">${tapX(r.sme[0], r.sme[0].w[0], true)}</span><span class="cv-fi">${esc(uiOf(r)[0] || "")}</span></div>` : "";
       };
       // Puhujat: vasemmalla poika (äänilistassa Máhtte), oikealla tyttö (Biret), molemmilla gákti
       const face = (side) => `<span class="cv-face ${side}" aria-hidden="true">${side === "l" ? FACE_BOY : FACE_GIRL}</span>`;
@@ -334,7 +364,7 @@ function renderSanasto(listId) {
         ["Bures boahtin", "Giitu", "Vieraan tullessa", "Når noen kommer"], ["Báze dearvan", "Mana dearvan", "Lähtiessä: lähtijä ja jäävä", "Ved avskjed: den som går og den som blir"]];
       const used = new Set(DIALOG.flatMap((d) => [d[0], d[1]]));
       html += DIALOG.map((d) => `<div class="cv"><span class="kt-cap">${esc(d[2 + nbi])}</span>${line(d[0], "l")}${line(d[1], "r")}</div>`).join("") +
-        `<div class="cv-more">${l.rows.filter((r) => !used.has(r.sme[0].w[0])).map((r) =>
+        `<div class="cv-more">${l.rows.filter((r) => !used.has(sanastoKey(r.sme[0]))).map((r) =>
           `<div class="cv-chip"><span class="cv-sme">${tapX(r.sme[0], r.sme[0].w[0], true)}</span><span class="cv-fi">${esc(uiOf(r)[0] || "")}</span></div>`).join("")}</div>`;
       return finish();
     }
@@ -343,7 +373,7 @@ function renderSanasto(listId) {
       const by = byLemma();
       const node = (lemma) => {
         const r = by[lemma];
-        return r ? `<div class="rd-node"><span class="kt-sme">${tapX(r.sme[0], lemma, true)}</span><span class="kt-fi">${esc(uiOf(r)[0] || "")}</span></div>` : "<div></div>";
+        return r ? `<div class="rd-node"><span class="kt-sme">${tapX(r.sme[0], r.sme[0].w[0], true)}</span><span class="kt-fi">${esc(uiOf(r)[0] || "")}</span></div>` : "<div></div>";
       };
       const CAP = { life: ["Vasasta aikuiseksi", "Fra kalv til voksen"], m: ["Urokset", "Hanndyr"], f: ["Naaraat", "Hunndyr"], herd: ["Porot ja tokka", "Rein og flokk"] };
       html += `<section class="sl-sec"><h3>${esc(CAP.life[nbi])}</h3><div class="rd-life"><div class="rd-calf">${node("miessi")}</div>` +
@@ -370,8 +400,8 @@ function renderSanasto(listId) {
         liekkas: '<path d="M10 14V5a2 2 0 1 1 4 0v9a4 4 0 1 1-4 0z"/><path d="M12 9v7"/>',
         galmmas: '<path d="M10 14V5a2 2 0 1 1 4 0v9a4 4 0 1 1-4 0z"/><path d="M12 15v1"/>',
       };
-      const tile = (r, snow) => `<div class="ico-tile${snow ? " snow" : ""}">${W[r.sme[0].w[0]] ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ` +
-        `stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${W[r.sme[0].w[0]]}</svg>` : ""}<span class="it-txt">` +
+      const tile = (r, snow) => `<div class="ico-tile${snow ? " snow" : ""}">${W[sanastoKey(r.sme[0])] ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ` +
+        `stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${W[sanastoKey(r.sme[0])]}</svg>` : ""}<span class="it-txt">` +
         `<span class="it-sme">${tapX(r.sme[0], r.sme[0].w[0], true)}</span><span class="it-fi">${esc(uiOf(r)[0] || "")}</span></span></div>`;
       const secs = l.sections || [{}, {}];
       html += `<section class="sl-sec"><h3>${esc(secs[0][lang] || "")}</h3><div class="ico-grid">${l.rows.filter((r) => !r.sec).map((r) => tile(r)).join("")}</div></section>` +
@@ -441,15 +471,15 @@ function renderSanasto(listId) {
       }
       // Päivät aikajanana: eilen → tänään (korostettu) → huomenna, ja "nyt" omana sirunaan
       if (l.id === "aika" && i === 1) {
-        const by = Object.fromEntries(rows.map((r) => [r.sme[0].w[0], r]));
+        const by = Object.fromEntries(rows.map((r) => [sanastoKey(r.sme[0]), r]));
         const step = (lemma, cls) => {
           const r = by[lemma];
-          return r ? `<div class="tl-step ${cls}"><span class="tl-fi">${esc(uiOf(r)[0] || "")}</span><span class="tl-sme">${tapX(r.sme[0], lemma, true)}</span></div>` : "";
+          return r ? `<div class="tl-step ${cls}"><span class="tl-fi">${esc(uiOf(r)[0] || "")}</span><span class="tl-sme">${tapX(r.sme[0], r.sme[0].w[0], true)}</span></div>` : "";
         };
         const now = by["dál"];
         return `<section class="sl-sec">${sec[lang] ? `<h3>${esc(sec[lang])}</h3>` : ""}<div class="timeline">${step("ikte", "past")}<span class="tl-arrow" aria-hidden="true">→</span>` +
           `${step("odne", "today")}<span class="tl-arrow" aria-hidden="true">→</span>${step("ihttin", "next")}</div>` +
-          (now ? `<div class="tl-now"><span class="tl-dot" aria-hidden="true"></span><span class="tl-sme">${tapX(now.sme[0], "dál", true)}</span><span class="tl-fi">${esc(uiOf(now)[0] || "")}</span></div>` : "") + `</section>`;
+          (now ? `<div class="tl-now"><span class="tl-dot" aria-hidden="true"></span><span class="tl-sme">${tapX(now.sme[0], now.sme[0].w[0], true)}</span><span class="tl-fi">${esc(uiOf(now)[0] || "")}</span></div>` : "") + `</section>`;
       }
       // Kello ja aika: kuvakkeelliset tiilet (viikko, tunti, minuutti, monelta?)
       if (l.id === "aika" && i === 2) {
@@ -462,7 +492,7 @@ function renderSanasto(listId) {
         return `<section class="sl-sec">${sec[lang] ? `<h3>${esc(sec[lang])}</h3>` : ""}<div class="ico-grid">` + rows.map((r) => {
           const x = r.sme[0];
           return `<div class="ico-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">` +
-            `${ICON[x.w[0]] || ""}</svg><span class="it-txt"><span class="it-sme">${tapX(x, x.w[0], true)}</span><span class="it-fi">${esc(uiOf(r)[0] || "")}</span></span></div>`;
+            `${ICON[sanastoKey(x)] || ""}</svg><span class="it-txt"><span class="it-sme">${tapX(x, x.w[0], true)}</span><span class="it-fi">${esc(uiOf(r)[0] || "")}</span></span></div>`;
         }).join("") + `</div></section>`;
       }
       if (l.id === "aika" && i === 0) {
@@ -564,8 +594,8 @@ function sanastoPlayTts(text, b) {
 }
 
 function sanastoSpeakAll() {
-  const l = sanastot.find((x) => x.id === sanastoAuki);
-  if (!l) return;
+  const l = sanastoLists().find((x) => x.id === sanastoAuki);
+  if (!l || sanastoSami() === "smn") return;
   if (sanastoAudio) {
     const mine = sanastoAudioBtn === $("sanasto-speak");
     sanastoStopAudio();
@@ -631,6 +661,8 @@ function bindSanastot() {
   body.addEventListener("click", (e) => {
     const tile = e.target.closest(".sanasto-tile");
     if (tile) return renderSanasto(tile.dataset.list);
+    const lang = e.target.closest(".pl-opt");
+    if (lang) { try { localStorage.setItem("satni-peli-sami", JSON.stringify(lang.dataset.sami)); } catch (err) { /* ei tallennusta */ } return renderSanastoGrid(); }
     if (e.target.closest(".sanasto-report-link")) { e.preventDefault(); return sanastoReport(); }
     const play = e.target.closest(".nt-play");
     if (play) {
@@ -663,7 +695,7 @@ function sanastoOpenPop(w) {
   w.dataset.speak = w.dataset.say;
   w.classList.add("picked");
   pop.innerHTML = `<span class="b-word">${esc(w.dataset.say)}</span>`
-    + `<button class="b-speak" aria-label="${esc(t("listenTo", w.dataset.say))}">${SPEAK_ICON}</button>`
+    + (sanastoSami() === "smn" ? "" : `<button class="b-speak" aria-label="${esc(t("listenTo", w.dataset.say))}">${SPEAK_ICON}</button>`)
     + `<button class="b-copy" aria-label="${esc(t("copy"))}">${COPY_ICON}</button>`
     + (w.dataset.id ? `<button class="b-open" aria-label="${esc(t("sanastoCard"))}">${OPEN_ICON}</button>` : "");
   pop.hidden = false;

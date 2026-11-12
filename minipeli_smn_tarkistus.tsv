@@ -1,5 +1,5 @@
-# Inarinsaamen minipelisanat, joita kaksi lähdettä ei vahvistanut (minipeli.py kirjoittaa tämän uudelleen).
-# Viimeinen sarake: inarinsaamen sana = peliin, '-' = ei peliin (tarkistettu), tyhjä = vielä tarkistamatta.
+# Inarinsaamen minipelisanat, joita kaksi lähdettä ei vahvistanut (kirjoitetaan uudelleen joka koonnissa).
+# Viimeinen sarake: inarinsaamen sana = käyttöön, '-' = ei käyttöön (tarkistettu), tyhjä = vielä tarkistamatta.
 # pivot = dict-sme-smn:n käännös pohjoissaamen sanalle; suora = dict-fin-smn/dict-smn-fin suomennoksen perusteella.
 pohjoissaame	suomi	norja	pivot	suora sanakirja	inarinsaame (tarkistettu)
 soaitit					-

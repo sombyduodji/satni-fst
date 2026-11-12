@@ -450,6 +450,45 @@ def ogg_seconds(path):
     return round((granule - pre_skip) / 48000, 2)
 
 
+def add_inari(L):
+    """Inarinsaame (kokeellinen, asetuksista): listan jokaiselle sanalle smn = inarinsaamen perusmuoto, kun kaksi lähdettä
+    vahvistaa sen (smn_words.py, sama sääntö kuin minipelissä). Vain perusmuoto: inarinsaamen generaattoria ei ole, joten
+    taivutusmuodot, esimerkkilauseet ja murremuodot jäävät pois. Lukulistaa ei käännetä (yhdysluvut). Jos sama inarin sana
+    tulisi listassa kahdelle sanalle (täti: goaski ja siessá), se jää vain sille, jonka oma inarin käännös se on."""
+    import smn_words
+    picker = smn_words.InariPicker(db, os.path.join(SCRIPT_DIR, "sanastot_smn_tarkistus.tsv"), "sanastojen sanat")
+    if not picker.available:
+        print("Inarinsaame: dict-smn-fin puuttuu, sanastot vain pohjoissaameksi")
+        return
+    total = 0
+    for lst in L:
+        if lst.get("kind") == "numbers":
+            continue
+        got = {}
+        for r in lst["rows"]:
+            x = r["sme"][0]
+            fi = ((r.get("fi") or [""])[0] or "").split(" · ")[0]
+            nb = ((r.get("nb") or [""])[0] or "").split(" · ")[0]
+            pos = None
+            if x.get("id"):
+                p = db.execute("SELECT pos FROM dictionary WHERE id = ?", (x["id"],)).fetchone()
+                pos = p[0] if p else None
+            word, why, piv = picker.pick(x["w"][0], fi, pos, nb)
+            if word:
+                got.setdefault(word, []).append((x, fi, nb, piv))
+        for word, hits in got.items():
+            own = [h for h in hits if h[3] == word]
+            keep = own[:1] if len(hits) > 1 and own else hits[:1]
+            for h in hits:
+                if h in keep:
+                    h[0]["smn"] = word
+                    total += 1
+                else:
+                    picker.unpick(h[0]["w"][0], h[1], h[2], h[3], f"sama inarin sana {word} kuin sanalla {keep[0][0]['w'][0]}")
+    picker.save()
+    print(f"Sanastot inarinsaameksi: {total} sanaa; " + picker.summary())
+
+
 if __name__ == "__main__":
     L = lists()
     add_sections(L)
@@ -464,6 +503,7 @@ if __name__ == "__main__":
             lst["numSections"] = [{"label": lab, "playLabel": pl, "from": start, "card": audio(f"luvut-{k}"), "ord": audio(f"jarjestysluvut-{k}")}
                                   for k, (lab, pl, start) in enumerate([("1–29", "1–29", 1), ("30–100", "30–100", 30), ("101–1000", "100–120", 101)], 1)]
     check_spelling(L)
+    add_inari(L)
     # Äänilistojen kestot (s): Android WebView ilmoittaa sovelluksen omien Ogg-tiedostojen keston äärettömäksi, joten
     # soittimen edistymiskehä käyttää näitä
     adir = os.path.join(os.path.dirname(OUT), "..", "audio")
