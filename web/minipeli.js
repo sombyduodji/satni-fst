@@ -16,7 +16,9 @@ const PELI_TEXTS = {
     modes: { beginner: ["Aloittelija", "Yleisimmät sanat"], advanced: ["Edistynyt", "Kaikki 1 089 sanaa"],
       ordinals: ["Järjestysluvut", "1.–100."], time: ["Viikonpäivät, vuodenajat ja kuukaudet", "Biret sanoo oikean vastauksen"],
       colours: ["Värit", "9 väriä"], questions: ["Kysymyssanat", "Biret sanoo oikean vastauksen"], animals: ["Eläimet", "23 eläintä"] },
-    groups: { words: "Sanat", cats: "Aiheet" },
+    groups: { words: "Sanat", cats: "Aiheet" }, groupSub: { words: "Sanakirjan sanoja kahdella tasolla", cats: "Lyhyitä teemapelejä" },
+    rules: [["4 vaihtoehtoa"], ["oikein", "+1"], ["väärä vastaus päättää pelin"]],
+    rulesWrite: [["oikea sana", "+3"], ["vihje", "−1"], ["tarkkeet puuttuvat", "−1"], ["väärä sana päättää pelin"]],
     askSme: "Mitä tämä on suomeksi?", askUi: "Mikä on saameksi", over: "Peli päättyi", correctWas: "Oikea vastaus:",
     again: "Pelaa uudelleen", menu: "Valitse toinen peli", home: "Etusivulle", top: "Parhaat tulokset",
     newBest: "Uusi ennätys!", youAnswered: "Vastasit:", resumeQ: "Jatketaanko keskeneräistä peliä?", resume: "Jatka", fresh: "Uusi peli",
@@ -36,7 +38,9 @@ const PELI_TEXTS = {
     modes: { beginner: ["Nybegynner", "De vanligste ordene"], advanced: ["Viderekommen", "Alle 1 089 ord"],
       ordinals: ["Ordenstall", "1.–100."], time: ["Ukedager, årstider og måneder", "Biret sier riktig svar"],
       colours: ["Farger", "9 farger"], questions: ["Spørreord", "Biret sier riktig svar"], animals: ["Dyr", "23 dyr"] },
-    groups: { words: "Ord", cats: "Emner" },
+    groups: { words: "Ord", cats: "Emner" }, groupSub: { words: "Ord fra ordboka på to nivåer", cats: "Korte temaspill" },
+    rules: [["4 alternativer"], ["riktig", "+1"], ["feil svar avslutter spillet"]],
+    rulesWrite: [["riktig ord", "+3"], ["hint", "−1"], ["manglende tegn", "−1"], ["feil ord avslutter spillet"]],
     askSme: "Hva er dette på norsk?", askUi: "Hva heter det på samisk", over: "Spillet er over", correctWas: "Riktig svar:",
     again: "Spill igjen", menu: "Velg et annet spill", home: "Til forsiden", top: "Beste resultater",
     newBest: "Ny rekord!", youAnswered: "Du svarte:", resumeQ: "Vil du fortsette spillet du ikke ble ferdig med?", resume: "Fortsett", fresh: "Nytt spill",
@@ -155,9 +159,11 @@ const PELI_STYLE_ICON = {
 };
 function peliStyleSwitch() {
   const T = pt();
+  // Pieni esikatselu: neljä vaihtoehtoa (yksi oikein) tai kirjoituskenttä vilkkuvalla kursorilla
+  const art = { choose: '<span class="ps-grid4"><i></i><i class="on"></i><i></i><i></i></span>', write: '<span class="ps-field" lang="se">čá</span>' };
   const b = (id, sme, ui) => `<button type="button" role="radio" class="ps-opt" data-style="${id}" aria-checked="${(id === "write") === peliWrite}">` +
-    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PELI_STYLE_ICON[id]}</svg>` +
-    `<span><b lang="se">${sme}</b><small>${esc(ui)}</small></span></button>`;
+    `<span class="ps-art" aria-hidden="true">${art[id]}</span><span class="ps-txt"><b lang="se">${sme}</b><small>${esc(ui)}</small></span>` +
+    `<span class="ps-check" aria-hidden="true">${PELI_OK}</span></button>`;
   return `<div class="peli-style" role="radiogroup" aria-label="${esc(T.style)}">${b("choose", "Vállje", T.choose)}${b("write", "Čále", T.write)}</div>`;
 }
 
@@ -166,13 +172,20 @@ function renderPeliMenu() {
   const T = pt();
   const tile = (m) => {
     const best = peliTop(m.id, peliWrite)[0];
-    return `<button type="button" class="peli-tile" data-mode="${m.id}" style="--tc: var(--flag-${m.color})">` +
-      `<span class="pt-ico">${peliModeIcon(m.id)}</span><span class="pt-name">${esc(T.modes[m.id][0])}</span><span class="pt-sub">${esc(T.modes[m.id][1])}</span>` +
-      `<span class="pt-best">${esc(T.best)}: <b>${best ? best.score : T.none}</b></span></button>`;
+    // Sanat: isot kortit kahdessa sarakkeessa; aiheet: tasakorkeat rivit. Paras tulos pokaalimerkkinä.
+    return `<button type="button" class="peli-tile${m.group === "cats" ? " row" : ""}" data-mode="${m.id}" style="--tc: var(--flag-${m.color})">` +
+      `<span class="pt-ico">${peliModeIcon(m.id)}</span><span class="pt-text"><span class="pt-name">${esc(T.modes[m.id][0])}</span>` +
+      `<span class="pt-sub">${esc(T.modes[m.id][1])}</span></span>` +
+      `<span class="pt-best${best ? "" : " none"}" title="${esc(T.best)}">${PELI_CUP}<b>${best ? best.score : T.none}</b></span></button>`;
   };
-  $("peli-body").innerHTML = peliStyleSwitch() + `<p class="peli-lead">${esc(peliWrite ? T.leadWrite : T.lead)}</p>` +
-    ["words", "cats"].map((g) => `<section class="peli-group"><h3>${esc(T.groups[g])}</h3><div class="peli-grid">` +
-      PELI_MODES.filter((m) => m.group === g).map(tile).join("") + `</div></section>`).join("");
+  const rules = (peliWrite ? T.rulesWrite : T.rules).map(([txt, pts]) =>
+    `<li${pts ? ` class="${pts.startsWith("+") ? "gain" : "cost"}"` : ""}>${pts ? `<b>${esc(pts)}</b>` : ""}${esc(txt)}</li>`).join("");
+  const GROUP_ICON = { words: PELI_MODE_ICON.beginner, cats: '<path d="M4 6h16M4 12h16M4 18h10"/>' };
+  $("peli-body").innerHTML = peliStyleSwitch() + `<ul class="peli-rules" aria-label="${esc(peliWrite ? T.leadWrite : T.lead)}">${rules}</ul>` +
+    ["words", "cats"].map((g) => `<section class="peli-group"><header class="pg-head"><span class="pg-ico">` +
+      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${GROUP_ICON[g]}</svg></span>` +
+      `<span><h3>${esc(T.groups[g])}</h3><p>${esc(T.groupSub[g])}</p></span></header>` +
+      `<div class="${g === "cats" ? "peli-list" : "peli-grid"}">${PELI_MODES.filter((m) => m.group === g).map(tile).join("")}</div></section>`).join("");
 }
 
 function renderPeliResume() {

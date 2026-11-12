@@ -1155,7 +1155,21 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 .peli-body { flex: 1; overflow-y: auto; padding: 14px 16px 28px; display: flex; flex-direction: column; gap: 14px;
   max-width: 640px; width: 100%; margin: 0 auto; box-sizing: border-box; }
 .peli-lead { margin: 0; color: var(--muted); }
-.peli-group h3 { margin: 4px 0 8px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+/* Osiot: kuvake, otsikko ja alaotsikko */
+.pg-head { display: flex; align-items: center; gap: 11px; margin: 6px 0 10px; }
+.pg-head h3 { margin: 0; font-size: 17px; font-weight: 800; line-height: 1.2; }
+.pg-head p { margin: 1px 0 0; font-size: 12.5px; color: var(--muted); }
+.pg-ico { flex: none; width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border)); }
+.pg-ico svg { width: 19px; height: 19px; }
+/* Säännöt sirumerkkeinä */
+.peli-rules { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.peli-rules li { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px 5px 9px; border-radius: 99px; font-size: 12.5px;
+  font-weight: 600; color: var(--muted); background: var(--surface); border: 1px solid var(--border); }
+.peli-rules li:not(.gain):not(.cost) { padding-left: 11px; }
+.peli-rules b { font-weight: 800; font-variant-numeric: tabular-nums; }
+.peli-rules .gain b { color: var(--flag-green); }
+.peli-rules .cost b { color: var(--flag-red); }
 .peli-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .peli-tile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; text-align: left;
   padding: 14px 14px 12px; border-radius: 16px; border: 1px solid var(--border); cursor: pointer; font: inherit; color: var(--text);
@@ -1165,8 +1179,24 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 .peli-tile:active { transform: scale(.97); }
 .pt-name { font-weight: 700; font-size: 16px; line-height: 1.25; }
 .pt-sub { font-size: 13px; color: var(--muted); }
-.pt-best { margin-top: 6px; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pt-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+/* Paras tulos: pokaalimerkki kortin kulmassa */
+.pt-best { position: absolute; top: 12px; right: 12px; display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px 3px 7px;
+  border-radius: 99px; font-size: 13px; font-variant-numeric: tabular-nums; background: var(--surface); border: 1px solid var(--border); }
+.pt-best svg { width: 14px; height: 14px; color: var(--flag-yellow); }
 .pt-best b { color: var(--text); }
+.pt-best.none { opacity: .55; }
+.pt-best.none svg { color: var(--muted); }
+/* Aiheet: tasakorkeat rivit, värijuova vasemmalla */
+.peli-list { display: flex; flex-direction: column; gap: 8px; }
+.peli-tile.row { flex-direction: row; align-items: center; gap: 12px; padding: 12px 12px 12px 16px;
+  background: linear-gradient(100deg, color-mix(in srgb, var(--tc) 14%, var(--surface)) 0%, var(--surface) 55%); }
+.peli-tile.row::before { inset: 0 auto 0 0; width: 4px; height: auto; }
+.peli-tile.row .pt-ico { margin: 0; flex: none; }
+.peli-tile.row .pt-text { flex: 1; }
+.peli-tile.row .pt-name { font-size: 15.5px; }
+.peli-tile.row .pt-sub { font-size: 12.5px; }
+.peli-tile.row .pt-best { position: static; flex: none; }
 .peli-card { position: relative; border-radius: 20px; border: 1px solid var(--border); background: var(--surface);
   padding: 18px 18px 20px; box-shadow: var(--card-shadow); overflow: hidden; }
 .peli-card::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--tc, var(--accent)); }
@@ -1289,17 +1319,32 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 .pt-ico.small { display: inline-grid; width: 24px; height: 24px; border-radius: 7px; margin: 0 6px -6px 0; }
 .pt-ico.small svg { width: 15px; height: 15px; }
 @media (prefers-reduced-motion: reduce) { .peli-score.pop, .peli-sheet, .peli-sheet-in { animation: none; } .peli-tile, .peli-opt { transition: none; } }
-/* Pelitapa: Vállje (valitse) / Čále (kirjoita) */
-.peli-style { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 16px; background: var(--surface-alt);
-  border: 1px solid var(--border); }
-.ps-opt { display: flex; align-items: center; justify-content: center; gap: 9px; padding: 8px 10px; border: 0; border-radius: 12px;
-  background: transparent; color: var(--muted); font: inherit; text-align: left; cursor: pointer; transition: background .15s, color .15s; }
-.ps-opt svg { width: 22px; height: 22px; flex: none; }
-.ps-opt b { display: block; font-size: 16px; line-height: 1.15; }
-.ps-opt small { display: block; font-size: 12px; color: var(--muted); }
-.ps-opt[aria-checked="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(15, 23, 42, .14); }
-.ps-opt[aria-checked="true"] svg { color: var(--accent); }
-.ps-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* Pelitapa: Vállje (valitse) / Čále (kirjoita): kaksi korttia esikatselulla, valittu täytetty korostusvärillä */
+.peli-style { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ps-opt { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 13px 14px 12px;
+  border-radius: 18px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font: inherit; text-align: left;
+  cursor: pointer; box-shadow: var(--card-shadow); transition: transform .12s, background-color .2s, border-color .2s, box-shadow .2s; }
+.ps-opt:active { transform: scale(.97); }
+.ps-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ps-opt[aria-checked="true"] { color: #fff; border-color: transparent;
+  background: linear-gradient(150deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 72%, #0b1220) 100%);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 32%, transparent); }
+.ps-txt b { display: block; font-size: 20px; font-weight: 800; line-height: 1.1; letter-spacing: -.01em; }
+.ps-txt small { display: block; margin-top: 2px; font-size: 12.5px; opacity: .72; }
+.ps-check { position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  background: rgb(255 255 255 / .24); opacity: 0; transform: scale(.5); transition: opacity .2s, transform .2s; }
+.ps-check svg { width: 14px; height: 14px; }
+.ps-opt[aria-checked="true"] .ps-check { opacity: 1; transform: none; }
+.ps-art { height: 32px; display: flex; align-items: center; }
+.ps-grid4 { display: grid; grid-template-columns: repeat(2, 20px); gap: 4px; }
+.ps-grid4 i { height: 13px; border-radius: 4px; background: color-mix(in srgb, currentColor 20%, transparent); }
+.ps-grid4 i.on { background: var(--flag-green); }
+.ps-opt[aria-checked="true"] .ps-grid4 i.on { background: #4ade80; }
+.ps-field { display: inline-flex; align-items: center; height: 28px; padding: 0 8px 0 9px; border-radius: 8px; font-size: 16px; font-weight: 800;
+  border: 1.5px solid color-mix(in srgb, currentColor 38%, transparent); }
+.ps-field::after { content: ""; width: 2px; height: 16px; margin-left: 2px; background: currentColor; animation: ps-caret 1.1s steps(1) infinite; }
+@keyframes ps-caret { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .ps-field::after { animation: none; } .ps-opt { transition: none; } }
 /* Čále: kirjoituskenttä, vihjeet ja saamen kirjaimet */
 .peli-stage.compact { padding-bottom: 16px; }
 .peli-stage.compact .peli-word { font-size: clamp(24px, 7.5vw, 36px); }
