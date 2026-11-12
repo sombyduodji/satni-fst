@@ -1,0 +1,4 @@
+# Inarinsaamen minipelisanat, joita kaksi lähdettä ei vahvistanut (minipeli.py kirjoittaa tämän uudelleen).
+# Kirjoita oikea inarinsaamen sana viimeiseen sarakkeeseen, niin se otetaan peliin; tyhjä = ei peliin.
+# pivot = dict-sme-smn:n käännös pohjoissaamen sanalle; suora = dict-fin-smn/dict-smn-fin suomennoksen perusteella.
+pohjoissaame	suomi	norja	pivot	suora sanakirja	inarinsaame (tarkistettu)

@@ -1319,6 +1319,14 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 .pt-ico.small { display: inline-grid; width: 24px; height: 24px; border-radius: 7px; margin: 0 6px -6px 0; }
 .pt-ico.small svg { width: 15px; height: 15px; }
 @media (prefers-reduced-motion: reduce) { .peli-score.pop, .peli-sheet, .peli-sheet-in { animation: none; } .peli-tile, .peli-opt { transition: none; } }
+/* Pelattava kieli (inarinsaame asetuksista): kielten omat nimet sirupainikkeina */
+.peli-sami { display: flex; flex-wrap: wrap; gap: 6px; }
+.pl-opt { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 99px; font: inherit; font-size: 14px;
+  font-weight: 700; color: var(--muted); background: var(--surface); border: 1.5px solid var(--border); cursor: pointer; }
+.pl-opt small { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 99px; color: var(--flag-yellow);
+  background: color-mix(in srgb, var(--flag-yellow) 15%, transparent); }
+.pl-opt[aria-checked="true"] { color: var(--text); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+.pl-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* Pelitapa: Vállje (valitse) / Čále (kirjoita): kaksi korttia esikatselulla, valittu täytetty korostusvärillä */
 .peli-style { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .ps-opt { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 13px 14px 12px;

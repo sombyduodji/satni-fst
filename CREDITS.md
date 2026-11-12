@@ -22,8 +22,8 @@ combines their work into one offline app.
 | Inari Sámi → North Sámi | Missing Inari Sámi translations; Finnish suggestions (experimental) | [giellalt/dict-smn-sme](https://github.com/giellalt/dict-smn-sme) |
 | Lule Sámi → North Sámi | Missing Lule Sámi translations | [giellalt/dict-smj-sme](https://github.com/giellalt/dict-smj-sme) |
 | Southern Sámi → North Sámi | Missing Southern Sámi translations | [giellalt/dict-sma-sme](https://github.com/giellalt/dict-sma-sme) |
-| Inari Sámi → Finnish | Finnish suggestions (experimental) | [giellalt/dict-smn-fin](https://github.com/giellalt/dict-smn-fin) |
-| Finnish → Inari Sámi | Finnish suggestions (experimental) | [giellalt/dict-fin-smn](https://github.com/giellalt/dict-fin-smn) |
+| Inari Sámi → Finnish | Finnish suggestions (experimental); Inari Sámi mini game words, checked against dict-sme-smn (experimental) | [giellalt/dict-smn-fin](https://github.com/giellalt/dict-smn-fin) |
+| Finnish → Inari Sámi | Finnish suggestions (experimental); Inari Sámi mini game words (experimental) | [giellalt/dict-fin-smn](https://github.com/giellalt/dict-fin-smn) |
 | North Sámi → Spanish | Spanish translations, meanings and examples (by Ángel Díaz de Rada and Kjell Kemi) | [giellalt/dict-sme-spa](https://github.com/giellalt/dict-sme-spa) |
 | Spanish → North Sámi | Missing Spanish translations (by Ángel Díaz de Rada and Kjell Kemi) | [giellalt/dict-spa-sme](https://github.com/giellalt/dict-spa-sme) |
 | Skolt Sámi → Finnish, Norwegian … | Skolt Sámi words (experimental) | [giellalt/dict-sms-mul](https://github.com/giellalt/dict-sms-mul) |
