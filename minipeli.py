@@ -69,6 +69,31 @@ def ordinals():
     return out
 
 
+# Kirjoitusasut, jotka kirjoituspeli hyväksyy täysin oikeiksi (sihkkar = sihkar, ihttin = ihtin): sanakirjan muu sana,
+# jolla on sama sanaluokka ja täsmälleen sama korpusfrekvenssi (korpuslaskenta on yhdistänyt ne yhdeksi sanaksi) ja
+# enintään kaksi kirjainta eroa. Lisäksi käsin tarkistetut parit.
+EXTRA_VARIANTS = {"veahá": ["vehá"]}
+
+
+def _lev(a, b):
+    prev = list(range(len(b) + 1))
+    for i, x in enumerate(a, 1):
+        cur = [i]
+        for j, y in enumerate(b, 1):
+            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (x != y)))
+        prev = cur
+    return prev[-1]
+
+
+def variants(db, sme):
+    r = db.execute("SELECT pos, freq FROM dictionary WHERE sme_lemma = ? AND freq > 0 ORDER BY freq DESC LIMIT 1", (sme,)).fetchone()
+    found = []
+    if r:
+        found = sorted(x[0] for x in db.execute("SELECT DISTINCT sme_lemma FROM dictionary WHERE pos = ? AND freq = ? AND sme_lemma != ?",
+                                                 (r[0], r[1], sme)) if _lev(x[0], sme) <= 2)
+    return found + [x for x in EXTRA_VARIANTS.get(sme, []) if x not in found]
+
+
 def main():
     lists = {l["id"]: l for l in json.load(open(os.path.join(SCRIPT_DIR, "web", "data", "sanastot.json"), encoding="utf-8"))["lists"]}
     sanasto = {}
@@ -81,7 +106,9 @@ def main():
     for line in open(os.path.join(SCRIPT_DIR, "minipeli_sanat.tsv"), encoding="utf-8"):
         if line.startswith("#") or not line.strip():
             continue
-        sme, lvl = line.rstrip("\n").split("\t")
+        cols = line.rstrip("\n").split("\t")
+        sme, lvl = cols[0], cols[1]
+        fi_own, nb_own = (cols + ["", ""])[2:4]  # pelin oma käännös, kun sanakirjan kaksi ensimmäistä johtavat harhaan
         if sme in sanasto:
             # Sanastojen sanoille väärät vaihtoehdot samasta listasta (kuukaudet keskenään): ryhmä "s:<lista>"
             fi, nb, lid = sanasto[sme]
@@ -93,8 +120,13 @@ def main():
                 missing.append(sme)
                 continue
             pos, fi, nb = row[0], first(row[1]), first(row[2])
+        fi, nb = fi_own or fi, nb_own or nb
         if fi and nb:
-            words.append([sme, fi, nb, pos, int(lvl)])
+            w = [sme, fi, nb, pos, int(lvl)]
+            v = variants(db, sme)
+            if v:
+                w.append(v)
+            words.append(w)
     time = []
     for lid, sub in (("viikonpaivat", "day"), ("vuodenajat", "season"), ("kuukaudet", "month")):
         for r in lists[lid]["rows"]:

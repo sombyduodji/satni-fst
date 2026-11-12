@@ -98,6 +98,9 @@ async function loadPeli() {
   return peli;
 }
 
+let peliVariantMap = null;
+const peliVariants = () => peliVariantMap || (peliVariantMap = Object.fromEntries(peli.words.filter((w) => w[5]).map((w) => [w[0], w[5]])));
+
 // Kysymyspakka: tilan sanat sekoitettuna; [saame, suomi, norja, ryhmä] (ryhmä: vaihtoehdot samasta ryhmästä)
 function peliPool(mode) {
   if (mode === "beginner" || mode === "advanced") {
@@ -120,8 +123,11 @@ function peliQuestion(run) {
     const terms = (w) => w[ui].split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
     const itemTerms = terms(item);
     const all = pool.concat(peli.words);
-    const accept = new Set([item[0], ...all.filter((w) => { const t = terms(w); return itemTerms.every((x) => t.includes(x)); }).map((w) => w[0])]);
-    const related = new Set(all.filter((w) => !accept.has(w[0]) && terms(w).some((x) => itemTerms.includes(x))).map((w) => w[0]));
+    // Kirjoitusasut (sihkkar = sihkar) kelpaavat kuten sana itse (minipeli.json: sanan 6. kenttä)
+    const withVariants = (list) => list.flatMap((w) => [w, ...((peliVariants()[w]) || [])]);
+    const accept = new Set(withVariants([item[0], ...all.filter((w) => { const t = terms(w); return itemTerms.every((x) => t.includes(x)); }).map((w) => w[0])]));
+    const related = new Set(withVariants(all.filter((w) => !accept.has(w[0]) && terms(w).some((x) => itemTerms.includes(x))).map((w) => w[0]))
+      .filter((w) => !accept.has(w)));
     return { sme: item[0], prompt: item[ui], toSme: true, write: true, accept: [...accept], related: [...related], answer: item[0], hints: 0,
       voice: PELI_VOICE[run.mode] ? item[4] : null };
   }

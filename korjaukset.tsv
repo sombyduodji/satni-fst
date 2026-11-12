@@ -154,3 +154,12 @@ goassážii	Adv			til når
 
 # yötesti 2026-11-12: lähteen "rankaista, rangaista" (rankaista on kirjoitusvirhe, Voikko tuntee vain muodon rangaista)
 ráŋggáštit	V	rangaista
+
+# Minipelin sanojen tarkistus 2026-11-12: suomennos väärä (norjannos ja sanan rakenne: valáštallat = urheilla,
+# bajás + šaddat = kasvaa ylös)
+valáštalli	N	urheilija
+bajásšaddat	V	kasvaa aikuiseksi, varttua
+# Toinen kierros (englanti GiellaLT:n ja Wiktionaryn kautta): gearggus = valmis (norjan "klar" käännetty väärään
+# merkitykseen "selkeä"; englanniksi "ready, prepared"), čuorvut: "huuhdella" on virhe (englanniksi "to call, to lure")
+gearggus	A	valmis, hanakka
+čuorvut	V	huutaa, huhuilla

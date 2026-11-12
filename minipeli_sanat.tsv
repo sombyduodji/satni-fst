@@ -1,6 +1,12 @@
 # Minipelin sanat (minipeli.py): saame<TAB>taso (1 = aloittelija, 2 = edistynyt). Koottu 2026-11-11:
 # Sanastojen sanat ja sanat, jotka ovat yleisiä sekä suomen tekstityksissä (FrequencyWords, OpenSubtitles 2018,
 # CC BY-SA 4.0; vain järjestykseen) että saamen korpuksessa. Käyttäjä tarkisti listan; poron hoidon erikoissanat pois.
+# Valinnaiset sarakkeet 3–4: pelin oma suomennos/norjannos, kun sanakirjan kaksi ensimmäistä käännöstä johtavat harhaan.
+# Tarkistus 2026-11-12, 1. kierros: omat käännökset orrut, boahtu, doarvi; pois kaksoisasut erenomáš/earenoamáš, murreasu
+# lávlu sekä epäselvät geažus, gálga, kásus, mielbargi; vehá -> veahá (yleisempi).
+# 2. kierros (merkitys englanniksi GiellaLT:n, Wiktionaryn saamen sekä suomen ja norjan kautta): omat käännökset rievdat,
+# gártat, várri, gearggus, mihtilmas, čađaheapmi, geasuheaddji; pois vuohttut, dadjamuš ja gáhttet (suomennos 'katua'
+# kuuluu sanalle gáhtat, norjannos 'vokte, bevare').
 vuossárga	1
 maŋŋebárga	1
 gaskavahkku	1
@@ -134,7 +140,7 @@ olmmoš	1
 oaidnit	1
 váldit	1
 addit	1
-orrut	1
+orrut	1	olla, asua
 jahki	1
 stuoris	1
 buktit	1
@@ -333,8 +339,7 @@ giella	1
 duohtavuohta	1
 olahit	1
 juohkit	1
-rievdat	1
-erenomáš	1
+rievdat	1	muuttua	forandre seg
 buoridit	1
 njuolga	1
 doavttir	1
@@ -367,7 +372,7 @@ illu	1
 geassit	1
 šaldi	1
 bivttas	1
-doarvi	1
+doarvi	1	riittävä määrä
 čuoččuhit	1
 latnja	1
 riekta	1
@@ -392,7 +397,6 @@ lahttu	1
 várra	1
 uksa	1
 váidit	1
-earenoamáš	1
 allat	1
 buohcceviessu	1
 giddagas	1
@@ -419,7 +423,7 @@ vásihit	1
 juovllat	2
 vearrái	2
 dovddus	2
-erenoamáš	2
+erenoamáš	1
 bisánit	2
 giitit	2
 vahát	2
@@ -487,7 +491,7 @@ smávis	2
 čoavdit	2
 dáhpáhus	2
 geahččaleapmi	2
-vehá	2
+veahá	2
 vajálduhttit	2
 maŋimuš	2
 aviisa	2
@@ -533,7 +537,7 @@ dárkkistit	2
 eahpidit	2
 divrras	2
 hástalus	2
-várri	2
+várri	2	tunturi, vuori	fjell
 duostat	2
 kantuvra	2
 čuovga	2
@@ -555,11 +559,10 @@ gullát	2
 spábba	2
 fáddá	2
 ráhkkanit	2
-geažus	2
 media	2
 ealga	2
 dolla	2
-gártat	2
+gártat	2	joutua, päätyä
 šillju	2
 journalista	2
 lobiheapme	2
@@ -584,7 +587,7 @@ giitu	2
 golli	2
 heasta	2
 molsut	2
-čađaheapmi	2
+čađaheapmi	2	toteuttaminen, läpivienti	gjennomføring
 mávssolaš	2
 kursa	2
 dollet	2
@@ -651,7 +654,6 @@ dihtor	2
 hárjehallat	2
 gurut	2
 lihkolaš	2
-kásus	2
 buohcci	2
 vealgi	2
 ságastit	2
@@ -702,7 +704,7 @@ jienastit	2
 eŋgelasgiella	2
 oaidnu	2
 rolla	2
-boahtu	2
+boahtu	2	tulo
 dávda	2
 moalla	2
 luomi	2
@@ -828,7 +830,7 @@ olgoriika	2
 leavvat	2
 suodjalus	2
 euro	2
-gearggus	2
+gearggus	2	valmis	klar, ferdig
 joksat	2
 čeavlái	2
 lahkonit	2
@@ -847,7 +849,6 @@ siellu	2
 vuola	2
 sihkkarvuohta	2
 márkan	2
-dadjamuš	2
 jorrat	2
 kunddar	2
 lohkka	2
@@ -878,7 +879,6 @@ gráda	2
 čierrut	2
 hehttehus	2
 roggat	2
-gáhttet	2
 gihppu	2
 vuorjat	2
 veahkaváldi	2
@@ -930,7 +930,7 @@ valáštalli	2
 teknihkalaš	2
 suodji	2
 duššat	2
-geasuheaddji	2
+geasuheaddji	2	viehättävä, puoleensavetävä
 jáhkka	2
 mállásat	2
 gilvalit	2
@@ -963,7 +963,7 @@ positiiva	2
 lohpádus	2
 rehket	2
 varas	2
-mihtilmas	2
+mihtilmas	2	tyypillinen, ominainen
 e-poasta	2
 fillet	2
 veallát	2
@@ -1020,7 +1020,6 @@ biibbal	2
 rohttet	2
 jury	2
 moraš	2
-mielbargi	2
 njunni	2
 čikŋa	2
 einnostit	2
@@ -1039,7 +1038,6 @@ helikopter	2
 bálvaleaddji	2
 noađđi	2
 negatiiva	2
-vuohttut	2
 indiána	2
 buhtadit	2
 guorrat	2
@@ -1055,7 +1053,6 @@ málet	2
 máilmmisoahti	2
 bensiidna	2
 buollát	2
-lávlu	2
 oainnus	2
 stoagus	2
 njálggat	2
@@ -1069,7 +1066,6 @@ gaskkamuddu	2
 dieđa	2
 báitit	2
 sajáiduvvat	2
-gálga	2
 ligget	2
 govvádus	2
 ráđđeaddi	2
