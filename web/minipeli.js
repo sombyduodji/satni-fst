@@ -65,8 +65,10 @@ const PELI_MODES = [
 // Pelattava saamen kieli: pohjoissaame aina, inarinsaame vain asetuksista valittuna (kokeellinen, minipeli.json: smn).
 // Biret puhuu vain pohjoissaamea, joten inarinsaamessa ei ole ääntä eikä kolmatta (kuuntelu)vihjettä.
 const PELI_SAMI = {
-  sme: { name: "Davvisámegiella", keys: ["á", "č", "đ", "ŋ", "š", "ŧ", "ž"], hints: 3, voice: true },
-  smn: { name: "Anarâškielâ", keys: ["á", "â", "ä", "č", "đ", "ŋ", "š", "ž"], hints: 2, voice: false },
+  // Pelitavan nimet: pohjoissaamessa käskymuoto (vállje, čále), inarissa perusmuoto (valjiđ, čäälliđ: sanakirja ja
+  // inarin oikoluku vahvistavat; käskymuotoja ei voi tarkistaa ilman generaattoria)
+  sme: { name: "Davvisámegiella", keys: ["á", "č", "đ", "ŋ", "š", "ŧ", "ž"], hints: 3, voice: true, choose: "Vállje", write: "Čále" },
+  smn: { name: "Anarâškielâ", keys: ["á", "â", "ä", "č", "đ", "ŋ", "š", "ž"], hints: 2, voice: false, choose: "Valjiđ", write: "Čäälliđ" },
 };
 const peliSamiEnabled = () => !!settings.gameSmn && !!(peli && peli.smn);
 const peliMenuSami = () => (peliSamiEnabled() && peliStore.get("satni-peli-sami", "sme") === "smn" ? "smn" : "sme");
@@ -186,9 +188,10 @@ function peliStyleSwitch() {
   // Pieni esikatselu: neljä vaihtoehtoa (yksi oikein) tai kirjoituskenttä vilkkuvalla kursorilla
   const art = { choose: '<span class="ps-grid4"><i></i><i class="on"></i><i></i><i></i></span>', write: '<span class="ps-field" lang="se">čá</span>' };
   const b = (id, sme, ui) => `<button type="button" role="radio" class="ps-opt" data-style="${id}" aria-checked="${(id === "write") === peliWrite}">` +
-    `<span class="ps-art" aria-hidden="true">${art[id]}</span><span class="ps-txt"><b lang="se">${sme}</b><small>${esc(ui)}</small></span>` +
+    `<span class="ps-art" aria-hidden="true">${art[id]}</span><span class="ps-txt"><b lang="${peliMenuSami() === "smn" ? "smn" : "se"}">${sme}</b><small>${esc(ui)}</small></span>` +
     `<span class="ps-check" aria-hidden="true">${PELI_OK}</span></button>`;
-  return `<div class="peli-style" role="radiogroup" aria-label="${esc(T.style)}">${b("choose", "Vállje", T.choose)}${b("write", "Čále", T.write)}</div>`;
+  const L = PELI_SAMI[peliMenuSami()];
+  return `<div class="peli-style" role="radiogroup" aria-label="${esc(T.style)}">${b("choose", L.choose, T.choose)}${b("write", L.write, T.write)}</div>`;
 }
 
 // Kielivalinta (vain kun inarinsaame on otettu käyttöön asetuksista): kielten omat nimet
@@ -234,7 +237,7 @@ function renderPeliResume() {
   const T = pt(), run = peliRun;
   peliHead(T.title, false);
   $("peli-body").innerHTML = `<div class="peli-card peli-ask" style="--tc: var(--flag-${PELI_MODES.find((m) => m.id === run.mode).color})">` +
-    `<p class="peli-mode"><span class="pt-ico small">${peliModeIcon(run.mode)}</span>${esc(T.modes[run.mode][0])}${peliSamiOf(run) === "smn" ? " · " + PELI_SAMI.smn.name : ""}${run.write ? " · Čále" : ""} · ${esc(run.write ? T.points(run.score) : T.score(run.score))}</p><h3>${esc(T.resumeQ)}</h3>` +
+    `<p class="peli-mode"><span class="pt-ico small">${peliModeIcon(run.mode)}</span>${esc(T.modes[run.mode][0])}${peliSamiOf(run) === "smn" ? " · " + PELI_SAMI.smn.name : ""}${run.write ? " · " + PELI_SAMI[peliSamiOf(run)].write : ""} · ${esc(run.write ? T.points(run.score) : T.score(run.score))}</p><h3>${esc(T.resumeQ)}</h3>` +
     `<div class="peli-actions"><button type="button" class="peli-primary" data-act="resume">${esc(T.resume)}</button>` +
     `<button type="button" class="peli-secondary" data-act="fresh">${esc(T.fresh)}</button></div></div>`;
 }
@@ -447,7 +450,7 @@ function renderPeliWrite() {
   const color = PELI_MODES.find((m) => m.id === run.mode).color;
   peliHead(T.modes[run.mode][0], true);
   const keys = peliKeysShown()
-    ? `<div class="pw-letters" role="group" aria-label="${esc(T.keys)}">${PELI_SAMI[peliSamiOf(run)].keys.map((k) => `<button type="button" class="pw-key" data-key="${k}" lang="se">${k}</button>`).join("")}` +
+    ? `<div class="pw-letters" role="group" aria-label="${esc(T.keys)}" style="--keys:${PELI_SAMI[peliSamiOf(run)].keys.length + 1}">${PELI_SAMI[peliSamiOf(run)].keys.map((k) => `<button type="button" class="pw-key" data-key="${k}" lang="se">${k}</button>`).join("")}` +
       `<button type="button" class="pw-key x" data-act="keys-hide" aria-label="${esc(T.hideKeys)}" title="${esc(T.hideKeys)}">✕</button></div>`
     : `<button type="button" class="pw-show" data-act="keys-show">${esc(T.showKeys)}</button>`;
   const tip = peliStore.get("satni-peli-kbdtip", false) || peliStore.get("satni-peli-kbd", false) ? ""

@@ -1371,7 +1371,7 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 .pw-in.almost { border-color: var(--flag-yellow); }
 .pw-in.wrong { border-color: var(--flag-red); color: var(--flag-red); }
 .pw-check { flex: none; }
-.pw-letters { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
+.pw-letters { display: grid; grid-template-columns: repeat(var(--keys, 8), minmax(0, 1fr)); gap: 5px; }
 .pw-key { font: inherit; font-size: 21px; font-weight: 700; padding: 9px 0; border-radius: 12px; border: 1px solid var(--border);
   background: var(--surface); color: var(--text); cursor: pointer; touch-action: manipulation; }
 .pw-key:active { transform: scale(.92); background: color-mix(in srgb, var(--tc) 14%, var(--surface)); }
