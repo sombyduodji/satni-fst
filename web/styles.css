@@ -1331,15 +1331,25 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 .pt-ico.small { display: inline-grid; width: 24px; height: 24px; border-radius: 7px; margin: 0 6px -6px 0; }
 .pt-ico.small svg { width: 15px; height: 15px; }
 @media (prefers-reduced-motion: reduce) { .peli-score.pop, .peli-sheet, .peli-sheet-in { animation: none; } .peli-tile, .peli-opt { transition: none; } }
-/* Pelattava kieli (inarinsaame asetuksista): kielten omat nimet sirupainikkeina */
-.peli-sami { display: flex; flex-wrap: wrap; gap: 6px; }
+/* Pelattava kieli (inarinsaame asetuksista): keskitetty kaksiosainen kytkin, kielten omat nimet. Valittu osa täytetty
+   korostusvärillä; korkeus sama kuin aiemmilla siruilla */
+.peli-sami { display: flex; width: fit-content; max-width: 100%; margin: 0 auto; padding: 3px; gap: 2px; border-radius: 99px;
+  background: var(--chip); border: 1px solid var(--border); }
 .sanasto-sami { margin-bottom: 4px; }
-.pl-opt { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 99px; font: inherit; font-size: 14px;
-  font-weight: 700; color: var(--muted); background: var(--surface); border: 1.5px solid var(--border); cursor: pointer; }
+.pl-opt { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 15px; border-radius: 99px;
+  font: inherit; font-size: 14px; font-weight: 700; color: var(--muted); background: transparent; border: 0; cursor: pointer;
+  white-space: nowrap; transition: background-color .18s, color .18s, box-shadow .18s; }
+.pl-opt:hover:not([aria-checked="true"]) { color: var(--text); }
 .pl-opt small { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 99px; color: var(--btn-yellow);
   background: color-mix(in srgb, var(--flag-yellow) 15%, transparent); }
-.pl-opt[aria-checked="true"] { color: var(--text); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+.pl-opt[aria-checked="true"] { color: #fff; background: #2563eb;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .18), 0 2px 8px rgba(37, 99, 235, .35); }
+.pl-opt[aria-checked="true"] small { color: #fff; background: rgba(255, 255, 255, .22); }
 .pl-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 400px) { .pl-opt { padding: 6px 11px; font-size: 13.5px; gap: 5px; } .pl-opt small { font-size: 10px; padding: 1px 5px; } }
+/* Kapeimmilla näytöillä (alle 345 px) kokeellisuusmerkki ei mahdu: se näkyy asetuksissa ja inarin ohjetekstissä */
+@media (max-width: 344px) { .pl-opt small { display: none; } }
+@media (prefers-reduced-motion: reduce) { .pl-opt { transition: none; } }
 /* Pelitapa: Vállje (valitse) / Čále (kirjoita): kaksi korttia esikatselulla, valittu täytetty korostusvärillä */
 .peli-style { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .ps-opt { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 13px 14px 12px;
