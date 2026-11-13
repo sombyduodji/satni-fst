@@ -2655,10 +2655,11 @@ let pendingShared = null;
 function openShared(text) {
   const words = text.replace(/https?:\/\/\S+/g, " ").split(/\s+/)
     .map((w) => w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "")).filter(Boolean);
-  if (!words.length) return;
-  if (!db) { pendingShared = text; return; }
+  if (!words.length) return false;  // pelkkä linkki, välimerkit tai tyhjä: ei haettavaa
+  if (!db) { pendingShared = text; return false; }
   const tries = [words.slice(0, 4).join(" "), ...words.slice(0, 20)];
   search(tries.find((q) => queryDatabase(q).length) || words[0]);
+  return true;
 }
 
 function routeFromHash() {
@@ -2850,8 +2851,8 @@ async function main() {
   $("search").disabled = false;
   $("search-btn").disabled = false;
   $("ocr-btn").disabled = false;
-  if (pendingShared) openShared(pendingShared);
-  else routeFromHash();
+  // Jaettu teksti ilman sanoja (esim. pelkkä linkki): aloitussivu, ettei latausnäkymä jää näkyviin
+  if (!(pendingShared && openShared(pendingShared))) routeFromHash();
   if (!location.hash) $("search").focus();
   showMenuTip();
 }
