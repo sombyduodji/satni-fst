@@ -164,7 +164,10 @@ class AppPage(QWebEnginePage):
     def acceptNavigationRequest(self, url, nav_type, is_main_frame):
         if url.scheme() == SCHEME.decode():
             return True
-        open_external(url)
+        # Vain verkko- ja sähköpostilinkit järjestelmälle (kuten ExternalLinkPage): ei file:-, data:- tms.
+        # osoitteita xdg-openille
+        if url.scheme() in ("http", "https", "mailto"):
+            open_external(url)
         return False
 
     def createWindow(self, window_type):
