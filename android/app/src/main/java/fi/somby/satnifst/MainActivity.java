@@ -176,9 +176,13 @@ public class MainActivity extends Activity {
 
     // Näppäimistö takaisin, kun ikkuna saa kohdistuksen takaisin (OnePlus OxygenOS 16: Gboardin näppäimistön vaihto
     // välilyönnin pitkällä painalluksella sulki näppäimistön; Android 15 ja 16 -emulaattoreissa sitä ei tapahdu).
-    // Vain jos näppäimistö oli auki ikkunan menettäessä kohdistuksen ja sovellus ei käynyt taustalla välillä.
+    // Vain jos näppäimistö oli auki ikkunan menettäessä kohdistuksen, sovellus ei käynyt taustalla välillä ja keskeytys
+    // oli lyhyt (kuten kielen valinta Gboardin ikkunasta): pidemmän keskeytyksen (keskustelukupla, jaettu näyttö)
+    // jälkeen näppäimistö ei avaudu itsestään.
+    private static final long RESTORE_MAX_MS = 15000;
     private boolean imeOpenWhenFocusLost;
     private boolean pausedSinceFocusLost;
+    private long focusLostAt;
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
@@ -186,13 +190,15 @@ public class MainActivity extends Activity {
         if (!hasFocus) {
             imeOpenWhenFocusLost = imeVisible();
             pausedSinceFocusLost = false;
+            focusLostAt = android.os.SystemClock.uptimeMillis();
             if (imeOpenWhenFocusLost) {
                 web.evaluateJavascript("window.__satniImeField = document.activeElement"
                         + " && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName) ? document.activeElement : null", null);
             }
             return;
         }
-        if (imeOpenWhenFocusLost && !pausedSinceFocusLost) {
+        if (imeOpenWhenFocusLost && !pausedSinceFocusLost
+                && android.os.SystemClock.uptimeMillis() - focusLostAt < RESTORE_MAX_MS) {
             web.postDelayed(this::restoreKeyboard, 300);  // näppäimistö ehtii palata itsestään, jos se palaa
         }
         imeOpenWhenFocusLost = false;
@@ -225,13 +231,18 @@ public class MainActivity extends Activity {
         });
     }
 
-    /** Onko näppäimistö näkyvissä (Android 11+; vanhemmissa ei palauteta näppäimistöä). */
+    /** Onko näppäimistö näkyvissä. Android 11+: ikkunan reunusten tieto; vanhemmat: näkyvä alue on yli 15 %
+     *  ikkunaa matalampi (näppäimistö peittää alaosan, windowSoftInputMode = adjustResize). */
     private boolean imeVisible() {
-        if (Build.VERSION.SDK_INT < 30) {
-            return false;
+        if (Build.VERSION.SDK_INT >= 30) {
+            WindowInsets insets = web.getRootWindowInsets();
+            return insets != null && insets.isVisible(WindowInsets.Type.ime());
         }
-        WindowInsets insets = web.getRootWindowInsets();
-        return insets != null && insets.isVisible(WindowInsets.Type.ime());
+        View root = web.getRootView();
+        android.graphics.Rect visible = new android.graphics.Rect();
+        root.getWindowVisibleDisplayFrame(visible);
+        int height = root.getHeight();
+        return height > 0 && height - visible.bottom > height * 0.15;
     }
 
     @Override
