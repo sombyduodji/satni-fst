@@ -1072,6 +1072,7 @@ function selectResult(i, pushHistory = true) {
   $("sme-def").innerHTML = def ? `<b>${esc(t("smeDef"))}</b>${esc(def.definition)}` : "";
   $("more-meanings").textContent = ownGroup.length > 1 ? t("moreMeanings", ownGroup.length - 1) :
     groups.some(([lang]) => lang !== settings.lang) ? t("otherLangs") : "";
+  $("more-meanings").hidden = !$("more-meanings").textContent;  // tyhjä linkki ei jää Tab-järjestykseen
 
   renderGradation();
   renderInfo(w);
@@ -2870,5 +2871,66 @@ async function main() {
   if (!location.hash) $("search").focus();
   showMenuTip();
 }
+
+// --- Näppäimistökäyttö koko näytön näkymissä (minipeli, sanastot, lausekääntäjä) ---
+// Avoimen näkymän alla oleva sivu on inert (Tab ei kulje näkymättömien painikkeiden kautta). Näppäimistöllä
+// käytettäessä fokus siirtyy avattuun näkymään, pysyy siinä uudelleenpiirron jälkeen (sama painike tai näkymän
+// pääpainike) ja palaa suljettaessa avanneeseen painikkeeseen. Kosketus- ja hiirikäytössä fokusta ei siirretä.
+function bindViewFocus() {
+  const views = ["peli-view", "sanasto-view", "lause-view"].map($).filter(Boolean);
+  const shell = [".topbar", ".searchbar", ".layout"].map((s) => document.querySelector(s)).filter(Boolean);
+  let kbd = false, opener = null, lastKey = null, autoFocused = null;
+  document.addEventListener("keydown", (e) => { if (["Tab", "Enter", " ", "Escape", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) kbd = true; }, true);
+  document.addEventListener("pointerdown", () => { kbd = false; }, true);
+  // Viimeksi painettu painike tunnistetaan data-attribuuteista, jotta sama painike löytyy uudelleenpiirron jälkeen
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest?.("button, [tabindex]");
+    if (!b || !views.some((v) => v.contains(b))) return;
+    const attrs = ["data-act", "data-mode", "data-list", "data-style", "data-sami"].filter((a) => b.hasAttribute(a));
+    lastKey = attrs.length ? attrs.map((a) => `[${a}="${CSS.escape(b.getAttribute(a))}"]`).join("") : null;
+  }, true);
+  const visible = (el) => el && !el.disabled && !el.hidden && el.getClientRects().length > 0;
+  const FOCUSABLE = "input:not([disabled]), textarea, .peli-primary, .peli-opt, button, [tabindex='0']";
+  const focusIn = (view) => {
+    const a = document.activeElement;
+    if (view.contains(a) && a !== view && a !== autoFocused) return;
+    const body = view.querySelector(".peli-body, .sanasto-body, .lause-view");
+    const remembered = lastKey && view.querySelector(lastKey);
+    let target = visible(remembered) ? remembered : null;
+    // Näkymän sisältö ensin (kirjoituskenttä, pääpainike, vastausvaihtoehto, muu painike), sitten otsikkorivi
+    for (const sel of FOCUSABLE.split(", ")) {
+      if (target) break;
+      target = [...(body ? body.querySelectorAll(sel) : [])].find((el) => visible(el) && !el.closest(".sanasto-head, .lause-head"));
+    }
+    autoFocused = null;
+    if (!target) target = autoFocused = [...view.querySelectorAll("button")].find(visible);
+    if (target) target.focus({ preventScroll: false });
+  };
+  const sync = () => {
+    const open = views.filter((v) => !v.hidden);
+    for (const el of shell) el.inert = open.length > 0;
+    if (!open.length) {
+      if (kbd && opener && opener.isConnected && visible(opener)) opener.focus();
+      opener = null;
+    }
+  };
+  for (const v of views) {
+    new MutationObserver(() => {
+      if (!v.hidden) {
+        if (!opener && !views.some((o) => o !== v && !o.hidden)) opener = document.activeElement;
+        lastKey = null;
+        if (kbd) requestAnimationFrame(() => focusIn(v));
+      }
+      sync();
+    }).observe(v, { attributes: true, attributeFilter: ["hidden"] });
+    // Sisällön uudelleenpiirto (innerHTML) pudottaa fokuksen <body>:lle: palautetaan se näkymään
+    const body = v.querySelector(".peli-body, .sanasto-body, .lause-chips");
+    if (body) new MutationObserver(() => {
+      const a = document.activeElement;
+      if (kbd && !v.hidden && (!v.contains(a) || a === autoFocused)) requestAnimationFrame(() => focusIn(v));
+    }).observe(body, { childList: true });
+  }
+}
+bindViewFocus();
 
 main();

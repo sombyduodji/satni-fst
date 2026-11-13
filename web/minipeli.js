@@ -218,7 +218,7 @@ function renderPeliMenu() {
   const tile = (m) => {
     const best = peliTop(m.id, peliWrite, sami)[0];
     // Sanat: isot kortit kahdessa sarakkeessa; aiheet: tasakorkeat rivit. Paras tulos pokaalimerkkinä.
-    return `<button type="button" class="peli-tile${m.group === "cats" ? " row" : ""}" data-mode="${m.id}" style="--tc: var(--flag-${m.color})">` +
+    return `<button type="button" class="peli-tile${m.group === "cats" ? " row" : ""}" data-mode="${m.id}" style="--tc: var(--flag-${m.color}); --tb: var(--btn-${m.color})">` +
       `<span class="pt-ico">${peliModeIcon(m.id)}</span><span class="pt-text"><span class="pt-name">${esc(T.modes[m.id][0])}</span>` +
       `<span class="pt-sub">${esc(peliModeSub(m.id, sami))}</span></span>` +
       `<span class="pt-best${best ? "" : " none"}" title="${esc(T.best)}">${PELI_CUP}<b>${best ? best.score : T.none}</b></span></button>`;
@@ -236,7 +236,7 @@ function renderPeliMenu() {
 function renderPeliResume() {
   const T = pt(), run = peliRun;
   peliHead(T.title, false);
-  $("peli-body").innerHTML = `<div class="peli-card peli-ask" style="--tc: var(--flag-${PELI_MODES.find((m) => m.id === run.mode).color})">` +
+  $("peli-body").innerHTML = `<div class="peli-card peli-ask" style="--tc: var(--flag-${PELI_MODES.find((m) => m.id === run.mode).color}); --tb: var(--btn-${PELI_MODES.find((m) => m.id === run.mode).color})">` +
     `<p class="peli-mode"><span class="pt-ico small">${peliModeIcon(run.mode)}</span>${esc(T.modes[run.mode][0])}${peliSamiOf(run) === "smn" ? " · " + PELI_SAMI.smn.name : ""}${run.write ? " · " + PELI_SAMI[peliSamiOf(run)].write : ""} · ${esc(run.write ? T.points(run.score) : T.score(run.score))}</p><h3>${esc(T.resumeQ)}</h3>` +
     `<div class="peli-actions"><button type="button" class="peli-primary" data-act="resume">${esc(T.resume)}</button>` +
     `<button type="button" class="peli-secondary" data-act="fresh">${esc(T.fresh)}</button></div></div>`;
@@ -258,7 +258,7 @@ function renderPeliQuestion() {
   if (q.write) return renderPeliWrite();
   const color = PELI_MODES.find((m) => m.id === run.mode).color;
   peliHead(T.modes[run.mode][0], true);
-  $("peli-body").innerHTML = `<div class="peli-play" style="--tc: var(--flag-${color})">` +
+  $("peli-body").innerHTML = `<div class="peli-play" style="--tc: var(--flag-${color}); --tb: var(--btn-${color})">` +
     `<div class="peli-stage"><div class="peli-meta">` +
     `<span class="peli-pill streak" title="${esc(T.streak)}">${PELI_FLAME}<b class="peli-score">${run.score}</b></span>` +
     `<span class="peli-pill best" title="${esc(T.best)}">${PELI_CUP}<b>${peliTop(run.mode, false, peliSamiOf(run))[0]?.score ?? 0}</b></span></div>` +
@@ -315,7 +315,9 @@ function renderPeliOver(chosen) {
   peliStore.set("satni-peli-run", null);
   const sheet = document.createElement("div");
   sheet.className = "peli-sheet";
-  sheet.style.setProperty("--tc", `var(--flag-${PELI_MODES.find((m) => m.id === mode).color})`);
+  const sheetColor = PELI_MODES.find((m) => m.id === mode).color;
+  sheet.style.setProperty("--tc", `var(--flag-${sheetColor})`);
+  sheet.style.setProperty("--tb", `var(--btn-${sheetColor})`);
   sheet.innerHTML = `<div class="peli-sheet-in" role="dialog" aria-label="${esc(T.over)}">` +
     `<div class="peli-ring"><b>${score}</b><span>${esc((write ? T.points : T.score)(score).replace(/^\d+\s*/, ""))}</span></div>` +
     `<h3>${esc(T.over)}${isNew ? ` <span class="peli-new">${PELI_CUP}${esc(T.newBest)}</span>` : ""}</h3>` +
@@ -457,7 +459,7 @@ function renderPeliWrite() {
     : `<p class="pw-tip"><span>⌨️</span><span>${esc(T.kbdTip)} <a href="${/Android/i.test(navigator.userAgent)
       ? "https://divvun.no/en/keyboards/installation_android.html" : "https://divvun.no/en/keyboards/mobileindex.html"}" target="_blank" rel="noopener">${esc(T.kbdLink)} ↗</a></span>` +
       `<button type="button" data-act="tip-close" aria-label="${esc(T.close)}">✕</button></p>`;
-  $("peli-body").innerHTML = `<div class="peli-play" style="--tc: var(--flag-${color})">` +
+  $("peli-body").innerHTML = `<div class="peli-play" style="--tc: var(--flag-${color}); --tb: var(--btn-${color})">` +
     `<div class="peli-stage compact"><div class="peli-meta">` +
     `<span class="peli-pill streak" title="${esc(T.points(run.score))}">${PELI_FLAME}<b class="peli-score">${run.score}</b></span>` +
     `<span class="peli-pill best" title="${esc(T.best)}">${PELI_CUP}<b>${peliTop(run.mode, true, peliSamiOf(run))[0]?.score ?? 0}</b></span></div>` +

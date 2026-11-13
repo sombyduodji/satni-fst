@@ -1,10 +1,12 @@
 /* Värit samat kuin työpöytäversion ui_theme.py:ssä */
 :root {
   --bg: #f4f6fa; --surface: #ffffff; --surface-alt: #f6f8fb; --border: #e2e8f0;
-  --text: #0f172a; --muted: #64748b; --subtle: #94a3b8;
+  --text: #0f172a; --muted: #5b6b80; --subtle: #94a3b8;  /* --subtle vain koristeisiin (nuolet, erottimet), ei tekstiin */
   --accent: #2563eb; --accent-hover: #1d4ed8; --accent-text: #ffffff;
   --on-flag: #ffffff;  /* teksti lippuvärin päällä (pelin päätoimintopainikkeet) */
   --flag-red: #e11d48; --flag-yellow: #ca8a04; --flag-blue: #2563eb; --flag-green: #16a34a;
+  /* Painikkeen tausta ja teksti lippuvärillä: keltainen ja vihreä tummempina, jotta kontrasti on vähintään 4,5:1 */
+  --btn-red: #e11d48; --btn-yellow: #a16207; --btn-blue: #2563eb; --btn-green: #15803d;
   --chip: #e8edf4; --chip-hover: #dbe3ee; --chip-text: #1e293b;
   --section: #eef2f8; --select: #dbeafe;
   --gd: #15803d; --gd-bg: #dcfce7; --hd: #c2410c; --hd-bg: #ffedd5;
@@ -21,6 +23,7 @@
     --accent: #3b82f6; --accent-hover: #60a5fa;
     --flag-red: #fb7185; --flag-yellow: #facc15; --flag-blue: #60a5fa; --flag-green: #4ade80;
     --on-flag: #0f141b;
+    --btn-red: #fb7185; --btn-yellow: #facc15; --btn-blue: #60a5fa; --btn-green: #4ade80;
     --chip: #232c38; --chip-hover: #2d3846; --chip-text: #e2e8f0;
     --section: #1f2834; --select: #1e3a5f;
     --gd: #4ade80; --gd-bg: #123220; --hd: #fb923c; --hd-bg: #3a2210;
@@ -36,6 +39,7 @@
   --accent: #3b82f6; --accent-hover: #60a5fa;
     --flag-red: #fb7185; --flag-yellow: #facc15; --flag-blue: #60a5fa; --flag-green: #4ade80;
     --on-flag: #0f141b;
+    --btn-red: #fb7185; --btn-yellow: #facc15; --btn-blue: #60a5fa; --btn-green: #4ade80;
   --chip: #232c38; --chip-hover: #2d3846; --chip-text: #e2e8f0;
   --section: #1f2834; --select: #1e3a5f;
   --gd: #4ade80; --gd-bg: #123220; --hd: #fb923c; --hd-bg: #3a2210;
@@ -306,7 +310,7 @@ select {
 /* Tarkoititko-ehdotus hakukentän listassa (app.js: suggestWords) */
 .suggestions li.sugg-dym .sugg-dym-label { color: var(--muted); font-size: 13px; }
 .suggestions li.sugg-dym b { color: var(--accent); }
-.suggestions li .pos { color: var(--subtle); font-size: 12px; }
+.suggestions li .pos { color: var(--muted); font-size: 12px; }
 .suggestions li .trans { color: var(--muted); font-size: 13px; margin-left: auto; text-align: right; }
 .suggestions li.active, .suggestions li:hover { background: var(--select); }
 
@@ -334,7 +338,7 @@ select {
 /* Saamenkielinen määritelmä (dict-sme) sanakortissa käännöksen alla */
 .sme-def { font-size: 15px; margin: -4px 0 10px; font-style: italic; color: var(--muted); }
 .sme-def b { font-style: normal; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; margin-right: 6px; }
-.word-list .empty { color: var(--subtle); font-size: 13px; padding: 4px 8px; }
+.word-list .empty { color: var(--muted); font-size: 13px; padding: 4px 8px; }
 
 .card {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
@@ -377,6 +381,9 @@ main > * + * { margin-top: 12px; }
 }
 .chips button:hover { background: var(--chip-hover); }
 .chips button.selected { background: var(--accent); color: var(--accent-text); }
+/* Tummassa teemassa --accent (#3b82f6) on valkoiselle tekstille liian vaalea (3,7:1): valittu siru tummemmalla sinisellä */
+:root[data-theme="dark"] .chips button.selected { background: #2563eb; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .chips button.selected { background: #2563eb; } }
 .chips button.random { background: var(--speak-bg); color: var(--speak); }
 .results button { font-size: 13px; }
 /* Tarkoititko: sama sana saamen erikoiskirjaimin */
@@ -396,7 +403,7 @@ main > * + * { margin-top: 12px; }
 .word-title { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .word-title h1 { margin: 0; font-size: 32px; line-height: 1.15; }
 .badge { background: var(--chip); color: var(--chip-text); border-radius: 6px; padding: 2px 8px; font-size: 13px; font-weight: 600; }
-.star-btn { background: none; border: 0; font-size: 24px; color: var(--subtle); cursor: pointer; padding: 0 4px; }
+.star-btn { background: none; border: 0; font-size: 24px; color: var(--muted); cursor: pointer; padding: 0 4px; }
 .star-btn.on { color: #eab308; }
 .speak-btn {
   position: relative; flex: none; display: inline-grid; place-items: center; width: 40px; height: 40px;
@@ -745,7 +752,7 @@ table.paradigm.boxed tbody tr:not(.gap):not(.section):nth-child(even) td { backg
 .support-actions a { text-decoration: none; display: inline-block; }
 .feedback-dlg { width: min(460px, calc(100vw - 32px)); }
 .sep { color: var(--subtle); }
-.hint { color: var(--subtle); font-size: 13px; margin: 12px 0 0; }
+.hint { color: var(--muted); font-size: 13px; margin: 12px 0 0; }
 
 /* Merkitykset */
 .meaning { margin: 0 0 18px; }
@@ -763,7 +770,7 @@ button .reg-label, li .reg-label { color: inherit; border-color: currentColor; o
 .example { margin: 6px 0 0 24px; }
 .example .sme { display: block; }
 .example .fin { display: block; color: var(--muted); }
-.example .missing { display: block; color: var(--subtle); font-style: italic; font-size: 13px; }
+.example .missing { display: block; color: var(--muted); font-style: italic; font-size: 13px; }
 .raw { font-family: ui-monospace, "DejaVu Sans Mono", monospace; font-size: 13px; }
 .raw .tag { color: var(--muted); display: inline-block; min-width: 200px; }
 
@@ -1173,7 +1180,7 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
   font-weight: 600; color: var(--muted); background: var(--surface); border: 1px solid var(--border); }
 .peli-rules li:not(.gain):not(.cost) { padding-left: 11px; }
 .peli-rules b { font-weight: 800; font-variant-numeric: tabular-nums; }
-.peli-rules .gain b { color: var(--flag-green); }
+.peli-rules .gain b { color: var(--btn-green); }
 .peli-rules .cost b { color: var(--flag-red); }
 .peli-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .peli-tile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; text-align: left;
@@ -1256,7 +1263,7 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 .peli-opt:active:not(:disabled) { transform: scale(.97); }
 .peli-opt:focus-visible { outline: 2px solid var(--tc); outline-offset: 2px; }
 .peli-opt.right { background: color-mix(in srgb, var(--flag-green) 16%, var(--surface)); border-color: var(--flag-green); }
-.peli-opt.right .po-key, .peli-opt.right .po-mark { color: var(--flag-green); }
+.peli-opt.right .po-key, .peli-opt.right .po-mark { color: var(--btn-green); }
 .peli-opt.wrong { background: color-mix(in srgb, var(--flag-red) 14%, var(--surface)); border-color: var(--flag-red); }
 .peli-opt.wrong .po-key, .peli-opt.wrong .po-mark { color: var(--flag-red); }
 .peli-opt:disabled { cursor: default; }
@@ -1313,7 +1320,7 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 .peli-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
 .peli-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .peli-primary, .peli-secondary { font: inherit; font-weight: 700; padding: 12px 14px; border-radius: 14px; cursor: pointer; border: 1px solid var(--border); }
-.peli-primary { background: var(--tc, var(--accent)); color: var(--on-flag, #fff); border-color: transparent; font-size: 16px; }
+.peli-primary { background: var(--tb, var(--tc, var(--accent))); color: var(--on-flag, #fff); border-color: transparent; font-size: 16px; }
 .peli-secondary { background: var(--surface-alt); color: var(--text); font-weight: 600; }
 .peli-sheet .peli-report { margin-top: 12px; }
 .peli-ask .peli-actions { flex-direction: row; flex-wrap: wrap; }
@@ -1329,7 +1336,7 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 .sanasto-sami { margin-bottom: 4px; }
 .pl-opt { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 99px; font: inherit; font-size: 14px;
   font-weight: 700; color: var(--muted); background: var(--surface); border: 1.5px solid var(--border); cursor: pointer; }
-.pl-opt small { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 99px; color: var(--flag-yellow);
+.pl-opt small { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 99px; color: var(--btn-yellow);
   background: color-mix(in srgb, var(--flag-yellow) 15%, transparent); }
 .pl-opt[aria-checked="true"] { color: var(--text); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
 .pl-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
