@@ -702,7 +702,9 @@ function bindPeli() {
     if (d) { d.close(); return true; }
     return closePeli() || (closeOcrBase ? closeOcrBase() : false);
   };
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !document.querySelector("dialog[open]")) closePeli(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector("dialog[open]") && closePeli()) e.preventDefault();
+  });
   document.addEventListener("visibilitychange", () => { if (document.hidden) peliStopAudio(); });
   // Kieli vaihtui kesken: näkymä uudelleen oikealla kielellä
   const setUiBase = window.setUiLanguage;

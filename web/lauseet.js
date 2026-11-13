@@ -643,7 +643,11 @@ function bindLause() {
   const closeOcrBase = window.closeOcr;
   window.closeOcr = () => closeLause() || (closeOcrBase ? closeOcrBase() : false);
   const backToOcrBase = window.backToOcr;
+  // Paluu lauseeseen vain, jos lausekääntäjä on yhä käytössä: kortilla ollessa käyttöliittymä on voitu vaihtaa
+  // norjaksi (lause vain suomeksi) tai kokeilu kytkeä pois (applyExperimental piilottaa painikkeen)
+  const lauseAvailable = () => !$("lause-btn").hidden;
   window.backToOcr = () => {
+    if (lauseReturnHash && !lauseAvailable()) lauseReturnHash = null;
     if (lauseReturnHash && location.hash === lauseReturnHash) {
       lauseReturnHash = null;
       $("lause-view").hidden = false;
@@ -655,7 +659,9 @@ function bindLause() {
   // Selaimen takaisin-painike (verkkosovellus): sanakortista takaisin lauseeseen
   window.addEventListener("popstate", () => {
     if (lauseReturnHash && location.hash !== lauseReturnHash) {
+      const back = lauseAvailable();
       lauseReturnHash = null;
+      if (!back) return;
       $("lause-view").hidden = false;
       renderLause();
     }
@@ -664,7 +670,9 @@ function bindLause() {
     const b = e.target.closest(".lp-info");
     if (b) lauseShowCard(Number($("lause-pop").dataset.i), Number(b.dataset.k));
   });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeLause(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector("dialog[open]") && closeLause()) e.preventDefault();
+  });
   $("lause-speak").onclick = () => speak($("lause-sme").textContent, $("lause-speak"));
   let timer = null;
   const reparse = () => {

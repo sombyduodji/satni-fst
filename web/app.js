@@ -2431,7 +2431,8 @@ async function showLicenses() {
   let files = LICENSE_FILES;
   try {
     const r = await fetch("licenses/desktop/files.txt");
-    if (r.ok) files = files.concat((await r.text()).split("\n").map((f) => f.trim()).filter(Boolean).map((f) => "desktop/" + f));
+    // Ilman verkkoa vanha service worker voi palauttaa index.html:n puuttuvan tiedoston tilalle
+    if (r.ok && !(r.headers.get("content-type") || "").includes("text/html")) files = files.concat((await r.text()).split("\n").map((f) => f.trim()).filter(Boolean).map((f) => "desktop/" + f));
   } catch (e) { /* ei työpöytäversio */ }
   $("lic-select").innerHTML = files.map((f) =>
     `<option value="${esc(f)}">${esc(f.replace("../vendor/LICENSE-", "").replace(/^desktop\/(debian\/)?/, ""))}</option>`).join("");
@@ -2635,7 +2636,11 @@ function bindFormPop() {
   document.addEventListener("click", (e) => {
     if (formPopTarget && !e.target.closest("#form-pop, .form, #sanasto-body .sw")) closeFormPop();
   });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeFormPop(); });
+  // Esc sulkee vain päällimmäisen kerroksen: käsitelty Esc merkitään (preventDefault), jolloin näkymien omat
+  // Esc-kuuntelijat (sanastot, peli, lause) ohittavat sen. Avoimen ikkunan (dialog) Esc sulkee vain ikkunan.
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector("dialog[open]") && closeFormPop()) e.preventDefault();
+  });
   addEventListener("scroll", placeFormPop, true);
   addEventListener("resize", placeFormPop);
 }
@@ -2763,7 +2768,9 @@ function bindEvents() {
     if (document.body.classList.toggle("sidebar-open") && historyExpanded) { historyExpanded = false; renderSidebar(); }
   };
   $("drawer-scrim").onclick = closeDrawer;
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrawer(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector("dialog[open]") && closeDrawer()) e.preventDefault();
+  });
   $("sidebar").addEventListener("click", (e) => { if (e.target.closest("a")) document.body.classList.remove("sidebar-open"); });
   $("clear-history").onclick = () => $("clear-history-dlg").showModal();
   $("clear-history-cancel").onclick = () => $("clear-history-dlg").close();

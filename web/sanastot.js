@@ -623,7 +623,9 @@ function bindSanastot() {
   $("sanasto-back").onclick = () => { sanastoStopAudio(); sanastoAuki = null; renderSanastoGrid(); };
   $("sanasto-speak").onclick = sanastoSpeakAll;
   // Esc avoimessa ikkunassa (virheilmoitus) sulkee vain ikkunan, ei listaa sen takana
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !document.querySelector("dialog[open]")) closeSanastot(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector("dialog[open]") && closeSanastot()) e.preventDefault();
+  });
   // Sovellus taustalle (kotinäppäin, näyttö kiinni): äänilista pysähtyy, ettei se jää soimaan ilman pysäytyspainiketta
   document.addEventListener("visibilitychange", () => { if (document.hidden) sanastoStopAudio(); });
   const closeOcrBase = window.closeOcr;
