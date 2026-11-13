@@ -388,28 +388,39 @@ async function loadDatabase() {
   const response = await fetch(DATA_URL);
   if (!response.ok) throw new Error(t("loadFailed", response.status));
 
-  // Ladataan osissa, jotta edistymispalkki liikkuu
+  // Ladataan ja puretaan virtana: pakattua tiedostoa (~49 Mt) ei pidetä muistissa kokonaisena, joten latauksen
+  // muistihuippu on puretut palat + yhdistetty tietokanta (~2 × 156 Mt) eikä ~410 Mt. Edistymispalkki seuraa
+  // pakattuja tavuja (content-length).
   const total = Number(response.headers.get("content-length")) || 0;
   const reader = response.body.getReader();
-  const chunks = [];
+  const first = await reader.read();
+  if (first.done) throw new Error(t("loadFailed", 0));
   let received = 0;
+  const counted = new ReadableStream({
+    start(ctrl) { ctrl.enqueue(first.value); received = first.value.length; },
+    async pull(ctrl) {
+      const { done, value } = await reader.read();
+      if (done) { $("loading-text").textContent = t("unpacking"); ctrl.close(); return; }
+      received += value.length;
+      if (total) $("progress-bar").style.width = `${Math.round((received / total) * 90)}%`;
+      ctrl.enqueue(value);
+    },
+    cancel(reason) { return reader.cancel(reason); },
+  });
+  // Palvelin voi jo purkaa gzipin (Content-Encoding); puretaan vain jos tiedosto on yhä pakattu
+  const gz = first.value[0] === 0x1f && first.value[1] === 0x8b;
+  const out = (gz ? counted.pipeThrough(new DecompressionStream("gzip")) : counted).getReader();
+  let chunks = [], size = 0;
   for (;;) {
-    const { done, value } = await reader.read();
+    const { done, value } = await out.read();
     if (done) break;
     chunks.push(value);
-    received += value.length;
-    if (total) $("progress-bar").style.width = `${Math.round((received / total) * 90)}%`;
+    size += value.length;
   }
-  let bytes = new Uint8Array(received);
+  const bytes = new Uint8Array(size);
   let offset = 0;
   for (const c of chunks) { bytes.set(c, offset); offset += c.length; }
-
-  // Palvelin voi jo purkaa gzipin (Content-Encoding); puretaan vain jos tiedosto on yhä pakattu
-  if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
-    $("loading-text").textContent = t("unpacking");
-    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
-    bytes = new Uint8Array(await new Response(stream).arrayBuffer());
-  }
+  chunks = null;
   $("progress-bar").style.width = "100%";
   return new SQL.Database(bytes);
 }
