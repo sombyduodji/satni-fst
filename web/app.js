@@ -612,12 +612,14 @@ function translationFormsOf(word, lang) {
     }
   }
   try {
+    // Erisnimet ovat taulukoissa isolla alkukirjaimella (Inari: Sg+Ine=Inarissa), haku pienillä: kokeillaan molempia
+    const cap = word.charAt(0).toUpperCase() + word.slice(1);
     for (const r of all(
-      `SELECT word, pos, forms FROM ${lang}_forms WHERE instr(forms, ?)`, [word]
+      `SELECT word, pos, forms FROM ${lang}_forms WHERE instr(forms, ?) OR instr(forms, ?)`, [word, cap]
     )) {
       for (const cell of r.forms.split(";")) {
         const [c, v] = cell.split("=");
-        if (v.split("/").includes(word)) out.push({ base: r.word, cell: c, pos: r.pos });
+        if (v.split("/").some((f) => f === word || f === cap)) out.push({ base: r.word, cell: c, pos: r.pos });
       }
     }
   } catch (e) { /* vanha tietokanta ilman taulua */ }
@@ -2909,6 +2911,7 @@ function bindViewFocus() {
   const sync = () => {
     const open = views.filter((v) => !v.hidden);
     for (const el of shell) el.inert = open.length > 0;
+    document.documentElement.classList.toggle("view-open", open.length > 0);
     if (!open.length) {
       if (kbd && opener && opener.isConnected && visible(opener)) opener.focus();
       opener = null;

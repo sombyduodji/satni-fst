@@ -103,6 +103,9 @@ select {
 .head-btn[hidden] { display: none; }
 @media (max-width: 400px) { .header-tools { gap: 4px; } .head-btn { padding: 6px 7px; } .head-btn svg { width: 21px; height: 21px; } }
 .tip-ico { width: 1.15em; height: 1.15em; vertical-align: -0.2em; color: var(--accent); }
+/* Koko näytön näkymän ollessa auki alla oleva sivu ei vieritä (app.js: bindViewFocus), muuten työpöydällä näkyy
+   kaksi vierityspalkkia */
+html.view-open { overflow: hidden; }
 .sanasto-view { position: fixed; inset: 0; z-index: 46; background: var(--bg); display: flex; flex-direction: column; }
 .sanasto-view[hidden] { display: none; }
 .sanasto-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); }
@@ -833,6 +836,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
   background: transparent; color: var(--muted); font-size: 24px; line-height: 1; cursor: pointer; }
 .lause-chip.open { border-color: var(--accent, #2563eb); box-shadow: 0 0 0 1px var(--accent, #2563eb); }
 .lause-pop .lp-sub { margin: 6px 0 0; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.lause-pop .lp-search { display: block; margin-top: 8px; font-size: 14px; }
 .lause-pop label { display: flex; gap: 8px; align-items: center; cursor: pointer; flex: 1; min-width: 0; }
 .lause-pop .lp-row { display: flex; align-items: center; gap: 8px; }
 .lause-pop .lp-gloss { display: block; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
@@ -1164,8 +1168,10 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 .peli-mute { display: grid; place-items: center; width: 40px; padding: 0; }
 .peli-mute svg { width: 20px; height: 20px; }
 .peli-mute.muted { color: var(--muted); }
-.peli-body { flex: 1; overflow-y: auto; padding: 14px 16px 28px; display: flex; flex-direction: column; gap: 14px;
-  max-width: 640px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+/* Vierityssäiliö koko leveydeltä (työpöydällä vierityspalkki ikkunan reunaan, ei sarakkeen keskelle); sisältö
+   keskitetään 640 px:n sarakkeeksi sivutäytteellä */
+.peli-body { flex: 1; overflow-y: auto; padding: 14px max(16px, calc((100% - 608px) / 2)) 28px; display: flex;
+  flex-direction: column; gap: 14px; width: 100%; box-sizing: border-box; }
 .peli-lead { margin: 0; color: var(--muted); }
 /* Osiot: kuvake, otsikko ja alaotsikko */
 .pg-head { display: flex; align-items: center; gap: 11px; margin: 6px 0 10px; }

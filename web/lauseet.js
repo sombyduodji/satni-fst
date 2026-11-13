@@ -81,10 +81,12 @@ function lauseCandidatesUncached(base, pos, exactOnly) {
 function lauseAnalyses(word, raw = word) {
   let clitic = null, stem = word;
   let out = lauseFinForms(word);
-  // Erisnimet ovat taulukoissa isolla alkukirjaimella (Inariin = Inari, Sg+Ill)
-  if (!out.length && raw !== word) {
-    out = lauseFinForms(raw);
-    if (out.length) stem = raw;
+  // Erisnimet ovat taulukoissa isolla alkukirjaimella (Inariin = Inari, Sg+Ill): kirjoitettu muoto, sitten iso
+  // alkukirjain myös pienellä kirjoitetulle (karigasniemellä = Karigasniemi)
+  for (const alt of [raw, word.charAt(0).toUpperCase() + word.slice(1)]) {
+    if (out.length || alt === word) continue;
+    out = lauseFinForms(alt);
+    if (out.length) stem = alt;
   }
   if (!out.length) {
     for (const [c] of LAUSE_CLITICS) {
@@ -523,7 +525,8 @@ function lauseOpenChip(i) {
     const sug = lauseSuggestions(tok.word);
     html = lauseHead(`${esc(tok.raw)}: ${esc(t("lauseDidYouMean"))}`) +
       sug.map((w) => `<label><input type="radio" name="lp" data-word="${esc(w)}"> ${esc(w)}</label>`).join("") +
-      `<label><input type="radio" name="lp" data-skip="1"> ${esc(t("lauseSkip"))}</label>`;
+      `<label><input type="radio" name="lp" data-skip="1"> ${esc(t("lauseSkip"))}</label>` +
+      `<button type="button" class="chip-btn lp-search" data-q="${esc(tok.raw)}">${esc(t("lauseSearchWord", tok.raw))}</button>`;
   }
   pop.innerHTML = html;
   pop.dataset.i = i;
@@ -670,6 +673,15 @@ function bindLause() {
   $("lause-pop").addEventListener("click", (e) => {
     const b = e.target.closest(".lp-info");
     if (b) lauseShowCard(Number($("lause-pop").dataset.i), Number(b.dataset.k));
+    // Tuntematon sana: haku sanakirjasta (esim. saamenkielinen sana tai kirjoitusvirhe); takaisin-ele palaa lauseeseen
+    const q = e.target.closest(".lp-search");
+    if (q) {
+      lauseClosePop();
+      $("lause-view").hidden = true;
+      $("search").value = q.dataset.q;
+      search(q.dataset.q);
+      lauseReturnHash = location.hash;
+    }
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector("dialog[open]") && closeLause()) e.preventDefault();
