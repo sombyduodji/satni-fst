@@ -319,6 +319,9 @@ function searchAgainKeepingWord() {
 
 // Haussa ä = æ ja ö = ø (norjalaiset nimet, esim. Bjørg)
 const fold = (s) => (s || "").toLowerCase().replace(/æ/g, "ä").replace(/ø/g, "ö");
+// Haettava teksti: yhdistetyt merkit (PDF:stä tai macOS:stä liitetty c + hattu -> č) ja näkymättömät merkit
+// (tavutusviiva, leveydettömät välit) pois, muuten oikein kirjoitettu sana ei löydy (sanakirja on NFC-muodossa)
+const cleanQuery = (s) => (s || "").normalize("NFC").replace(/[\u00AD\u200B-\u200D\u2060\uFEFF]/g, "");
 const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const nordic = (s) => s.replace(/ä/g, "æ").replace(/ö/g, "ø");
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -657,7 +660,7 @@ function samiCaseOfFinCell(cell, pos) {
 }
 
 function suggestWords(prefix, withForms = true) {
-  const q = fold(prefix.trim());
+  const q = fold(cleanQuery(prefix).trim());
   if (q.length < 2) return [];
   const rows = all(
     `SELECT id, sme_lemma, pos, ${TRANS_COLS} FROM dictionary
@@ -830,7 +833,7 @@ function showOnly(view) {
 }
 
 function search(query, index = 0, pushHistory = true) {
-  query = query.trim();
+  query = cleanQuery(query).trim();
   if (!query || !db) return;
   hideSuggestions();
   $("search").value = query;
@@ -2653,7 +2656,7 @@ function bindFormPop() {
 // teksti odottaa (pendingShared).
 let pendingShared = null;
 function openShared(text) {
-  const words = text.replace(/https?:\/\/\S+/g, " ").split(/\s+/)
+  const words = cleanQuery(text).replace(/https?:\/\/\S+/g, " ").split(/\s+/)
     .map((w) => w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "")).filter(Boolean);
   if (!words.length) return false;  // pelkkä linkki, välimerkit tai tyhjä: ei haettavaa
   if (!db) { pendingShared = text; return false; }
