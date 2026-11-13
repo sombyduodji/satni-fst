@@ -3,6 +3,7 @@
   --bg: #f4f6fa; --surface: #ffffff; --surface-alt: #f6f8fb; --border: #e2e8f0;
   --text: #0f172a; --muted: #64748b; --subtle: #94a3b8;
   --accent: #2563eb; --accent-hover: #1d4ed8; --accent-text: #ffffff;
+  --on-flag: #ffffff;  /* teksti lippuvärin päällä (pelin päätoimintopainikkeet) */
   --flag-red: #e11d48; --flag-yellow: #ca8a04; --flag-blue: #2563eb; --flag-green: #16a34a;
   --chip: #e8edf4; --chip-hover: #dbe3ee; --chip-text: #1e293b;
   --section: #eef2f8; --select: #dbeafe;
@@ -19,6 +20,7 @@
     --text: #e5e9f0; --muted: #94a3b8; --subtle: #64748b;
     --accent: #3b82f6; --accent-hover: #60a5fa;
     --flag-red: #fb7185; --flag-yellow: #facc15; --flag-blue: #60a5fa; --flag-green: #4ade80;
+    --on-flag: #0f141b;
     --chip: #232c38; --chip-hover: #2d3846; --chip-text: #e2e8f0;
     --section: #1f2834; --select: #1e3a5f;
     --gd: #4ade80; --gd-bg: #123220; --hd: #fb923c; --hd-bg: #3a2210;
@@ -33,6 +35,7 @@
   --text: #e5e9f0; --muted: #94a3b8; --subtle: #64748b;
   --accent: #3b82f6; --accent-hover: #60a5fa;
     --flag-red: #fb7185; --flag-yellow: #facc15; --flag-blue: #60a5fa; --flag-green: #4ade80;
+    --on-flag: #0f141b;
   --chip: #232c38; --chip-hover: #2d3846; --chip-text: #e2e8f0;
   --section: #1f2834; --select: #1e3a5f;
   --gd: #4ade80; --gd-bg: #123220; --hd: #fb923c; --hd-bg: #3a2210;
@@ -1310,7 +1313,7 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 .peli-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
 .peli-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .peli-primary, .peli-secondary { font: inherit; font-weight: 700; padding: 12px 14px; border-radius: 14px; cursor: pointer; border: 1px solid var(--border); }
-.peli-primary { background: var(--tc, var(--accent)); color: #fff; border-color: transparent; font-size: 16px; }
+.peli-primary { background: var(--tc, var(--accent)); color: var(--on-flag, #fff); border-color: transparent; font-size: 16px; }
 .peli-secondary { background: var(--surface-alt); color: var(--text); font-weight: 600; }
 .peli-sheet .peli-report { margin-top: 12px; }
 .peli-ask .peli-actions { flex-direction: row; flex-wrap: wrap; }
