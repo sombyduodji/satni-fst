@@ -7,7 +7,7 @@
 # kerran: packaging/android/luo_allekirjoitusavain.sh). Saman avaimen päivitykset asentuvat vanhan päälle.
 # --debug: kehitysversio debug-avaimella (WebView-vianetsintä päällä) emulaattorin dev-laitteelle ja omaan puhelimeen
 #          (x86_64 ja arm64). Oma sovellustunnus fi.somby.satnifst.dev ja nimi "Sátni FST DEV", joten se asentuu
-#          julkaistun version rinnalle. Versio: RELEASE_VERSION + .1-DEV (0.9.3 -> 0.9.3.1-DEV).
+#          julkaistun version rinnalle. Versio: seuraavan korjausjulkaisun numero + -DEV (release.py dev: 0.9.3 -> 0.9.3.1-DEV).
 # --testi: julkaisuavaimella allekirjoitettu testiversio välimuistikansioon (ei dist-kansioon, jossa on julkaistu
 #          versio): emulaattorin main-laitteella voi kokeilla päivitystä käyttäjien version päälle.
 cd "$(dirname "$0")" || exit 1
@@ -29,7 +29,7 @@ fi
 [ -n "$SKIP_VERSION_BUMP" ] || python3 bump_version.py || exit 1
 VERSION=$(python3 -c "import version; print(version.VERSION)") || exit 1
 VERSION_CODE=$(python3 -c "import version; print(version.VERSION_CODE)") || exit 1
-[ "$1" = "--debug" ] && VERSION="$(cat RELEASE_VERSION).1-DEV" 
+[ "$1" = "--debug" ] && VERSION="$(python3 release.py dev)"
 
 # Väliaikaiset tiedostot (Gradle, käännös, debug-avain) välimuistikansioon, ei projektikansioon
 mkdir -p "$CACHE_DIR/home" "$CACHE_DIR/build" || exit 1
