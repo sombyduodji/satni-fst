@@ -174,6 +174,66 @@ public class MainActivity extends Activity {
                 + " if (window.applyStaticTexts) applyStaticTexts();", null);
     }
 
+    // Näppäimistö takaisin, kun ikkuna saa kohdistuksen takaisin (OnePlus OxygenOS 16: Gboardin näppäimistön vaihto
+    // välilyönnin pitkällä painalluksella sulki näppäimistön; Android 15 ja 16 -emulaattoreissa sitä ei tapahdu).
+    // Vain jos näppäimistö oli auki ikkunan menettäessä kohdistuksen ja sovellus ei käynyt taustalla välillä.
+    private boolean imeOpenWhenFocusLost;
+    private boolean pausedSinceFocusLost;
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (!hasFocus) {
+            imeOpenWhenFocusLost = imeVisible();
+            pausedSinceFocusLost = false;
+            if (imeOpenWhenFocusLost) {
+                web.evaluateJavascript("window.__satniImeField = document.activeElement"
+                        + " && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName) ? document.activeElement : null", null);
+            }
+            return;
+        }
+        if (imeOpenWhenFocusLost && !pausedSinceFocusLost) {
+            web.postDelayed(this::restoreKeyboard, 300);  // näppäimistö ehtii palata itsestään, jos se palaa
+        }
+        imeOpenWhenFocusLost = false;
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        pausedSinceFocusLost = true;
+    }
+
+    private void restoreKeyboard() {
+        if (imeVisible()) {
+            return;
+        }
+        // Sama kenttä uudelleen valituksi vain, jos kohdistus ei ole siirtynyt muualle (esim. käyttäjän napautus)
+        web.evaluateJavascript("(function () { var f = window.__satniImeField, a = document.activeElement;"
+                + " window.__satniImeField = null;"
+                + " if (!f || !f.isConnected || f.disabled || f.offsetParent === null) return false;"
+                + " if (a !== f && a && a !== document.body) return false;"
+                + " if (a !== f) f.focus({ preventScroll: true });"
+                + " return document.activeElement === f; })()", result -> {
+            if ("true".equals(result)) {
+                web.requestFocus();
+                android.view.inputmethod.InputMethodManager imm = getSystemService(android.view.inputmethod.InputMethodManager.class);
+                if (imm != null) {
+                    imm.showSoftInput(web, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+                }
+            }
+        });
+    }
+
+    /** Onko näppäimistö näkyvissä (Android 11+; vanhemmissa ei palauteta näppäimistöä). */
+    private boolean imeVisible() {
+        if (Build.VERSION.SDK_INT < 30) {
+            return false;
+        }
+        WindowInsets insets = web.getRootWindowInsets();
+        return insets != null && insets.isVisible(WindowInsets.Type.ime());
+    }
+
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
