@@ -1,6 +1,8 @@
 #!/bin/sh
 # Rakentaa Qt-työpöytäsovelluksen (satni_desktop.py) AppImagen. Ohjelma käännetään Debian 11
 # -kontissa (packaging/qt/Dockerfile), jotta se toimii myös vanhemmissa Linux-jakeluissa. Vaatii Dockerin.
+# --dev: kehitysversio (dev-haara) omalla nimellään dist/Satni_FST-DEV-x86_64.AppImage, ei korvaa julkaistua
+#        AppImagea. Versio kuten debug-APK:ssa: RELEASE_VERSION + .1-DEV (0.9.3 -> 0.9.3.1-DEV).
 cd "$(dirname "$0")" || exit 1
 
 APPIMAGETOOL_URL="https://github.com/AppImage/appimagetool/releases/download/1.9.0/appimagetool-x86_64.AppImage"
@@ -18,6 +20,11 @@ mkdir -p "$CACHE_DIR" || exit 1
 
 # build.sh on jo kasvattanut versiota, jotta .exe ja AppImage saavat saman numeron
 [ -n "$SKIP_VERSION_BUMP" ] || python3 bump_version.py || exit 1
+if [ "$1" = "--dev" ]; then
+    # version.py luodaan joka buildilla uudelleen (bump_version.py), joten DEV-merkintä ei jää seuraavaan buildiin
+    DEV_VERSION="$(cat RELEASE_VERSION).1-DEV"
+    sed -i "s/^VERSION = .*/VERSION = \"$DEV_VERSION\"/" version.py || exit 1
+fi
 
 # Web-käyttöliittymän sanakirja (~40 Mt) satni.db:stä
 python3 export_web_data.py || exit 1
@@ -35,5 +42,6 @@ docker run --rm \
 
 mkdir -p dist
 OUT="dist/Satni_FST-x86_64.AppImage"
+[ "$1" = "--dev" ] && OUT="dist/Satni_FST-DEV-x86_64.AppImage"
 ARCH=x86_64 "$APPIMAGETOOL" --no-appstream "$CACHE_DIR/AppDir" "$OUT" || exit 1
 ls -la "$OUT"
