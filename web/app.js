@@ -94,6 +94,8 @@ function applyStaticTexts() {
   for (const el of document.querySelectorAll("[data-i18n-placeholder]")) el.placeholder = t(el.dataset.i18nPlaceholder);
   for (const el of document.querySelectorAll("[data-i18n-aria]")) el.setAttribute("aria-label", t(el.dataset.i18nAria));
   for (const el of document.querySelectorAll("[data-i18n-title]")) el.title = t(el.dataset.i18nTitle);
+  // Android- ja työpöytäsovelluksessa sanakirja tulee paketista (APK:n assets, AppImage/exe), ei verkosta
+  if (IS_ANDROID || IS_DESKTOP) $("loading-text").textContent = t("loadingLocal");
   // Versionumeron antaa työpöytäsovellus (satni_desktop.py) tai Android-sovellus (android/); selainversiolle
   // julkaise_sivu.sh kirjoittaa julkaisun numeron (SATNI_WEB_VERSION)
   const version = window.SATNI_VERSION;
@@ -197,6 +199,46 @@ function closeDrawer() {
   const open = document.body.classList.contains("sidebar-open");
   document.body.classList.remove("sidebar-open");
   return open;
+}
+
+// Selaimen ja puhelimen Takaisin verkkoversiossa (PWA): Sanastot, Minipeli ja Lausekääntäjä saavat avautuessaan oman
+// historiamerkinnän (sama osoite, state.satniOverlay), ja Takaisin sulkee yhden kerroksen kerrallaan samalla ketjulla
+// kuin Androidin takaisin-ele (kupla, ikkuna, lista -> ruudukko, näkymä). Androidissa MainActivity hoitaa takaisin-eleen
+// itse, joten siellä historiaan ei lisätä mitään. Painikkeella tai Escillä suljettaessa merkintä poistetaan
+// (history.back), ettei seuraava Takaisin tunnu tekevän mitään.
+const OVERLAY_HISTORY = location.hostname !== "appassets.androidplatform.net";
+let overlayPops = 0;          // omat history.back()-kutsut, joiden popstate ohitetaan
+let overlayPopping = false;   // Takaisin käsittelyssä: näkymän sulkeminen ei poista merkintää uudelleen
+const afterOverlayPop = [];
+const isOverlayState = (s) => !!(s && s.satniOverlay);
+const overlayOpen = () => ["peli-view", "sanasto-view", "lause-view"].some((id) => $(id) && !$(id).hidden);
+function overlayOpened() {
+  if (OVERLAY_HISTORY && !isOverlayState(history.state)) history.pushState({ satniOverlay: true }, "");
+}
+function overlayClosed() {
+  if (!OVERLAY_HISTORY || overlayPopping || overlayOpen() || !isOverlayState(history.state)) return;
+  overlayPops++;
+  history.back();
+}
+// Historiaan lisääminen heti näkymän sulkemisen jälkeen (pelin Koti): vasta kun oma history.back() on valmis
+function whenOverlayHistoryIdle(fn) {
+  if (overlayPops > 0) afterOverlayPop.push(fn); else fn();
+}
+function onPopState(e) {
+  if (overlayPops > 0) {
+    overlayPops--;
+    e.stopImmediatePropagation();
+    if (!overlayPops) afterOverlayPop.splice(0).forEach((fn) => fn());
+    return;
+  }
+  if (OVERLAY_HISTORY && overlayOpen() && !isOverlayState(e.state)) {
+    e.stopImmediatePropagation();  // osoite ei muuttunut: ei korttia uudelleen eikä sanastojen/lauseen paluuta
+    overlayPopping = true;
+    try { closeFormPop() || (window.closeOcr && closeOcr()) || closeDrawer(); } finally { overlayPopping = false; }
+    if (overlayOpen()) history.pushState({ satniOverlay: true }, "");
+    return;
+  }
+  routeFromHash();
 }
 
 // Muut kielet valikossa: valittujen kielten käännökset näytetään sanakortissa (renderExtraTranslations)
@@ -432,6 +474,22 @@ async function loadDatabase() {
 // jälkeen (rank 6.5), joten ne eivät peitä pohjoissaamen muotoja (lea = leahkit eikä luulajansaamen lea).
 const COMMON_WORD = 50000;  // korpusfrekvenssi, jota yleisemmän sanan taivutusmuoto menee käännösten edelle
 
+// Uudemman tietokannan rakenteet (export_web_data.py 2026-11-13: nob_items, *_form_alt, paradigms.ord). Tarkistetaan
+// kerran; PWA:n välimuistissa voi vielä olla vanha tietokanta, jolloin käytetään vanhoja (hitaampia) kyselyjä.
+const dbHas = {};
+function hasTable(name) {
+  if (!(name in dbHas)) dbHas[name] = all("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", [name]).length > 0;
+  return dbHas[name];
+}
+let paradigmOrder = null;  // "p.ord" (WITHOUT ROWID -taulu) tai vanhassa tietokannassa "p.rowid"
+function paradigmOrderBy() {
+  if (paradigmOrder === null) paradigmOrder = all("PRAGMA table_info(paradigms)").some((c) => c.name === "ord") ? "p.ord" : "p.rowid";
+  return paradigmOrder;
+}
+// Käännöslistan sanat yksitellen (fin_items, nob_items): rajaa trans_search-rivit indeksillä ennen LIKE-ehtoja, jolloin
+// koko taulua (216 000 riviä) ei käydä läpi (sql.js noin 20 -> 0,2 ms). Ei pilkkua eikä jokerimerkkejä: niillä vanha tapa.
+const itemsTableFor = (lang, q) => (q && !/[,%_]/.test(q) && hasTable(`${lang}_items`) ? `${lang}_items` : null);
+
 // Ihmistä tarkoittavien substantiivien merkintä (semantics.py) on vain uudemmassa tietokannassa
 let humanColumn = null;
 function hasHumanColumn() {
@@ -465,10 +523,12 @@ function queryDatabase(query) {
   }
   // 1.5 = käänteisen sanakirjan (dict-fin-sme, dict-nob-sme) hakusana, sen ensisijainen saamennos ensin;
   // 2 = ainoa käännös, 3 = ensimmäinen käännös, 4 = jokin muu
+  const items = itemsTableFor(searchLang, q);
   for (const r of all(
     `SELECT d.${cols.split(", ").join(", d.")}, t.fold, t.lang, t.nr FROM trans_search t JOIN dictionary d ON d.id = t.word_id
-     WHERE t.lang = ? AND ${TRANS_MATCH}`,
-    [searchLang, ...transMatchParams(q)]
+     WHERE t.lang = ? ${items ? `AND t.word_id IN (SELECT word_id FROM ${items} WHERE item = ?)` : ""} AND ${TRANS_MATCH}
+     ORDER BY t.rowid`,
+    [searchLang, ...(items ? [q] : []), ...transMatchParams(q)]
   )) {
     add(r, r.nr !== null ? (r.fold === q ? 1.5 + Math.min(r.nr, 9) / 100 : 4)
       : r.fold === q ? 2 : r.fold.startsWith(`${q},`) ? 3 : 4);
@@ -494,10 +554,12 @@ function queryDatabase(query) {
   for (const { base, cell, pos } of translationFormsOf(query.trim().toLowerCase(), searchLang)) {
     const b = fold(base);
     if (b === q) continue;
+    const bItems = itemsTableFor(searchLang, b);
     for (const r of all(
       `SELECT d.${cols.split(", ").join(", d.")}, t.fold, t.nr FROM trans_search t JOIN dictionary d ON d.id = t.word_id
-       WHERE t.lang = ? AND d.pos = ? AND ${TRANS_MATCH}`,
-      [searchLang, pos, ...transMatchParams(b)]
+       WHERE t.lang = ? AND d.pos = ? ${bItems ? `AND t.word_id IN (SELECT word_id FROM ${bItems} WHERE item = ?)` : ""}
+       AND ${TRANS_MATCH} ORDER BY t.rowid`,
+      [searchLang, pos, ...(bItems ? [b] : []), ...transMatchParams(b)]
     )) {
       const rank = r.nr !== null ? (r.fold === b ? 1.5 + Math.min(r.nr, 9) / 100 : 4)
         : r.fold === b ? 2 : r.fold.startsWith(`${b},`) ? 3 : 4;
@@ -614,9 +676,21 @@ function translationFormsOf(word, lang) {
   try {
     // Erisnimet ovat taulukoissa isolla alkukirjaimella (Inari: Sg+Ine=Inarissa), haku pienillä: kokeillaan molempia
     const cap = word.charAt(0).toUpperCase() + word.slice(1);
-    for (const r of all(
-      `SELECT word, pos, forms FROM ${lang}_forms WHERE instr(forms, ?) OR instr(forms, ?)`, [word, cap]
-    )) {
+    // Muoto alkaa samoilla kahdella kirjaimella kuin perusmuoto (talossa -> talo, Inarissa -> Inari): haetaan vain
+    // perusmuodon avainväliltä eikä koko taulusta (16 Mt, 60-120 ms); poikkeukset (aika -> ajan) ovat taulussa *_form_alt
+    const rows = hasTable(`${lang}_form_alt`)
+      ? (() => {
+        const p = word.slice(0, 2).toLowerCase(), P = p.charAt(0).toUpperCase() + p.slice(1);
+        return all(
+          `SELECT word, pos, forms FROM ${lang}_forms WHERE ((word >= ? AND word < ?) OR (word >= ? AND word < ?))
+             AND (instr(forms, ?) OR instr(forms, ?))
+           UNION SELECT f.word, f.pos, f.forms FROM ${lang}_form_alt a JOIN ${lang}_forms f ON f.word = a.word AND f.pos = a.pos
+             WHERE a.form = ?`,
+          [p, p + "\uffff", P, P + "\uffff", word, cap, word.toLowerCase()]
+        );
+      })()
+      : all(`SELECT word, pos, forms FROM ${lang}_forms WHERE instr(forms, ?) OR instr(forms, ?)`, [word, cap]);
+    for (const r of rows) {
       for (const cell of r.forms.split(";")) {
         const [c, v] = cell.split("=");
         if (v.split("/").some((f) => f === word || f === cap)) out.push({ base: r.word, cell: c, pos: r.pos });
@@ -681,11 +755,14 @@ function suggestWords(prefix, withForms = true) {
      ORDER BY length(sme_lemma), sme_lemma LIMIT 8`, [q, q + "￿", q, q + "￿"]
   );
   if (rows.length < 8) {
+    // Jonkin käännöslistan sanan alku (items-taulun avainväli rajaa rivit, LIKE-ehdot ennallaan)
+    const items = itemsTableFor(settings.lang, q);
     rows.push(...all(
       `SELECT DISTINCT d.id, d.sme_lemma, d.pos, ${TRANS_COLS.split(", ").map((c) => "d." + c).join(", ")}
        FROM trans_search t JOIN dictionary d ON d.id = t.word_id
-       WHERE t.lang = ? AND (t.fold LIKE ? OR t.fold LIKE ?) ORDER BY length(d.sme_lemma) LIMIT 8`,
-      [settings.lang, `${q}%`, `%, ${q}%`]
+       WHERE t.lang = ? ${items ? `AND t.word_id IN (SELECT word_id FROM ${items} WHERE item >= ? AND item < ?)` : ""}
+       AND (t.fold LIKE ? OR t.fold LIKE ?) ORDER BY length(d.sme_lemma), d.id LIMIT 8`,
+      [settings.lang, ...(items ? [q, q + "\uffff"] : []), `${q}%`, `%, ${q}%`]
     ));
   }
   // Muut kielet -asetuksessa valitut kielet viimeisinä (espanjaksi per -> beana "perro")
@@ -786,7 +863,7 @@ function loadWord(id) {
   const paradigm = new Map();
   const grades = new Map();
   for (const r of all(
-    `SELECT t.tag, p.surface, p.grade FROM paradigms p JOIN tags t ON t.id = p.tag_id WHERE p.word_id = ? ORDER BY p.rowid`, [id]
+    `SELECT t.tag, p.surface, p.grade FROM paradigms p JOIN tags t ON t.id = p.tag_id WHERE p.word_id = ? ORDER BY ${paradigmOrderBy()}`, [id]
   )) {
     if (!paradigm.has(r.tag)) paradigm.set(r.tag, []);
     if (!paradigm.get(r.tag).includes(r.surface)) paradigm.get(r.tag).push(r.surface);
@@ -2498,7 +2575,7 @@ function applyExperimental() {
     const fi = settings.uiLang === "fi";
     $("exp-lause-row").hidden = !fi;
     $("lause-btn").hidden = !(fi && settings.exp.lause);
-    if (!(fi && settings.exp.lause)) $("lause-view").hidden = true;
+    if (!(fi && settings.exp.lause) && !$("lause-view").hidden) { $("lause-view").hidden = true; overlayClosed(); }
   }
 }
 function bindExperimental() {
@@ -2799,7 +2876,7 @@ function bindEvents() {
     renderSidebar();
   };
   $("history-more").onclick = () => { historyExpanded = true; renderSidebar(); };
-  window.addEventListener("popstate", routeFromHash);
+  window.addEventListener("popstate", onPopState);
   window.addEventListener("hashchange", routeFromHash);
   document.addEventListener("keydown", (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f" && db) { e.preventDefault(); input.focus(); input.select(); }

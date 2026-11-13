@@ -1,6 +1,6 @@
 /* Service worker: sovellus ja sanakirja toimivat ilman verkkoyhteyttä ensimmäisen käynnin jälkeen.
    Kun tiedostoja päivitetään, kasvata VERSION, jolloin selaimet hakevat uudet tiedostot. */
-const VERSION = "satni-v136";
+const VERSION = "satni-v137";
 // Sanastojen äänilistat (suomi + saame ja pelkkä saame): välimuistiin erikseen, jottei puuttuva tiedosto kaada asennusta
 const AUDIO = [
   "audio/kuukaudet.ogg", "audio/kuukaudet-sme.ogg", "audio/viikonpaivat.ogg", "audio/viikonpaivat-sme.ogg", "audio/vuodenajat.ogg", "audio/vuodenajat-sme.ogg", "audio/luvut-1.ogg", "audio/luvut-1-sme.ogg", "audio/luvut-2.ogg", "audio/luvut-2-sme.ogg", "audio/luvut-3.ogg", "audio/luvut-3-sme.ogg", "audio/jarjestysluvut-1.ogg", "audio/jarjestysluvut-1-sme.ogg", "audio/jarjestysluvut-2.ogg", "audio/jarjestysluvut-2-sme.ogg", "audio/jarjestysluvut-3.ogg", "audio/jarjestysluvut-3-sme.ogg",
@@ -18,12 +18,12 @@ const APP_SHELL = [
   "licenses/MPL-2.0.txt", "licenses/Apache-2.0.txt", "licenses/CC-BY-SA-4.0.txt", "vendor/LICENSE-sql.js.txt",
 ];
 const DATA = "data/satni-web.db.gz";
-// Sanakirjalla on oma välimuistinsa, jottei 21 Mt ladata uudelleen joka sovelluspäivityksessä.
+// Sanakirjalla on oma välimuistinsa, jottei noin 47 Mt ladata uudelleen joka sovelluspäivityksessä.
 // Kasvata numeroa, kun tietokannan sisältö tai rakenne muuttuu (v2: käännökset kielittäin, v3: käänteiset sanakirjat,
 // v5: astevaihtelun korjaus, dilli ll ~ l, v6: taivutusluokat,
 // v7: muiden saamenkielten käännöksiä lisää ja suomennosehdotukset, v8: espanja, v9: haku ilman sulkeissa olevia tarkenteita,
 // v10: Tarkoititko-hakusanat muille kielille, v11: englantia Wiktionarysta)
-const DATA_CACHE = "satni-data-v35";
+const DATA_CACHE = "satni-data-v36";  // v36: paradigms ilman rowidia, nob_items, *_form_alt, hakemistot
 
 self.addEventListener("install", (event) => {
   // cache: "reload": sovelluksen tiedostot verkosta eikä selaimen HTTP-välimuistista (muuten vanha app.js voisi jäädä);
@@ -48,7 +48,7 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET" || url.origin !== location.origin) return;
 
   if (url.pathname.endsWith(DATA)) {
-    // Sanakirja (~50 Mt): välimuistista, verkosta vain ensimmäisellä kerralla
+    // Sanakirja (~47 Mt): välimuistista, verkosta vain ensimmäisellä kerralla
     event.respondWith(caches.open(DATA_CACHE).then(async (cache) => {
       const cached = await cache.match(event.request);
       if (cached) return cached;

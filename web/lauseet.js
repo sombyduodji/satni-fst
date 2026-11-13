@@ -472,6 +472,7 @@ function openLause() {
     try { input.value = localStorage.getItem("satni-lause") || ""; } catch (e) { /* yksityinen tila */ }
   }
   $("lause-view").hidden = false;
+  overlayOpened();  // verkkoversion Takaisin sulkee lauseen (app.js)
   if (input.value !== lause.parsedText || !lause.tokens.length) lause.tokens = lauseParseRestoring(input.value);
   renderLause();
   // Valmiin lauseen kohdalla ei avata näppäimistöä sanojen päälle
@@ -483,7 +484,7 @@ function closeLause() {
   if ($("lause-view").hidden) return false;
   if (!$("lause-card").hidden) $("lause-card").hidden = true;
   else if (!$("lause-pop").hidden) lauseClosePop();
-  else $("lause-view").hidden = true;
+  else { $("lause-view").hidden = true; overlayClosed(); }
   return true;
 }
 
@@ -643,7 +644,7 @@ let lauseReturnHash = null;  // lauseesta avatun sanakortin osoite: takaisin-ele
 function bindLause() {
   if (!$("lause-view")) return;
   $("lause-btn").onclick = openLause;
-  $("lause-close").onclick = () => { $("lause-view").hidden = true; };
+  $("lause-close").onclick = () => { $("lause-view").hidden = true; overlayClosed(); };
   const closeOcrBase = window.closeOcr;
   window.closeOcr = () => closeLause() || (closeOcrBase ? closeOcrBase() : false);
   const backToOcrBase = window.backToOcr;

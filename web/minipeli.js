@@ -571,6 +571,7 @@ async function peliSayWord(word, btn) {
 function openPeli() {
   stopTts();
   $("peli-view").hidden = false;
+  overlayOpened();  // verkkoversion Takaisin sulkee pelin (app.js)
   loadPeli().then(() => {
     if (!peliRun) peliRun = peliStore.get("satni-peli-run", null);
     // Inarinsaamen keskeneräinen peli vain, jos inarinsaame on yhä käytössä asetuksissa
@@ -578,7 +579,7 @@ function openPeli() {
     else { peliRun = null; renderPeliMenu(); }
   }).catch(() => { $("peli-body").textContent = t("loadFailed", "minipeli.json"); });
 }
-function hidePeli() { peliStopAudio(); $("peli-view").hidden = true; }
+function hidePeli() { peliStopAudio(); const was = !$("peli-view").hidden; $("peli-view").hidden = true; if (was) overlayClosed(); }
 // Takaisin-ele: ensin pelistä valikkoon (peli jää jatkettavaksi), sitten näkymä kiinni
 function closePeli() {
   if ($("peli-view").hidden) return false;
@@ -690,7 +691,10 @@ function bindPeli() {
       renderPeliWrite();
       document.querySelector(".pw-in").value = v;
     } else if (act === "tip-close") { peliStore.set("satni-peli-kbdtip", true); e.target.closest(".pw-tip")?.remove(); }
-    else if (act === "home") { hidePeli(); if (location.hash) { history.pushState(null, "", location.pathname + location.search); routeFromHash(); } }
+    else if (act === "home") {
+      hidePeli();
+      whenOverlayHistoryIdle(() => { if (location.hash) { history.pushState(null, "", location.pathname + location.search); routeFromHash(); } });
+    }
   });
   $("peli-body").addEventListener("submit", (e) => { e.preventDefault(); peliSubmit(); });
   // Kirjainrivin napautus ei saa viedä kohdistusta kentästä (puhelimen näppäimistö pysyy auki)

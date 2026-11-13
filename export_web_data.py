@@ -161,7 +161,10 @@ def main():
         CREATE TABLE trans_bare (lang TEXT, bare TEXT, term TEXT);
         -- Taivutustagit (Ind+Prs+Sg1 ...) numeroina: sama merkkijono toistuisi muuten lähes miljoona kertaa
         CREATE TABLE tags (id INTEGER PRIMARY KEY, tag TEXT);
-        CREATE TABLE paradigms (word_id INTEGER, tag_id INTEGER, surface TEXT, grade TEXT);
+        -- WITHOUT ROWID ja avain (word_id, ord): sanan muodot ovat peräkkäin, eikä word_id-indeksiä tarvita
+        -- (17 Mt pienempi, pakattuna noin 4,5 Mt); ord = muotojen järjestys taulukossa (ennen rowid)
+        CREATE TABLE paradigms (word_id INTEGER, ord INTEGER, tag_id INTEGER, surface TEXT, grade TEXT,
+                                PRIMARY KEY (word_id, ord)) WITHOUT ROWID;
         CREATE TABLE meanings (word_id INTEGER, lang TEXT, nr INTEGER, translations TEXT, explanations TEXT,
                                restrictions TEXT, labels TEXT, geo TEXT);
         CREATE TABLE examples (word_id INTEGER, lang TEXT, meaning_nr INTEGER, sme TEXT, translation TEXT,
@@ -181,6 +184,12 @@ def main():
         -- Suomen käännöslistan sanat yksitellen (trans_search.fold pilkuista jaettuna): lausekääntäjän haku indeksillä
         -- LIKE '%, sana'-haun sijaan (17 ms -> 0,01 ms hakua kohden); first = 0, kun sana on listan ensimmäinen
         CREATE TABLE fin_items (item TEXT, word_id INTEGER, first INTEGER, nr INTEGER, PRIMARY KEY (item, word_id)) WITHOUT ROWID;
+        -- Sama norjalle: haku rajaa trans_search-rivit näiden avulla eikä käy kaikkia läpi (13 ms -> 0,1 ms)
+        CREATE TABLE nob_items (item TEXT, word_id INTEGER, first INTEGER, nr INTEGER, PRIMARY KEY (item, word_id)) WITHOUT ROWID;
+        -- Käännöksen taivutusmuodot, joiden kaksi ensimmäistä kirjainta eroavat perusmuodosta (aika -> ajan, bok -> bøker):
+        -- muuten muoto haetaan perusmuodon alkukirjainten avainvälistä (translationFormsOf)
+        CREATE TABLE fin_form_alt (form TEXT, word TEXT, pos TEXT, PRIMARY KEY (form, word, pos)) WITHOUT ROWID;
+        CREATE TABLE nob_form_alt (form TEXT, word TEXT, pos TEXT, PRIMARY KEY (form, word, pos)) WITHOUT ROWID;
         -- Koltansaame (kokeellinen, skolt_data.py): suomen/norjan sanan vahvimmat koltan vastineet ("a, b, c")
         CREATE TABLE sms (lang TEXT, fold TEXT, pos TEXT, words TEXT, PRIMARY KEY (lang, fold, pos)) WITHOUT ROWID;
         -- Apertium (kokeellinen, apertium_data.py): norjan käännös sanoille, joilla sitä ei muuten ole
@@ -226,14 +235,18 @@ def main():
         if bare:
             search_rows.append((w, lang, fold(bare), nr))
     dst.executemany("INSERT INTO trans_search VALUES (?, ?, ?, ?)", search_rows)
-    items = {}
-    for r in search_rows:
-        if r[1] != "fin":
-            continue
-        for k, item in enumerate(r[2].split(", ")):
-            first, nr = items.get((item, r[0]), (1, None))
-            items[(item, r[0])] = (min(first, 0 if k == 0 else 1), r[3] if nr is None else nr if r[3] is None else min(nr, r[3]))
-    dst.executemany("INSERT INTO fin_items VALUES (?, ?, ?, ?)", ((i, w, f, n) for (i, w), (f, n) in items.items()))
+    # Pilkulla jaettuna ja välit pois (myös "ominainen,," -> ominainen), jotta jokainen trans_search-osuma löytyy
+    for items_lang in ("fin", "nob"):
+        items = {}
+        for r in search_rows:
+            if r[1] != items_lang:
+                continue
+            for k, item in enumerate(x.strip() for x in r[2].split(",")):
+                if not item:
+                    continue
+                first, nr = items.get((item, r[0]), (1, None))
+                items[(item, r[0])] = (min(first, 0 if k == 0 else 1), r[3] if nr is None else nr if r[3] is None else min(nr, r[3]))
+        dst.executemany(f"INSERT INTO {items_lang}_items VALUES (?, ?, ?, ?)", ((i, w, f, n) for (i, w), (f, n) in items.items()))
     bare_rows = {(lang, without_letters(term), term) for _, lang, text, _ in search_rows if lang not in ("fin", "nob")
                  for term in text.split(", ") if term and without_letters(term) != term}
     dst.executemany("INSERT INTO trans_bare VALUES (?, ?, ?)", sorted(bare_rows))
@@ -244,9 +257,9 @@ def main():
         tag_ids[tag] = len(tag_ids) + 1
     dst.executemany("INSERT INTO tags VALUES (?, ?)", [(i, t) for t, i in tag_ids.items()])
     dst.executemany(
-        "INSERT INTO paradigms VALUES (?,?,?,?)",
-        ((w, tag_ids[t], s, g) for w, t, s, g in
-         src.execute("SELECT word_id, tag, surface, grade FROM paradigms ORDER BY word_id, rowid"))
+        "INSERT INTO paradigms VALUES (?,?,?,?,?)",
+        ((w, ord_, tag_ids[t], s, g) for ord_, (w, t, s, g) in
+         enumerate(src.execute("SELECT word_id, tag, surface, grade FROM paradigms ORDER BY word_id, rowid")))
     )
     dst.executemany("INSERT INTO meanings VALUES (?,?,?,?,?,?,?,?)", src.execute(
         "SELECT word_id, lang, nr, translations, explanations, restrictions, labels, geo FROM meanings "
@@ -291,10 +304,23 @@ def main():
     dst.executemany("INSERT INTO pivot_fin VALUES (?,?,?)", pivot_rows)
     print(f"Suomennosehdotukset: {len(pivot_rows)} riviä" if pivot_rows else "Suomennosehdotukset: dict-smn-fin puuttuu (hae_sanakirjat.sh)")
 
+    # Taivutusmuodot, jotka eivät ala perusmuodon kahdella ensimmäisellä kirjaimella (pienillä tai isolla alkukirjaimella)
+    for forms_lang in ("fin", "nob"):
+        alt = set()
+        for word, pos, forms in dst.execute(f"SELECT word, pos, forms FROM {forms_lang}_forms").fetchall():
+            for cell in forms.split(";"):
+                for form in cell.split("=", 1)[1].split("/") if "=" in cell else []:
+                    pre = form[:2].lower()
+                    if form and word[:2] not in (pre, pre[:1].upper() + pre[1:]):
+                        alt.add((form.lower(), word, pos))
+        dst.executemany(f"INSERT INTO {forms_lang}_form_alt VALUES (?, ?, ?)", alt)
+        print(f"{forms_lang}_form_alt: {len(alt)} muotoa")
+
     dst.executescript("""
         CREATE INDEX idx_lemma_fold ON dictionary(lemma_fold);
+        CREATE INDEX idx_sme_lemma ON dictionary(sme_lemma);
+        CREATE INDEX idx_trans_search_word ON trans_search(word_id);
         CREATE INDEX idx_variant_fold ON dictionary(variant_fold);
-        CREATE INDEX idx_paradigms_word ON paradigms(word_id);
         CREATE INDEX idx_paradigms_surface ON paradigms(surface);
         CREATE INDEX idx_meanings_word ON meanings(word_id);
         CREATE INDEX idx_trans_bare ON trans_bare(bare);

@@ -58,6 +58,7 @@ async function loadSanastot() {
 function openSanastot() {
   stopTts();  // sanakortin ääntämys ei jatku sanastojen päällä
   $("sanasto-view").hidden = false;
+  overlayOpened();  // verkkoversion Takaisin sulkee sanastot (app.js)
   loadSanastot().then(() => (sanastoAuki ? renderSanasto(sanastoAuki) : renderSanastoGrid()))
     .catch(() => { $("sanasto-body").textContent = t("loadFailed", "sanastot.json"); });
 }
@@ -75,7 +76,9 @@ function closeSanastot() {
 // aloitussivulla, jottei sulkeminen näytä vanhaa korttia.
 function hideSanastot() {
   sanastoStopAudio();
+  const was = !$("sanasto-view").hidden;
   $("sanasto-view").hidden = true;
+  if (was) overlayClosed();
   const card = sanastoCardHash;
   sanastoCardHash = null;
   if (card && location.hash === card) {
