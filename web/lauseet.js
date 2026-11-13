@@ -146,7 +146,8 @@ function lauseSuggestions(word) {
 // Lause sanoiksi ja välimerkeiksi; jokaiselle sanalle tulkinta ja saamen ehdokkaat
 function lauseParse(text) {
   const tokens = [];
-  for (const m of text.matchAll(/\d+(?:[.,:]\d+)*|[\p{L}-]+|[^\s\p{L}\d]+/gu)) {
+  // cleanQuery (app.js): NFC, jottei PDF:stä liitetty ä (a + yhdistävä merkki) katkaise sanaa kahtia
+  for (const m of cleanQuery(text).matchAll(/\d+(?:[.,:]\d+)*|[\p{L}-]+|[^\s\p{L}\d]+/gu)) {
     const raw = m[0];
     // Numero sellaisenaan (200, 7,5, 12.30); arvo luvun jälkeisen sanan muotoa varten
     if (/^\d/.test(raw)) { tokens.push({ raw, word: raw, num: true, value: parseFloat(raw.replace(",", ".")), known: true }); continue; }
