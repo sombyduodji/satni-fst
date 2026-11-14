@@ -222,11 +222,22 @@ const afterOverlayPop = [];
 const overlayLayerFns = [];   // näkymäkohtaiset kerrokset (sanastot.js, minipeli.js, lauseet.js)
 const isOverlayState = (s) => !!(s && s.satniOverlay);
 const overlayDepth = (s) => (isOverlayState(s) ? s.satniDepth || 1 : 0);
-const overlayOpen = () => ["peli-view", "sanasto-view", "lause-view", "settings-view"].some((id) => $(id) && !$(id).hidden);
+const overlayViewOpen = () => ["peli-view", "sanasto-view", "lause-view", "settings-view"].some((id) => $(id) && !$(id).hidden);
+// Myös valikko (drawer) ja aloitussivun ikkunat (Tietoa, palaute, tuki) ovat kerroksia: ilman omaa merkintää Takaisin
+// valikon ollessa auki poistui Chromessa sovelluksesta (yötesti 2026-11-15)
+const drawerOpen = () => document.body.classList.contains("sidebar-open");
+const overlayOpen = () => overlayViewOpen() || drawerOpen() || !!document.querySelector("dialog[open]");
 function overlayLayers() {
   if (!overlayOpen()) return 0;
-  return 1 + overlayLayerFns.reduce((n, f) => n + f(), 0) + (formPopTarget ? 1 : 0) +
-    (document.querySelector("dialog[open]") ? 1 : 0);
+  return (overlayViewOpen() ? 1 : 0) + overlayLayerFns.reduce((n, f) => n + f(), 0) + (formPopTarget ? 1 : 0) +
+    (document.querySelector("dialog[open]") ? 1 : 0) + (drawerOpen() ? 1 : 0);
+}
+// Päällimmäinen avoin ikkuna kiinni (Takaisin verkkoversiossa)
+function closeTopDialog() {
+  const open = [...document.querySelectorAll("dialog[open]")];
+  if (!open.length) return false;
+  open[open.length - 1].close();
+  return true;
 }
 // Historia vastaamaan avoimia kerroksia: enintään yksi uusi merkintä elettä kohden (jokainen kerros avataan omalla
 // napautuksellaan); suljetut kerrokset poistetaan historiasta. trimOnly: vain poisto (Takaisin-käsittelyn jälkeen,
@@ -263,7 +274,7 @@ function onPopState(e) {
     try {
       // Yleensä yksi kerros; useampi, jos merkintöjä on vähemmän kuin kerroksia (esim. kaksi kerrosta yhdellä eleellä)
       for (let i = 0; i < 8 && overlayLayers() > overlayDepth(e.state); i++) {
-        if (!(closeFormPop() || (window.closeOcr && closeOcr()) || closeDrawer())) break;
+        if (!(closeTopDialog() || closeFormPop() || (window.closeOcr && closeOcr()) || closeDrawer())) break;
       }
     } finally { overlayPopping = false; }
     syncOverlayHistory(true);  // ei koskaan uutta merkintää tässä (Chromen historiainterventio), vain ylimääräisten poisto
