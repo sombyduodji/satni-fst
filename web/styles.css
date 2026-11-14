@@ -313,7 +313,7 @@ html.view-open { overflow: hidden; }
 .suggestions li .sugg-form { color: var(--muted); }
 /* Tarkoititko-ehdotus hakukentän listassa (app.js: suggestWords) */
 .suggestions li.sugg-dym .sugg-dym-label { color: var(--muted); font-size: 13px; }
-.suggestions li.sugg-dym b { color: var(--accent); }
+/* Tarkoititko-rivit ovat tavallisia rivejä otsikon alla (ennen: sininen sana samalla rivillä kuin "Tarkoititko") */
 .suggestions li .pos { color: var(--muted); font-size: 12px; }
 .suggestions li .trans { color: var(--muted); font-size: 13px; margin-left: auto; text-align: right; }
 .suggestions li.active, .suggestions li:hover { background: var(--select); }

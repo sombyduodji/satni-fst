@@ -843,7 +843,7 @@ function suggestWords(prefix, withForms = true) {
   const forms = withForms ? formSuggestions(prefix, searched) : [];
   const dym = searched
     ? [...(typed.includes(" ") ? [] : didYouMean(typed, searched)), ...extraDidYouMean(typed, searched)].slice(0, 2)
-        .map((d) => ({ id: d.id, sme_lemma: d.lemma, pos: "", form: d.word, dym: d })) : [];
+        .map((d) => ({ id: d.id, sme_lemma: d.lemma, pos: d.pos || "", form: d.word, dym: d })) : [];
   // Oma tyhjä hakusana (mus, munnje ilman suomennosta) on turha, kun perusmuoto (mun) näkyy
   const useful = forms.length ? rows.filter((r) => fold(r.sme_lemma) !== q || r[col]) : rows;
   // Sama sana vain kerran tunnisteen mukaan, ei perusmuodon ja sanaluokan: mii = me ja mii = mikä ovat eri sanoja.
@@ -1072,7 +1072,7 @@ function didYouMean(query, results) {
     if (!best.has(word) || (r.freq || 0) > (best.get(word).freq || 0)) best.set(word, r);
   }
   return [...best.entries()].sort((a, b) => (b[1].freq || 0) - (a[1].freq || 0)).slice(0, 2)
-    .map(([word, r]) => ({ word, id: r.id, lemma: r.sme_lemma, trans: splitList(r.tr)[0] }));
+    .map(([word, r]) => ({ word, id: r.id, lemma: r.sme_lemma, pos: r.pos, trans: splitList(r.tr)[0] }));
 }
 // "Tarkoititko" Muut kielet -asetuksessa valituille kielille: sama hakusana erikoiskirjaimin ja tarkkein (arbol -> árbol,
 // vyevdi -> vyevdi, cuvgat -> čuvgat). Hakusanat ilman erikoiskirjaimia ovat taulussa trans_bare (export_web_data.py).
@@ -1104,12 +1104,12 @@ function extraDidYouMean(query, results) {
   const out = [];
   for (const { lang, term } of terms) {
     const r = all(
-      `SELECT d.id, d.sme_lemma, d.freq, d.${col} AS tr, d.${LANGUAGES[lang].col} AS own FROM trans_search t
+      `SELECT d.id, d.sme_lemma, d.pos, d.freq, d.${col} AS tr, d.${LANGUAGES[lang].col} AS own FROM trans_search t
        JOIN dictionary d ON d.id = t.word_id WHERE t.lang = ? AND (t.fold = ? OR t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\')
        ORDER BY d.freq DESC LIMIT 1`, [lang, term, `${likeEsc(term)},%`, `%, ${likeEsc(term)},%`, `%, ${likeEsc(term)}`])[0];
     if (!r || (sami.length && (r.freq || 0) < Math.max(1000, current * SUGGEST_FACTOR))) continue;
     const word = splitList(r.own).find((x) => fold(x) === term) || term;  // alkuperäinen kirjoitusasu (æ, ø)
-    out.push({ word, id: r.id, lemma: r.sme_lemma, trans: splitList(r.tr)[0], lang, freq: r.freq || 0 });
+    out.push({ word, id: r.id, lemma: r.sme_lemma, pos: r.pos, trans: splitList(r.tr)[0], lang, freq: r.freq || 0 });
   }
   return out.sort((a, b) => b.freq - a.freq).slice(0, 2);
 }
@@ -2115,17 +2115,21 @@ function updateSuggestions(withForms = true) {
     list.hidden = true;  // ei hideSuggestions: odottava muotohaku saa vielä tuoda ehdotuksia (munnje, kolmelle)
     return;
   }
-  // Erikoiskirjaimitta löytyneiden yllä otsikko "Tarkoititko oažž…" (ellei yksittäistä Tarkoititko-riviä ole)
-  const firstPlain = suggestions.some((s) => s.dym) ? -1 : suggestions.findIndex((s) => s.plainMatch);
+  // "Tarkoititko:" omana otsikkorivinään, ehdotetut sanat sen alla tavallisina riveinä (sana, sanaluokka, käännös);
+  // pelkkien erikoiskirjaimitta löytyneiden yllä otsikossa myös kirjoitetun alku erikoiskirjaimin (oažž…)
+  const anyDym = suggestions.some((s) => s.dym);
+  const firstPlain = suggestions.findIndex((s) => s.dym || s.plainMatch);
   const plainHead = firstPlain < 0 ? "" : (() => {
+    if (anyDym) return `<li class="sugg-head" aria-hidden="true">${esc(t("didYouMean"))}</li>`;
     const lemma = suggestions[firstPlain].sme_lemma, stem = lemma.slice(0, [...value].length);
     return `<li class="sugg-head" aria-hidden="true">${esc(t("didYouMean"))} <b>${esc(stem)}${stem.length < lemma.length ? "…" : ""}</b></li>`;
   })();
   // "Haetaan muotoja…" listan loppuun, ettei se työnnä Tarkoititko-riviä alas
   list.innerHTML = suggestions.map((s, i) => (i === firstPlain ? plainHead : "") + (s.recent ?
     `<li role="option" data-i="${i}" class="sugg-recent"><span class="sugg-recent-ico" aria-hidden="true">${s.fav ? "★" : "🕘"}</span><b>${esc(s.recent)}</b></li>` : s.dym ?
-    `<li role="option" data-i="${i}" class="sugg-dym"><span class="sugg-dym-label">${esc(t("didYouMean"))}</span> <b>${esc(s.dym.word)}</b>` +
-    `${s.dym.word === s.dym.lemma ? "" : ` → ${esc(s.dym.lemma)}`}<span class="trans">${esc(s.dym.trans || "")}${s.dym.lang ? ` · ${esc(t("langName")[s.dym.lang])}` : ""}</span></li>` :
+    `<li role="option" data-i="${i}" class="sugg-dym"><b>${esc(s.dym.lemma)}</b>` +
+    `${s.dym.word === s.dym.lemma ? "" : `<i class="sugg-form">${esc(s.dym.word)}</i>`}<span class="pos">${esc(s.dym.pos || "")}</span>` +
+    `<span class="trans">${esc(s.dym.trans || "")}${s.dym.lang ? ` · ${esc(t("langName")[s.dym.lang])}` : ""}</span></li>` :
     `<li role="option" data-i="${i}"><b>${esc(s.sme_lemma)}</b>${s.smeForm ? `<i class="sugg-form">${esc(s.smeForm)}</i>` : ""}` +
     `<span class="pos">${esc(s.pos)}</span><span class="trans">${s.form ? esc(s.formNote) : resultTransHtml(s, 2)}</span></li>`)).join("") +
     (pending ? `<li class="sugg-loading" role="status"><span class="sugg-ring"></span>${esc(t("searchingForms"))}</li>` : "");
