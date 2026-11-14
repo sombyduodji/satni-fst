@@ -280,10 +280,12 @@ function onPopState(e) {
 // Koltansaame eteläsaamen jälkeen omana kytkimenään: merkintä "tarkistamaton", ja päällä ollessa sen alla valinta
 // pohjoissaamen sanakorteille (suomennoksen kautta)
 function renderExtraLangs() {
-  const row = (l) => `<label class="switch-row"><span>${esc(capitalize(langName(l)))}</span>` +
+  // Kielen nimen alla käännösten lähde (Asetukset → Käännöskielet)
+  const src = (l) => (t("langSource") || {})[l] ? `<span class="muted small">${esc(t("langSource")[l])}</span>` : "";
+  const row = (l) => `<label class="switch-row"><span class="switch-text"><span>${esc(capitalize(langName(l)))}</span>${src(l)}</span>` +
     `<input type="checkbox" class="switch" role="switch" value="${l}"${settings.extraLangs.includes(l) ? " checked" : ""}></label>`;
-  const skolt = `<label class="switch-row"><span>${esc(capitalize(langName("sms")))}` +
-    `<span class="unchecked-badge">${esc(t("smsUnchecked"))}</span></span>` +
+  const skolt = `<label class="switch-row"><span class="switch-text"><span>${esc(capitalize(langName("sms")))}` +
+    `<span class="unchecked-badge">${esc(t("smsUnchecked"))}</span></span>${src("sms")}</span>` +
     `<input type="checkbox" class="switch" role="switch" data-skolt="on"${settings.skolt ? " checked" : ""}></label>` +
     (settings.skolt ? `<label class="skolt-sub"><input type="checkbox" data-skolt="via"${settings.skoltViaSme ? " checked" : ""}>` +
       `<span>${esc(t("skoltViaShort"))}</span></label>` : "");
@@ -2188,7 +2190,7 @@ function applyTextSize() {
 // muut kielet, minipeli, kokeilut, historia) ovat samoilla id:illä kuin ennen valikossa, joten niiden käsittelijät
 // ovat ennallaan. Takaisin, Esc ja Androidin takaisin-ele: alasivulta pääsivulle, sitten kiinni (verkossa oma
 // historiamerkintä kummallekin, overlayLayerFns).
-const SETTINGS_PAGES = { look: "setLook", card: "setCard", langs: "setLangs", topbar: "setTopbar", exp: "experimental", history: "setHistory" };
+const SETTINGS_PAGES = { look: "setLook", card: "setCard", langs: "setLangs", tools: "setTools", exp: "experimental", history: "setHistory" };
 const EXP_KEYS = ["ocr", "lause", "tableTr", "apertium", "pivotFin"];
 let settingsPage = "main";
 function showSettingsPage(page) {
@@ -2229,19 +2231,13 @@ function renderSettingsSummary() {
   const langs = [...settings.extraLangs.map((l) => capitalize(langName(l))), ...(settings.skolt ? [capitalize(langName("sms"))] : [])];
   set("sum-langs", langs.length ? langs.join(", ") : t("sumNone"));
   const fi = settings.uiLang === "fi";
-  const bar = [settings.game ? t("minipeli") : "", settings.exp.ocr && window.SatniOcr ? t("expOcr") : "",
-    settings.exp.lause && fi ? t("lauseTitle") : ""].filter(Boolean);
-  set("sum-topbar", bar.length ? bar.join(", ") : t("sumOff"));
-  const on = EXP_KEYS.filter((k) => settings.exp[k] && (k !== "ocr" || window.SatniOcr) && (k !== "lause" || fi)).length + (settings.gameSmn ? 1 : 0);
-  set("sum-exp", t("sumExp", on));
+  const tools = [settings.game ? t("minipeli") : "", t("sanastot"), settings.exp.ocr && window.SatniOcr ? t("expOcr") : "",
+    settings.exp.lause && fi ? t("lauseTitle") : "", settings.gameSmn ? capitalize(langName("smn")) : ""].filter(Boolean);
+  set("sum-tools", tools.join(", "));
+  set("sum-exp", t("sumExp", ["tableTr", fi ? "pivotFin" : "apertium"].filter((k) => settings.exp[k]).length));
   set("sum-history", t("sumHistory", settings.history.length));
   set("sum-clear", t("sumHistory", settings.history.length));
   set("sum-about", $("about-version").textContent);
-  // Uudet työkalut -ryhmä piiloon, jos siinä ei ole näkyviä rivejä (verkossa ei valokuvahakua, norjaksi ei lausekääntäjää)
-  const tools = $("exp-lause-row").closest(".set-card");
-  const anyTool = [...tools.querySelectorAll(".switch-row")].some((r) => !r.hidden);
-  tools.hidden = !anyTool;
-  tools.previousElementSibling.hidden = !anyTool;
   for (const b of document.querySelectorAll("#theme-seg [data-theme-opt]")) b.setAttribute("aria-checked", b.dataset.themeOpt === settings.theme);
   for (const b of document.querySelectorAll("#textsize-seg [data-size]")) b.setAttribute("aria-checked", b.dataset.size === String(settings.textSize));
 }
@@ -2808,6 +2804,9 @@ function applyExperimental() {
   if ($("lause-btn")) {
     const fi = settings.uiLang === "fi";
     $("exp-lause-row").hidden = !fi;
+    // Suomennosehdotukset vain suomeksi ja Apertiumin norjannokset vain norjaksi (muuten ne eivät vaikuta mihinkään)
+    $("exp-pivotfin-row").hidden = !fi;
+    $("exp-apertium-row").hidden = fi;
     $("lause-btn").hidden = !(fi && settings.exp.lause);
     if (!(fi && settings.exp.lause) && !$("lause-view").hidden) { $("lause-view").hidden = true; overlayClosed(); }
   }
@@ -2822,7 +2821,8 @@ function bindExperimental() {
     if (name === "apertium" && state.results.length) searchAgainKeepingWord();
     if (name === "pivotFin" && state.results.length) searchAgainKeepingWord();
   };
-  $("experimental-section").addEventListener("change", (e) => {
+  // Kokeelliset kytkimet ovat kahdella asetussivulla (Työkalut: valokuvahaku ja lausekääntäjä; Kokeelliset käännökset)
+  $("settings-view").addEventListener("change", (e) => {
     const name = e.target.dataset.exp;
     if (!name) return;
     if (!e.target.checked) { set(name, false); return; }
@@ -3115,7 +3115,7 @@ function bindEvents() {
   // käännä saamen sanoja suomen tai norjan mukana (käyttöliittymä saa yhä kääntyä). Merkitään keskitetysti valitsimilla,
   // myös myöhemmin piirretty sisältö (MutationObserver), ettei jokaista mallia tarvitse muistaa erikseen.
   const SAMI_SEL = '#lemma, #lause-sme, #sme-def, #welcome-title, #today, .r-lemma, .form, .sme, .sw, .b-word, .lcard-lemma, ' +
-    '.lc-sme, .lc-base, .cv-sme, #lause-pop b, #suggestions li > b, .sugg-form, [lang="se"]';
+    '.lc-sme, .lc-base, .cv-sme, #lause-pop b, #suggestions li > b, .sugg-form, #examples button:not(.random), .st-prev, [lang="se"], [lang="smn"]';
   const markSami = (root) => {
     for (const el of [...(root.matches(SAMI_SEL) ? [root] : []), ...root.querySelectorAll(SAMI_SEL)]) {
       if (el.getAttribute("translate") !== "no") { el.setAttribute("translate", "no"); if (!el.lang) el.lang = "se"; }

@@ -309,7 +309,7 @@
 <button type="button" class="set-nav" data-go="look"><span class="set-ico" aria-hidden="true">🌐</span><span class="set-txt"><b data-i18n="setLook"></b><small id="sum-look"></small></span><span class="chev" aria-hidden="true">›</span></button>
 <button type="button" class="set-nav" data-go="card"><span class="set-ico" aria-hidden="true">📖</span><span class="set-txt"><b data-i18n="setCard"></b><small id="sum-card"></small></span><span class="chev" aria-hidden="true">›</span></button>
 <button type="button" class="set-nav" data-go="langs"><span class="set-ico" aria-hidden="true">🗣️</span><span class="set-txt"><b data-i18n="setLangs"></b><small id="sum-langs"></small></span><span class="chev" aria-hidden="true">›</span></button>
-<button type="button" class="set-nav" data-go="topbar"><span class="set-ico" aria-hidden="true">🎮</span><span class="set-txt"><b data-i18n="setTopbar"></b><small id="sum-topbar"></small></span><span class="chev" aria-hidden="true">›</span></button>
+<button type="button" class="set-nav" data-go="tools"><span class="set-ico" aria-hidden="true">🧰</span><span class="set-txt"><b data-i18n="setTools"></b><small id="sum-tools"></small></span><span class="chev" aria-hidden="true">›</span></button>
         </div>
         <h3 class="set-h" data-i18n="setMore">Lisää</h3>
         <div class="set-card">
@@ -377,54 +377,56 @@
           <div id="extra-langs" class="extra-langs"></div>
         </div>
       </div>
-      <div class="set-page" data-page="topbar" hidden>
+      <!-- Työkalut: yläpalkin painikkeet. Kokeilussa olevat työkalut BETA-merkinnällä (päälle kytkettäessä hyväksyntäikkuna,
+           app.js: bindExperimental); valmistuessaan merkintä poistetaan eikä mitään tarvitse siirtää. -->
+      <div class="set-page" data-page="tools" hidden>
+        <p class="set-intro" data-i18n="toolsIntro"></p>
         <div class="set-card">
-          <label class="switch-row" id="game-option"><span data-i18n="gameButton">Minipeli yläpalkissa</span>
-            <input type="checkbox" class="switch" role="switch" id="game-toggle" checked></label>
-        </div>
-        <p class="set-note set-intro" data-i18n="topbarNote"></p>
-      </div>
-      <div class="set-page" data-page="exp" hidden>
-        <p class="set-beta-note" data-i18n="experimentalHint"></p>
-        <section id="experimental-section" class="experimental">
-          <h3 class="set-h" data-i18n="expTools">Uudet työkalut</h3>
-          <div class="set-card">
           <div class="toggle-list">
+            <label class="switch-row" id="game-option"><span class="switch-text"><span class="set-title"><span data-i18n="minipeli">Minipeli</span></span>
+              <span class="muted small" data-i18n="toolGameDesc"></span></span>
+              <input type="checkbox" class="switch" role="switch" id="game-toggle" checked></label>
+            <div class="switch-row tool-fixed"><span class="switch-text"><span class="set-title"><span data-i18n="sanastot">Sanastot</span></span>
+              <span class="muted small" data-i18n="toolWordlistsDesc"></span></span><span class="tool-always" data-i18n="toolAlways">Aina</span></div>
             <label class="switch-row" id="exp-ocr-row" hidden>
-              <span class="switch-text"><span data-i18n="expOcr">Valokuvahaku</span>
+              <span class="switch-text"><span class="set-title"><span data-i18n="expOcr">Valokuvahaku</span><span class="beta-tag">BETA</span></span>
                 <span class="muted small" data-i18n="expOcrDesc"></span></span>
               <input type="checkbox" class="switch" role="switch" data-exp="ocr">
             </label>
             <label class="switch-row" id="exp-lause-row">
-              <span class="switch-text"><span data-i18n="lauseTitle">Lausekääntäjä</span>
+              <span class="switch-text"><span class="set-title"><span data-i18n="lauseTitle">Lausekääntäjä</span><span class="beta-tag">BETA</span></span>
                 <span class="muted small" data-i18n="expLauseDesc"></span></span>
               <input type="checkbox" class="switch" role="switch" data-exp="lause">
             </label>
+            <label class="switch-row" id="game-smn-option"><span class="switch-text"><span class="set-title"><span data-i18n="gameSmn">Inarinsaame minipelissä ja sanastoissa</span><span class="beta-tag">BETA</span></span>
+              <span class="muted small" data-i18n="toolSmnDesc"></span></span>
+              <input type="checkbox" class="switch" role="switch" id="game-smn-toggle"></label>
           </div>
-          </div>
-          <h3 class="set-h" data-i18n="expMore">Lisää käännöksiä</h3>
+        </div>
+        <p class="setting-note" id="game-smn-note" data-i18n="gameSmnNote"></p>
+      </div>
+      <div class="set-page" data-page="exp" hidden>
+        <p class="set-beta-note" data-i18n="experimentalHint"></p>
+        <section id="experimental-section" class="experimental">
           <div class="set-card">
           <div class="toggle-list">
             <label class="switch-row">
-              <span class="switch-text"><span data-i18n="expTableTr">Konekäännökset taulukossa</span>
+              <span class="switch-text"><span data-i18n="expTableTr">Taivutusmuotojen käännökset</span>
                 <span class="muted small" data-i18n="expTableTrDesc"></span></span>
               <input type="checkbox" class="switch" role="switch" data-exp="tableTr">
             </label>
-            <label class="switch-row">
-              <span class="switch-text"><span data-i18n="expApertium">Apertium-käännökset</span>
+            <label class="switch-row" id="exp-apertium-row">
+              <span class="switch-text"><span data-i18n="expApertium">Norjannokset konekäännöksenä</span>
                 <span class="muted small" data-i18n="expApertiumDesc"></span></span>
               <input type="checkbox" class="switch" role="switch" data-exp="apertium">
             </label>
-            <label class="switch-row">
+            <label class="switch-row" id="exp-pivotfin-row">
               <span class="switch-text"><span data-i18n="expPivotFin">Suomennosehdotukset</span>
                 <span class="muted small" data-i18n="expPivotFinDesc"></span></span>
               <input type="checkbox" class="switch" role="switch" data-exp="pivotFin">
             </label>
           </div>
-            <label class="switch-row" id="game-smn-option"><span data-i18n="gameSmn">Inarinsaame minipelissä ja sanastoissa (kokeellinen)</span>
-            <input type="checkbox" class="switch" role="switch" id="game-smn-toggle"></label>
           </div>
-          <p class="setting-note" id="game-smn-note" data-i18n="gameSmnNote"></p>
         </section>
       </div>
       <div class="set-page" data-page="history" hidden>

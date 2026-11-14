@@ -124,7 +124,7 @@ function renderSanastoGrid() {
   const words = all.reduce((n, l) => n + l.rows.length, 0);
   const tile = (l, color) => `<button type="button" class="sanasto-tile" data-list="${esc(l.id)}" style="--tc: var(--flag-${color}); --tb: var(--btn-${color})">` +
     `<span class="st-ico">${sanastoSvg(l.icon)}</span><span class="st-txt"><span class="st-title">${esc(l.title[lang])}</span>` +
-    `<span class="st-prev">${esc(sanastoPreview(l))}</span></span><span class="st-n">${l.rows.length}</span></button>`;
+    `<span class="st-prev" lang="${sanastoSami() === "smn" ? "smn" : "se"}">${esc(sanastoPreview(l))}</span></span><span class="st-n">${l.rows.length}</span></button>`;
   $("sanasto-body").innerHTML = sanastoSamiSwitch() + `<p class="sanasto-intro">${esc(t(sanastoSami() === "smn" ? "sanastoIntroSmn" : "sanastoIntro", all.length, words))}</p>` +
     groups.filter((g) => g.lists.length).map((g) => `<section class="sanasto-group" style="--tc: var(--flag-${g.color}); --tb: var(--btn-${g.color})">` +
       `<h3>${esc(t("sanastoGroup_" + g.id))}</h3><div class="sanasto-grid">${g.lists.map((id) => tile(byId[id], g.color)).join("")}</div></section>`).join("");
