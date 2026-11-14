@@ -97,9 +97,10 @@ function applyStaticTexts() {
   // Android- ja työpöytäsovelluksessa sanakirja tulee paketista (APK:n assets, AppImage/exe), ei verkosta
   if (IS_ANDROID || IS_DESKTOP) $("loading-text").textContent = t("loadingLocal");
   // Versionumeron antaa työpöytäsovellus (satni_desktop.py) tai Android-sovellus (android/); selainversiolle
-  // julkaise_sivu.sh kirjoittaa julkaisun numeron (SATNI_WEB_VERSION)
+  // julkaise_sivu.sh kirjoittaa julkaisun numeron (<meta name="satni-web-version">)
   const version = window.SATNI_VERSION;
-  $("about-version").textContent = !version ? t("aboutWeb", window.SATNI_WEB_VERSION)
+  const webVersion = document.querySelector('meta[name="satni-web-version"]')?.content || window.SATNI_WEB_VERSION;
+  $("about-version").textContent = !version ? t("aboutWeb", webVersion)
     : window.SATNI_PLATFORM === "android" ? t("aboutAndroid", version) : t("aboutDesktop", version);
   $("menu-version").textContent = $("about-version").textContent;
   // Kehitysversio (build_apk.sh --debug: versio päättyy -DEV): nimeen "DEV", ettei sitä sekoita julkaistuun

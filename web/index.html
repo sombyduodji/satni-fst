@@ -2,6 +2,11 @@
 <html lang="fi">
 <head>
   <meta charset="utf-8">
+  <!-- Sisällön suojauskäytäntö (yötesti 2026-11-14): vain omat skriptit (ei sivun sisäisiä eikä inline-tapahtumia), sql.js:n
+       WebAssembly, puhepalvelu api-giellalt.uit.no. Sama sivu toimii GitHub Pagesissa, Android-sovelluksessa
+       (appassets.androidplatform.net) ja työpöytäsovelluksessa (satni://app). Tyylit inline-sallittuina: näkymät
+       asettavat värit style-attribuutteina (--tc, --tb). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https://api-giellalt.uit.no; object-src 'none'; base-uri 'none'; form-action 'self'">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Sátni FST</title>
   <meta name="description" content="Pohjoissaamen–suomen sanakirja ja taivutusgeneraattori">
@@ -10,16 +15,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="styles.css">
-  <script>
-    // Teema ja kieli heti ennen piirtämistä, ettei sivu välähdä väärän värisenä
-    try {
-      const s = JSON.parse(localStorage.getItem("satni-settings") || "{}");
-      if (s.theme === "light" || s.theme === "dark") document.documentElement.dataset.theme = s.theme;
-      if (s.uiLang === "nb") document.documentElement.lang = "nb";
-    } catch (e) {}
-    // Android-sovellus jättää tilarivin tilan itse (MainActivity): yläpalkki ei lisää sitä toista kertaa
-    if (location.hostname === "appassets.androidplatform.net") document.documentElement.classList.add("android-app");
-  </script>
+  <script src="boot.js"></script>
 </head>
 <body class="drawer-layout">
   <header class="topbar">
