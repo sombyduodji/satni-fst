@@ -459,6 +459,7 @@ def merge_duplicate_entries(entries, by_lemma):
 # perussanaan; jos sellaista ei ole, sana saa hakusanaksi pelkän perusmuodon. Keskellä olevat sulkeet (bidjat (bargi)
 # bággolupmui) ovat fraasin osa ja jäävät; haku löytää ne ilman sulkeita (export_web_data.py: variant_fold).
 _BRACKET_LEMMA_RE = re.compile(r"^(.+?)\s*\(([^()]+)\)$")
+_BRACKETS_RE = re.compile(r"\s*\([^()]*\)")
 
 
 def resolve_bracket_lemmas(entries, by_lemma):
@@ -481,15 +482,23 @@ def resolve_bracket_lemmas(entries, by_lemma):
             if target and not target[-1].endswith(f"({note})"):
                 target[-1] = f"{target[-1]} ({note})"
         dst = find_entry(entries, by_lemma, base, pos, subtype)
+        # Käänteisen sanakirjan sanaluokka tulee suomen hakusanasta (nyrkinisku N -> čorpmahallat (soapmásii)), joten
+        # perussana kelpaa myös toisella sanaluokalla (čorpmahallat V, Neahttadigisánit ja lang-sme: verbi)
+        if not dst and str(data.get("new_from", "")).endswith("-sme") and by_lemma.get(base):
+            dst = existing_lemma_entry(by_lemma, base, pos)
         if dst:
-            # Perussanalla jo sama käännös (molla: "molli" ja "molli (mus.)"): merkitty kaksoiskappale pois
-            bare = lambda text: text[:-len(f" ({note})")] if text.endswith(f" ({note})") else text
+            # Perussanalla jo sama käännös (molla: "molli" ja "molli (mus.)"; garastallat: "kovistella (jkta)" ja
+            # "kovistella (soapmásiin)"; čorpmahallat: "saada nyrkinisku (jklta)" kattaa "nyrkinisku"): kaksoiskappale pois
+            bare = lambda text: _BRACKETS_RE.sub("", text).strip()
+            covered = lambda text, have: any(bare(text) == bare(h) or re.search(r"(?<!\w)" + re.escape(bare(text)) + r"(?!\w)", h)
+                                             for h in have) if bare(text) else False
             for lang, items in data["translations"].items():
-                have = set(entries[dst]["translations"].get(lang, []))
-                data["translations"][lang] = [i for i in items if bare(i) not in have]
+                have = entries[dst]["translations"].get(lang, [])
+                data["translations"][lang] = [i for i in items if not covered(i, have)]
             for m in data["meanings"]:
-                have = {t for d in entries[dst]["meanings"] if d["lang"] == m["lang"] for t in d["translations"]}
-                m["translations"] = [t for t in m["translations"] if bare(t) not in have and t not in have]
+                have = [t for d in entries[dst]["meanings"] if d["lang"] == m["lang"] for t in d["translations"] + d["explanations"]]
+                m["translations"] = [t for t in m["translations"] if not covered(t, have)]
+                m["explanations"] = [t for t in m["explanations"] if not covered(t, have)]
             data["meanings"] = [m for m in data["meanings"] if m["translations"] or m["explanations"] or m["examples"]]
             _merge_entry(entries[dst], data)
             merged += 1

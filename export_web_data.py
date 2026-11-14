@@ -82,6 +82,7 @@ def without_brackets(text):
 
 # Sama haun normalisointi kuin gui.py:ssä: ä = æ, ö = ø
 # Haun vertailumuoto (selain: app.js fold + cleanQuery): norjan æ/ø suomen ä/ö:ksi, kaarevat heittomerkit ':ksi
+SAMI_PLAIN = str.maketrans({"á": "a", "č": "c", "đ": "d", "ŋ": "n", "š": "s", "ŧ": "t", "ž": "z"})
 SEARCH_FOLD = str.maketrans({"æ": "ä", "ø": "ö", "\u2019": "'", "\u2018": "'", "\u02bc": "'"})
 
 
@@ -244,6 +245,12 @@ def main():
         if bare:
             search_rows.append((w, lang, fold(bare), nr))
     dst.executemany("INSERT INTO trans_search VALUES (?, ?, ?, ?)", search_rows)
+    # Hakusanat ilman saamen erikoiskirjaimia (čáhci -> cahci): hakukentän ehdotukset kirjoitettaessa tavallisilla
+    # kirjaimilla (cah -> čáhci). Vain sanat, joissa erikoiskirjaimia on (app.js: suggestWords).
+    dst.execute("CREATE TABLE lemma_plain (plain TEXT, word_id INTEGER, PRIMARY KEY (plain, word_id)) WITHOUT ROWID")
+    plain_rows = {(fold(r[1]).translate(SAMI_PLAIN), r[0]) for r in rows if fold(r[1]) != fold(r[1]).translate(SAMI_PLAIN)}
+    dst.executemany("INSERT INTO lemma_plain VALUES (?, ?)", sorted(plain_rows))
+    print(f"lemma_plain: {len(plain_rows)} hakusanaa")
     # Pilkulla jaettuna ja välit pois (myös "ominainen,," -> ominainen), jotta jokainen trans_search-osuma löytyy
     for items_lang in ("fin", "nob"):
         items = {}
