@@ -20,7 +20,7 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0f141b; --surface: #171e27; --surface-alt: #1b232e; --border: #2a3441;
-    --text: #e5e9f0; --muted: #94a3b8; --subtle: #64748b;
+    --text: #e5e9f0; --muted: #94a3b8; --subtle: #8391a5;
     --accent: #3b82f6; --accent-hover: #60a5fa;
     --flag-red: #fb7185; --flag-yellow: #facc15; --flag-blue: #60a5fa; --flag-green: #4ade80;
     --on-flag: #0f141b;
@@ -36,7 +36,7 @@
 }
 :root[data-theme="dark"] {
   --bg: #0f141b; --surface: #171e27; --surface-alt: #1b232e; --border: #2a3441;
-  --text: #e5e9f0; --muted: #94a3b8; --subtle: #64748b;
+  --text: #e5e9f0; --muted: #94a3b8; --subtle: #8391a5;
   --accent: #3b82f6; --accent-hover: #60a5fa;
     --flag-red: #fb7185; --flag-yellow: #facc15; --flag-blue: #60a5fa; --flag-green: #4ade80;
     --on-flag: #0f141b;
@@ -609,6 +609,9 @@ main > * + * { margin-top: 12px; }
   font-size: 12px; font-weight: 800; background: var(--accent); color: var(--accent-text);
 }
 .link-pill.gt .lp-mark { background: var(--gt); color: var(--gt-bg); }
+/* Tumma teema: s-merkin pohja tummempi sininen, valkoinen kirjain vähintään 4,5:1 (yötesti 2026-11-14) */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .link-pill:not(.gt) .lp-mark { background: #2563eb; } }
+:root[data-theme="dark"] .link-pill:not(.gt) .lp-mark { background: #2563eb; }
 .lp-arrow { color: var(--muted); font-size: 12px; margin-left: -2px; }
 /* Leveällä näytöllä oma solu sanan oikealla puolella; kapealla rivi kortin alaosassa */
 @media (min-width: 821px) {
