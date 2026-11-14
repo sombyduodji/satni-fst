@@ -111,6 +111,11 @@ const UI_TEXTS = {
     sumGradeOn: "Astevaihtelu näkyy", sumGradeOff: "Astevaihtelu piilossa", sumNone: "Ei valittuja", sumOff: "Ei painikkeita",
     sumExp: (n) => (n ? `${n} käytössä` : "Ei käytössä"), sumHistory: (n) => `${n} hakua historiassa`,
     sumTextSystem: "laitteen tekstikoko", sumText: (n) => `tekstikoko ${n} %`, sumTheme: { auto: "automaattinen teema", light: "vaalea teema", dark: "tumma teema" },
+    gradeStyleHead: "Astevaihtelun merkintä", gradeGdColor: "Vahva aste (GD)", gradeHdColor: "Heikko aste (HD)",
+    gradeUnderline: "Alleviivaus", gradeUnderlineDesc: "Vahva aste yhtenäisellä viivalla, heikko katkoviivalla: erottuu ilman värejäkin.",
+    gradeCvd: "Värisokeille sopiva: sininen ja oranssi", gradeSample: "esimerkki",
+    gradeColors: { green: "vihreä", orange: "oranssi", blue: "sininen", purple: "violetti", red: "punainen", brown: "ruskea", none: "ei väriä" },
+    sumUnderline: "alleviivaus",
     recentHead: "Viimeksi haetut", expTools: "Uudet työkalut", expMore: "Lisää käännöksiä",
     favourites: "★ Suosikit", history: "Historia", searchingForms: "Haetaan muotoja…", clearHistory: "Tyhjennä historia", clearHistoryTitle: "Tyhjennetäänkö historia?",
     clearHistoryBody: "Kaikki hakuhistoria poistetaan. Suosikit säilyvät.", clearHistoryOk: "Tyhjennä", historyMore: "Lisää…",
@@ -150,7 +155,7 @@ const UI_TEXTS = {
       "sekä osalle sanoista englanniksi, inarin-, luulajan- ja eteläsaameksi.",
     welcomeTips: `<dt>Hae</dt><dd>saamen sanalla (dahkat), suomen sanalla (tehdä) tai taivutetulla muodolla (dagan).</dd>
       <dt>Taivutus</dt><dd>verbeillä kaikki tapaluokat, nomineilla sijamuodot (ol. ja ml.).</dd>
-      <dt>Astevaihtelu</dt><dd>vahva aste <b class="gd">GD</b> vihreänä, heikko aste <b class="hd">HD</b> oranssina.</dd>
+      <dt>Astevaihtelu</dt><dd>vahva aste <b class="gd">GD</b> ja heikko aste <b class="hd">HD</b> omilla väreillään (valittavissa asetuksista).</dd>
       <dt>Ääntäminen</dt><dd>🔈 sanan vieressä, tai napauta taulukon muotoa: kuuntele tai kopioi.</dd>
       <dt>Suosikit</dt><dd>★ tallentaa sanan omalle listalle.</dd>
       <dt>Sanastot</dt><dd><svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5.6 4 9 4 12 6c3-2 6.4-2 9-.5V19c-2.6-1.5-6-1.5-9 .5-3-2-6.4-2-9-.5z"/><path d="M12 6v13.5"/><path d="M15.5 5.2v5.3l1.5-1.2 1.5 1.2V4.9"/></svg> oikeassa yläkulmassa: aihekohtaiset sanalistat ääntämyksineen (luvut, kuukaudet, perhe, värit…), osassa kuunneltava äänilista.</dd>
@@ -188,7 +193,7 @@ const UI_TEXTS = {
     nomClassRules: { I: "<b class=\"gd\">Vahva:</b> yks. nominatiivi, yks. illatiivi, essiivi · <b class=\"hd\">Heikko:</b> muut muodot",
                      II: "<b class=\"hd\">Heikko:</b> yks. nominatiivi, essiivi · <b class=\"gd\">Vahva:</b> muut muodot",
                      III: "<b class=\"hd\">Heikko:</b> yks. nominatiivi, essiivi · <b class=\"gd\">Vahva:</b> muut muodot" },
-    gradeLegend: `Aste: <b class="gd">vihreä = GD</b> vahva aste &nbsp;&nbsp; <b class="hd">oranssi = HD</b> heikko aste`,
+    gradeLegend: `Aste: <b class="gd">GD</b> vahva aste &nbsp;&nbsp; <b class="hd">HD</b> heikko aste`,
     noForms: "FST-generaattori ei tuottanut tälle sanalle taivutusmuotoja.",
     tapHint: "Napauta muotoa: kuuntele tai kopioi.",
     noMeanings: "Ei merkitystietoja.", noExampleTranslation: "(ei käännöstä lähteessä)",
@@ -354,6 +359,11 @@ const UI_TEXTS = {
     sumGradeOn: "Stadieveksling vises", sumGradeOff: "Stadieveksling skjult", sumNone: "Ingen valgt", sumOff: "Ingen knapper",
     sumExp: (n) => (n ? `${n} i bruk` : "Ikke i bruk"), sumHistory: (n) => `${n} søk i historikken`,
     sumTextSystem: "enhetens tekststørrelse", sumText: (n) => `tekststørrelse ${n} %`, sumTheme: { auto: "automatisk tema", light: "lyst tema", dark: "mørkt tema" },
+    gradeStyleHead: "Merking av stadieveksling", gradeGdColor: "Sterkt stadium (GD)", gradeHdColor: "Svakt stadium (HD)",
+    gradeUnderline: "Understreking", gradeUnderlineDesc: "Sterkt stadium med heltrukken linje, svakt med stiplet: synlig også uten farger.",
+    gradeCvd: "Egnet for fargeblinde: blå og oransje", gradeSample: "eksempel",
+    gradeColors: { green: "grønn", orange: "oransje", blue: "blå", purple: "lilla", red: "rød", brown: "brun", none: "ingen farge" },
+    sumUnderline: "understreking",
     recentHead: "Sist søkt", expTools: "Nye verktøy", expMore: "Flere oversettelser",
     favourites: "★ Favoritter", history: "Historikk", searchingForms: "Søker etter former…", clearHistory: "Tøm historikken", clearHistoryTitle: "Tømme historikken?",
     clearHistoryBody: "All søkehistorikk slettes. Favorittene beholdes.", clearHistoryOk: "Tøm", historyMore: "Flere…",
@@ -393,7 +403,7 @@ const UI_TEXTS = {
       "og for en del av ordene til engelsk, enaresamisk, lulesamisk og sørsamisk.",
     welcomeTips: `<dt>Søk</dt><dd>med et samisk ord (dahkat), et norsk ord (gjøre) eller en bøyd form (dagan).</dd>
       <dt>Bøying</dt><dd>alle modi for verb, kasus for nomen (ol. og ml.).</dd>
-      <dt>Stadieveksling</dt><dd>sterkt stadium <b class="gd">GD</b> i grønt, svakt stadium <b class="hd">HD</b> i oransje.</dd>
+      <dt>Stadieveksling</dt><dd>sterkt stadium <b class="gd">GD</b> og svakt stadium <b class="hd">HD</b> i hver sin farge (kan velges i innstillingene).</dd>
       <dt>Uttale</dt><dd>🔈 ved ordet, eller trykk på en form i tabellen: lytt eller kopier.</dd>
       <dt>Favoritter</dt><dd>★ lagrer ordet i din egen liste.</dd>
       <dt>Ordlister</dt><dd><svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5.6 4 9 4 12 6c3-2 6.4-2 9-.5V19c-2.6-1.5-6-1.5-9 .5-3-2-6.4-2-9-.5z"/><path d="M12 6v13.5"/><path d="M15.5 5.2v5.3l1.5-1.2 1.5 1.2V4.9"/></svg> øverst til høyre: ordlister etter tema med uttale (tall, måneder, familie, farger…), noen med lydliste å lytte til.</dd>
@@ -430,7 +440,7 @@ const UI_TEXTS = {
     nomClassRules: { I: "<b class=\"gd\">Sterkt:</b> ent. nominativ, ent. illativ, essiv · <b class=\"hd\">Svakt:</b> andre former",
                      II: "<b class=\"hd\">Svakt:</b> ent. nominativ, essiv · <b class=\"gd\">Sterkt:</b> andre former",
                      III: "<b class=\"hd\">Svakt:</b> ent. nominativ, essiv · <b class=\"gd\">Sterkt:</b> andre former" },
-    gradeLegend: `Stadium: <b class="gd">grønn = GD</b> sterkt stadium &nbsp;&nbsp; <b class="hd">oransje = HD</b> svakt stadium`,
+    gradeLegend: `Stadium: <b class="gd">GD</b> sterkt stadium &nbsp;&nbsp; <b class="hd">HD</b> svakt stadium`,
     noForms: "FST-generatoren ga ingen bøyingsformer for dette ordet.",
     tapHint: "Trykk på en form: lytt eller kopier.",
     noMeanings: "Ingen opplysninger om betydning.", noExampleTranslation: "(ingen oversettelse i kilden)",

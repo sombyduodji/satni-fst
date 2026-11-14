@@ -65,8 +65,8 @@ a { color: var(--accent); }
 [hidden] { display: none !important; }
 .muted { color: var(--muted); }
 .small { font-size: 13px; }
-b.gd, .gd { color: var(--gd); }
-b.hd, .hd { color: var(--hd); }
+b.gd, .gd { color: var(--grade-gd, var(--gd)); }
+b.hd, .hd { color: var(--grade-hd, var(--hd)); }
 
 /* Yläpalkki */
 .topbar {
@@ -647,8 +647,8 @@ main > * + * { margin-top: 12px; }
 .grad-cell.infl-class { flex-basis: 100%; }
 .gradation > .muted + .grad-cells { margin-top: 8px; }
 .gc-rule { display: block; margin-top: 2px; font-size: 13px; font-weight: 400; white-space: normal; color: var(--muted); }
-.gc-rule .gd { color: var(--gd); }
-.gc-rule .hd { color: var(--hd); }
+.gc-rule .gd { color: var(--grade-gd, var(--gd)); }
+.gc-rule .hd { color: var(--grade-hd, var(--hd)); }
 .gradation .arrow { color: var(--subtle); font-weight: 400; margin: 0 2px; }
 /* Puhelimessa sanapari ja ryhmä omille riveilleen, koska pitkät sanat eivät mahdu puolikkaaseen; väliin konsonantit ja asteet */
 @media (max-width: 480px) {
@@ -1483,3 +1483,21 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 .seg-ctl button { flex: 1 1 auto; padding: 8px 8px; }
 #welcome-recent { margin: 4px 0 12px; }
 #welcome-recent .small { margin: 0 0 6px; }
+
+/* Astevaihtelun merkintä (Asetukset → Sanakortti ja ääntäminen): värit valittavissa (--grade-gd/--grade-hd, app.js:
+   applyGradeStyle) ja alleviivaus, joka erottaa asteet ilman värejä: vahva yhtenäinen, heikko katkoviiva */
+html.grade-underline .gd, html.grade-underline .hd { text-decoration-line: underline; text-decoration-thickness: 2px; text-underline-offset: .2em; }
+html.grade-underline .gd { text-decoration-style: solid; }
+html.grade-underline .hd { text-decoration-style: dashed; }
+.grade-preview { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; padding: 10px 12px; border-radius: 10px; background: var(--section); margin-bottom: 4px; }
+.grade-preview .gp-words { font-size: 18px; font-weight: 700; }
+.grade-preview .gp-tags { margin-left: auto; font-weight: 800; }
+.set-sub { margin: 12px 2px 6px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatches button { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--border); background: var(--sw); cursor: pointer;
+  display: grid; place-items: center; color: #fff; font-size: 18px; font-weight: 800; padding: 0; }
+.swatches button.sw-none { background: var(--surface); color: var(--text); font-size: 14px; }
+.swatches button[aria-checked="true"] { border-color: var(--text); box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--accent); }
+.swatches button[aria-checked="true"]::after { content: "✓"; }
+.swatches button.sw-none[aria-checked="true"]::after { content: "✓"; }
+.grade-cvd { margin-top: 12px; }

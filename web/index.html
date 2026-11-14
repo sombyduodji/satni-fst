@@ -350,6 +350,22 @@
           <label class="switch-row" id="grade-option"><span class="switch-text"><span data-i18n="showGrade">Näytä astevaihtelu</span><span class="muted small" data-i18n="showGradeDesc"></span></span>
             <input type="checkbox" class="switch" role="switch" id="grade-toggle" checked></label>
         </div>
+        <h3 class="set-h" data-i18n="gradeStyleHead">Astevaihtelun merkintä</h3>
+        <div class="set-card set-pad">
+          <div class="grade-preview"><span class="muted small" data-i18n="gradeSample">esimerkki</span>
+            <span class="gp-words" lang="se" translate="no"><span class="gd">viessu</span> → <span class="hd">viesu</span></span>
+            <span class="gp-tags"><b class="gd">GD</b> <b class="hd">HD</b></span></div>
+          <div class="set-sub" data-i18n="gradeGdColor">Vahva aste (GD)</div>
+          <div class="swatches" id="gd-swatches" role="radiogroup" data-i18n-aria="gradeGdColor"></div>
+          <div class="set-sub" data-i18n="gradeHdColor">Heikko aste (HD)</div>
+          <div class="swatches" id="hd-swatches" role="radiogroup" data-i18n-aria="gradeHdColor"></div>
+          <button type="button" class="link-btn grade-cvd" id="grade-cvd" data-i18n="gradeCvd">Värisokeille sopiva: sininen ja oranssi</button>
+        </div>
+        <div class="set-card">
+          <label class="switch-row"><span class="switch-text"><span data-i18n="gradeUnderline">Alleviivaus</span>
+            <span class="muted small" data-i18n="gradeUnderlineDesc"></span></span>
+            <input type="checkbox" class="switch" role="switch" id="grade-underline"></label>
+        </div>
         <h3 class="set-h" data-i18n="voiceHead">Ääntämisen ääni</h3>
         <div class="set-card set-pad">
           <div id="voice-list" class="voice-list" role="radiogroup" data-i18n-aria="voice"></div>

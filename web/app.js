@@ -62,6 +62,8 @@ const DEFAULT_SETTINGS = {
   ocrFrom: "sme", ocrStyle: "frame", ocrColor: "#2563eb",
   // Tekstin koko (Asetukset → Kieli ja ulkoasu): "system" = laitteen tekstikoko (Android: fontScale), muuten prosentti
   textSize: "system",
+  // Astevaihtelun merkintä: värit (GRADE_COLORS) ja alleviivaus (vahva yhtenäinen, heikko katkoviiva)
+  gradeGd: "green", gradeHd: "orange", gradeUnderline: false,
 };
 // Ensimmäinen käynnistys: asetuksia ei ole vielä tallennettu, joten kysytään käyttöliittymän kieli
 const FIRST_RUN = (() => { try { return localStorage.getItem("satni-settings") === null; } catch (e) { return false; } })();
@@ -806,6 +808,16 @@ function suggestWords(prefix, withForms = true) {
       [settings.lang, ...(items ? [q, q + "\uffff"] : []), `${likeEsc(q)}%`, `%, ${likeEsc(q)}%`]
     ));
   }
+  // Saamen sana ilman erikoiskirjaimia (cah -> čáhci, sapm -> sápmi): käännösosumien jälkeen, ettei suomen sana jää
+  // samannäköisen saamen sanan alle. Vain, jos haussa ei ole erikoiskirjaimia (taulu lemma_plain: export_web_data.py).
+  if (rows.length < 8 && !/[áčđŋšŧž]/.test(q) && hasTable("lemma_plain")) {
+    const seen = new Set(rows.map((r) => r.id));
+    rows.push(...all(
+      `SELECT d.id, d.sme_lemma, d.pos, ${TRANS_COLS.split(", ").map((c) => "d." + c).join(", ")}
+       FROM lemma_plain p JOIN dictionary d ON d.id = p.word_id WHERE p.plain >= ? AND p.plain < ?
+       ORDER BY d.freq DESC, length(d.sme_lemma) LIMIT 8`, [q, q + "\uffff"]
+    ).filter((r) => !seen.has(r.id)));
+  }
   // Muut kielet -asetuksessa valitut kielet viimeisinä (espanjaksi per -> beana "perro")
   const extra = extraSearchLangs();
   if (rows.length < 8 && extra.length) {
@@ -1097,7 +1109,8 @@ function renderDidYouMean(query, results) {
   const list = [...didYouMean(query, results), ...extraDidYouMean(query, results)].slice(0, 3);
   box.hidden = !list.length;
   box.innerHTML = list.length ? `<span>${esc(t("didYouMean"))}</span>` + list.map((s) =>
-    `<button data-q="${esc(s.word)}"><b>${esc(s.word)}</b> → ${esc(s.lemma)}${s.trans ? ` (${esc(s.trans)})` : ""}` +
+    // Taivutusmuoto -> perusmuoto (čázis → čáhci); perusmuodosta vain sana kerran (čáhci, ei "čáhci → čáhci")
+    `<button data-q="${esc(s.word)}"><b>${esc(s.word)}</b>${s.word === s.lemma ? "" : ` → ${esc(s.lemma)}`}${s.trans ? ` (${esc(s.trans)})` : ""}` +
     `${s.lang ? ` <span class="muted small">${esc(t("langName")[s.lang])}</span>` : ""}</button>`).join("") : "";
 }
 
@@ -2121,7 +2134,40 @@ function applyTheme() {
   const t = settings.theme;
   if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
   else delete document.documentElement.dataset.theme;
+  if (typeof applyGradeStyle === "function") applyGradeStyle();
 }
+
+// --- Astevaihtelun merkintä ---
+// Värit vaaleassa ja tummassa teemassa, kumpikin vähintään 4,5:1 taustaa vasten; "none" = tekstin väri (alleviivauksen kanssa)
+const GRADE_COLORS = {
+  green: ["#15803d", "#4ade80"], orange: ["#c2410c", "#fb923c"], blue: ["#1d4ed8", "#60a5fa"],
+  purple: ["#7e22ce", "#c084fc"], red: ["#b91c1c", "#f87171"], brown: ["#92400e", "#f59e0b"], none: [null, null],
+};
+const darkScheme = () => settings.theme === "dark" ||
+  (settings.theme !== "light" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+function applyGradeStyle() {
+  const root = document.documentElement, dark = darkScheme() ? 1 : 0;
+  for (const [grade, name] of [["gd", settings.gradeGd], ["hd", settings.gradeHd]]) {
+    const c = (GRADE_COLORS[name] || GRADE_COLORS[grade === "gd" ? "green" : "orange"])[dark];
+    root.style.setProperty(`--grade-${grade}`, c || "var(--text)");
+  }
+  root.classList.toggle("grade-underline", !!settings.gradeUnderline);
+  renderGradeSwatches();
+}
+function renderGradeSwatches() {
+  const dark = darkScheme() ? 1 : 0;
+  for (const grade of ["gd", "hd"]) {
+    const box = $(`${grade}-swatches`);
+    if (!box) continue;
+    const current = grade === "gd" ? settings.gradeGd : settings.gradeHd;
+    box.innerHTML = Object.entries(GRADE_COLORS).map(([name, c]) =>
+      `<button type="button" role="radio" data-grade="${grade}" data-color="${name}" aria-checked="${name === current}"` +
+      ` aria-label="${esc(t("gradeColors")[name])}" title="${esc(t("gradeColors")[name])}"` +
+      (c[dark] ? ` style="--sw:${c[dark]}"` : ' class="sw-none"') + `>${c[dark] ? "" : "Aa"}</button>`).join("");
+  }
+  if ($("grade-underline")) $("grade-underline").checked = !!settings.gradeUnderline;
+}
+if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => applyGradeStyle());
 
 // --- Tekstin koko ---
 // Android-sovelluksessa WebViewin tekstin zoomaus (MainActivity: SatniApp.setTextZoom, "system" = laitteen fonttikoko),
@@ -2176,7 +2222,10 @@ function renderSettingsSummary() {
   const set = (id, text) => { if ($(id)) $(id).textContent = text; };
   const size = settings.textSize === "system" ? t("sumTextSystem") : t("sumText", settings.textSize);
   set("sum-look", [UI_LANGUAGES[settings.uiLang].name, t("sumTheme")[settings.theme] || "", size].filter(Boolean).join(" · "));
-  set("sum-card", [t(settings.showGrade ? "sumGradeOn" : "sumGradeOff"), settings.voice].join(" · "));
+  const colors = t("gradeColors");
+  const gradeSum = settings.showGrade ? `${colors[settings.gradeGd]}/${colors[settings.gradeHd]}` +
+    (settings.gradeUnderline ? `, ${t("sumUnderline")}` : "") : "";
+  set("sum-card", [t(settings.showGrade ? "sumGradeOn" : "sumGradeOff") + (gradeSum ? ` (${gradeSum})` : ""), settings.voice].join(" · "));
   const langs = [...settings.extraLangs.map((l) => capitalize(langName(l))), ...(settings.skolt ? [capitalize(langName("sms"))] : [])];
   set("sum-langs", langs.length ? langs.join(", ") : t("sumNone"));
   const fi = settings.uiLang === "fi";
@@ -2227,8 +2276,21 @@ function bindSettings() {
   overlayLayerFns.push(() => (!$("settings-view").hidden && settingsPage !== "main" ? 1 : 0));
   // Kieli vaihtui asetuksissa: otsikko ja yhteenvedot uudelleen
   const setUiBase = window.setUiLanguage;
-  window.setUiLanguage = (code) => { setUiBase(code); if (!$("settings-view").hidden) showSettingsPage(settingsPage); };
+  window.setUiLanguage = (code) => { setUiBase(code); renderGradeSwatches(); if (!$("settings-view").hidden) showSettingsPage(settingsPage); };
   $("recent-chips").onclick = (e) => { const b = e.target.closest("[data-q]"); if (b) search(b.dataset.q); };
+  // Astevaihtelun värit ja alleviivaus
+  const gradeChanged = () => { saveSettings(); applyGradeStyle(); renderSettingsSummary(); };
+  for (const grade of ["gd", "hd"]) {
+    $(`${grade}-swatches`).onclick = (e) => {
+      const b = e.target.closest("[data-color]");
+      if (!b) return;
+      settings[grade === "gd" ? "gradeGd" : "gradeHd"] = b.dataset.color;
+      gradeChanged();
+    };
+  }
+  $("grade-cvd").onclick = () => { settings.gradeGd = "blue"; settings.gradeHd = "orange"; gradeChanged(); };
+  $("grade-underline").onchange = (e) => { settings.gradeUnderline = e.target.checked; gradeChanged(); };
+  applyGradeStyle();
   applyTextSize();
 }
 
