@@ -81,7 +81,8 @@ def without_brackets(text):
     return joined if joined and joined != text else None
 
 # Sama haun normalisointi kuin gui.py:ssä: ä = æ, ö = ø
-SEARCH_FOLD = str.maketrans({"æ": "ä", "ø": "ö"})
+# Haun vertailumuoto (selain: app.js fold + cleanQuery): norjan æ/ø suomen ä/ö:ksi, kaarevat heittomerkit ':ksi
+SEARCH_FOLD = str.maketrans({"æ": "ä", "ø": "ö", "\u2019": "'", "\u2018": "'", "\u02bc": "'"})
 
 
 # Käännöskielet ja niiden sarakkeet satni.db:ssä (ks. import_full_dict.py)

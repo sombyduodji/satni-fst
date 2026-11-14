@@ -120,7 +120,17 @@ INFLECTION_START = {"Sg", "Pl", "Nom", "Attr", "Inf", "Ess"}
 
 
 # Suomennoksissa on paikoin norjalaiset kirjaimet suomalaisten tilalla (esim. "viisikymmentæ")
-FINNISH_LETTER_FIXES = str.maketrans({"æ": "ä", "Æ": "Ä", "ø": "ö", "Ø": "Ö"})
+# Päivätesti 2026-11-14: huurṛe (r ja alapiste), T˸n (U+02F8 kaksoispisteen sijaan), nauˈunta (painomerkki heittomerkin sijaan)
+FINNISH_LETTER_FIXES = str.maketrans({"æ": "ä", "Æ": "Ä", "ø": "ö", "Ø": "Ö", "ṛ": "r", "˸": ":", "ˈ": "’"})
+# Päivätesti 2026-11-14: rakennevirheet suomennoksissa (tupla pilkku, tyhjät sulut, sulkematon sulku, vanhalla
+# oikeinkirjoituksella kirjoitettu saamenkielinen esimerkki suomennoksen sisällä: skádjat)
+FINNISH_TEXT_FIXES = [
+    (re.compile(r",\s*,"), ","),
+    (re.compile(r"\s*,\s*$"), ""),
+    (re.compile(r"\s*\(\s*=\s*\)"), ""),
+    (re.compile(r"^(pistää \(nopeasti, usein t\. useita esineitä)$"), r"\1)"),
+    (re.compile(r"\s*\(oppa várrẹvielti skádjá beatnagiid ciellamis = koko vaaranrinne raikuu koirien haukunnasta\.\)"), ""),
+]
 
 
 # FST:n tuottamat muodot, joita ei oteta tietokantaan: lang-sme 6b1ae1cb40 tuottaa nämä lyhenteille EMRIP ja
@@ -159,12 +169,17 @@ FINNISH_TYPOS = {
  "ammatti-alue": "ammattialue",
  # täystesti 2026-11-12 (3 000 yleisimmän sanan suomennokset, Voikko): gilvit = kylvää, čielgat = selkiytyä
  "kylvätä": "kylvää", "selkeentyä": "selkiytyä",
+ # päivätesti 2026-11-14 (árvofápmu): saamen á suomennoksessa
+ "árvovalta": "arvovalta",
 }
 _FINNISH_TYPO_RE = re.compile(r"\b(" + "|".join(sorted(FINNISH_TYPOS, key=len, reverse=True)) + r")\b")
 
 
 def fix_finnish_text(text):
-    return _FINNISH_TYPO_RE.sub(lambda m: FINNISH_TYPOS[m.group(1)], text.translate(FINNISH_LETTER_FIXES))
+    text = _FINNISH_TYPO_RE.sub(lambda m: FINNISH_TYPOS[m.group(1)], text.translate(FINNISH_LETTER_FIXES))
+    for pattern, repl in FINNISH_TEXT_FIXES:
+        text = pattern.sub(repl, text)
+    return text
 
 
 # Muiden kielten kirjoitusvirheet: offline-tarkistus 2026-11-10 (Hunspell nb/nn/en/es, Norsk ordbank, yhdyssanojen

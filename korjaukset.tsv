@@ -581,3 +581,7 @@ Gáivuotna	N	Kaivuono
 Ivgu	N	Yykeä
 Čohkkiras	N	Jukkasjärvi
 Jiellevárri	N	Jällivaara
+
+# Päivätesti 2026-11-14: sotkeutunut hakusana "(pl,)", sama sana ja suomennos ovat jo omina hakusanoinaan
+# (oappážat: sisarukset, siskokset; oappážagat: sisarukset, siskokset)
+oappážat (pl,), oappážagat	N	-

@@ -394,7 +394,11 @@ function searchAgainKeepingWord() {
 const fold = (s) => (s || "").toLowerCase().replace(/æ/g, "ä").replace(/ø/g, "ö");
 // Haettava teksti: yhdistetyt merkit (PDF:stä tai macOS:stä liitetty c + hattu -> č) ja näkymättömät merkit
 // (tavutusviiva, leveydettömät välit) pois, muuten oikein kirjoitettu sana ei löydy (sanakirja on NFC-muodossa)
-const cleanQuery = (s) => (s || "").normalize("NFC").replace(/[\u00AD\u200B-\u200D\u2060\uFEFF]/g, "");
+// Haun merkkien siivous: NFC (PDF:stä liitetty ä), näkymättömät merkit ja suuntamerkit (LRM/RLM, upotukset) pois,
+// kaarevat heittomerkit (’ ‘ ʼ) tavalliseksi ':ksi (saamen taivutusmuodot, bággogask'oapmi) ja sanan sisäinen
+// ajatusviiva yhdysmerkiksi (TV–fálaldat). Päivätesti 2026-11-14.
+const cleanQuery = (s) => (s || "").normalize("NFC").replace(/[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/g, "")
+  .replace(/[\u2018\u2019\u02BC]/g, "'").replace(/(?<=\p{L})[\u2010\u2011\u2013\u2014](?=\p{L})/gu, "-");
 const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const nordic = (s) => s.replace(/ä/g, "æ").replace(/ö/g, "ø");
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -698,6 +702,8 @@ const SAMI_HIT_RANKS = [1, 1.2, 5, 5.5, 6];
 // muotoa "Prs+Sg1=juon;Prs+Sg2=juot;..." ja vaihtoehdot /-merkillä (husene/husa). SQL rajaa rivit nopeasti, tarkka osuma alla.
 function translationFormsOf(word, lang) {
   if (!word || word.includes(" ") || !FORM_PHRASES[lang]) return [];
+  // Suomen taivutusmuodoissa heittomerkki on ’ (raa’an), haussa ' (cleanQuery)
+  if (lang === "fin" && word.includes("'")) return translationFormsOf(word.replace(/'/g, "\u2019"), lang);
   const out = [];
   if (lang === "fin") {
     for (const fi of FIN_PRONOUN_FORMS) {
@@ -780,7 +786,7 @@ function samiCaseOfFinCell(cell, pos) {
 }
 
 function suggestWords(prefix, withForms = true) {
-  const q = fold(cleanQuery(prefix).trim());
+  const q = fold(cleanQuery(prefix).replace(/\s+/g, " ").trim());
   if (q.length < 2) return [];
   const rows = all(
     `SELECT id, sme_lemma, pos, ${TRANS_COLS} FROM dictionary
@@ -959,7 +965,7 @@ function showOnly(view) {
 // 5 000 merkin haku vei 375 ms (yötesti 2026-11-14). Lausekääntäjällä on oma kenttänsä.
 const MAX_QUERY = 100;
 function search(query, index = 0, pushHistory = true) {
-  query = cleanQuery(String(query).slice(0, MAX_QUERY)).trim();
+  query = cleanQuery(String(query).slice(0, MAX_QUERY)).replace(/\s+/g, " ").trim();  // myös NBSP ja tuplavälit
   if (!query || !db) return;
   hideSuggestions();
   $("search").value = query;
