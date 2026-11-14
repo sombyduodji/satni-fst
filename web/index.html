@@ -44,6 +44,8 @@
       <input id="search" type="search" autocomplete="off" spellcheck="false" maxlength="100"
              placeholder="Hae saameksi, käännöksellä tai taivutusmuodolla" aria-label="Hae"
              data-i18n-placeholder="searchPlaceholder" data-i18n-aria="search" disabled>
+      <!-- Tyhjennys (Androidin hakukentässä ei ole omaa ×-painiketta; selainten oma piilotetaan, styles.css) -->
+      <button type="button" id="search-clear" class="search-clear" data-i18n-aria="clearSearch" data-i18n-title="clearSearch" hidden>×</button>
       <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
     </div>
     <!-- Kapealla näytöllä Hae on pelkkä suurennuslasi -->
@@ -74,6 +76,7 @@
         <ul id="history" class="word-list"></ul>
         <div class="history-actions">
           <button class="link-btn" id="history-more" data-i18n="historyMore" hidden>Lisää…</button>
+          <button class="link-btn" id="history-clear-menu" data-i18n="clearHistory">Tyhjennä historia</button>
         </div>
       </section>
       <nav class="menu-links">
@@ -118,8 +121,10 @@
             <h1 id="lemma"></h1>
             <span id="pos-badge" class="badge"></span>
             <!-- Kuuntele: pyöreä kaiutinpainike, äänen haun ajan pyörivä kehä (styles.css) -->
+            <span class="word-actions">
             <button id="speak-btn" class="speak-btn" data-i18n-title="listen" data-i18n-aria="listen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
             <button id="fav-btn" class="star-btn">☆</button>
+            </span>
           </div>
         </div>
         <p class="translation"><span id="translation"></span> <a href="#" id="more-meanings" class="more"></a></p>

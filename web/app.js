@@ -981,11 +981,14 @@ function showOnly(view) {
 // Haun pituusraja: sama kuin hakukentän maxlength (index.html); koskee myös osoitetta #/sana/… ja jaettua tekstiä.
 // 5 000 merkin haku vei 375 ms (yötesti 2026-11-14). Lausekääntäjällä on oma kenttänsä.
 const MAX_QUERY = 100;
+// Hakukentän ×: näkyvissä, kun kentässä on tekstiä
+function syncSearchClear() { if ($("search-clear")) $("search-clear").hidden = !$("search").value; }
 function search(query, index = 0, pushHistory = true) {
   query = cleanQuery(String(query).slice(0, MAX_QUERY)).replace(/\s+/g, " ").trim();  // myös NBSP ja tuplavälit
   if (!query || !db) return;
   hideSuggestions();
   $("search").value = query;
+  syncSearchClear();
   state.query = query;
   state.results = queryDatabase(query);
   renderDidYouMean(query, state.results);
@@ -2086,6 +2089,8 @@ function renderSidebar() {
   fill("history", historyExpanded ? settings.history : settings.history.slice(0, HISTORY_SHOWN), esc(t("noHistory")));
   $("history-more").hidden = historyExpanded || settings.history.length <= HISTORY_SHOWN;
   $("clear-history").disabled = !settings.history.length;
+  $("history-clear-menu").hidden = !settings.history.length;
+  for (const a of $("history").querySelectorAll("a")) a.title = t("historyHint");
   renderSettingsSummary();
 }
 
@@ -2198,6 +2203,7 @@ function showSettingsPage(page) {
   for (const el of document.querySelectorAll("#settings-view .set-page")) el.hidden = el.dataset.page !== page;
   $("settings-title").textContent = t(page === "main" ? "settings" : SETTINGS_PAGES[page]);
   $("settings-back").setAttribute("aria-label", t("back"));
+  $("settings-back").hidden = page === "main";  // pääsivulla vain Sulje (molemmat sulkisivat)
   $("settings-view").querySelector(".settings-body").scrollTop = 0;
   renderSettingsSummary();
 }
@@ -3002,7 +3008,7 @@ function routeFromHash() {
   stopTts();  // edellisen sanan ääntämys ei jatku uudella sivulla
   const m = location.hash.match(/^#\/sana\/([^/]+)(?:\/(\d+))?/);
   if (m) search(decodeURIComponent(m[1]), Number(m[2] || 0));
-  else { showOnly("welcome"); $("search").value = ""; $("did-you-mean").hidden = true; }
+  else { showOnly("welcome"); $("search").value = ""; syncSearchClear(); $("did-you-mean").hidden = true; }
 }
 
 // Logo ja nimi: takaisin aloitussivulle. Sivua ei ladata uudelleen, koska sanakirja on jo muistissa.
@@ -3019,6 +3025,13 @@ function goHome(e) {
 
 function bindEvents() {
   const input = $("search");
+  input.addEventListener("input", syncSearchClear);
+  $("search-clear").onclick = () => {
+    input.value = "";
+    syncSearchClear();
+    input.focus();
+    updateSuggestions(false);  // tyhjä kenttä: viimeksi haetut ja suosikit
+  };
   input.addEventListener("input", () => {
     clearTimeout(suggestTimer);
     clearTimeout(formTimer);
@@ -3130,6 +3143,27 @@ function bindEvents() {
   new MutationObserver(syncDrawer).observe(document.body, { attributes: true, attributeFilter: ["class"] });
   syncDrawer();
   $("clear-history").onclick = () => $("clear-history-dlg").showModal();
+  $("history-clear-menu").onclick = () => $("clear-history-dlg").showModal();
+  // Historian sanan pitkä painallus poistaa sen (ilmoitus kertoo); tavallinen napautus avaa sanan kuten ennen
+  let histPress = null, histLong = false;
+  const histCancel = () => { clearTimeout(histPress); histPress = null; $("history").querySelector(".pressing")?.classList.remove("pressing"); };
+  $("history").addEventListener("pointerdown", (e) => {
+    const a = e.target.closest("li a");
+    histLong = false;
+    if (!a) return;
+    a.classList.add("pressing");
+    histPress = setTimeout(() => {
+      histLong = true;
+      const w = decodeURIComponent(a.getAttribute("href").replace("#/sana/", ""));
+      settings.history = settings.history.filter((x) => x !== w);
+      saveSettings();
+      renderSidebar();
+      toast(t("historyRemoved", w), 2500);
+    }, 600);
+  });
+  for (const ev of ["pointerup", "pointerleave", "pointercancel"]) $("history").addEventListener(ev, histCancel);
+  $("history").addEventListener("click", (e) => { if (histLong) { e.preventDefault(); e.stopPropagation(); histLong = false; } }, true);
+  $("history").addEventListener("contextmenu", (e) => { if (e.target.closest("li a")) e.preventDefault(); });
   $("clear-history-cancel").onclick = () => $("clear-history-dlg").close();
   $("clear-history-ok").onclick = () => {
     $("clear-history-dlg").close();
