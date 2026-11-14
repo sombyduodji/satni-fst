@@ -170,7 +170,7 @@ FINNISH_TYPOS = {
  # täystesti 2026-11-12 (3 000 yleisimmän sanan suomennokset, Voikko): gilvit = kylvää, čielgat = selkiytyä
  "kylvätä": "kylvää", "selkeentyä": "selkiytyä",
  # päivätesti 2026-11-14 (árvofápmu): saamen á suomennoksessa
- "árvovalta": "arvovalta",
+ "árvovalta": "arvovalta", "ráju": "raju",
 }
 _FINNISH_TYPO_RE = re.compile(r"\b(" + "|".join(sorted(FINNISH_TYPOS, key=len, reverse=True)) + r")\b")
 
@@ -453,6 +453,53 @@ def merge_duplicate_entries(entries, by_lemma):
     print(f"Yhdistettiin {merged} rinnakkaista sanaa (saman sanan kaksoiskappaleet)")
 
 
+# Hakusanan lopussa sulkeissa rakenne tai tyyli (bahkket (gosa nu), suostut (soapmásii), molla (mus.)): päivätesti
+# 2026-11-14, 34 sanaa. Sulkeinen ei kuulu sanaan, joten sanalle ei syntynyt taivutustaulukkoa eikä "bahkket" löytänyt
+# sitä. Merkintä siirretään käännöksen perään ("vängätä, ängetä (gosa nu)"), ja sana yhdistetään saman sanaluokan
+# perussanaan; jos sellaista ei ole, sana saa hakusanaksi pelkän perusmuodon. Keskellä olevat sulkeet (bidjat (bargi)
+# bággolupmui) ovat fraasin osa ja jäävät; haku löytää ne ilman sulkeita (export_web_data.py: variant_fold).
+_BRACKET_LEMMA_RE = re.compile(r"^(.+?)\s*\(([^()]+)\)$")
+
+
+def resolve_bracket_lemmas(entries, by_lemma):
+    merged = renamed = 0
+    for key in [k for k in entries if _BRACKET_LEMMA_RE.match(k[0])]:
+        lemma, pos, subtype = key
+        base, note = (x.strip() for x in _BRACKET_LEMMA_RE.match(lemma).groups())
+        if not base or "(" in base:
+            continue
+        data = entries.pop(key)
+        by_lemma[lemma].remove(key)
+        if not by_lemma[lemma]:
+            del by_lemma[lemma]
+        # Merkintä kunkin kielen viimeisen käännöksen ja kunkin merkityksen perään (yksi kerta kieltä kohden)
+        for items in data["translations"].values():
+            if items and not items[-1].endswith(f"({note})"):
+                items[-1] = f"{items[-1]} ({note})"
+        for m in data["meanings"]:
+            target = m["translations"] or m["explanations"]
+            if target and not target[-1].endswith(f"({note})"):
+                target[-1] = f"{target[-1]} ({note})"
+        dst = find_entry(entries, by_lemma, base, pos, subtype)
+        if dst:
+            # Perussanalla jo sama käännös (molla: "molli" ja "molli (mus.)"): merkitty kaksoiskappale pois
+            bare = lambda text: text[:-len(f" ({note})")] if text.endswith(f" ({note})") else text
+            for lang, items in data["translations"].items():
+                have = set(entries[dst]["translations"].get(lang, []))
+                data["translations"][lang] = [i for i in items if bare(i) not in have]
+            for m in data["meanings"]:
+                have = {t for d in entries[dst]["meanings"] if d["lang"] == m["lang"] for t in d["translations"]}
+                m["translations"] = [t for t in m["translations"] if bare(t) not in have and t not in have]
+            data["meanings"] = [m for m in data["meanings"] if m["translations"] or m["explanations"] or m["examples"]]
+            _merge_entry(entries[dst], data)
+            merged += 1
+        else:
+            entries[(base, pos, subtype)] = data
+            by_lemma.setdefault(base, []).append((base, pos, subtype))
+            renamed += 1
+    print(f"Sulkeisiin päättyvät hakusanat: {merged} yhdistettiin perussanaan, {renamed} sai hakusanaksi perusmuodon")
+
+
 def _merge_entry(dst, src):
     for lang, items in src["translations"].items():
         target = dst["translations"].setdefault(lang, [])
@@ -544,6 +591,7 @@ def parse_xml_dictionaries():
     parse_reverse_dictionaries(entries, by_lemma)
     fill_sami_translations(entries, by_lemma)
     fill_spanish(entries, by_lemma)
+    resolve_bracket_lemmas(entries, by_lemma)
     merge_duplicate_entries(entries, by_lemma)
     # Vasta yhdistämisen jälkeen: muuten Wiktionaryn englanti voisi täyttää rinnakkaisen sanan, joka sitten yhdistetään
     # sanaan, jolla GiellaLT:n englanti jo on (37 sanaa 2026-11-06)

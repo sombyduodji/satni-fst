@@ -91,6 +91,14 @@ TRANSLATION_COLUMNS = {"fin": "finnish_translation", "nob": "nob_translation", "
                        "spa": "spa_translation"}
 
 
+def lemma_without_brackets(lemma):
+    """Fraasin keskellä sulkeissa oleva osa (bidjat (bargi) bággolupmui): haku löytää fraasin myös ilman sitä."""
+    if "(" not in lemma:
+        return None
+    bare = " ".join(re.sub(r"\([^()]*\)", " ", lemma).split())
+    return fold(bare) if bare and bare != lemma else None
+
+
 def fold(text):
     return text.lower().translate(SEARCH_FOLD) if isinstance(text, str) else text
 
@@ -212,7 +220,7 @@ def main():
     ).fetchall()
     # human ja sem viimeisinä (lemma_fold ja variant_fold ennen niitä, kuten taulussa); r[-4] = dial_same
     dst.executemany(f"INSERT INTO dictionary VALUES ({', '.join('?' * (len(rows[0]) + 2))})",
-                    [r[:-2] + (fold(r[1]), fold(r[-4]) if r[-4] else None) + r[-2:] for r in rows])
+                    [r[:-2] + (fold(r[1]), fold(r[-4]) if r[-4] else lemma_without_brackets(r[1])) + r[-2:] for r in rows])
     # Hakuun käännös sellaisenaan ja toisena rivinä ilman sulkeissa olevia tarkenteita, jotta naida löytää sanan,
     # jonka käännös on "naida (kerran)" (koko haun tarkistus 2026-11-06: noin 3 400 sanaa ei muuten löytynyt)
     search_rows = []
