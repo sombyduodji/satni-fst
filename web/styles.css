@@ -783,7 +783,8 @@ button .reg-label, li .reg-label { color: inherit; border-color: currentColor; o
 
 dialog {
   background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 12px;
-  max-width: 540px; padding: 24px 28px;
+  /* Ei leveämpi kuin näyttö myöskään suurella fonttikoolla (pitkät sanat, yötesti 2026-11-15: Tietoa 478 px / 412 px) */
+  max-width: min(540px, calc(100vw - 32px)); padding: 24px 28px; overflow-wrap: break-word;
 }
 dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
