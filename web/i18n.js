@@ -27,8 +27,8 @@ const UI_TEXTS = {
     ocrNoText: "Kuvasta ei löytynyt tekstiä. Kokeile ottaa kuva lähempää ja suoraan edestä.",
     ocrNoWords: "Tekstiä löytyi, mutta ei sanakirjan sanoja.",
     ocrDirSwitched: "suunta vaihdettu", ocrAlso: "tai", ocrRotateLeft: "Käännä kuvaa vasemmalle", ocrRotateRight: "Käännä kuvaa oikealle",
-    experimental: "Kokeelliset ominaisuudet", experimentalOn: "Käytössä", experimentalOff: "Pois käytöstä",
-    experimentalHint: "Kokeiluversioita: voivat vielä muuttua tai poistua.",
+    experimental: "Kokeilussa", experimentalOn: "Käytössä", experimentalOff: "Pois käytöstä",
+    experimentalHint: "Nämä ominaisuudet ovat vielä kehitteillä. Ne voivat muuttua tai poistua, ja tuloksissa voi olla virheitä. Palaute auttaa!",
     // Lausekääntäjä (test-lauseet, lauseet.js)
     lauseTitle: "Lausekääntäjä", lauseBadge: "kokeilu", lauseShort: "Lause", ocrShort: "Kuva", expLauseDesc: "Lyhyt suomenkielinen lause saameksi. Avataan yläpalkin puhekuplasta.",
     expLauseInfo: `<p>Yläpalkkiin tulee <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg> puhekuplapainike, joka avaa lausekääntäjän: kirjoita lyhyt suomenkielinen lause, niin sovellus
@@ -50,20 +50,20 @@ const UI_TEXTS = {
       kuvaan. Napauta sanaa, niin näet käännöksen.</p>
       <p>Teksti tunnistetaan puhelimessa Googlen ML Kitillä, eikä kuva lähde laitteelta. ML Kit voi lähettää Googlelle
       nimettömiä käyttötilastoja, kun toimintoa käytetään.</p>`,
-    expTableTr: "Konekäännökset taulukossa", expTableTrDesc: "Jokaisen muodon konekäännös sen alla taivutustaulukossa.",
+    expTableTr: "Taivutusmuotojen käännökset", expTableTrDesc: "Konekäännös jokaisen muodon alla taivutustaulukossa.",
     positionOn: "päällä", positionUnder: "alla",
     expTableTrInfo: `<p>Taivutustaulukon muotojen alle tulee konekäännös pienellä: <i>mun lean – minä olen</i>. Duaali merkitään
       numerolla: <i>moai letne – me (2) olemme</i>.</p>
       <p>Käännökset muodostetaan automaattisesti sanan ensimmäisestä käännöksestä, joten ne eivät ole aina oikein.
       Muodolla, jolle käännöstä ei saada, ei näytetä mitään.</p>`,
     tableTrNote: "Käännökset on muodostettu automaattisesti.",
-    expApertium: "Apertium-käännökset", expApertiumDesc: "Norjan käännös sanoille, joilla sitä ei ole sanakirjoissa.",
+    expApertium: "Norjannokset konekäännöksenä", expApertiumDesc: "Apertium: norjannos sanoille, joilla sitä ei ole sanakirjoissa.",
     expApertiumInfo: `<p>Kun käännöskielenä on norja ja sanalta puuttuu käännös, sanakortissa näytetään käännös
       Apertium-konekääntimen sanastosta (apertium-sme-nob).</p>
       <p>Sanasto on tehty konekääntämistä varten, ei sanakirjaksi. Käännös voi olla karkea tai väärä, eikä sitä ole
       tarkistettu. Nämä käännökset eivät vaikuta hakuun.</p>`,
     apertiumNote: "Apertium, tarkistamaton",
-    expPivotFin: "Suomennosehdotukset", expPivotFinDesc: "Suomennos sanoille, joilla sitä ei ole sanakirjoissa.",
+    expPivotFin: "Suomennosehdotukset", expPivotFinDesc: "Muiden kielten kautta sanoille, joilla ei ole suomennosta sanakirjoissa.",
     expPivotFinInfo: `<p>Kun käännöskielenä on suomi ja sanalta puuttuu suomennos, sanakortissa näytetään ehdotus, joka on
       muodostettu toisen kielen kautta: inarinsaamen käännöksestä GiellaLT:n inarinsaamen ja suomen sanakirjoilla tai,
       jos sitä ei ole, suomennoksesta, joka muilla sanoilla on samalle norjan sanalle.</p>
@@ -84,7 +84,7 @@ const UI_TEXTS = {
     reportKindSme: "Saamen sana tai muoto on väärin", reportKindAudio: "Äänitteessä on virhe",
     reportWhichWord: "Mikä sana? (valinnainen)", reportList: "Sanasto",
     // Minipeli (minipeli.js)
-    minipeli: "Minipeli", gameButton: "Minipeli yläpalkissa", gameSmn: "Inarinsaame minipelissä ja sanastoissa (kokeellinen)", gameSmnNote: "", reportKindBad: "Sana on sopimaton",
+    minipeli: "Minipeli", gameButton: "Minipeli yläpalkissa", gameSmn: "Inarinsaame minipelissä ja sanastoissa", gameSmnNote: "", reportKindBad: "Sana on sopimaton",
     reportDetails: "Tiedot ilmoituksesta",
     reportLabels: { error: "Virhe", word: "Sana", shown: "Näytetty käännös", search: "Hakusana", ui: "Käyttöliittymä",
       other: "muut kielet", version: "Versio", link: "Linkki" },
@@ -99,6 +99,19 @@ const UI_TEXTS = {
     settings: "Asetukset", otherLanguages: "Muut kielet",
     extraLangsHint: "Valittujen kielten käännökset näkyvät sanakortissa suomennoksen lisäksi, ja niillä voi myös hakea.",
     voice: "Ääni",
+    // Asetukset omana näkymänään (2026-11-14)
+    setGeneral: "Yleiset", setMore: "Lisää", setLook: "Kieli ja ulkoasu", setCard: "Sanakortti ja ääntäminen",
+    setLangs: "Käännöskielet", setTopbar: "Yläpalkin painikkeet", setHistory: "Historia ja suosikit", setAbout: "Tietoa sovelluksesta",
+    themeNote: "Automaattinen seuraa laitteen asetusta.",
+    textSize: "Tekstin koko", textSizeSystem: "Laitteen", textSizeNote: "Laitteen: sama tekstikoko kuin laitteen omissa asetuksissa.",
+    previewHouse: "talo", previewInHouse: "talossa",
+    showGradeDesc: "Vahva ja heikko aste väreinä", voiceHead: "Ääntämisen ääni",
+    topbarNote: "Valokuvahaun ja lausekääntäjän painikkeet saa yläpalkkiin kohdasta Kokeilussa.",
+    historyNote: "Suosikit ja historia näkyvät valikossa ja aloitussivulla.",
+    sumGradeOn: "Astevaihtelu näkyy", sumGradeOff: "Astevaihtelu piilossa", sumNone: "Ei valittuja", sumOff: "Ei painikkeita",
+    sumExp: (n) => (n ? `${n} käytössä` : "Ei käytössä"), sumHistory: (n) => `${n} hakua historiassa`,
+    sumTextSystem: "laitteen tekstikoko", sumText: (n) => `tekstikoko ${n} %`, sumTheme: { auto: "automaattinen teema", light: "vaalea teema", dark: "tumma teema" },
+    recentHead: "Viimeksi haetut", expTools: "Uudet työkalut", expMore: "Lisää käännöksiä",
     favourites: "★ Suosikit", history: "Historia", searchingForms: "Haetaan muotoja…", clearHistory: "Tyhjennä historia", clearHistoryTitle: "Tyhjennetäänkö historia?",
     clearHistoryBody: "Kaikki hakuhistoria poistetaan. Suosikit säilyvät.", clearHistoryOk: "Tyhjennä", historyMore: "Lisää…",
     supportStory: `<p><strong>Buorre beaivi! Olen Juha Somby.</strong></p>
@@ -260,8 +273,8 @@ const UI_TEXTS = {
     ocrNoText: "Fant ingen tekst i bildet. Prøv å ta bildet nærmere og rett forfra.",
     ocrNoWords: "Fant tekst, men ingen ord fra ordboka.",
     ocrDirSwitched: "retning byttet", ocrAlso: "eller", ocrRotateLeft: "Roter bildet mot venstre", ocrRotateRight: "Roter bildet mot høyre",
-    experimental: "Eksperimentelle funksjoner", experimentalOn: "På", experimentalOff: "Av",
-    experimentalHint: "Prøveversjoner: kan fortsatt endres eller fjernes.",
+    experimental: "Under utprøving", experimentalOn: "På", experimentalOff: "Av",
+    experimentalHint: "Disse funksjonene er fortsatt under utvikling. De kan endres eller fjernes, og resultatene kan inneholde feil. Tilbakemeldinger hjelper!",
     lauseTitle: "Setningsoversetter", lauseBadge: "prøve", lauseShort: "Setning", ocrShort: "Bilde", expLauseDesc: "Kort finsk setning til samisk. Åpnes med snakkeboble-knappen i topplinjen.",
     expLauseInfo: `<p>I topplinjen kommer en <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg> snakkeboble-knapp som åpner setningsoversetteren: skriv en kort setning på finsk, så
       lager appen en nordsamisk setning av ordboksordene og bøyningsformene.</p>
@@ -282,14 +295,14 @@ const UI_TEXTS = {
       merket i bildet. Trykk på et ord for å se oversettelsen.</p>
       <p>Teksten gjenkjennes på telefonen med Googles ML Kit, og bildet forlater ikke enheten. ML Kit kan sende anonym
       bruksstatistikk til Google når funksjonen brukes.</p>`,
-    expTableTr: "Maskinoversettelser i tabellen", expTableTrDesc: "Maskinoversettelsen under hver form i bøyingstabellen.",
+    expTableTr: "Oversettelse av bøyingsformer", expTableTrDesc: "Maskinoversettelse under hver form i bøyingstabellen.",
     positionOn: "på", positionUnder: "under",
     expTableTrInfo: `<p>Under formene i bøyingstabellen vises maskinoversettelsen med liten skrift: <i>mun lean – jeg er</i>. Dualis merkes
       med tall: <i>moai letne – vi (2) er</i>.</p>
       <p>Oversettelsene lages automatisk fra ordets første oversettelse, så de er ikke alltid riktige.
       Former uten oversettelse viser ingenting.</p>`,
     tableTrNote: "Oversettelsene er laget automatisk.",
-    expApertium: "Apertium-oversettelser", expApertiumDesc: "Norsk oversettelse av ord som ikke har det i ordbøkene.",
+    expApertium: "Norske maskinoversettelser", expApertiumDesc: "Apertium: norsk oversettelse av ord som ikke har det i ordbøkene.",
     expApertiumInfo: `<p>Når oversettelsesspråket er norsk og et ord mangler oversettelse, viser ordkortet en oversettelse
       fra ordlisten til maskinoversetteren Apertium (apertium-sme-nob).</p>
       <p>Ordlisten er laget for maskinoversettelse, ikke som ordbok. Oversettelsen kan være grov eller feil, og den er
@@ -312,7 +325,7 @@ const UI_TEXTS = {
     reportSubjectKind: { trans: "oversettelse", word: "feil ord", form: "bøyning", sme: "samisk ord", audio: "lydopptak", inappropriate: "upassende", other: "annet" },
     reportKindSme: "Et samisk ord eller en form er feil", reportKindAudio: "Det er feil i lydopptaket",
     reportWhichWord: "Hvilket ord? (valgfritt)", reportList: "Ordliste",
-    minipeli: "Minispill", gameButton: "Minispill i topplinjen", gameSmn: "Enaresamisk i minispillet og ordlistene (eksperimentelt)",
+    minipeli: "Minispill", gameButton: "Minispill i topplinjen", gameSmn: "Enaresamisk i minispillet og ordlistene",
     // Inarin sanat on tarkistettu suomea vasten; norjannokset tulevat pohjoissaamen kautta (ei inari–norja-sanakirjaa)
     gameSmnNote: "De enaresamiske ordene er kontrollert mot finsk. De norske oversettelsene går via nordsamisk og kan være mindre presise.", reportKindBad: "Ordet er upassende",
     reportDetails: "Opplysninger om meldingen",
@@ -329,6 +342,19 @@ const UI_TEXTS = {
     settings: "Innstillinger", otherLanguages: "Andre språk",
     extraLangsHint: "Oversettelser på valgte språk vises på ordkortet i tillegg til den norske, og du kan også søke med dem.",
     voice: "Stemme",
+    // Innstillinger som egen visning (2026-11-14)
+    setGeneral: "Generelt", setMore: "Mer", setLook: "Språk og utseende", setCard: "Ordkort og uttale",
+    setLangs: "Oversettelsesspråk", setTopbar: "Knapper i topplinjen", setHistory: "Historikk og favoritter", setAbout: "Om appen",
+    themeNote: "Automatisk følger innstillingen på enheten.",
+    textSize: "Tekststørrelse", textSizeSystem: "Enhetens", textSizeNote: "Enhetens: samme tekststørrelse som i innstillingene på enheten.",
+    previewHouse: "hus", previewInHouse: "i huset",
+    showGradeDesc: "Sterkt og svakt stadium i farger", voiceHead: "Stemme for uttale",
+    topbarNote: "Knappene for bildesøk og setningsoversetter slås på under Under utprøving.",
+    historyNote: "Favoritter og historikk vises i menyen og på startsiden.",
+    sumGradeOn: "Stadieveksling vises", sumGradeOff: "Stadieveksling skjult", sumNone: "Ingen valgt", sumOff: "Ingen knapper",
+    sumExp: (n) => (n ? `${n} i bruk` : "Ikke i bruk"), sumHistory: (n) => `${n} søk i historikken`,
+    sumTextSystem: "enhetens tekststørrelse", sumText: (n) => `tekststørrelse ${n} %`, sumTheme: { auto: "automatisk tema", light: "lyst tema", dark: "mørkt tema" },
+    recentHead: "Sist søkt", expTools: "Nye verktøy", expMore: "Flere oversettelser",
     favourites: "★ Favoritter", history: "Historikk", searchingForms: "Søker etter former…", clearHistory: "Tøm historikken", clearHistoryTitle: "Tømme historikken?",
     clearHistoryBody: "All søkehistorikk slettes. Favorittene beholdes.", clearHistoryOk: "Tøm", historyMore: "Flere…",
     supportStory: `<p><strong>Buorre beaivi! Jeg er Juha Somby.</strong></p>

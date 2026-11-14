@@ -80,7 +80,9 @@ public class MainActivity extends Activity {
         settings.setAllowContentAccess(false);
         // Ääntäminen soitetaan vasta, kun ääni on haettu verkosta (napautuksen jälkeen)
         settings.setMediaPlaybackRequiresUserGesture(false);
-        settings.setTextZoom(100);
+        // Tekstin koko (Asetukset → Kieli ja ulkoasu, app.js: applyTextSize): tallennettu valinta heti, ennen sivun
+        // latautumista, ettei teksti hyppää; -1 = laitteen fonttikoko (Asetukset → Näyttö → Fonttikoko)
+        applyTextZoom(getPreferences(MODE_PRIVATE).getInt(PREF_TEXT_ZOOM, -1));
 
         // Ei venytystä reunojen yli vierittäessä (sovellus ei ole verkkosivu)
         web.setOverScrollMode(android.view.View.OVER_SCROLL_NEVER);
@@ -88,6 +90,7 @@ public class MainActivity extends Activity {
         // Vain sovelluksen omat sivut latautuvat WebViewiin (ulkoiset linkit avataan muissa sovelluksissa)
         ocr = new Ocr(this, web);
         web.addJavascriptInterface(ocr, "SatniOcr");
+        web.addJavascriptInterface(new AppBridge(), "SatniApp");
         // Android 13+: takaisin-ele tulee tätä kautta (onBackPressed ei aina tule kutsutuksi)
         if (Build.VERSION.SDK_INT >= 33) {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
@@ -343,6 +346,25 @@ public class MainActivity extends Activity {
             } catch (IOException e) {
                 return new WebResourceResponse("text/plain", "utf-8", 404, "Not Found", headers, null);
             }
+        }
+    }
+
+    private static final String PREF_TEXT_ZOOM = "textZoom";
+
+    /** Tekstin zoomaus prosentteina; -1 = laitteen fonttikoko (fontScale), rajattu 50–300 %. */
+    private void applyTextZoom(int percent) {
+        int zoom = percent < 0 ? Math.round(getResources().getConfiguration().fontScale * 100) : percent;
+        web.getSettings().setTextZoom(Math.max(50, Math.min(300, zoom)));
+    }
+
+    /** Sivulle näkyvä silta (window.SatniApp): vain tekstin koko. Tallennetaan, jotta se on käytössä heti seuraavalla
+     *  käynnistyksellä ennen sivun latautumista. */
+    private class AppBridge {
+        @android.webkit.JavascriptInterface
+        public void setTextZoom(int percent) {
+            int value = percent < 0 ? -1 : Math.max(50, Math.min(300, percent));
+            getPreferences(MODE_PRIVATE).edit().putInt(PREF_TEXT_ZOOM, value).apply();
+            runOnUiThread(() -> applyTextZoom(value));
         }
     }
 }

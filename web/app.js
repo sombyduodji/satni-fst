@@ -60,6 +60,8 @@ const DEFAULT_SETTINGS = {
   exp: { ocr: false, lause: false, tableTr: false, apertium: false, pivotFin: false },
   // Kuvasta haku: suunta ("sme" = saamen teksti, "ui" = käyttöliittymän kielen teksti), merkintätapa ja väri
   ocrFrom: "sme", ocrStyle: "frame", ocrColor: "#2563eb",
+  // Tekstin koko (Asetukset → Kieli ja ulkoasu): "system" = laitteen tekstikoko (Android: fontScale), muuten prosentti
+  textSize: "system",
 };
 // Ensimmäinen käynnistys: asetuksia ei ole vielä tallennettu, joten kysytään käyttöliittymän kieli
 const FIRST_RUN = (() => { try { return localStorage.getItem("satni-settings") === null; } catch (e) { return false; } })();
@@ -176,8 +178,8 @@ function showMenuTip() {
   const tip = $("menu-tip");
   const r = btn.getBoundingClientRect();
   tip.textContent = t("menuTip");
-  tip.style.top = `${r.bottom + 10}px`;
-  tip.style.left = `${r.left}px`;
+  tip.style.top = `${r.bottom / pageZoom() + 10}px`;
+  tip.style.left = `${r.left / pageZoom()}px`;
   tip.hidden = false;
   btn.classList.add("menu-tip-target");
   const seen = setTimeout(() => {
@@ -218,7 +220,7 @@ const afterOverlayPop = [];
 const overlayLayerFns = [];   // näkymäkohtaiset kerrokset (sanastot.js, minipeli.js, lauseet.js)
 const isOverlayState = (s) => !!(s && s.satniOverlay);
 const overlayDepth = (s) => (isOverlayState(s) ? s.satniDepth || 1 : 0);
-const overlayOpen = () => ["peli-view", "sanasto-view", "lause-view"].some((id) => $(id) && !$(id).hidden);
+const overlayOpen = () => ["peli-view", "sanasto-view", "lause-view", "settings-view"].some((id) => $(id) && !$(id).hidden);
 function overlayLayers() {
   if (!overlayOpen()) return 0;
   return 1 + overlayLayerFns.reduce((n, f) => n + f(), 0) + (formPopTarget ? 1 : 0) +
@@ -955,6 +957,7 @@ function showOnly(view) {
     renderToday();
     // Kielen valinta vain uudelle käyttäjälle: kun on hakuja tai suosikkeja, kieli vaihdetaan valikosta
     $("welcome-lang").hidden = settings.history.length > 0 || settings.favourites.length > 0;
+    renderRecent();
   }
   $("loading").hidden = view !== "loading";
   for (const id of ["results", "word", "tabs"]) $(id).hidden = view !== "word";
@@ -2067,7 +2070,8 @@ function renderSidebar() {
   // Historiasta 10 viimeisintä; Lisää… näyttää loput, ja valikon avaaminen palauttaa kymmeneen
   fill("history", historyExpanded ? settings.history : settings.history.slice(0, HISTORY_SHOWN), esc(t("noHistory")));
   $("history-more").hidden = historyExpanded || settings.history.length <= HISTORY_SHOWN;
-  $("clear-history").hidden = !settings.history.length;
+  $("clear-history").disabled = !settings.history.length;
+  renderSettingsSummary();
 }
 
 // --- Hakuehdotukset ---
@@ -2081,12 +2085,14 @@ function updateSuggestions(withForms = true) {
   const list = $("suggestions");
   // Muotohaku on vielä tulossa: rivi kertoo sen, ettei lista näytä tyhjältä (minulle löytyy vasta muotohaulla)
   const value = $("search").value.trim();
+  if (!value) suggestions = recentSuggestions();
   const pending = !withForms && fold(value).length >= 2 && !value.includes(" ");
   if (!pending && !suggestions.length) {
     list.hidden = true;  // ei hideSuggestions: odottava muotohaku saa vielä tuoda ehdotuksia (munnje, kolmelle)
     return;
   }
-  list.innerHTML = (pending ? `<li class="sugg-loading" role="status"><span class="sugg-ring"></span>${esc(t("searchingForms"))}</li>` : "") + suggestions.map((s, i) => s.dym ?
+  list.innerHTML = (pending ? `<li class="sugg-loading" role="status"><span class="sugg-ring"></span>${esc(t("searchingForms"))}</li>` : "") + suggestions.map((s, i) => s.recent ?
+    `<li role="option" data-i="${i}" class="sugg-recent"><span class="sugg-recent-ico" aria-hidden="true">${s.fav ? "★" : "🕘"}</span><b>${esc(s.recent)}</b></li>` : s.dym ?
     `<li role="option" data-i="${i}" class="sugg-dym"><span class="sugg-dym-label">${esc(t("didYouMean"))}</span> <b>${esc(s.dym.word)}</b>` +
     ` → ${esc(s.dym.lemma)}<span class="trans">${esc(s.dym.trans || "")}${s.dym.lang ? ` · ${esc(t("langName")[s.dym.lang])}` : ""}</span></li>` :
     `<li role="option" data-i="${i}"><b>${esc(s.sme_lemma)}</b>${s.smeForm ? `<i class="sugg-form">${esc(s.smeForm)}</i>` : ""}` +
@@ -2096,6 +2102,7 @@ function updateSuggestions(withForms = true) {
 function hideSuggestions() { clearTimeout(suggestTimer); clearTimeout(formTimer); $("suggestions").hidden = true; activeSuggestion = -1; }
 // Ehdotuksesta avataan juuri valittu sana: samannäköisistä (vuostá = vastaan / juusto) muuten avautuisi ensimmäinen
 function pickSuggestion(s) {
+  if (s.recent) { search(s.recent); return; }
   const text = s.form || s.sme_lemma;
   const index = queryDatabase(text).findIndex((r) => r.id === s.id);
   search(text, Math.max(index, 0));
@@ -2114,6 +2121,129 @@ function applyTheme() {
   const t = settings.theme;
   if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
   else delete document.documentElement.dataset.theme;
+}
+
+// --- Tekstin koko ---
+// Android-sovelluksessa WebViewin tekstin zoomaus (MainActivity: SatniApp.setTextZoom, "system" = laitteen fonttikoko),
+// muualla (selain, työpöytä) koko sivun CSS-zoom; "system" = 100 % (selaimen oma zoomaus toimii kuten ennenkin)
+function applyTextSize() {
+  const v = settings.textSize || "system";
+  if (window.SatniApp && window.SatniApp.setTextZoom) {
+    window.SatniApp.setTextZoom(v === "system" ? -1 : Number(v));
+    document.documentElement.style.zoom = "";
+    return;
+  }
+  const z = v === "system" ? 1 : Number(v) / 100;
+  document.documentElement.style.zoom = z === 1 ? "" : String(z);
+}
+
+// --- Asetukset-näkymä (2026-11-14) ---
+// Pääsivulla aiheet ja kunkin nykyinen valinta, aiheet avautuvat alasivuiksi. Ohjaimet (kieli, astevaihtelu, ääni,
+// muut kielet, minipeli, kokeilut, historia) ovat samoilla id:illä kuin ennen valikossa, joten niiden käsittelijät
+// ovat ennallaan. Takaisin, Esc ja Androidin takaisin-ele: alasivulta pääsivulle, sitten kiinni (verkossa oma
+// historiamerkintä kummallekin, overlayLayerFns).
+const SETTINGS_PAGES = { look: "setLook", card: "setCard", langs: "setLangs", topbar: "setTopbar", exp: "experimental", history: "setHistory" };
+const EXP_KEYS = ["ocr", "lause", "tableTr", "apertium", "pivotFin"];
+let settingsPage = "main";
+function showSettingsPage(page) {
+  settingsPage = page;
+  for (const el of document.querySelectorAll("#settings-view .set-page")) el.hidden = el.dataset.page !== page;
+  $("settings-title").textContent = t(page === "main" ? "settings" : SETTINGS_PAGES[page]);
+  $("settings-back").setAttribute("aria-label", t("back"));
+  $("settings-view").querySelector(".settings-body").scrollTop = 0;
+  renderSettingsSummary();
+}
+function openSettings() {
+  closeDrawer();
+  stopTts();
+  $("settings-view").hidden = false;
+  showSettingsPage("main");
+  overlayOpened();
+}
+function hideSettings() {
+  const was = !$("settings-view").hidden;
+  $("settings-view").hidden = true;
+  settingsPage = "main";
+  if (was) overlayClosed();
+}
+function closeSettings() {
+  if ($("settings-view").hidden) return false;
+  if (settingsPage !== "main") showSettingsPage("main"); else hideSettings();
+  return true;
+}
+function renderSettingsSummary() {
+  if (!$("settings-view") || $("settings-view").hidden) return;
+  const set = (id, text) => { if ($(id)) $(id).textContent = text; };
+  const size = settings.textSize === "system" ? t("sumTextSystem") : t("sumText", settings.textSize);
+  set("sum-look", [UI_LANGUAGES[settings.uiLang].name, t("sumTheme")[settings.theme] || "", size].filter(Boolean).join(" · "));
+  set("sum-card", [t(settings.showGrade ? "sumGradeOn" : "sumGradeOff"), settings.voice].join(" · "));
+  const langs = [...settings.extraLangs.map((l) => capitalize(langName(l))), ...(settings.skolt ? [capitalize(langName("sms"))] : [])];
+  set("sum-langs", langs.length ? langs.join(", ") : t("sumNone"));
+  const fi = settings.uiLang === "fi";
+  const bar = [settings.game ? t("minipeli") : "", settings.exp.ocr && window.SatniOcr ? t("expOcr") : "",
+    settings.exp.lause && fi ? t("lauseTitle") : ""].filter(Boolean);
+  set("sum-topbar", bar.length ? bar.join(", ") : t("sumOff"));
+  const on = EXP_KEYS.filter((k) => settings.exp[k] && (k !== "ocr" || window.SatniOcr) && (k !== "lause" || fi)).length + (settings.gameSmn ? 1 : 0);
+  set("sum-exp", t("sumExp", on));
+  set("sum-history", t("sumHistory", settings.history.length));
+  set("sum-clear", t("sumHistory", settings.history.length));
+  set("sum-about", $("about-version").textContent);
+  // Uudet työkalut -ryhmä piiloon, jos siinä ei ole näkyviä rivejä (verkossa ei valokuvahakua, norjaksi ei lausekääntäjää)
+  const tools = $("exp-lause-row").closest(".set-card");
+  const anyTool = [...tools.querySelectorAll(".switch-row")].some((r) => !r.hidden);
+  tools.hidden = !anyTool;
+  tools.previousElementSibling.hidden = !anyTool;
+  for (const b of document.querySelectorAll("#theme-seg [data-theme-opt]")) b.setAttribute("aria-checked", b.dataset.themeOpt === settings.theme);
+  for (const b of document.querySelectorAll("#textsize-seg [data-size]")) b.setAttribute("aria-checked", b.dataset.size === String(settings.textSize));
+}
+function bindSettings() {
+  $("settings-btn").onclick = openSettings;
+  $("settings-back").onclick = () => closeSettings();
+  $("settings-close").onclick = hideSettings;
+  $("settings-about").onclick = () => $("about").showModal();
+  $("settings-view").addEventListener("click", (e) => {
+    const go = e.target.closest("[data-go]");
+    if (go) { showSettingsPage(go.dataset.go); return; }
+    const theme = e.target.closest("[data-theme-opt]");
+    if (theme) { settings.theme = theme.dataset.themeOpt; saveSettings(); applyTheme(); }
+    const size = e.target.closest("[data-size]");
+    if (size) { settings.textSize = size.dataset.size === "system" ? "system" : Number(size.dataset.size); saveSettings(); applyTextSize(); }
+    setTimeout(renderSettingsSummary, 0);
+  });
+  $("settings-view").addEventListener("change", () => setTimeout(renderSettingsSummary, 0));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector("dialog[open]") && closeSettings()) e.preventDefault();
+  });
+  // Androidin takaisin-ele (MainActivity: closeOcr): ensin avoin ikkuna (esim. kokeilun hyväksyntä), sitten asetukset
+  const closeOcrBase = window.closeOcr;
+  window.closeOcr = () => {
+    if (!$("settings-view").hidden) {
+      const d = document.querySelector("dialog[open]");
+      if (d) { d.close(); return true; }
+      return closeSettings();
+    }
+    return closeOcrBase ? closeOcrBase() : false;
+  };
+  overlayLayerFns.push(() => (!$("settings-view").hidden && settingsPage !== "main" ? 1 : 0));
+  // Kieli vaihtui asetuksissa: otsikko ja yhteenvedot uudelleen
+  const setUiBase = window.setUiLanguage;
+  window.setUiLanguage = (code) => { setUiBase(code); if (!$("settings-view").hidden) showSettingsPage(settingsPage); };
+  $("recent-chips").onclick = (e) => { const b = e.target.closest("[data-q]"); if (b) search(b.dataset.q); };
+  applyTextSize();
+}
+
+// Aloitussivulla suosikit ja viimeksi haetut (enintään 10), hakukentässä samat tyhjän kentän napautuksella
+function recentWords() {
+  const fav = settings.favourites.map((w) => ({ recent: w, fav: true }));
+  const hist = settings.history.filter((w) => !settings.favourites.includes(w)).map((w) => ({ recent: w }));
+  return [...fav, ...hist].slice(0, 10);
+}
+function recentSuggestions() { return recentWords().slice(0, 8); }
+function renderRecent() {
+  const words = recentWords();
+  $("welcome-recent").hidden = !words.length;
+  $("recent-chips").innerHTML = words.map((r) =>
+    `<button type="button" data-q="${esc(r.recent)}">${r.fav ? '<span class="recent-star" aria-hidden="true">★</span>' : ""}${esc(r.recent)}</button>`).join("");
 }
 
 // --- Tekstintunnistus valokuvasta (vain Android-sovellus: Ocr.java, window.SatniOcr) ---
@@ -2713,16 +2843,23 @@ function closeFormPop() {
 }
 
 // Kupla muodon yläpuolelle (tai alle, jos yläpuolella ei ole tilaa), sivun koordinaateissa
+// Tekstin koko selaimessa (applyTextSize: CSS-zoom): getBoundingClientRect ja vieritys ovat näytön pikseleitä, tyylit CSS-pikseleitä
+const pageZoom = () => parseFloat(document.documentElement.style.zoom) || 1;
 function placeFormPop() {
   if (!formPopTarget) return;
-  const pop = $("form-pop"), b = formPopTarget.getBoundingClientRect();
-  if (b.bottom < 0 || b.top > innerHeight) { closeFormPop(); return; }
+  const pop = $("form-pop"), r = formPopTarget.getBoundingClientRect();
+  if (r.bottom < 0 || r.top > innerHeight) { closeFormPop(); return; }
+  // Vanhemmat Chromiumit (alle 128, esim. Qt WebEngine) antavat zoomatun sivun mitat CSS-pikseleinä: mitataan suhde
+  // elementistä itsestään (näytön leveys / CSS-leveys), eikä oleteta
+  const k = formPopTarget.offsetWidth ? r.width / formPopTarget.offsetWidth : 1;
+  const z = Math.abs(k - pageZoom()) < 0.12 ? pageZoom() : 1;
+  const b = { left: r.left / z, top: r.top / z, bottom: r.bottom / z, width: r.width / z };
   const below = b.top < pop.offsetHeight + 16;
   pop.classList.toggle("below", below);
   const x = b.left + b.width / 2, half = pop.offsetWidth / 2;
-  const left = Math.min(Math.max(x, half + 8), document.documentElement.clientWidth - half - 8);
-  pop.style.left = `${left + scrollX}px`;
-  pop.style.top = `${(below ? b.bottom : b.top) + scrollY}px`;
+  const left = Math.min(Math.max(x, half + 8), document.documentElement.clientWidth / z - half - 8);
+  pop.style.left = `${left + scrollX / z}px`;
+  pop.style.top = `${(below ? b.bottom : b.top) + scrollY / z}px`;
   pop.style.setProperty("--arrow", `${Math.min(Math.max(x - left + half, 16), half * 2 - 16)}px`);
 }
 
@@ -2842,6 +2979,9 @@ function bindEvents() {
     }
   });
   input.addEventListener("blur", () => setTimeout(hideSuggestions, 150));
+  // Tyhjän kentän napautus tai nuoli alas: viimeksi haetut ja suosikit (ei automaattisesta kohdistuksesta käynnistyksessä)
+  input.addEventListener("click", () => { if (!input.value.trim()) updateSuggestions(false); });
+  input.addEventListener("keydown", (e) => { if (e.key === "ArrowDown" && !input.value.trim() && $("suggestions").hidden) { updateSuggestions(false); e.preventDefault(); } });
   $("suggestions").addEventListener("mousedown", (e) => {
     const li = e.target.closest("li[data-i]");  // ei hakurivi
     if (li) { e.preventDefault(); pickSuggestion(suggestions[li.dataset.i]); input.blur(); }
@@ -2880,8 +3020,7 @@ function bindEvents() {
   // Kielivalinta koskee vain käännösvirhettä: valinnan muutos valitsee sen
   $("report-lang").onchange = () => { $("report-dlg").querySelector('input[value="trans"]').checked = true; };
   $("skolt-cancel").onclick = () => $("skolt-dlg").close();
-  $("theme-select").value = settings.theme;
-  $("theme-select").onchange = (e) => { settings.theme = e.target.value; saveSettings(); applyTheme(); };
+  bindSettings();
 
   $("tabs").onclick = (e) => { if (e.target.dataset.tab) setTab(e.target.dataset.tab); };
   $("more-meanings").onclick = (e) => { e.preventDefault(); setTab("meanings"); };
@@ -3020,7 +3159,7 @@ async function main() {
 // käytettäessä fokus siirtyy avattuun näkymään, pysyy siinä uudelleenpiirron jälkeen (sama painike tai näkymän
 // pääpainike) ja palaa suljettaessa avanneeseen painikkeeseen. Kosketus- ja hiirikäytössä fokusta ei siirretä.
 function bindViewFocus() {
-  const views = ["peli-view", "sanasto-view", "lause-view"].map($).filter(Boolean);
+  const views = ["peli-view", "sanasto-view", "lause-view", "settings-view"].map($).filter(Boolean);
   const shell = [".topbar", ".searchbar", ".layout"].map((s) => document.querySelector(s)).filter(Boolean);
   let kbd = false, opener = null, lastKey = null, autoFocused = null;
   document.addEventListener("keydown", (e) => { if (["Tab", "Enter", " ", "Escape", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) kbd = true; }, true);
