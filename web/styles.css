@@ -1524,3 +1524,6 @@ html.grade-underline .hd { text-decoration-style: dashed; }
 .word-actions { display: inline-flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
 /* Historian rivin pitkä painallus: korostus painamisen ajan */
 #history li a.pressing { background: var(--chip); }
+/* Hakukentän ehdotukset ilman erikoiskirjaimia: otsikko "Tarkoititko: oažž…" (ei valittava rivi) */
+.suggestions .sugg-head { padding: 8px 14px 2px; font-size: 13px; color: var(--muted); cursor: default; pointer-events: none; }
+.suggestions .sugg-head b { color: var(--accent); font-weight: 700; }

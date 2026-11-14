@@ -818,7 +818,7 @@ function suggestWords(prefix, withForms = true) {
       `SELECT d.id, d.sme_lemma, d.pos, ${TRANS_COLS.split(", ").map((c) => "d." + c).join(", ")}
        FROM lemma_plain p JOIN dictionary d ON d.id = p.word_id WHERE p.plain >= ? AND p.plain < ?
        ORDER BY d.freq DESC, length(d.sme_lemma) LIMIT 8`, [q, q + "\uffff"]
-    ).filter((r) => !seen.has(r.id)));
+    ).filter((r) => !seen.has(r.id)).map((r) => ({ ...r, plainMatch: true })));
   }
   // Muut kielet -asetuksessa valitut kielet viimeisinä (espanjaksi per -> beana "perro")
   const extra = extraSearchLangs();
@@ -837,7 +837,9 @@ function suggestWords(prefix, withForms = true) {
   // "Tarkoititko" myös hakukentän ehdotuksiin (boadat -> boađát, arbol -> árbol, a la vista) samalla hitaammalla
   // kierroksella kuin muodot ja samalla haulla (queryDatabase vain kerran)
   const typed = prefix.trim();
-  const searched = withForms && fold(typed).length >= 2 ? queryDatabase(typed) : null;
+  // Tarkoititko jo ensimmäisellä (nopealla) kierroksella, ei vasta kirjoitustauon jälkeen (käyttäjä 2026-11-14);
+  // taivutusmuodot yhä vasta tauolla (hitaita)
+  const searched = fold(typed).length >= 2 ? queryDatabase(typed) : null;
   const forms = withForms ? formSuggestions(prefix, searched) : [];
   const dym = searched
     ? [...(typed.includes(" ") ? [] : didYouMean(typed, searched)), ...extraDidYouMean(typed, searched)].slice(0, 2)
@@ -848,7 +850,9 @@ function suggestWords(prefix, withForms = true) {
   // Muotorivi ja saman sanan tavallinen rivi yhdistyvät; "tarkoititko"-rivit pidetään erillään kuten ennen.
   const key = (r) => r.dym ? "dym|" + r.sme_lemma : r.id != null ? "id|" + r.id : r.sme_lemma + "|" + r.pos;
   const seen = new Set();
-  const unique = [...dym, ...forms, ...exact, ...useful].filter((r) => !seen.has(key(r)) && seen.add(key(r)));
+  // Tarkoititko-sana on itse perusmuoto (cahci -> čáhci): sama sana ei toistu alempana omana rivinään
+  const dymSame = new Set(dym.filter((d) => d.dym.word === d.dym.lemma).map((d) => d.id));
+  const unique = [...dym, ...forms, ...exact, ...useful].filter((r) => (r.dym || !dymSame.has(r.id)) && !seen.has(key(r)) && seen.add(key(r)));
   return mergeSameLemma(unique, col).slice(0, 8);
 }
 
@@ -2111,12 +2115,20 @@ function updateSuggestions(withForms = true) {
     list.hidden = true;  // ei hideSuggestions: odottava muotohaku saa vielä tuoda ehdotuksia (munnje, kolmelle)
     return;
   }
-  list.innerHTML = (pending ? `<li class="sugg-loading" role="status"><span class="sugg-ring"></span>${esc(t("searchingForms"))}</li>` : "") + suggestions.map((s, i) => s.recent ?
+  // Erikoiskirjaimitta löytyneiden yllä otsikko "Tarkoititko oažž…" (ellei yksittäistä Tarkoititko-riviä ole)
+  const firstPlain = suggestions.some((s) => s.dym) ? -1 : suggestions.findIndex((s) => s.plainMatch);
+  const plainHead = firstPlain < 0 ? "" : (() => {
+    const lemma = suggestions[firstPlain].sme_lemma, stem = lemma.slice(0, [...value].length);
+    return `<li class="sugg-head" aria-hidden="true">${esc(t("didYouMean"))} <b>${esc(stem)}${stem.length < lemma.length ? "…" : ""}</b></li>`;
+  })();
+  // "Haetaan muotoja…" listan loppuun, ettei se työnnä Tarkoititko-riviä alas
+  list.innerHTML = suggestions.map((s, i) => (i === firstPlain ? plainHead : "") + (s.recent ?
     `<li role="option" data-i="${i}" class="sugg-recent"><span class="sugg-recent-ico" aria-hidden="true">${s.fav ? "★" : "🕘"}</span><b>${esc(s.recent)}</b></li>` : s.dym ?
     `<li role="option" data-i="${i}" class="sugg-dym"><span class="sugg-dym-label">${esc(t("didYouMean"))}</span> <b>${esc(s.dym.word)}</b>` +
-    ` → ${esc(s.dym.lemma)}<span class="trans">${esc(s.dym.trans || "")}${s.dym.lang ? ` · ${esc(t("langName")[s.dym.lang])}` : ""}</span></li>` :
+    `${s.dym.word === s.dym.lemma ? "" : ` → ${esc(s.dym.lemma)}`}<span class="trans">${esc(s.dym.trans || "")}${s.dym.lang ? ` · ${esc(t("langName")[s.dym.lang])}` : ""}</span></li>` :
     `<li role="option" data-i="${i}"><b>${esc(s.sme_lemma)}</b>${s.smeForm ? `<i class="sugg-form">${esc(s.smeForm)}</i>` : ""}` +
-    `<span class="pos">${esc(s.pos)}</span><span class="trans">${s.form ? esc(s.formNote) : resultTransHtml(s, 2)}</span></li>`).join("");
+    `<span class="pos">${esc(s.pos)}</span><span class="trans">${s.form ? esc(s.formNote) : resultTransHtml(s, 2)}</span></li>`)).join("") +
+    (pending ? `<li class="sugg-loading" role="status"><span class="sugg-ring"></span>${esc(t("searchingForms"))}</li>` : "");
   list.hidden = false;
 }
 function hideSuggestions() { clearTimeout(suggestTimer); clearTimeout(formTimer); $("suggestions").hidden = true; activeSuggestion = -1; }
