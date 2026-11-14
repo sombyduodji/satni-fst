@@ -1112,7 +1112,7 @@ function renderResults() {
     const b = document.createElement("button");
     const trans = resultTransHtml(r, 2);
     const pos = r.subtype ? `${r.pos} ${r.subtype}` : r.pos;
-    b.innerHTML = `${esc(shownLemma(r))} <span class="trans">(${esc(pos)})${trans ? " – " + trans : ""}</span>`;
+    b.innerHTML = `<span class="r-lemma">${esc(shownLemma(r))}</span> <span class="trans">(${esc(pos)})${trans ? " – " + trans : ""}</span>`;
     b.dataset.i = i;
     b.onclick = () => selectResult(i);
     box.appendChild(b);
@@ -2910,6 +2910,20 @@ function bindEvents() {
     if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector("dialog[open]") && closeDrawer()) e.preventDefault();
   });
   $("sidebar").addEventListener("click", (e) => { if (e.target.closest("a")) document.body.classList.remove("sidebar-open"); });
+  // Saamenkieliset sanat: lang="se" ja translate="no", jottei selaimen automaattinen käännös (Chrome, Edge, Safari)
+  // käännä saamen sanoja suomen tai norjan mukana (käyttöliittymä saa yhä kääntyä). Merkitään keskitetysti valitsimilla,
+  // myös myöhemmin piirretty sisältö (MutationObserver), ettei jokaista mallia tarvitse muistaa erikseen.
+  const SAMI_SEL = '#lemma, #lause-sme, #sme-def, #welcome-title, #today, .r-lemma, .form, .sme, .sw, .b-word, .lcard-lemma, ' +
+    '.lc-sme, .lc-base, .cv-sme, #lause-pop b, #suggestions li > b, .sugg-form, [lang="se"]';
+  const markSami = (root) => {
+    for (const el of [...(root.matches(SAMI_SEL) ? [root] : []), ...root.querySelectorAll(SAMI_SEL)]) {
+      if (el.getAttribute("translate") !== "no") { el.setAttribute("translate", "no"); if (!el.lang) el.lang = "se"; }
+    }
+  };
+  markSami(document.body);
+  new MutationObserver((list) => {
+    for (const m of list) for (const n of m.addedNodes) if (n.nodeType === 1) markSami(n);
+  }).observe(document.body, { childList: true, subtree: true });
   // Suljettu valikko on vain siirretty näytön ulkopuolelle: inert pois ruudunlukijalta ja Tab-järjestyksestä (päivätesti 2026-11-14)
   const syncDrawer = () => { $("sidebar").inert = !document.body.classList.contains("sidebar-open"); };
   new MutationObserver(syncDrawer).observe(document.body, { attributes: true, attributeFilter: ["class"] });
