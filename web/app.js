@@ -2910,6 +2910,10 @@ function bindEvents() {
     if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector("dialog[open]") && closeDrawer()) e.preventDefault();
   });
   $("sidebar").addEventListener("click", (e) => { if (e.target.closest("a")) document.body.classList.remove("sidebar-open"); });
+  // Suljettu valikko on vain siirretty näytön ulkopuolelle: inert pois ruudunlukijalta ja Tab-järjestyksestä (päivätesti 2026-11-14)
+  const syncDrawer = () => { $("sidebar").inert = !document.body.classList.contains("sidebar-open"); };
+  new MutationObserver(syncDrawer).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  syncDrawer();
   $("clear-history").onclick = () => $("clear-history-dlg").showModal();
   $("clear-history-cancel").onclick = () => $("clear-history-dlg").close();
   $("clear-history-ok").onclick = () => {
