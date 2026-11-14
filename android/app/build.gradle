@@ -58,7 +58,10 @@ android {
             manifestPlaceholders = [appLabel: "Sátni FST DEV"]
         }
         release {
-            minifyEnabled false
+            // R8: pienempi APK (ML Kit, androidx). JS-sillan keep-säännöt: proguard-rules.pro. Testattava puhelimella
+            // tekstintunnistus (SatniOcr) ennen julkaisua: virheet näkyvät vasta ajossa.
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             if (signingProps?.exists()) {
                 signingConfig signingConfigs.release
             }
