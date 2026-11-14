@@ -132,6 +132,108 @@ def inari(db, data):
     return {"words": words, "cats": cats}
 
 
+# Tavutus pitkille sanoille (yli 11 merkkiä), jotta kapealla näytöllä sana katkeaa oikeasta kohdasta tavuviivalla
+# (kolmas|kymmenes|ensimmäinen) eikä mielivaltaisesta kirjaimesta (kolmaskymmenesen|simmäinen). Tavutettu muoto
+# erillisenä karttana (data["hy"], sana -> sana pehmein tavuviivoin U+00AD): vastausten tarkistus käyttää yhä
+# alkuperäisiä sanoja (minipeli.js: peliHy vain näyttöön).
+#   suomi: Voikko (yhdyssanan rajat STRUCTURE-kentästä, pitkien osien sisällä myös tavurajat)
+#   pohjoissaame: GiellaLT:n LibreOffice-tavutuskuviot (lang-sme/tools/hyphenators/hyph_se.dic, Liangin algoritmi)
+#   norja ja inarinsaame: ei tavutusta (lyhyitä tai ei kuvioita)
+HYPH_MIN_LEN = 12
+SHY = "\u00ad"
+SME_PATTERNS = os.path.join(SCRIPT_DIR, "lang-sme", "tools", "hyphenators", "hyph_se.dic")
+
+
+def _load_liang(path):
+    patterns = {}
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line == "UTF-8" or line.split()[0].isupper():
+                continue
+            letters = re.sub(r"\d", "", line)
+            points = [0] * (len(letters) + 1)
+            i = 0
+            for ch in line:
+                if ch.isdigit():
+                    points[i] = int(ch)
+                else:
+                    i += 1
+            patterns[letters] = points
+    return patterns
+
+
+def _liang_points(word, patterns, left=2, right=2):
+    w = "." + word.lower() + "."
+    points = [0] * (len(w) + 1)
+    for i in range(len(w)):
+        for j in range(i + 1, len(w) + 1):
+            pat = patterns.get(w[i:j])
+            if pat:
+                for k, v in enumerate(pat):
+                    points[i + k] = max(points[i + k], v)
+    # points[i + 1] = katkokohta ennen word[i]
+    return [i for i in range(left, len(word) - right + 1) if points[i + 1] % 2 == 1]
+
+
+def _insert(word, cuts):
+    out, prev = [], 0
+    for c in sorted(set(cuts)):
+        out.append(word[prev:c]); prev = c
+    out.append(word[prev:])
+    return SHY.join(out)
+
+
+def _fi_cuts(word, voikko):
+    syl = []
+    pos = 0
+    for ch in voikko.hyphenate(word):
+        if ch == "-":
+            syl.append(pos)
+        else:
+            pos += 1
+    analyses = voikko.analyze(word)
+    structure = analyses[0].get("STRUCTURE", "") if analyses else ""
+    parts, pos = [], 0
+    for ch in structure:
+        if ch == "=":
+            if pos:
+                parts.append(pos)
+        else:
+            pos += 1
+    if not parts:
+        return syl
+    # Yhdyssanan rajat; pitkien osien (yli 12 merkkiä) sisällä myös tavurajat
+    bounds = [0] + parts + [len(word)]
+    cuts = list(parts)
+    for a, b in zip(bounds, bounds[1:]):
+        if b - a > 12:
+            cuts += [c for c in syl if a + 2 <= c <= b - 2]
+    return cuts
+
+
+def hyphenation_map(data):
+    import libvoikko
+    voikko = libvoikko.Voikko("fi")
+    sme = _load_liang(SME_PATTERNS) if os.path.exists(SME_PATTERNS) else None
+    out = {}
+    rows = list(data["words"]) + [r for lst in data["cats"].values() for r in lst]
+    for r in rows:
+        for idx, lang in ((0, "sme"), (1, "fin")):
+            for tok in re.findall(r"[^\s,;/()]+", str(r[idx])):
+                if len(tok) < HYPH_MIN_LEN or tok in out:
+                    continue
+                if lang == "fin":
+                    cuts = _fi_cuts(tok, voikko)
+                elif sme:
+                    cuts = _liang_points(tok, sme)
+                else:
+                    cuts = []
+                if cuts:
+                    out[tok] = _insert(tok, cuts)
+    return out
+
+
 def main():
     lists = {l["id"]: l for l in json.load(open(os.path.join(SCRIPT_DIR, "web", "data", "sanastot.json"), encoding="utf-8"))["lists"]}
     sanasto = {}
@@ -176,6 +278,7 @@ def main():
                                      "animals": [list(a) for a in ANIMALS]}}
     # Inarinsaame (asetuksista valittava, kokeellinen): samat käsitteet, sana kahdesta lähteestä tarkistettuna
     data["smn"] = inari(db, data)
+    data["hy"] = hyphenation_map(data)
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
     lv = [w[4] for w in words]

@@ -263,9 +263,9 @@ function renderPeliQuestion() {
     `<span class="peli-pill streak" title="${esc(T.streak)}">${PELI_FLAME}<b class="peli-score">${run.score}</b></span>` +
     `<span class="peli-pill best" title="${esc(T.best)}">${PELI_CUP}<b>${peliTop(run.mode, false, peliSamiOf(run))[0]?.score ?? 0}</b></span></div>` +
     `<p class="peli-q">${esc(q.toSme ? `${T.askUi(T.inLang[peliSamiOf(run)])}?` : T.askSme)}</p>` +
-    `<p class="peli-word"${q.toSme ? "" : ' lang="se"'}>${esc(q.prompt)}</p></div>` +
+    `<p class="peli-word"${q.toSme ? "" : ' lang="se"'}>${esc(peliHy(q.prompt))}</p></div>` +
     `<div class="peli-opts">${q.opts.map((o, i) => `<button type="button" class="peli-opt" data-o="${esc(o)}">` +
-      `<span class="po-key">${"ABCD"[i]}</span><span class="po-txt${peliLongClass(o)}"${q.toSme ? ' lang="se"' : ""}>${esc(o)}</span>` +
+      `<span class="po-key">${"ABCD"[i]}</span><span class="po-txt${peliLongClass(o)}"${q.toSme ? ' lang="se"' : ""}>${esc(peliHy(o))}</span>` +
       `<span class="po-mark"></span></button>`).join("")}</div></div>` +
     `<p class="peli-report"><a href="#" class="report-link peli-report-link"><span aria-hidden="true">⚑</span> ${esc(T.report)}</a></p>`;
   peliShownAt = performance.now();
@@ -408,6 +408,9 @@ function peliNext(answered, wait) {
 // Vihjeet heikoimmasta: kirjainten määrä, ensimmäinen kirjain, Biret sanoo sanan (Divvunin puhepalvelu: vaatii verkon
 // tai aiemmin kuullun sanan; jos ääni ei onnistu, vihje ei maksa).
 const PELI_FOLD = { á: "a", â: "a", ä: "a", č: "c", đ: "d", ŋ: "n", š: "s", ŧ: "t", ž: "z" };
+// Pitkät sanat näytöllä pehmein tavuviivoin (minipeli.py: data.hy), jotta ne katkeavat oikeasta kohdasta
+// (kolmas-kymmenes-ensimmäinen); vastausten tarkistus käyttää alkuperäisiä sanoja
+const peliHy = (s) => (peli && peli.hy ? String(s).replace(/[^\s,;/()]+/g, (w) => peli.hy[w] || w) : String(s));
 const peliNorm = (s) => s.normalize("NFC").toLowerCase().replace(/[’ʼ´`]/g, "'").replace(/\s+/g, " ").trim().replace(/[?!.]+$/, "");
 const peliFold = (s) => s.replace(/[áâäčđŋšŧž]/g, (c) => PELI_FOLD[c]);
 const peliPoints = (q, r) => Math.max(0, 3 - q.hints - (r.almost ? 1 : 0) - (r.related ? 1 : 0));
@@ -463,7 +466,7 @@ function renderPeliWrite() {
     `<div class="peli-stage compact"><div class="peli-meta">` +
     `<span class="peli-pill streak" title="${esc(T.points(run.score))}">${PELI_FLAME}<b class="peli-score">${run.score}</b></span>` +
     `<span class="peli-pill best" title="${esc(T.best)}">${PELI_CUP}<b>${peliTop(run.mode, true, peliSamiOf(run))[0]?.score ?? 0}</b></span></div>` +
-    `<p class="peli-q">${esc(T.askWrite(T.inLang[peliSamiOf(run)]))}</p><p class="peli-word">${esc(q.prompt)}</p>` +
+    `<p class="peli-q">${esc(T.askWrite(T.inLang[peliSamiOf(run)]))}</p><p class="peli-word">${esc(peliHy(q.prompt))}</p>` +
     `<div class="pw-hint" aria-live="polite">${peliHintHtml(q)}</div></div>` +
     `<form class="pw-form" autocomplete="off"><input class="pw-in" type="text" lang="se" autocomplete="off" autocapitalize="none" autocorrect="off" ` +
     `spellcheck="false" enterkeyhint="go" aria-label="${esc(T.inputLabel)}"><button type="submit" class="peli-primary pw-check">${esc(T.check)}</button></form>` +

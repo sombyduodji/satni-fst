@@ -1253,7 +1253,7 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 @keyframes peli-pop { 0% { transform: scale(1); } 40% { transform: scale(1.5); color: var(--flag-green); } 100% { transform: scale(1); } }
 .peli-q { margin: 16px 0 2px; color: var(--muted); font-size: 14px; }
 .peli-word { margin: 0; font-size: clamp(28px, 9vw, 42px); font-weight: 800; letter-spacing: -.02em; line-height: 1.12;
-  overflow-wrap: anywhere; text-wrap: balance; }
+  overflow-wrap: anywhere; hyphens: manual; text-wrap: balance; }  /* pehmeät tavuviivat (minipeli.js: peliHy) ensin */
 .peli-opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .peli-opt { position: relative; display: flex; align-items: center; gap: 10px; min-height: 62px; padding: 10px 12px; text-align: left;
   border-radius: 16px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font: inherit;
