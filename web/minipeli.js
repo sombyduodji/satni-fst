@@ -701,6 +701,7 @@ function bindPeli() {
   for (const ev of ["pointerdown", "mousedown"]) {
     $("peli-body").addEventListener(ev, (e) => { if (e.target.closest(".pw-key, .pw-hint-btn")) e.preventDefault(); });
   }
+  overlayLayerFns.push(() => (!$("peli-view").hidden && peliRun && !$("peli-back").hidden ? 1 : 0));  // käynnissä oleva peli (app.js)
   // Takaisin-ele (MainActivity: closeOcr) ja Esc: ensin avoin ikkuna, sitten peli
   const closeOcrBase = window.closeOcr;
   window.closeOcr = () => {

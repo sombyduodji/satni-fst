@@ -122,11 +122,11 @@ function renderSanastoGrid() {
   const rest = all.filter((l) => !listed.has(l.id)).map((l) => l.id);  // uusi lista ilman ryhmää: viimeiseen
   if (rest.length) groups[groups.length - 1].lists.push(...rest);
   const words = all.reduce((n, l) => n + l.rows.length, 0);
-  const tile = (l, color) => `<button type="button" class="sanasto-tile" data-list="${esc(l.id)}" style="--tc: var(--flag-${color})">` +
+  const tile = (l, color) => `<button type="button" class="sanasto-tile" data-list="${esc(l.id)}" style="--tc: var(--flag-${color}); --tb: var(--btn-${color})">` +
     `<span class="st-ico">${sanastoSvg(l.icon)}</span><span class="st-txt"><span class="st-title">${esc(l.title[lang])}</span>` +
     `<span class="st-prev">${esc(sanastoPreview(l))}</span></span><span class="st-n">${l.rows.length}</span></button>`;
   $("sanasto-body").innerHTML = sanastoSamiSwitch() + `<p class="sanasto-intro">${esc(t(sanastoSami() === "smn" ? "sanastoIntroSmn" : "sanastoIntro", all.length, words))}</p>` +
-    groups.filter((g) => g.lists.length).map((g) => `<section class="sanasto-group" style="--tc: var(--flag-${g.color})">` +
+    groups.filter((g) => g.lists.length).map((g) => `<section class="sanasto-group" style="--tc: var(--flag-${g.color}); --tb: var(--btn-${g.color})">` +
       `<h3>${esc(t("sanastoGroup_" + g.id))}</h3><div class="sanasto-grid">${g.lists.map((id) => tile(byId[id], g.color)).join("")}</div></section>`).join("");
   $("sanasto-body").scrollTop = 0;
 }
@@ -210,6 +210,7 @@ function renderSanasto(listId) {
   closeFormPop();
   const grp = SANASTO_GROUPS.find((g) => g.lists.includes(listId));
   $("sanasto-view").style.setProperty("--tc", `var(--flag-${grp ? grp.color : "blue"})`);
+  $("sanasto-view").style.setProperty("--tb", `var(--btn-${grp ? grp.color : "blue"})`);
   $("sanasto-title").textContent = l.title[lang];
   $("sanasto-ico").innerHTML = sanastoSvg(l.icon);
   $("sanasto-ico").hidden = false;
@@ -631,6 +632,7 @@ function bindSanastot() {
   });
   // Sovellus taustalle (kotinäppäin, näyttö kiinni): äänilista pysähtyy, ettei se jää soimaan ilman pysäytyspainiketta
   document.addEventListener("visibilitychange", () => { if (document.hidden) sanastoStopAudio(); });
+  overlayLayerFns.push(() => (!$("sanasto-view").hidden && sanastoAuki ? 1 : 0));  // lista ruudukon päällä (app.js)
   const closeOcrBase = window.closeOcr;
   // Androidin takaisin-ele: ensin avoin ikkuna (esim. virheilmoitus), sitten sanastot
   const closeDialog = () => { const d = document.querySelector("dialog[open]"); if (d) d.close(); return !!d; };

@@ -201,26 +201,47 @@ function closeDrawer() {
   return open;
 }
 
-// Selaimen ja puhelimen Takaisin verkkoversiossa (PWA): Sanastot, Minipeli ja Lausekääntäjä saavat avautuessaan oman
-// historiamerkinnän (sama osoite, state.satniOverlay), ja Takaisin sulkee yhden kerroksen kerrallaan samalla ketjulla
-// kuin Androidin takaisin-ele (kupla, ikkuna, lista -> ruudukko, näkymä). Androidissa MainActivity hoitaa takaisin-eleen
-// itse, joten siellä historiaan ei lisätä mitään. Painikkeella tai Escillä suljettaessa merkintä poistetaan
-// (history.back), ettei seuraava Takaisin tunnu tekevän mitään.
+// Selaimen ja puhelimen Takaisin verkkoversiossa (PWA): jokainen avoin kerros (Sanastot/Minipeli/Lausekääntäjä,
+// sanastolista, käynnissä oleva peli, kupla, lauseen valikko ja kortti, ikkuna) saa oman historiamerkintänsä
+// (sama osoite, state.satniOverlay + satniDepth = kerrosten määrä), ja Takaisin sulkee yhden kerroksen kerrallaan
+// samalla ketjulla kuin Androidin takaisin-ele. Merkinnät lisätään vain käyttäjän napautuksen tai näppäilyn jälkeen
+// (syncOverlayHistory), koskaan popstate-käsittelijässä: Chrome merkitsee ilman eleaktivointia lisätyn merkinnän
+// edellisen merkinnän ohitettavaksi, ja seuraava Takaisin poistui silloin sovelluksesta (yötesti 2026-11-14).
+// Painikkeella, Escillä tai napautuksella suljettu kerros poistaa merkintänsä (history.go(-n)), ettei seuraava
+// Takaisin tunnu tekevän mitään. Androidissa MainActivity hoitaa takaisin-eleen itse, joten siellä historiaan ei
+// lisätä mitään.
 const OVERLAY_HISTORY = location.hostname !== "appassets.androidplatform.net";
-let overlayPops = 0;          // omat history.back()-kutsut, joiden popstate ohitetaan
-let overlayPopping = false;   // Takaisin käsittelyssä: näkymän sulkeminen ei poista merkintää uudelleen
+let overlayPops = 0;          // omat history.go()-kutsut, joiden popstate ohitetaan
+let overlayPopping = false;   // Takaisin käsittelyssä: kerroksen sulkeminen ei poista merkintää uudelleen
 const afterOverlayPop = [];
+const overlayLayerFns = [];   // näkymäkohtaiset kerrokset (sanastot.js, minipeli.js, lauseet.js)
 const isOverlayState = (s) => !!(s && s.satniOverlay);
+const overlayDepth = (s) => (isOverlayState(s) ? s.satniDepth || 1 : 0);
 const overlayOpen = () => ["peli-view", "sanasto-view", "lause-view"].some((id) => $(id) && !$(id).hidden);
-function overlayOpened() {
-  if (OVERLAY_HISTORY && !isOverlayState(history.state)) history.pushState({ satniOverlay: true }, "");
+function overlayLayers() {
+  if (!overlayOpen()) return 0;
+  return 1 + overlayLayerFns.reduce((n, f) => n + f(), 0) + (formPopTarget ? 1 : 0) +
+    (document.querySelector("dialog[open]") ? 1 : 0);
 }
-function overlayClosed() {
-  if (!OVERLAY_HISTORY || overlayPopping || overlayOpen() || !isOverlayState(history.state)) return;
-  overlayPops++;
-  history.back();
+// Historia vastaamaan avoimia kerroksia: enintään yksi uusi merkintä elettä kohden (jokainen kerros avataan omalla
+// napautuksellaan); suljetut kerrokset poistetaan historiasta. trimOnly: vain poisto (Takaisin-käsittelyn jälkeen,
+// jolloin eleaktivointia ei ole)
+function syncOverlayHistory(trimOnly) {
+  if (!OVERLAY_HISTORY || overlayPops > 0 || overlayPopping) return;
+  const depth = overlayDepth(history.state), layers = overlayLayers();
+  if (layers > depth) { if (!trimOnly) history.pushState({ satniOverlay: true, satniDepth: depth + 1 }, ""); }
+  else if (layers < depth) { overlayPops++; history.go(layers - depth); }
 }
-// Historiaan lisääminen heti näkymän sulkemisen jälkeen (pelin Koti): vasta kun oma history.back() on valmis
+let overlaySyncQueued = false;
+function queueOverlaySync() {
+  if (!OVERLAY_HISTORY || overlaySyncQueued) return;
+  overlaySyncQueued = true;
+  // Kaikkien käsittelijöiden jälkeen (myös näkymien omat napautuskäsittelijät); eleaktivointi on yhä voimassa
+  setTimeout(() => { overlaySyncQueued = false; syncOverlayHistory(); }, 0);
+}
+function overlayOpened() { queueOverlaySync(); }
+function overlayClosed() { if (!overlayPopping) syncOverlayHistory(); }
+// Historiaan lisääminen heti näkymän sulkemisen jälkeen (pelin Koti): vasta kun oma history.go() on valmis
 function whenOverlayHistoryIdle(fn) {
   if (overlayPops > 0) afterOverlayPop.push(fn); else fn();
 }
@@ -231,14 +252,23 @@ function onPopState(e) {
     if (!overlayPops) afterOverlayPop.splice(0).forEach((fn) => fn());
     return;
   }
-  if (OVERLAY_HISTORY && overlayOpen() && !isOverlayState(e.state)) {
+  if (OVERLAY_HISTORY && overlayOpen() && overlayLayers() > overlayDepth(e.state)) {
     e.stopImmediatePropagation();  // osoite ei muuttunut: ei korttia uudelleen eikä sanastojen/lauseen paluuta
     overlayPopping = true;
-    try { closeFormPop() || (window.closeOcr && closeOcr()) || closeDrawer(); } finally { overlayPopping = false; }
-    if (overlayOpen()) history.pushState({ satniOverlay: true }, "");
+    try {
+      // Yleensä yksi kerros; useampi, jos merkintöjä on vähemmän kuin kerroksia (esim. kaksi kerrosta yhdellä eleellä)
+      for (let i = 0; i < 8 && overlayLayers() > overlayDepth(e.state); i++) {
+        if (!(closeFormPop() || (window.closeOcr && closeOcr()) || closeDrawer())) break;
+      }
+    } finally { overlayPopping = false; }
+    syncOverlayHistory(true);  // ei koskaan uutta merkintää tässä (Chromen historiainterventio), vain ylimääräisten poisto
     return;
   }
+  if (OVERLAY_HISTORY && overlayOpen() && isOverlayState(e.state)) { e.stopImmediatePropagation(); syncOverlayHistory(true); return; }
   routeFromHash();
+  // Sanakortilta takaisin näkymään (sanastot.js, lauseet.js avaavat näkymän omissa popstate-käsittelijöissään):
+  // kerroksia voi olla vähemmän kuin merkintöjä
+  if (OVERLAY_HISTORY) setTimeout(() => syncOverlayHistory(true), 0);
 }
 
 // Muut kielet valikossa: valittujen kielten käännökset näytetään sanakortissa (renderExtraTranslations)
@@ -487,8 +517,8 @@ function paradigmOrderBy() {
   return paradigmOrder;
 }
 // Käännöslistan sanat yksitellen (fin_items, nob_items): rajaa trans_search-rivit indeksillä ennen LIKE-ehtoja, jolloin
-// koko taulua (216 000 riviä) ei käydä läpi (sql.js noin 20 -> 0,2 ms). Ei pilkkua eikä jokerimerkkejä: niillä vanha tapa.
-const itemsTableFor = (lang, q) => (q && !/[,%_]/.test(q) && hasTable(`${lang}_items`) ? `${lang}_items` : null);
+// koko taulua (216 000 riviä) ei käydä läpi (sql.js noin 20 -> 0,2 ms). Ei pilkkua: sillä vanha tapa.
+const itemsTableFor = (lang, q) => (q && !q.includes(",") && hasTable(`${lang}_items`) ? `${lang}_items` : null);
 
 // Ihmistä tarkoittavien substantiivien merkintä (semantics.py) on vain uudemmassa tietokannassa
 let humanColumn = null;
@@ -499,9 +529,11 @@ function hasHumanColumn() {
 
 // Käännöslistan osuma (q on koko lista, sen ensimmäinen tai jokin muu pilkulla erotettu sana). instr-esisuodatin on
 // sama ehto kuin LIKE-ehdot (fold ja q ovat pienaakkosin) mutta nopeampi: trans_search käydään läpi 40 % nopeammin
-// (sql.js 28 -> 16 ms). Jokerimerkit % ja _ ohittavat esisuodattimen, jotta tulokset pysyvät samoina.
-const TRANS_MATCH = "(? OR instr(t.fold, ?)) AND (t.fold = ? OR t.fold LIKE ? OR t.fold LIKE ? OR t.fold LIKE ?)";
-const transMatchParams = (q) => [/[%_]/.test(q) ? 1 : 0, q, q, `${q},%`, `%, ${q},%`, `%, ${q}`];
+// (sql.js 28 -> 16 ms). % ja _ ovat tavallisia merkkejä (ESCAPE, likeEsc), eivät LIKE-jokerimerkkejä (yötesti 2026-11-14:
+// haku % palautti satunnaisia sanoja).
+const likeEsc = (s) => s.replace(/[\\%_]/g, "\\$&");
+const TRANS_MATCH = "(? OR instr(t.fold, ?)) AND (t.fold = ? OR t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\')";
+const transMatchParams = (q) => { const e = likeEsc(q); return [0, q, q, `${e},%`, `%, ${e},%`, `%, ${e}`]; };
 
 function queryDatabase(query) {
   const q = fold(query.trim());
@@ -577,8 +609,8 @@ function queryDatabase(query) {
     for (const r of all(
       `SELECT d.${cols.split(", ").join(", d.")}, t.fold, t.lang FROM trans_search t JOIN dictionary d ON d.id = t.word_id
        WHERE t.lang IN (${extra.map(() => "?").join(", ")}) AND t.nr IS NULL
-         AND (t.fold = ? OR t.fold LIKE ? OR t.fold LIKE ? OR t.fold LIKE ?)`,
-      [...extra, q, `${q},%`, `%, ${q},%`, `%, ${q}`]
+         AND (t.fold = ? OR t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\')`,
+      [...extra, q, `${likeEsc(q)},%`, `%, ${likeEsc(q)},%`, `%, ${likeEsc(q)}`]
     )) {
       add({ ...r, extraLang: r.lang }, r.fold === q ? 6.5 : r.fold.startsWith(`${q},`) ? 6.51 : 6.52);
     }
@@ -761,8 +793,8 @@ function suggestWords(prefix, withForms = true) {
       `SELECT DISTINCT d.id, d.sme_lemma, d.pos, ${TRANS_COLS.split(", ").map((c) => "d." + c).join(", ")}
        FROM trans_search t JOIN dictionary d ON d.id = t.word_id
        WHERE t.lang = ? ${items ? `AND t.word_id IN (SELECT word_id FROM ${items} WHERE item >= ? AND item < ?)` : ""}
-       AND (t.fold LIKE ? OR t.fold LIKE ?) ORDER BY length(d.sme_lemma), d.id LIMIT 8`,
-      [settings.lang, ...(items ? [q, q + "\uffff"] : []), `${q}%`, `%, ${q}%`]
+       AND (t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\') ORDER BY length(d.sme_lemma), d.id LIMIT 8`,
+      [settings.lang, ...(items ? [q, q + "\uffff"] : []), `${likeEsc(q)}%`, `%, ${likeEsc(q)}%`]
     ));
   }
   // Muut kielet -asetuksessa valitut kielet viimeisinä (espanjaksi per -> beana "perro")
@@ -771,9 +803,9 @@ function suggestWords(prefix, withForms = true) {
     rows.push(...all(
       `SELECT d.id, d.sme_lemma, d.pos, ${TRANS_COLS.split(", ").map((c) => "d." + c).join(", ")}, MIN(t.lang) AS extraLang
        FROM trans_search t JOIN dictionary d ON d.id = t.word_id
-       WHERE t.lang IN (${extra.map(() => "?").join(", ")}) AND t.nr IS NULL AND (t.fold LIKE ? OR t.fold LIKE ?)
+       WHERE t.lang IN (${extra.map(() => "?").join(", ")}) AND t.nr IS NULL AND (t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\')
        GROUP BY d.id ORDER BY d.freq DESC, length(d.sme_lemma) LIMIT 8`,
-      [...extra, `${q}%`, `%, ${q}%`]
+      [...extra, `${likeEsc(q)}%`, `%, ${likeEsc(q)}%`]
     ));
   }
   // Kirjoitettu sana taivutusmuotona (munnje = mun, minulle = mun): perusmuodon jälkeen, jos sana on itse käännetty hakusana
@@ -922,8 +954,11 @@ function showOnly(view) {
   for (const t of ["table", "meanings", "raw"]) $("panel-" + t).hidden = view !== "word" || state.tab !== t;
 }
 
+// Haun pituusraja: sama kuin hakukentän maxlength (index.html); koskee myös osoitetta #/sana/… ja jaettua tekstiä.
+// 5 000 merkin haku vei 375 ms (yötesti 2026-11-14). Lausekääntäjällä on oma kenttänsä.
+const MAX_QUERY = 100;
 function search(query, index = 0, pushHistory = true) {
-  query = cleanQuery(query).trim();
+  query = cleanQuery(String(query).slice(0, MAX_QUERY)).trim();
   if (!query || !db) return;
   hideSuggestions();
   $("search").value = query;
@@ -1039,8 +1074,8 @@ function extraDidYouMean(query, results) {
   for (const { lang, term } of terms) {
     const r = all(
       `SELECT d.id, d.sme_lemma, d.freq, d.${col} AS tr, d.${LANGUAGES[lang].col} AS own FROM trans_search t
-       JOIN dictionary d ON d.id = t.word_id WHERE t.lang = ? AND (t.fold = ? OR t.fold LIKE ? OR t.fold LIKE ? OR t.fold LIKE ?)
-       ORDER BY d.freq DESC LIMIT 1`, [lang, term, `${term},%`, `%, ${term},%`, `%, ${term}`])[0];
+       JOIN dictionary d ON d.id = t.word_id WHERE t.lang = ? AND (t.fold = ? OR t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\')
+       ORDER BY d.freq DESC LIMIT 1`, [lang, term, `${likeEsc(term)},%`, `%, ${likeEsc(term)},%`, `%, ${likeEsc(term)}`])[0];
     if (!r || (sami.length && (r.freq || 0) < Math.max(1000, current * SUGGEST_FACTOR))) continue;
     const word = splitList(r.own).find((x) => fold(x) === term) || term;  // alkuperäinen kirjoitusasu (æ, ø)
     out.push({ word, id: r.id, lemma: r.sme_lemma, trans: splitList(r.tr)[0], lang, freq: r.freq || 0 });
@@ -2747,6 +2782,7 @@ function bindFormPop() {
 // teksti odottaa (pendingShared).
 let pendingShared = null;
 function openShared(text) {
+  text = String(text).slice(0, MAX_QUERY);
   const words = cleanQuery(text).replace(/https?:\/\/\S+/g, " ").split(/\s+/)
     .map((w) => w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "")).filter(Boolean);
   if (!words.length) return false;  // pelkkä linkki, välimerkit tai tyhjä: ei haettavaa
@@ -2877,6 +2913,9 @@ function bindEvents() {
   };
   $("history-more").onclick = () => { historyExpanded = true; renderSidebar(); };
   window.addEventListener("popstate", onPopState);
+  // Kerrosten historiamerkinnät käyttäjän eleiden jälkeen (napautus, näppäin) ja ikkunan sulkeuduttua
+  for (const ev of ["click", "keyup"]) document.addEventListener(ev, queueOverlaySync, true);
+  document.addEventListener("close", queueOverlaySync, true);
   window.addEventListener("hashchange", routeFromHash);
   document.addEventListener("keydown", (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f" && db) { e.preventDefault(); input.focus(); input.select(); }

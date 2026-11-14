@@ -60,10 +60,10 @@ function lauseCandidatesUncached(base, pos, exactOnly) {
       FROM fin_items i JOIN dictionary d ON d.id = i.word_id WHERE i.item = ? GROUP BY d.id`, [f]);
   } catch (e) {
     rows = all(`SELECT DISTINCT d.id, d.sme_lemma, d.pos, d.subtype, d.freq, d.human, d.sem, MIN(COALESCE(t.nr, 9)) AS nr,
-      MIN(CASE WHEN t.fold = ? OR t.fold LIKE ? THEN 0 ELSE 1 END) AS at FROM trans_search t
+      MIN(CASE WHEN t.fold = ? OR t.fold LIKE ? ESCAPE '\\' THEN 0 ELSE 1 END) AS at FROM trans_search t
       JOIN dictionary d ON d.id = t.word_id WHERE t.lang = 'fin'
-      AND (t.fold = ? OR t.fold LIKE ? OR t.fold LIKE ? OR t.fold LIKE ?) GROUP BY d.id`,
-      [f, `${f}, %`, f, `${f}, %`, `%, ${f}`, `%, ${f}, %`]);
+      AND (t.fold = ? OR t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\') GROUP BY d.id`,
+      [f, `${likeEsc(f)}, %`, f, `${likeEsc(f)}, %`, `%, ${likeEsc(f)}`, `%, ${likeEsc(f)}, %`]);
   }
   rows = rows.filter((r) => !exactOnly || r.at === 0);
   const want = LAUSE_POS[pos] || null;
@@ -645,6 +645,7 @@ function bindLause() {
   if (!$("lause-view")) return;
   $("lause-btn").onclick = openLause;
   $("lause-close").onclick = () => { $("lause-view").hidden = true; overlayClosed(); };
+  overlayLayerFns.push(() => ($("lause-view").hidden ? 0 : (!$("lause-pop").hidden) + (!$("lause-card").hidden)));  // sanan valikko ja kortti (app.js)
   const closeOcrBase = window.closeOcr;
   window.closeOcr = () => closeLause() || (closeOcrBase ? closeOcrBase() : false);
   const backToOcrBase = window.backToOcr;
