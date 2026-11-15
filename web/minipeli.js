@@ -11,6 +11,8 @@ let peliShownAt = 0;    // kysymyksen piirtohetki: heti sen jälkeen tulleet nap
 
 const PELI_TEXTS = {
   fi: {
+    statStreak: "paras putki", statModes: "peliä pelattu", statGames: "pelattua peliä", record: "ennätys", rulesBtn: "Säännöt",
+    unfinished: (n) => `kesken ${n} p`, restart: "Aloita kesken jäänyt peli alusta",
     title: "Minipeli", pick: "Valitse peli", best: "Paras", none: "–", score: (n) => `${n} oikein`,
     lead: "Valitse oikea käännös neljästä. Yksi väärä vastaus päättää pelin.",
     modes: { beginner: ["Aloittelija", "Yleisimmät sanat"], advanced: ["Edistynyt", "Kaikki 1 089 sanaa"],
@@ -33,6 +35,8 @@ const PELI_TEXTS = {
     kbdLink: "Näin lisäät sen", close: "Sulje",
   },
   nb: {
+    statStreak: "beste rekke", statModes: "spill prøvd", statGames: "spill spilt", record: "rekord", rulesBtn: "Regler",
+    unfinished: (n) => `uferdig ${n} p`, restart: "Start det uferdige spillet på nytt",
     title: "Minispill", pick: "Velg spill", best: "Best", none: "–", score: (n) => `${n} riktige`,
     lead: "Velg riktig oversettelse av fire. Ett feil svar avslutter spillet.",
     modes: { beginner: ["Nybegynner", "De vanligste ordene"], advanced: ["Viderekommen", "Alle 1 089 ord"],
@@ -106,6 +110,7 @@ function peliAddTop(mode, score, write = false, sami = "sme") {
     .sort((a, b) => b.score - a.score).slice(0, 3);
   all[mode] = list;
   peliStore.set("satni-peli-top", all);
+  peliStore.set("satni-peli-games", peliStore.get("satni-peli-games", 0) + 1);  // pelattujen pelien määrä (valikon tilastot)
   return list;
 }
 
@@ -174,6 +179,9 @@ function peliHead(title, back) {
   renderPeliMute();  // kielen mukainen nimi
   $("peli-title").textContent = title;
   $("peli-back").hidden = !back;
+  $("peli-rules-btn").hidden = back;  // säännöt vain valikossa
+  $("peli-rules-btn").textContent = "ⓘ " + pt().rulesBtn;
+  if (!back) $("peli-meta-head").replaceChildren();  // valikossa ei pisteitä otsikossa
   // Äänipainike vain, kun pelissä on ääntä: inarinsaamessa Biret ei puhu (pelissä pelin kieli, valikossa valittu kieli)
   $("peli-mute").hidden = !PELI_SAMI[back && peliRun ? peliSamiOf(peliRun) : peliMenuSami()].voice;
 }
@@ -216,22 +224,29 @@ function renderPeliMenu() {
   peliHead(pt().title, false);
   const T = pt();
   const sami = peliMenuSami();
-  const tile = (m) => {
-    const best = peliTop(m.id, peliWrite, sami)[0];
-    // Sanat: isot kortit kahdessa sarakkeessa; aiheet: tasakorkeat rivit. Paras tulos pokaalimerkkinä.
-    return `<button type="button" class="peli-tile${m.group === "cats" ? " row" : ""}" data-mode="${m.id}" style="--tc: var(--flag-${m.color}); --tb: var(--btn-${m.color})">` +
-      `<span class="pt-ico">${peliModeIcon(m.id)}</span><span class="pt-text"><span class="pt-name">${esc(T.modes[m.id][0])}</span>` +
-      `<span class="pt-sub">${esc(peliModeSub(m.id, sami))}</span></span>` +
-      `<span class="pt-best${best ? "" : " none"}" title="${esc(T.best)}">${PELI_CUP}<b>${best ? best.score : T.none}</b></span></button>`;
+  const modes = peliModesFor(sami);
+  const run = peliRun && peliRun.q && !!peliRun.write === peliWrite && peliSamiOf(peliRun) === sami ? peliRun : null;
+  // V2 (test-fable): omat tulokset ylhäällä, jokainen peli rivinä (ennätys ja palkki), säännöt ⓘ-painikkeen takana.
+  // Palkin täysi mitta: pelin sanamäärä, enintään 30 (pitkissä sanapeleissä 30 oikeaa peräkkäin täyttää palkin).
+  const bests = modes.map((m) => peliTop(m.id, peliWrite, sami)[0]?.score ?? 0);
+  const stat = (n, label) => `<div class="pm-stat"><b>${n}</b>${esc(label)}</div>`;
+  const row = (m, i) => {
+    const best = bests[i], goal = Math.max(1, Math.min(30, peliPool(m.id, sami).length));
+    const unfinished = run && run.mode === m.id;
+    return `<button type="button" class="peli-tile pm-row${unfinished ? " unfinished" : ""}" data-mode="${m.id}"${unfinished ? ' data-resume="1"' : ""} style="--tc: var(--flag-${m.color}); --tb: var(--btn-${m.color})">` +
+      `<span class="pt-ico">${peliModeIcon(m.id)}</span><span class="pm-text"><span class="pt-name">${esc(T.modes[m.id][0])}` +
+      (unfinished ? `<small> · ${esc(T.unfinished(run.score))}</small>` : "") + `</span>` +
+      `<span class="pm-bar"><i style="width:${Math.round(100 * Math.min(1, best / goal))}%"></i></span></span>` +
+      `<span class="pm-best${best ? "" : " none"}"><small>${esc(T.record)}</small><b>${best || T.none}${best >= goal ? " ✓" : ""}</b></span></button>`;
   };
   const rules = (peliWrite ? T.rulesWrite : T.rules).map(([txt, pts]) =>
     `<li${pts ? ` class="${pts.startsWith("+") ? "gain" : "cost"}"` : ""}>${pts ? `<b>${esc(pts)}</b>` : ""}${esc(txt)}</li>`).join("");
-  const GROUP_ICON = { words: PELI_MODE_ICON.beginner, cats: '<path d="M4 6h16M4 12h16M4 18h10"/>' };
-  $("peli-body").innerHTML = peliSamiSwitch(sami) + peliStyleSwitch() + `<ul class="peli-rules" aria-label="${esc(peliWrite ? T.leadWrite : T.lead)}">${rules}</ul>` +
-    ["words", "cats"].map((g) => `<section class="peli-group"><header class="pg-head"><span class="pg-ico">` +
-      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${GROUP_ICON[g]}</svg></span>` +
-      `<span><h3>${esc(T.groups[g])}</h3><p>${esc(T.groupSub[g])}</p></span></header>` +
-      `<div class="${g === "cats" ? "peli-list" : "peli-grid"}">${peliModesFor(sami).filter((m) => m.group === g).map(tile).join("")}</div></section>`).join("");
+  $("peli-body").innerHTML = peliSamiSwitch(sami) +
+    `<div class="pm-stats">${stat(Math.max(0, ...bests), T.statStreak)}${stat(`${bests.filter(Boolean).length} / ${modes.length}`, T.statModes)}` +
+    `${stat(peliStore.get("satni-peli-games", 0), T.statGames)}</div>` + peliStyleSwitch() +
+    `<ul class="peli-rules" aria-label="${esc(peliWrite ? T.leadWrite : T.lead)}"${$("peli-rules-btn").getAttribute("aria-expanded") === "true" ? "" : " hidden"}>${rules}</ul>` +
+    `<div class="pm-list">${modes.map(row).join("")}</div>` +
+    (run ? `<p class="pm-fresh"><button type="button" class="link-btn" data-act="fresh">${esc(T.restart)}</button></p>` : "");
 }
 
 function renderPeliResume() {
@@ -269,7 +284,14 @@ function renderPeliQuestion() {
       `<span class="po-key">${"ABCD"[i]}</span><span class="po-txt${peliLongClass(o)}"${q.toSme ? ' lang="se"' : ""}>${esc(peliHy(o))}</span>` +
       `<span class="po-mark"></span></button>`).join("")}</div></div>` +
     `<p class="peli-report"><a href="#" class="report-link peli-report-link"><span aria-hidden="true">⚑</span> ${esc(T.report)}</a></p>`;
+  peliMetaToHead();
   peliShownAt = performance.now();
+}
+// Putki ja ennätys otsikkoriville (kysymyskortti pienemmäksi, vastaukset alas peukalon ulottuville)
+function peliMetaToHead() {
+  const meta = $("peli-body").querySelector(".peli-meta");
+  if (meta) $("peli-meta-head").replaceChildren(...meta.children);
+  meta?.remove();
 }
 
 // Parhaat tulokset: kolme parasta korokkeella (🥈 vasemmalla, 🥇 keskellä korkeimpana, 🥉 oikealla)
@@ -481,6 +503,7 @@ function renderPeliWrite() {
       if (!peliStore.get("satni-peli-keys", null)) { document.querySelector(".pw-letters")?.remove(); document.querySelector(".pw-tip")?.remove(); }
     }
   });
+  peliMetaToHead();
   peliShownAt = performance.now();
   inp.focus({ preventScroll: true });
 }
@@ -579,8 +602,9 @@ function openPeli() {
   loadPeli().then(() => {
     if (!peliRun) peliRun = peliStore.get("satni-peli-run", null);
     // Inarinsaamen keskeneräinen peli vain, jos inarinsaame on yhä käytössä asetuksissa
-    if (peliRun && peliRun.q && PELI_MODES.some((m) => m.id === peliRun.mode) && (peliSamiOf(peliRun) === "sme" || peliSamiEnabled())) renderPeliResume();
-    else { peliRun = null; renderPeliMenu(); }
+    // Kesken jäänyt peli näkyy valikon yläosassa Jatka-painikkeella (ei enää omana kysymysnäkymänään)
+    if (!(peliRun && peliRun.q && PELI_MODES.some((m) => m.id === peliRun.mode) && (peliSamiOf(peliRun) === "sme" || peliSamiEnabled()))) peliRun = null;
+    renderPeliMenu();
   }).catch(() => { $("peli-body").textContent = t("loadFailed", "minipeli.json"); });
 }
 function hidePeli() { peliStopAudio(); const was = !$("peli-view").hidden; $("peli-view").hidden = true; if (was) overlayClosed(); }
@@ -656,6 +680,12 @@ function bindPeli() {
   $("peli-btn").onclick = openPeli;
   $("peli-close").onclick = hidePeli;
   $("peli-mute").onclick = togglePeliMute;
+  $("peli-rules-btn").onclick = () => {
+    const b = $("peli-rules-btn"), open = b.getAttribute("aria-expanded") !== "true";
+    b.setAttribute("aria-expanded", String(open));
+    const list = $("peli-body").querySelector(".peli-rules");
+    if (list) list.hidden = !open;
+  };
   renderPeliMute();
   $("peli-back").onclick = () => renderPeliMenu();
   if ($("game-toggle")) {
@@ -672,7 +702,7 @@ function bindPeli() {
   applyPeliButton();
   $("peli-body").addEventListener("click", (e) => {
     const tile = e.target.closest(".peli-tile");
-    if (tile) return peliStart(tile.dataset.mode);
+    if (tile) return tile.dataset.resume ? renderPeliQuestion() : peliStart(tile.dataset.mode);
     const lang = e.target.closest(".pl-opt");
     if (lang) { peliStore.set("satni-peli-sami", lang.dataset.sami); return renderPeliMenu(); }
     const style = e.target.closest(".ps-opt");

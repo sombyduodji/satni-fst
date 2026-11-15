@@ -196,6 +196,7 @@ function showMenuTip() {
     return;
   }
   const btn = $("sidebar-toggle");
+  if (!btn.getClientRects().length) return;  // alapalkki käytössä: valikko on nimetty Lisää-painike
   const tip = $("menu-tip");
   const r = btn.getBoundingClientRect();
   tip.textContent = t("menuTip");
@@ -1008,8 +1009,8 @@ function showOnly(view) {
     renderRecent();
   }
   $("loading").hidden = view !== "loading";
-  for (const id of ["results", "word", "tabs"]) $(id).hidden = view !== "word";
-  for (const t of ["table", "meanings", "raw"]) $("panel-" + t).hidden = view !== "word" || state.tab !== t;
+  for (const id of ["results", "word", "tabs", "word-foot"]) $(id).hidden = view !== "word";
+  for (const t of TABS) $("panel-" + t).hidden = view !== "word" || state.tab !== t;
 }
 
 // Haun pituusraja: sama kuin hakukentän maxlength (index.html); koskee myös osoitetta #/sana/… ja jaettua tekstiä.
@@ -1036,7 +1037,9 @@ function search(query, index = 0, pushHistory = true) {
     showOnly("word");
     $("results").hidden = true;
     $("tabs").hidden = true;
-    for (const t of ["table", "meanings", "raw"]) $("panel-" + t).hidden = true;
+    $("word-foot").hidden = true;
+    $("grad-sum").hidden = true;
+    for (const t of TABS) $("panel-" + t).hidden = true;
     $("lemma").textContent = t("noHits", query);
     $("pos-badge").hidden = true;
     $("fav-btn").hidden = true;
@@ -1703,7 +1706,21 @@ function inflectionClassCell(w) {
          `<span class="gc-val">${esc(name)}${rule}</span></div>`;
 }
 
+// Kortissa tiivis rivi (viessu → viesu · ss → s), täydet tiedot Astevaihtelu-välilehdellä (kokeilu B, test-fable)
 function renderGradation() {
+  renderGradationFull();
+  const w = state.word, full = $("gradation"), sum = $("grad-sum");
+  const any = full.innerHTML !== "";
+  $("grade-tab").hidden = !any;
+  if (!any && state.tab === "grade") setTab("table");
+  sum.hidden = !any;
+  if (!any) return;
+  const forms = full.querySelector(".grad-cell.forms .gc-val");
+  sum.innerHTML = (forms
+    ? `<span class="gs-forms" lang="se" translate="no">${forms.innerHTML}</span><span class="gs-clusters"><span class="gd">${esc(w.gd_cluster)}</span> → <span class="hd">${esc(w.hd_cluster)}</span></span>`
+    : `<span class="muted"><i>${esc(t("noGradation"))}</i></span>`) + `<span class="gs-more">${esc(t("gradation"))} ›</span>`;
+}
+function renderGradationFull() {
   const w = state.word;
   const el = $("gradation");
   if (!settings.showGrade || UNINFLECTED_POS.includes(w.pos.toUpperCase()) || !state.paradigm.size) { el.innerHTML = ""; return; }
@@ -1982,11 +1999,12 @@ function renderRaw() {
   $("panel-raw").innerHTML = `<div class="raw">${html || esc(state.word.sme_lemma)}</div>`;
 }
 
+const TABS = ["table", "grade", "meanings", "raw"];
 function setTab(tab) {
   closeFormPop();
   state.tab = tab;
   for (const b of $("tabs").children) b.classList.toggle("active", b.dataset.tab === tab);
-  for (const t of ["table", "meanings", "raw"]) $("panel-" + t).hidden = t !== tab;
+  for (const t of TABS) $("panel-" + t).hidden = t !== tab;
 }
 
 // --- Ääntäminen: Divvunin puhesynteesi, välimuisti selaimen Cache Storagessa ---
@@ -2110,18 +2128,40 @@ function updateFavButton() {
   $("fav-btn").title = on ? t("removeFavourite") : t("addFavourite");
   $("fav-btn").setAttribute("aria-label", $("fav-btn").title);
 }
-const HISTORY_SHOWN = 10;
+const HISTORY_SHOWN = 6;
 let historyExpanded = false;
+let menuTab = "history";  // valikon välilehti: historia tai suosikit
+// Sanan lyhyt käännös valikon riville (käyttöliittymän kielellä); tyhjä, jos sanakirja ei ole vielä auki tai käännöstä ei ole
+const glossCache = new Map();
+function menuGloss(lemma) {
+  if (!db) return "";
+  const key = settings.lang + "|" + lemma;
+  if (!glossCache.has(key)) {
+    let g = "";
+    try {
+      const col = (LANGUAGES[settings.lang] || LANGUAGES.fin).col;
+      const r = all(`SELECT ${col} AS tr FROM dictionary WHERE sme_lemma = ? AND ${col} <> '' ORDER BY freq DESC LIMIT 1`, [lemma])[0];
+      if (r) g = r.tr.split(/[,;]/).slice(0, 2).map((x) => x.trim()).filter(Boolean).join(", ");  // kaksi ensimmäistä merkitystä (giella: ansa, kieli)
+    } catch (e) { /* ei käännöstä riville */ }
+    glossCache.set(key, g);
+  }
+  return glossCache.get(key);
+}
 function renderSidebar() {
   const fill = (id, words, empty) => {
     $(id).innerHTML = words.length
-      ? words.map((w) => `<li><a href="#/sana/${encodeURIComponent(w)}">${esc(w)}</a></li>`).join("")
+      ? words.map((w) => { const g = menuGloss(w); return `<li><a href="#/sana/${encodeURIComponent(w)}"><b class="wl-w">${esc(w)}</b>${g ? `<span class="wl-tr">${esc(g)}</span>` : ""}</a></li>`; }).join("")
       : `<li class="empty">${empty}</li>`;
   };
+  for (const b of document.querySelectorAll(".menu-tabs [data-mtab]")) b.setAttribute("aria-selected", String(b.dataset.mtab === menuTab));
+  $("menu-history").hidden = menuTab !== "history";
+  $("menu-favourites").hidden = menuTab !== "favourites";
+  $("fav-count").textContent = settings.favourites.length ? `(${settings.favourites.length})` : "";
   fill("favourites", settings.favourites, esc(t("noFavourites")));
   // Historiasta 10 viimeisintä; Lisää… näyttää loput, ja valikon avaaminen palauttaa kymmeneen
   fill("history", historyExpanded ? settings.history : settings.history.slice(0, HISTORY_SHOWN), esc(t("noHistory")));
   $("history-more").hidden = historyExpanded || settings.history.length <= HISTORY_SHOWN;
+  $("history-more").textContent = t("historyAll", settings.history.length);
   $("clear-history").disabled = !settings.history.length;
   $("history-clear-menu").hidden = !settings.history.length;
   for (const a of $("history").querySelectorAll("a")) a.title = t("historyHint");
@@ -2221,6 +2261,68 @@ function renderGradeSwatches() {
   if ($("grade-underline")) $("grade-underline").checked = !!settings.gradeUnderline;
 }
 if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => applyGradeStyle());
+
+// --- Alapalkki (kokeilu, test-fable): kapealla näytöllä yläpalkin tilalla ---
+// Painike sulkee ensin avoimen näkymän ja avaa sitten omansa samalla toiminnolla kuin yläpalkin painike; Haku palaa
+// hakuun (aloitussivulle, jos mikään näkymä ei ollut auki). Näppäimistön ajaksi palkki piiloon.
+const NAV_VIEWS = { sanasto: "sanasto-view", peli: "peli-view", lause: "lause-view", ocr: "ocr-view" };
+function closeAllViews() {
+  let closed = false;
+  if (!$("settings-view").hidden) { hideSettings(); closed = true; }
+  if (!$("sanasto-view").hidden) { closeFormPop(); hideSanastot(); closed = true; }
+  if (!$("peli-view").hidden) { hidePeli(); closed = true; }
+  if (!$("lause-view").hidden) { $("lause-view").hidden = true; overlayClosed(); closed = true; }
+  if (!$("ocr-view").hidden) { $("ocr-view").hidden = true; closed = true; }
+  return closed;
+}
+function syncBottomNav() {
+  const nav = $("bottom-nav");
+  if (!nav) return;
+  nav.querySelector('[data-nav="lause"]').hidden = $("lause-btn").hidden;
+  nav.querySelector('[data-nav="ocr"]').hidden = $("ocr-btn").hidden;
+  nav.querySelector('[data-nav="peli"]').hidden = $("peli-btn").hidden;
+  nav.classList.toggle("many", nav.querySelectorAll("button:not([hidden])").length >= 6);  // kuusi painiketta: pienempi teksti
+  const open = Object.keys(NAV_VIEWS).find((k) => !$(NAV_VIEWS[k]).hidden) ||
+    (document.body.classList.contains("sidebar-open") || !$("settings-view").hidden ? "more" : "home");
+  for (const b of nav.querySelectorAll("button")) {
+    b.classList.toggle("active", b.dataset.nav === open);
+    if (b.dataset.nav === open) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  }
+}
+function bindBottomNav() {
+  const nav = $("bottom-nav");
+  if (!nav) return;
+  const openers = { sanasto: "sanasto-btn", peli: "peli-btn", lause: "lause-btn", ocr: "ocr-btn" };
+  nav.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-nav]");
+    if (!b) return;
+    const what = b.dataset.nav;
+    if (what !== "home" && what !== "more" && !$(NAV_VIEWS[what]).hidden) return;  // jo auki
+    const closed = closeAllViews();
+    const drawer = closeDrawer();
+    whenOverlayHistoryIdle(() => {
+      if (what === "home") { if (!closed && !drawer) goHome(e); else window.scrollTo(0, 0); }
+      else if (what === "more") { if (!drawer) $("sidebar-toggle").click(); }
+      else $(openers[what]).click();
+      syncBottomNav();
+    });
+  });
+  const watch = new MutationObserver(syncBottomNav);
+  for (const id of [...Object.values(NAV_VIEWS), "settings-view", "lause-btn", "ocr-btn", "peli-btn"]) watch.observe($(id), { attributes: true, attributeFilter: ["hidden"] });
+  watch.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  // Näppäimistö auki: palkki pois tieltä. Tunnistetaan ikkunan korkeuden pienenemisestä (Android: adjustResize;
+  // selaimet: visualViewport), ei kentän kohdistuksesta: takaisin-ele sulkee näppäimistön mutta jättää kohdistuksen.
+  const tallest = {};  // leveys -> suurin nähty korkeus (pysty ja vaaka erikseen)
+  const checkKeyboard = () => {
+    const w = window.innerWidth, h = Math.min(window.innerHeight, window.visualViewport ? window.visualViewport.height : Infinity);
+    tallest[w] = Math.max(tallest[w] || 0, h);
+    document.body.classList.toggle("kbd-open", h < tallest[w] - 150);
+  };
+  window.addEventListener("resize", checkKeyboard);
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", checkKeyboard);
+  checkKeyboard();
+  syncBottomNav();
+}
 
 // --- Tekstin koko ---
 // Android-sovelluksessa WebViewin tekstin zoomaus (MainActivity: SatniApp.setTextZoom, "system" = laitteen fonttikoko),
@@ -3151,8 +3253,10 @@ function bindEvents() {
   $("report-lang").onchange = () => { $("report-dlg").querySelector('input[value="trans"]').checked = true; };
   $("skolt-cancel").onclick = () => $("skolt-dlg").close();
   bindSettings();
+  bindBottomNav();
 
   $("tabs").onclick = (e) => { if (e.target.dataset.tab) setTab(e.target.dataset.tab); };
+  $("grad-sum").onclick = () => { setTab("grade"); $("tabs").scrollIntoView({ block: "start", behavior: "smooth" }); };
   $("more-meanings").onclick = (e) => { e.preventDefault(); setTab("meanings"); };
   $("speak-btn").onclick = () => speak(shownLemma(state.word), $("speak-btn"));
   $("fav-btn").onclick = toggleFavourite;
@@ -3172,8 +3276,48 @@ function bindEvents() {
     if (b) setUiLanguage(b.dataset.lang);
   });
   $("sidebar-toggle").onclick = () => {
-    if (document.body.classList.toggle("sidebar-open") && historyExpanded) { historyExpanded = false; renderSidebar(); }
+    // Avattaessa lista lyhyenä ja käännökset ajan tasalla (sanakirja on voinut latautua valikon piirtämisen jälkeen)
+    if (document.body.classList.toggle("sidebar-open")) { historyExpanded = false; renderSidebar(); }
   };
+  document.querySelector(".menu-tabs").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-mtab]");
+    if (b && b.dataset.mtab !== menuTab) { menuTab = b.dataset.mtab; renderSidebar(); }
+  });
+  // Puhelimessa alhaalta nousevan valikon voi vetää alas kiinni (kahva, välilehdet tai lista, kun se on alussa)
+  {
+    const sb = $("sidebar"), sheet = window.matchMedia("(max-width: 700px)");
+    let drag = null;
+    sb.addEventListener("touchstart", (e) => {
+      drag = null;
+      if (!sheet.matches || !drawerOpen() || e.touches.length !== 1) return;
+      const list = e.target.closest(".word-list");
+      if (list && list.scrollTop > 0) return;  // lista vierii ensin alkuun
+      drag = { y: e.touches[0].clientY, t: Date.now(), dy: 0, on: false };
+    }, { passive: true });
+    sb.addEventListener("touchmove", (e) => {
+      if (!drag) return;
+      drag.dy = e.touches[0].clientY - drag.y;
+      if (!drag.on && drag.dy < -8) { drag = null; return; }  // ylöspäin: tavallinen vieritys
+      if (!drag.on && drag.dy > 8) {
+        drag.on = true;
+        sb.style.transition = "none";
+        $("history").dispatchEvent(new PointerEvent("pointercancel", { bubbles: true }));  // ei pitkän painalluksen poistoa kesken vedon
+      }
+      if (drag.on) { if (e.cancelable) e.preventDefault(); sb.style.transform = `translateY(${Math.max(0, drag.dy)}px)`; }
+    }, { passive: false });
+    const end = () => {
+      if (!drag) return;
+      const d = drag;
+      drag = null;
+      if (!d.on) return;
+      sb.style.transition = "";
+      sb.style.transform = "";
+      // Riittävän pitkä tai nopea veto sulkee, muuten paneeli palaa paikalleen
+      if (d.dy > 90 || (d.dy > 30 && d.dy / Math.max(1, Date.now() - d.t) > 0.5)) closeDrawer();
+    };
+    sb.addEventListener("touchend", end);
+    sb.addEventListener("touchcancel", end);
+  }
   $("drawer-scrim").onclick = closeDrawer;
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector("dialog[open]") && closeDrawer()) e.preventDefault();
@@ -3183,7 +3327,7 @@ function bindEvents() {
   // käännä saamen sanoja suomen tai norjan mukana (käyttöliittymä saa yhä kääntyä). Merkitään keskitetysti valitsimilla,
   // myös myöhemmin piirretty sisältö (MutationObserver), ettei jokaista mallia tarvitse muistaa erikseen.
   const SAMI_SEL = '#lemma, #lause-sme, #sme-def, #welcome-title, #today, .r-lemma, .form, .sme, .sw, .b-word, .lcard-lemma, ' +
-    '.lc-sme, .lc-base, .cv-sme, #lause-pop b, #suggestions li > b, .sugg-form, #examples button:not(.random), .st-prev, [lang="se"], [lang="smn"]';
+    '.lc-sme, .lc-base, .cv-sme, .wl-w, #lause-pop b, #suggestions li > b, .sugg-form, #examples button:not(.random), .st-prev, [lang="se"], [lang="smn"]';
   const markSami = (root) => {
     for (const el of [...(root.matches(SAMI_SEL) ? [root] : []), ...root.querySelectorAll(SAMI_SEL)]) {
       if (el.getAttribute("translate") !== "no") { el.setAttribute("translate", "no"); if (!el.lang) el.lang = "se"; }
