@@ -1644,3 +1644,29 @@ html.grade-underline .hd { text-decoration-style: dashed; }
   .peli-play .peli-opt { min-height: 68px; }
   .peli-play ~ .peli-report { margin: 8px 0 0; text-align: center; }
 }
+
+/* --- Kokeilu V2 (test-fable): minipelin pääsivu: tilastot, pelit riveinä (ennätys ja palkki), säännöt painikkeen takana --- */
+.peli-rules[hidden] { display: none; }
+.peli-rules-btn[hidden] { display: none; }
+.peli-rules-btn { font-size: 13.5px; white-space: nowrap; }
+.peli-rules-btn[aria-expanded="true"] { background: var(--select); }
+.pm-stats { display: flex; gap: 8px; }
+.pm-stat { flex: 1; min-width: 0; padding: 9px 6px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border);
+  text-align: center; font-size: 11.5px; color: var(--muted); line-height: 1.25; }
+.pm-stat b { display: block; font-size: 20px; color: var(--text); font-variant-numeric: tabular-nums; }
+.pm-list { display: flex; flex-direction: column; gap: 8px; }
+.peli-tile.pm-row { display: flex; flex-direction: row; align-items: center; gap: 11px; padding: 10px 12px; min-height: 0; border-radius: 14px; }
+.peli-tile.pm-row::before { display: none; }
+.peli-tile.pm-row .pt-ico { margin: 0; flex: none; width: 38px; height: 38px; border-radius: 11px; grid-row: auto; }
+.pm-row .pm-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.pm-row .pt-name { font-size: 15px; font-weight: 700; line-height: 1.2; }
+.pm-row .pt-name small { font-weight: 400; color: var(--muted); font-size: 13px; }
+.pm-bar { display: block; height: 6px; border-radius: 3px; background: var(--chip); overflow: hidden; }
+.pm-bar i { display: block; height: 100%; border-radius: 3px; background: var(--tb, var(--tc)); }
+.pm-best { flex: none; min-width: 52px; text-align: right; display: flex; flex-direction: column; line-height: 1.15; }
+.pm-best small { font-size: 11.5px; color: var(--muted); }
+.pm-best b { font-size: 17px; font-variant-numeric: tabular-nums; }
+.pm-best.none b { color: var(--muted); }
+.pm-row.unfinished { border-color: var(--accent); box-shadow: 0 0 0 2px var(--select); }
+.pm-fresh { margin: 0; text-align: center; }
+@media (max-width: 700px) { .peli-rules:not([hidden]) { padding: 8px 10px; border-radius: 10px; background: var(--surface-alt); } }
