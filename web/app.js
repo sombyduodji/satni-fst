@@ -3313,7 +3313,9 @@ function bindEvents() {
       sb.style.transition = "";
       sb.style.transform = "";
       // Riittävän pitkä tai nopea veto sulkee, muuten paneeli palaa paikalleen
-      if (d.dy > 90 || (d.dy > 30 && d.dy / Math.max(1, Date.now() - d.t) > 0.5)) closeDrawer();
+      // Veto ei tuota click-tapahtumaa (touchmove estetty), joten valikon historiamerkintä poistetaan tässä; muuten
+      // seuraava Takaisin verkkoversiossa ei tekisi näkyvää (yötesti 2026-11-16)
+      if (d.dy > 90 || (d.dy > 30 && d.dy / Math.max(1, Date.now() - d.t) > 0.5)) { closeDrawer(); overlayClosed(); }
     };
     sb.addEventListener("touchend", end);
     sb.addEventListener("touchcancel", end);
