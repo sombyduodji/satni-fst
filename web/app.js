@@ -196,6 +196,7 @@ function showMenuTip() {
     return;
   }
   const btn = $("sidebar-toggle");
+  if (!btn.getClientRects().length) return;  // alapalkki käytössä: valikko on nimetty Lisää-painike
   const tip = $("menu-tip");
   const r = btn.getBoundingClientRect();
   tip.textContent = t("menuTip");
@@ -2222,6 +2223,67 @@ function renderGradeSwatches() {
 }
 if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => applyGradeStyle());
 
+// --- Alapalkki (kokeilu, test-fable): kapealla näytöllä yläpalkin tilalla ---
+// Painike sulkee ensin avoimen näkymän ja avaa sitten omansa samalla toiminnolla kuin yläpalkin painike; Haku palaa
+// hakuun (aloitussivulle, jos mikään näkymä ei ollut auki). Näppäimistön ajaksi palkki piiloon.
+const NAV_VIEWS = { sanasto: "sanasto-view", peli: "peli-view", lause: "lause-view", ocr: "ocr-view" };
+function closeAllViews() {
+  let closed = false;
+  if (!$("settings-view").hidden) { hideSettings(); closed = true; }
+  if (!$("sanasto-view").hidden) { closeFormPop(); hideSanastot(); closed = true; }
+  if (!$("peli-view").hidden) { hidePeli(); closed = true; }
+  if (!$("lause-view").hidden) { $("lause-view").hidden = true; overlayClosed(); closed = true; }
+  if (!$("ocr-view").hidden) { $("ocr-view").hidden = true; closed = true; }
+  return closed;
+}
+function syncBottomNav() {
+  const nav = $("bottom-nav");
+  if (!nav) return;
+  nav.querySelector('[data-nav="lause"]').hidden = $("lause-btn").hidden;
+  nav.querySelector('[data-nav="ocr"]').hidden = $("ocr-btn").hidden;
+  nav.querySelector('[data-nav="peli"]').hidden = $("peli-btn").hidden;
+  const open = Object.keys(NAV_VIEWS).find((k) => !$(NAV_VIEWS[k]).hidden) ||
+    (document.body.classList.contains("sidebar-open") || !$("settings-view").hidden ? "more" : "home");
+  for (const b of nav.querySelectorAll("button")) {
+    b.classList.toggle("active", b.dataset.nav === open);
+    if (b.dataset.nav === open) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  }
+}
+function bindBottomNav() {
+  const nav = $("bottom-nav");
+  if (!nav) return;
+  const openers = { sanasto: "sanasto-btn", peli: "peli-btn", lause: "lause-btn", ocr: "ocr-btn" };
+  nav.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-nav]");
+    if (!b) return;
+    const what = b.dataset.nav;
+    if (what !== "home" && what !== "more" && !$(NAV_VIEWS[what]).hidden) return;  // jo auki
+    const closed = closeAllViews();
+    const drawer = closeDrawer();
+    whenOverlayHistoryIdle(() => {
+      if (what === "home") { if (!closed && !drawer) goHome(e); else window.scrollTo(0, 0); }
+      else if (what === "more") { if (!drawer) $("sidebar-toggle").click(); }
+      else $(openers[what]).click();
+      syncBottomNav();
+    });
+  });
+  const watch = new MutationObserver(syncBottomNav);
+  for (const id of [...Object.values(NAV_VIEWS), "settings-view", "lause-btn", "ocr-btn", "peli-btn"]) watch.observe($(id), { attributes: true, attributeFilter: ["hidden"] });
+  watch.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  // Näppäimistö auki: palkki pois tieltä. Tunnistetaan ikkunan korkeuden pienenemisestä (Android: adjustResize;
+  // selaimet: visualViewport), ei kentän kohdistuksesta: takaisin-ele sulkee näppäimistön mutta jättää kohdistuksen.
+  const tallest = {};  // leveys -> suurin nähty korkeus (pysty ja vaaka erikseen)
+  const checkKeyboard = () => {
+    const w = window.innerWidth, h = Math.min(window.innerHeight, window.visualViewport ? window.visualViewport.height : Infinity);
+    tallest[w] = Math.max(tallest[w] || 0, h);
+    document.body.classList.toggle("kbd-open", h < tallest[w] - 150);
+  };
+  window.addEventListener("resize", checkKeyboard);
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", checkKeyboard);
+  checkKeyboard();
+  syncBottomNav();
+}
+
 // --- Tekstin koko ---
 // Android-sovelluksessa WebViewin tekstin zoomaus (MainActivity: SatniApp.setTextZoom, "system" = laitteen fonttikoko),
 // muualla (selain, työpöytä) koko sivun CSS-zoom; "system" = 100 % (selaimen oma zoomaus toimii kuten ennenkin)
@@ -3151,6 +3213,7 @@ function bindEvents() {
   $("report-lang").onchange = () => { $("report-dlg").querySelector('input[value="trans"]').checked = true; };
   $("skolt-cancel").onclick = () => $("skolt-dlg").close();
   bindSettings();
+  bindBottomNav();
 
   $("tabs").onclick = (e) => { if (e.target.dataset.tab) setTab(e.target.dataset.tab); };
   $("more-meanings").onclick = (e) => { e.preventDefault(); setTab("meanings"); };

@@ -441,6 +441,16 @@
       </div>
     </div>
   </div>
+  <!-- Alapalkki kapealla näytöllä (kokeilu, haara test-fable; docs/tutkimus-ui): yläpalkin työkalut peukalon ulottuville
+       nimettyinä. Painikkeet käyttävät samoja toimintoja kuin yläpalkin painikkeet (app.js: bindBottomNav). -->
+  <nav id="bottom-nav" class="bottom-nav" data-i18n-aria="navLabel">
+    <button type="button" data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><span data-i18n="navSearch">Haku</span></button>
+    <button type="button" data-nav="sanasto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5.6 4 9 4 12 6c3-2 6.4-2 9-.5V19c-2.6-1.5-6-1.5-9 .5-3-2-6.4-2-9-.5z"/><path d="M12 6v13.5"/></svg><span data-i18n="sanastot">Sanastot</span></button>
+    <button type="button" data-nav="peli"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M8.6 8.6h.01M15.4 8.6h.01M12 12h.01M8.6 15.4h.01M15.4 15.4h.01" stroke-width="2.6"/></svg><span data-i18n="navGame">Peli</span></button>
+    <button type="button" data-nav="lause" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h8"/></svg><span data-i18n="navSentence">Lause</span></button>
+    <button type="button" data-nav="ocr" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg><span data-i18n="navPhoto">Kuva</span></button>
+    <button type="button" data-nav="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span data-i18n="navMore">Lisää</span></button>
+  </nav>
   <div id="sanasto-view" class="sanasto-view" hidden>
     <div class="sanasto-head">
       <button type="button" class="chip-btn" id="sanasto-back" data-i18n-aria="back" hidden>←</button>
