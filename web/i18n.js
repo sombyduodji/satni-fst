@@ -17,6 +17,8 @@ const UI_TEXTS = {
     theme: "Teema", themeAuto: "Automaattinen", themeLight: "Vaalea", themeDark: "Tumma",
     about: "Tietoa",
     searchPlaceholder: "Hae saameksi, käännöksellä tai taivutusmuodolla",
+    // Kapealle kentälle lyhyemmät (app.js: fitSearchPlaceholder valitsee pisimmän, joka mahtuu)
+    searchPlaceholderMid: "Hae saameksi tai suomeksi", searchPlaceholderShort: "Hae sanaa",
     search: "Hae",
     ocrTitle: "Hae sanaa valokuvasta", ocrCamera: "📷 Ota kuva", ocrGallery: "🖼️ Valitse kuva",
     ocrIntro: "Ota kuva saamen- tai suomenkielisestä tekstistä tai valitse kuva, ja valitse suunta yltä. Teksti tunnistetaan puhelimessa, eikä kuva lähde laitteelta.",
@@ -272,6 +274,7 @@ const UI_TEXTS = {
     theme: "Tema", themeAuto: "Automatisk", themeLight: "Lyst", themeDark: "Mørkt",
     about: "Om",
     searchPlaceholder: "Søk på samisk, med oversettelse eller bøyd form",
+    searchPlaceholderMid: "Søk på samisk eller norsk", searchPlaceholderShort: "Søk etter ord",
     search: "Søk",
     ocrTitle: "Søk etter ord i et bilde", ocrCamera: "📷 Ta bilde", ocrGallery: "🖼️ Velg bilde",
     ocrIntro: "Ta et bilde av samisk eller norsk tekst eller velg et bilde, og velg retning ovenfor. Teksten gjenkjennes på telefonen, og bildet forlater ikke enheten.",

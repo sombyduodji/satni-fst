@@ -89,6 +89,24 @@ function t(key, ...args) {
 }
 const langName = (lang) => t("langName")[lang];
 
+// Hakukentän paikkamerkki: pisin vaihtoehto, joka mahtuu kenttään nykyisellä leveydellä ja tekstikoolla (yötesti
+// 2026-11-15: 1080 px:n puhelimissa "…käännöksellä tai t"). Mitataan kentän omalla fontilla; uudelleen kun leveys,
+// tekstikoko tai kieli muuttuu.
+function fitSearchPlaceholder() {
+  const inp = $("search");
+  if (!inp || !inp.clientWidth) return;
+  const cs = getComputedStyle(inp);
+  const avail = inp.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 4;
+  const ctx = fitSearchPlaceholder.ctx || (fitSearchPlaceholder.ctx = document.createElement("canvas").getContext("2d"));
+  ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  const options = [t("searchPlaceholder"), t("searchPlaceholderMid"), t("searchPlaceholderShort")];
+  inp.placeholder = options.find((text) => ctx.measureText(text).width <= avail) || options[options.length - 1];
+}
+let fitPlaceholderTimer = null;
+const refitSearchPlaceholder = () => { clearTimeout(fitPlaceholderTimer); fitPlaceholderTimer = setTimeout(fitSearchPlaceholder, 120); };
+window.addEventListener("resize", refitSearchPlaceholder);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(refitSearchPlaceholder);
+
 // index.html:n data-i18n-merkityt tekstit
 function applyStaticTexts() {
   document.documentElement.lang = settings.uiLang;
@@ -96,6 +114,7 @@ function applyStaticTexts() {
   for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t(el.dataset.i18n);
   for (const el of document.querySelectorAll("[data-i18n-html]")) el.innerHTML = t(el.dataset.i18nHtml);
   for (const el of document.querySelectorAll("[data-i18n-placeholder]")) el.placeholder = t(el.dataset.i18nPlaceholder);
+  refitSearchPlaceholder();
   for (const el of document.querySelectorAll("[data-i18n-aria]")) el.setAttribute("aria-label", t(el.dataset.i18nAria));
   for (const el of document.querySelectorAll("[data-i18n-title]")) el.title = t(el.dataset.i18nTitle);
   // Android- ja työpöytäsovelluksessa sanakirja tulee paketista (APK:n assets, AppImage/exe), ei verkosta
@@ -2207,6 +2226,7 @@ if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListen
 // Android-sovelluksessa WebViewin tekstin zoomaus (MainActivity: SatniApp.setTextZoom, "system" = laitteen fonttikoko),
 // muualla (selain, työpöytä) koko sivun CSS-zoom; "system" = 100 % (selaimen oma zoomaus toimii kuten ennenkin)
 function applyTextSize() {
+  setTimeout(refitSearchPlaceholder, 200);  // Androidin tekstin zoomaus vaihtuu natiivisti hetken päästä
   const v = settings.textSize || "system";
   if (window.SatniApp && window.SatniApp.setTextZoom) {
     window.SatniApp.setTextZoom(v === "system" ? -1 : Number(v));
