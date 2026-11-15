@@ -149,7 +149,21 @@ const FACE_GIRL = FACE_PARTS(
   '<circle cx="20" cy="30.6" r="1.9" fill="#d9dee6" stroke="#9aa3b0" stroke-width=".6"/>');
 
 // Listan loppu: ohje ja virheilmoitus (sama lomake kuin sanakortissa, app.js: report-dlg)
-const sanastoFoot = () => `<p class="sanasto-hint">${esc(t(sanastoSami() === "smn" ? "sanastoHelpSmn" : "sanastoHelp"))}</p>` +
+// Listojen järjestys ruudukossa (ryhmittäin); listan lopussa edellinen ja seuraava aihe, ettei tarvitse palata ruudukkoon
+function sanastoOrder() {
+  const all = sanastoLists(), ids = new Set(all.map((l) => l.id));
+  const grouped = SANASTO_GROUPS.flatMap((g) => g.lists).filter((id) => ids.has(id));
+  return [...grouped, ...all.map((l) => l.id).filter((id) => !grouped.includes(id))];
+}
+function sanastoNav() {
+  const order = sanastoOrder(), i = order.indexOf(sanastoAuki);
+  if (i < 0 || order.length < 2) return "";
+  const lang = sanastoLang(), byId = Object.fromEntries(sanastoLists().map((l) => [l.id, l]));
+  const btn = (id, dir) => id ? `<button type="button" class="sn-btn ${dir}" data-list="${esc(id)}"><b>${dir === "prev" ? "‹ " : ""}${esc(byId[id].title[lang])}${dir === "next" ? " ›" : ""}</b>` +
+    `<small>${esc(t(dir === "prev" ? "sanastoPrev" : "sanastoNext"))}</small></button>` : `<span class="sn-btn none"></span>`;
+  return `<nav class="sanasto-nav">${btn(order[i - 1], "prev")}<span class="sn-pos">${i + 1} / ${order.length}</span>${btn(order[i + 1], "next")}</nav>`;
+}
+const sanastoFoot = () => sanastoNav() + `<p class="sanasto-hint">${esc(t(sanastoSami() === "smn" ? "sanastoHelpSmn" : "sanastoHelp"))}</p>` +
   `<p class="report-line sanasto-report"><a href="#" class="report-link sanasto-report-link"><span aria-hidden="true">⚑</span> ` +
   `<span>${esc(t("reportError"))}</span></a></p>`;
 let sanastoLastWord = null;  // viimeksi napautettu sana: virheilmoituksen Mikä sana? -kenttään valmiiksi
@@ -666,7 +680,7 @@ function bindSanastot() {
   body.addEventListener("pointercancel", cancel);
   body.addEventListener("contextmenu", (e) => { if (e.target.closest(".sw")) e.preventDefault(); });
   body.addEventListener("click", (e) => {
-    const tile = e.target.closest(".sanasto-tile");
+    const tile = e.target.closest(".sanasto-tile, .sn-btn[data-list]");
     if (tile) return renderSanasto(tile.dataset.list);
     const lang = e.target.closest(".pl-opt");
     if (lang) { try { localStorage.setItem("satni-peli-sami", JSON.stringify(lang.dataset.sami)); } catch (err) { /* ei tallennusta */ } return renderSanastoGrid(); }

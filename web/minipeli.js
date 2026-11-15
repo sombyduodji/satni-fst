@@ -174,6 +174,7 @@ function peliHead(title, back) {
   renderPeliMute();  // kielen mukainen nimi
   $("peli-title").textContent = title;
   $("peli-back").hidden = !back;
+  if (!back) $("peli-meta-head").replaceChildren();  // valikossa ei pisteitä otsikossa
   // Äänipainike vain, kun pelissä on ääntä: inarinsaamessa Biret ei puhu (pelissä pelin kieli, valikossa valittu kieli)
   $("peli-mute").hidden = !PELI_SAMI[back && peliRun ? peliSamiOf(peliRun) : peliMenuSami()].voice;
 }
@@ -227,7 +228,10 @@ function renderPeliMenu() {
   const rules = (peliWrite ? T.rulesWrite : T.rules).map(([txt, pts]) =>
     `<li${pts ? ` class="${pts.startsWith("+") ? "gain" : "cost"}"` : ""}>${pts ? `<b>${esc(pts)}</b>` : ""}${esc(txt)}</li>`).join("");
   const GROUP_ICON = { words: PELI_MODE_ICON.beginner, cats: '<path d="M4 6h16M4 12h16M4 18h10"/>' };
-  $("peli-body").innerHTML = peliSamiSwitch(sami) + peliStyleSwitch() + `<ul class="peli-rules" aria-label="${esc(peliWrite ? T.leadWrite : T.lead)}">${rules}</ul>` +
+  const run = peliRun && peliRun.q ? peliRun : null;
+  const resume = run ? `<div class="peli-resume"><span class="pr-txt"><b>${esc(T.modes[run.mode][0])}</b>${peliSamiOf(run) === "smn" ? " · " + PELI_SAMI.smn.name : ""}${run.write ? " · " + PELI_SAMI[peliSamiOf(run)].write : ""}` +
+    ` · ${PELI_FLAME}<b>${run.score}</b></span><button type="button" class="pr-btn" data-act="resume">${esc(T.resume)}</button></div>` : "";
+  $("peli-body").innerHTML = resume + peliSamiSwitch(sami) + peliStyleSwitch() + `<ul class="peli-rules" aria-label="${esc(peliWrite ? T.leadWrite : T.lead)}">${rules}</ul>` +
     ["words", "cats"].map((g) => `<section class="peli-group"><header class="pg-head"><span class="pg-ico">` +
       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${GROUP_ICON[g]}</svg></span>` +
       `<span><h3>${esc(T.groups[g])}</h3><p>${esc(T.groupSub[g])}</p></span></header>` +
@@ -269,7 +273,14 @@ function renderPeliQuestion() {
       `<span class="po-key">${"ABCD"[i]}</span><span class="po-txt${peliLongClass(o)}"${q.toSme ? ' lang="se"' : ""}>${esc(peliHy(o))}</span>` +
       `<span class="po-mark"></span></button>`).join("")}</div></div>` +
     `<p class="peli-report"><a href="#" class="report-link peli-report-link"><span aria-hidden="true">⚑</span> ${esc(T.report)}</a></p>`;
+  peliMetaToHead();
   peliShownAt = performance.now();
+}
+// Putki ja ennätys otsikkoriville (kysymyskortti pienemmäksi, vastaukset alas peukalon ulottuville)
+function peliMetaToHead() {
+  const meta = $("peli-body").querySelector(".peli-meta");
+  if (meta) $("peli-meta-head").replaceChildren(...meta.children);
+  meta?.remove();
 }
 
 // Parhaat tulokset: kolme parasta korokkeella (🥈 vasemmalla, 🥇 keskellä korkeimpana, 🥉 oikealla)
@@ -481,6 +492,7 @@ function renderPeliWrite() {
       if (!peliStore.get("satni-peli-keys", null)) { document.querySelector(".pw-letters")?.remove(); document.querySelector(".pw-tip")?.remove(); }
     }
   });
+  peliMetaToHead();
   peliShownAt = performance.now();
   inp.focus({ preventScroll: true });
 }
@@ -579,8 +591,9 @@ function openPeli() {
   loadPeli().then(() => {
     if (!peliRun) peliRun = peliStore.get("satni-peli-run", null);
     // Inarinsaamen keskeneräinen peli vain, jos inarinsaame on yhä käytössä asetuksissa
-    if (peliRun && peliRun.q && PELI_MODES.some((m) => m.id === peliRun.mode) && (peliSamiOf(peliRun) === "sme" || peliSamiEnabled())) renderPeliResume();
-    else { peliRun = null; renderPeliMenu(); }
+    // Kesken jäänyt peli näkyy valikon yläosassa Jatka-painikkeella (ei enää omana kysymysnäkymänään)
+    if (!(peliRun && peliRun.q && PELI_MODES.some((m) => m.id === peliRun.mode) && (peliSamiOf(peliRun) === "sme" || peliSamiEnabled()))) peliRun = null;
+    renderPeliMenu();
   }).catch(() => { $("peli-body").textContent = t("loadFailed", "minipeli.json"); });
 }
 function hidePeli() { peliStopAudio(); const was = !$("peli-view").hidden; $("peli-view").hidden = true; if (was) overlayClosed(); }
