@@ -107,6 +107,10 @@ function sanastoSamiSwitch() {
   return `<div class="peli-sami sanasto-sami" role="radiogroup">${b("sme", "Davvisámegiella")}${b("smn", "Anarâškielâ")}</div>`;
 }
 
+// Laatan merkki: aiheella on valmis äänilista (suomi + saame); inarinsaamessa ei ääntä
+const sanastoHasAudio = (l) => canOpus && sanastoSami() !== "smn" && !!(l.audio || (l.numSections && l.numSections.some((x) => x.card)));
+const SANASTO_AUDIO_MARK = '<svg class="st-aud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg>';
 function renderSanastoGrid() {
   sanastoStopAudio();
   closeFormPop();
@@ -115,6 +119,7 @@ function renderSanastoGrid() {
   $("sanasto-ico").hidden = true;
   $("sanasto-back").hidden = true;
   $("sanasto-speak").hidden = true;
+  $("sanasto-body").onscroll = null;
   const all = sanastoLists();
   const byId = Object.fromEntries(all.map((l) => [l.id, l]));
   const listed = new Set(SANASTO_GROUPS.flatMap((g) => g.lists));
@@ -124,8 +129,10 @@ function renderSanastoGrid() {
   const words = all.reduce((n, l) => n + l.rows.length, 0);
   const tile = (l, color) => `<button type="button" class="sanasto-tile" data-list="${esc(l.id)}" style="--tc: var(--flag-${color}); --tb: var(--btn-${color})">` +
     `<span class="st-ico">${sanastoSvg(l.icon)}</span><span class="st-txt"><span class="st-title">${esc(l.title[lang])}</span>` +
-    `<span class="st-prev" lang="${sanastoSami() === "smn" ? "smn" : "se"}">${esc(sanastoPreview(l))}</span></span><span class="st-n">${l.rows.length}</span></button>`;
-  $("sanasto-body").innerHTML = sanastoSamiSwitch() + `<p class="sanasto-intro">${esc(t(sanastoSami() === "smn" ? "sanastoIntroSmn" : "sanastoIntro", all.length, words))}</p>` +
+    `<span class="st-prev" lang="${sanastoSami() === "smn" ? "smn" : "se"}">${esc(sanastoPreview(l))}</span></span><span class="st-n">${l.rows.length}${sanastoHasAudio(l) ? SANASTO_AUDIO_MARK : ""}</span></button>`;
+  // Määrä otsikkorivillä; inarinsaamessa lisäksi selite (perusmuodot, ei ääntä)
+  $("sanasto-pos").textContent = t("sanastoCount", all.length, words);
+  $("sanasto-body").innerHTML = sanastoSamiSwitch() + (sanastoSami() === "smn" ? `<p class="sanasto-intro">${esc(t("sanastoIntroSmn", all.length, words))}</p>` : "") +
     groups.filter((g) => g.lists.length).map((g) => `<section class="sanasto-group" style="--tc: var(--flag-${g.color}); --tb: var(--btn-${g.color})">` +
       `<h3>${esc(t("sanastoGroup_" + g.id))}</h3><div class="sanasto-grid">${g.lists.map((id) => tile(byId[id], g.color)).join("")}</div></section>`).join("");
   $("sanasto-body").scrollTop = 0;
@@ -161,7 +168,7 @@ function sanastoNav() {
   const lang = sanastoLang(), byId = Object.fromEntries(sanastoLists().map((l) => [l.id, l]));
   const btn = (id, dir) => id ? `<button type="button" class="sn-btn ${dir}" data-list="${esc(id)}"><b>${dir === "prev" ? "‹ " : ""}${esc(byId[id].title[lang])}${dir === "next" ? " ›" : ""}</b>` +
     `<small>${esc(t(dir === "prev" ? "sanastoPrev" : "sanastoNext"))}</small></button>` : `<span class="sn-btn none"></span>`;
-  return `<nav class="sanasto-nav">${btn(order[i - 1], "prev")}<span class="sn-pos">${i + 1} / ${order.length}</span>${btn(order[i + 1], "next")}</nav>`;
+  return `<nav class="sanasto-nav">${btn(order[i - 1], "prev")}${btn(order[i + 1], "next")}</nav>`;
 }
 const sanastoFoot = () => sanastoNav() + `<p class="sanasto-hint">${esc(t(sanastoSami() === "smn" ? "sanastoHelpSmn" : "sanastoHelp"))}</p>` +
   `<p class="report-line sanasto-report"><a href="#" class="report-link sanasto-report-link"><span aria-hidden="true">⚑</span> ` +
@@ -226,6 +233,9 @@ function renderSanasto(listId) {
   $("sanasto-view").style.setProperty("--tc", `var(--flag-${grp ? grp.color : "blue"})`);
   $("sanasto-view").style.setProperty("--tb", `var(--btn-${grp ? grp.color : "blue"})`);
   $("sanasto-title").textContent = l.title[lang];
+  const order = sanastoOrder();
+  $("sanasto-pos").textContent = order.includes(listId) ? `${order.indexOf(listId) + 1} / ${order.length}` : "";
+  $("sanasto-body").onscroll = null;
   $("sanasto-ico").innerHTML = sanastoSvg(l.icon);
   $("sanasto-ico").hidden = false;
   $("sanasto-back").hidden = false;
@@ -254,6 +264,12 @@ function renderSanasto(listId) {
         .replace(/^(čuođi)(.)/, (_, a, b) => `${m(a)}<wbr>${b}`)
         .replace(/(.)(vuosttaš|nubbi)$/, "$1<wbr>$2");
     };
+    // Hyppysirut: pitkä lista osissa (1–10, 11–20, ...), napautus vierittää osan alkuun ja vieritys korostaa nykyisen osan
+    const ns = l.rows.map((r) => r.n), JUMPS = [1, 11, 21, 30, 101].filter((n) => ns.includes(n));
+    if (JUMPS.length > 1) html += `<div class="num-jump">` + JUMPS.map((n, k) => {
+      const end = JUMPS[k + 1] ? ns[ns.indexOf(JUMPS[k + 1]) - 1] : ns[ns.length - 1];
+      return `<button type="button" class="nj${k ? "" : " on"}" data-jump="${n}">${n}–${end}</button>`;
+    }).join("") + `</div>`;
     html += `<div class="num-table"><span class="nt-corner"></span><span class="nt-head"><b>${esc(t("sanastoCardinal"))}</b><small>${esc(t("sanastoCardinalEx"))}</small></span>` +
       `<span class="nt-head"><b>${esc(t("sanastoOrdinal"))}</b><small>${esc(t("sanastoOrdinalEx"))}</small></span>` +
       l.rows.map((r) => {
@@ -264,7 +280,7 @@ function renderSanasto(listId) {
         return (sec ? `<div class="nt-band${canOpus && (sec.card || sec.ord) ? "" : " plain"}"><span></span>` + (canOpus && (sec.card || sec.ord)
           ? [sec.card, sec.ord].map((src) => `<span class="nt-playcell">${src ? playBtn(src, sec.playLabel || sec.label) : ""}</span>`).join("")
           : `<span class="nt-sec">${esc(sec.label)}</span>`) + `</div>` : "") +
-          `<span class="nt-n${z}">${r.n}</span>` +
+          `<span class="nt-n${z}" data-n="${r.n}">${r.n}</span>` +
           `<span class="nt-cell${z}"><span class="sw main" data-say="${esc(r.card)}"${r.card_id ? ` data-id="${r.card_id}"` : ""}>${parts(r.card)}</span></span>` +
           `<span class="nt-cell${z}">${r.ord ? `<span class="sw" data-say="${esc(r.ord)}"${r.ord_id ? ` data-id="${r.ord_id}"` : ""}>${parts(r.ord)}</span>` +
             "" : ""}</span>`;
@@ -275,6 +291,8 @@ function renderSanasto(listId) {
     const cols = Math.max(...l.rows.flatMap((r) => r.sme.map((x) => x.w.length)));
     // Yhden muodon sana (äiti = eadni) mahtuu puolikkaaseen soluun: kaksi rinnakkain, monimuotoiset koko leveydeltä
     const isOne = (r) => r.sme.length === 1 && r.sme[0].w.length === 1 && !r.sme[0].dial && (lang === "nb" ? r.nb : r.fi).filter(Boolean).length <= 1;
+    const numbered = l.id === "viikonpaivat" || l.id === "kuukaudet";
+    let rowNo = 0;
     const rowHtml = (r, wide) => {
       const ui = (lang === "nb" ? r.nb : r.fi).filter(Boolean);
       if (isOne(r)) {
@@ -297,10 +315,10 @@ function renderSanasto(listId) {
       const tap = (x, w, main) => `<span class="sw${main ? " main" : ""}" data-say="${esc(w)}"${x.id ? ` data-id="${x.id}"` : ""}>${esc(w)}</span>`;
       // Murremerkintä käyttöliittymän kielellä (it/lä, norjaksi ø/v), selite listan lopussa
       const dial = (d) => t(d === "it" ? "dialEast" : "dialWest");
-      const main = r.sme.map((x) => tap(x, x.w[0], true) + (x.dial ? `<span class="mr-dial">${esc(dial(x.dial))}</span>` : "")).join(`<span class="mr-sep">·</span>`);
+      const main = r.sme.map((x) => `<span class="mr-w">${tap(x, x.w[0], true)}${x.dial ? `<span class="mr-dial">${esc(dial(x.dial))}</span>` : ""}</span>`).join(`<span class="mr-sep">·</span>`);
       const forms = r.sme.flatMap((x) => x.w.slice(1).map((w) => tap(x, w))).join(" · ");
       const note = r.note && r.note[lang] ? `<span class="mr-note">${esc(r.note[lang])}</span>` : "";
-      return `<div class="sanasto-row mrow"><span class="mr-main">${main}</span><span class="mr-fi">${esc(ui[0] || "")}</span>` +
+      return `<div class="sanasto-row mrow">${numbered ? `<span class="mr-n">${++rowNo}</span>` : ""}<span class="mr-main">${main}</span><span class="mr-fi">${esc(ui[0] || "")}</span>` +
         (forms ? `<span class="mr-forms">${forms}</span>` : "") + note + `</div>`;
     };
     const tapX = (x, w, main) => `<span class="sw${main ? " main" : ""}" data-say="${esc(w)}"${x.id ? ` data-id="${x.id}"` : ""}>${esc(w)}</span>`;
@@ -520,13 +538,49 @@ function renderSanasto(listId) {
             `<span class="day-form">${x.w.slice(1).map((w) => tapX(x, w)).join(" · ")}${ui[1] ? ` <span class="day-ui">${esc(ui[1])}</span>` : ""}</span></div>`;
         }).join("") + `</div></section>`;
       }
-      return `<section class="sl-sec">${sec[lang] ? `<h3>${esc(sec[lang])}</h3>` : ""}<div class="sl-card">${rows.map((r, k) => rowHtml(r, wide[k])).join("")}</div></section>`;
+      return `<section class="sl-sec">${sec[lang] ? `<h3>${esc(sec[lang])}</h3>` : ""}<div class="sl-card${numbered ? " numbered" : ""}">${rows.map((r, k) => rowHtml(r, wide[k])).join("")}</div></section>`;
     }).join("");
   }
   if (l.rows.some((r) => (r.sme || []).some((x) => x.dial))) html += `<p class="sanasto-hint">${esc(t("dialLegend"))}</p>`;
   html += `${sanastoFoot()}`;
   $("sanasto-body").innerHTML = html;
   $("sanasto-body").scrollTop = 0;
+  sanastoBindJump();
+}
+
+// Lukujen hyppysirut: napautus vierittää osan alkuun; vierittäessä korostetaan osa, jonka kohdalla ollaan
+function sanastoJumpTarget(n) {
+  const cell = $("sanasto-body").querySelector(`.nt-n[data-n="${n}"]`);
+  const prev = cell && cell.previousElementSibling;
+  return prev && prev.classList.contains("nt-band") ? prev : cell;
+}
+function sanastoBindJump() {
+  const body = $("sanasto-body"), bar = body.querySelector(".num-jump");
+  if (!bar) return;
+  const chips = [...bar.querySelectorAll(".nj")];
+  // Kiinnitetyn sirurivin ja sarakeotsikon korkeus: kohde vieritetään niiden alle
+  const off = () => bar.offsetHeight + ((body.querySelector(".nt-head") || {}).offsetHeight || 0) + 4;
+  const topOf = (el) => el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop;
+  bar.addEventListener("click", (e) => {
+    const b = e.target.closest(".nj");
+    const el = b && sanastoJumpTarget(b.dataset.jump);
+    if (el) body.scrollTo({ top: b === chips[0] ? 0 : Math.max(0, topOf(el) - off()), behavior: "smooth" });
+  });
+  let tick = false;
+  body.onscroll = () => {
+    if (tick) return;
+    tick = true;
+    requestAnimationFrame(() => {
+      tick = false;
+      if (!bar.isConnected) return;
+      const y = body.scrollTop + off() + 8;
+      let cur = 0;
+      // Lopussa viimeinen osa, vaikka se ei mahdu ylös asti
+      if (body.scrollTop + body.clientHeight >= body.scrollHeight - 2) cur = chips.length - 1;
+      else chips.forEach((b, k) => { const el = sanastoJumpTarget(b.dataset.jump); if (el && topOf(el) <= y) cur = k; });
+      chips.forEach((b, k) => b.classList.toggle("on", k === cur));
+    });
+  };
 }
 
 // Koko listan perusmuodot ääneen yhtenä pyyntönä (pilkut tuovat tauot)
