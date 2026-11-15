@@ -1528,3 +1528,7 @@ html.grade-underline .hd { text-decoration-style: dashed; }
 /* Hakukentän ehdotukset ilman erikoiskirjaimia: otsikko "Tarkoititko: oažž…" (ei valittava rivi) */
 .suggestions .sugg-head { padding: 8px 14px 2px; font-size: 13px; color: var(--muted); cursor: default; pointer-events: none; }
 .suggestions .sugg-head b { color: var(--accent); font-weight: 700; }
+/* Koko äänisiru on painike (valitsee ja soittaa näytteen): painallus näkyy */
+.settings-view .voice-row { cursor: pointer; transition: transform .1s, background .15s; -webkit-tap-highlight-color: transparent; }
+.settings-view .voice-row:active { transform: scale(.96); }
+.settings-view .voice-row label { cursor: pointer; }

@@ -3116,9 +3116,17 @@ function bindEvents() {
     if (state.word) { renderGradation(); renderTable(); renderRaw(); }
   };
   $("voice-list").addEventListener("change", (e) => { settings.voice = e.target.value; saveSettings(); });
+  // Koko äänisiru valitsee äänen ja soittaa sen näytteen (sovelluksessa oleva lause); kaiutinpainike soittaa vain
   $("voice-list").addEventListener("click", (e) => {
     const b = e.target.closest(".sample-btn");
-    if (b) playVoiceSample(b.dataset.voice, b);
+    if (b) { playVoiceSample(b.dataset.voice, b); return; }
+    const row = e.target.closest(".voice-row");
+    if (!row) return;
+    const radio = row.querySelector("input[type=radio]");
+    if (e.target === radio) return;  // label-napautus tuottaa myös radion klikkauksen: käsitellään vain kerran
+    if (!radio.checked) { radio.checked = true; settings.voice = radio.value; saveSettings(); renderSettingsSummary(); }
+    const sample = row.querySelector(".sample-btn");
+    playVoiceSample(sample.dataset.voice, sample);
   });
   $("drawer-lang").addEventListener("click", (e) => {
     const b = e.target.closest("[data-lang]");
@@ -3149,7 +3157,7 @@ function bindEvents() {
   $("speak-btn").onclick = () => speak(shownLemma(state.word), $("speak-btn"));
   $("fav-btn").onclick = toggleFavourite;
   bindFormPop();
-  $("about-btn").onclick = () => $("about").showModal();
+  // Tietoa: Asetukset → Tietoa sovelluksesta ja valikon tekijärivi (valikon oma Tietoa-rivi poistettu 2026-11-15)
   $("author-btn").onclick = () => $("about").showModal();
   $("support-btn").onclick = () => $("support-dlg").showModal();
   $("feedback-btn").onclick = () => $("feedback-dlg").showModal();

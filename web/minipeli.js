@@ -87,7 +87,8 @@ const PELI_MODE_SANASTO_ICON = { ordinals: "numbers", time: "month", colours: "p
 const peliModeIcon = (id) => PELI_MODE_ICON[id]
   ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PELI_MODE_ICON[id]}</svg>`
   : sanastoSvg(PELI_MODE_SANASTO_ICON[id]);
-const PELI_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 8h11a4 4 0 0 1 3.9 4.9l-.8 3.6a2.3 2.3 0 0 1-4 .9L15 15.5H9l-1.6 1.9a2.3 2.3 0 0 1-4-.9l-.8-3.6A4 4 0 0 1 6.5 8z"/><path d="M8 10.5v3M6.5 12h3"/><circle cx="15.5" cy="11.2" r=".6" fill="currentColor"/><circle cx="17.3" cy="13" r=".6" fill="currentColor"/></svg>';
+// Noppa (neliö kuten yläpalkin muut kuvakkeet; aiempi peliohjain oli matala ja alempana, käyttäjä 2026-11-15)
+const PELI_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M8.6 8.6h.01M15.4 8.6h.01M12 12h.01M8.6 15.4h.01M15.4 15.4h.01" stroke-width="2.6"/></svg>';
 
 // --- Tallennus laitteelle (parhaat tulokset ja kesken jäänyt peli); yksityinen tila ei kaada peliä ---
 const peliStore = {
