@@ -1753,3 +1753,14 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
   .sidebar .menu-acts { order: 4; }
   .sidebar .menu-foot { margin-top: 0; justify-content: center; }
 }
+
+/* Valikon alarivi: tekijä ja selvästi linkiltä näyttävä Tietoa ja lisenssit (avaa Tietoa-ikkunan, jossa lisenssit) */
+.menu-foot .menu-author { display: inline-flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.menu-author .ma-link { color: var(--accent); font-weight: 600; }
+.menu-author:hover .ma-link { text-decoration: underline; }
+@media (max-width: 700px) {
+  body.drawer-layout .sidebar { overscroll-behavior: contain; touch-action: pan-y; }
+  .sidebar .word-list { overscroll-behavior: contain; }
+  .menu-grab { width: 44px; height: 5px; margin: 4px auto 2px; }
+  .menu-foot { column-gap: 14px; row-gap: 0; }
+}

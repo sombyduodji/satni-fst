@@ -3283,6 +3283,41 @@ function bindEvents() {
     const b = e.target.closest("[data-mtab]");
     if (b && b.dataset.mtab !== menuTab) { menuTab = b.dataset.mtab; renderSidebar(); }
   });
+  // Puhelimessa alhaalta nousevan valikon voi vetää alas kiinni (kahva, välilehdet tai lista, kun se on alussa)
+  {
+    const sb = $("sidebar"), sheet = window.matchMedia("(max-width: 700px)");
+    let drag = null;
+    sb.addEventListener("touchstart", (e) => {
+      drag = null;
+      if (!sheet.matches || !drawerOpen() || e.touches.length !== 1) return;
+      const list = e.target.closest(".word-list");
+      if (list && list.scrollTop > 0) return;  // lista vierii ensin alkuun
+      drag = { y: e.touches[0].clientY, t: Date.now(), dy: 0, on: false };
+    }, { passive: true });
+    sb.addEventListener("touchmove", (e) => {
+      if (!drag) return;
+      drag.dy = e.touches[0].clientY - drag.y;
+      if (!drag.on && drag.dy < -8) { drag = null; return; }  // ylöspäin: tavallinen vieritys
+      if (!drag.on && drag.dy > 8) {
+        drag.on = true;
+        sb.style.transition = "none";
+        $("history").dispatchEvent(new PointerEvent("pointercancel", { bubbles: true }));  // ei pitkän painalluksen poistoa kesken vedon
+      }
+      if (drag.on) { if (e.cancelable) e.preventDefault(); sb.style.transform = `translateY(${Math.max(0, drag.dy)}px)`; }
+    }, { passive: false });
+    const end = () => {
+      if (!drag) return;
+      const d = drag;
+      drag = null;
+      if (!d.on) return;
+      sb.style.transition = "";
+      sb.style.transform = "";
+      // Riittävän pitkä tai nopea veto sulkee, muuten paneeli palaa paikalleen
+      if (d.dy > 90 || (d.dy > 30 && d.dy / Math.max(1, Date.now() - d.t) > 0.5)) closeDrawer();
+    };
+    sb.addEventListener("touchend", end);
+    sb.addEventListener("touchcancel", end);
+  }
   $("drawer-scrim").onclick = closeDrawer;
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector("dialog[open]") && closeDrawer()) e.preventDefault();
