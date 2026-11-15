@@ -1764,3 +1764,12 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
   .menu-grab { width: 44px; height: 5px; margin: 4px auto 2px; }
   .menu-foot { column-gap: 14px; row-gap: 0; }
 }
+
+/* Matala näkymä (puhelin vaakatasossa, matala ikkuna): historia- ja suosikkilista kutistui flex-asettelussa nollaan
+   korkeuteen, joten valikossa ei näkynyt yhtään sanaa (yötesti 2026-11-16, Samsung vaaka 880 × 315). Lista saa
+   luonnollisen korkeutensa, ja koko valikko vierii. */
+@media (max-height: 520px) {
+  .sidebar .menu-pane { flex: none !important; }
+  .sidebar .menu-pane .word-list { overflow: visible; }
+  body.drawer-layout .sidebar { overflow-y: auto; overscroll-behavior: contain; }
+}

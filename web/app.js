@@ -3296,7 +3296,7 @@ function bindEvents() {
       drag = null;
       if (!sheet.matches || !drawerOpen() || e.touches.length !== 1) return;
       const list = e.target.closest(".word-list");
-      if (list && list.scrollTop > 0) return;  // lista vierii ensin alkuun
+      if ((list && list.scrollTop > 0) || sb.scrollTop > 0) return;  // lista (matalassa näkymässä koko valikko) vierii ensin alkuun
       drag = { y: e.touches[0].clientY, t: Date.now(), dy: 0, on: false };
     }, { passive: true });
     sb.addEventListener("touchmove", (e) => {
