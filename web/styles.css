@@ -1553,6 +1553,8 @@ html.grade-underline .hd { text-decoration-style: dashed; }
   .bottom-nav button.active { color: var(--accent); }
   .bottom-nav button.active svg { background: var(--select); }
   .bottom-nav button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bottom-nav.many button { font-size: 10px; letter-spacing: -.01em; }
+  .bottom-nav.many svg { padding: 2px 10px; }
   .sanasto-view, .lause-view, .ocr-view, .peli-view, .peli-sheet { bottom: var(--nav-h); }
   .toast { bottom: calc(24px + var(--nav-h)); }
   .sidebar { bottom: 0; }

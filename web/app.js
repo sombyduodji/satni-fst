@@ -2259,6 +2259,7 @@ function syncBottomNav() {
   nav.querySelector('[data-nav="lause"]').hidden = $("lause-btn").hidden;
   nav.querySelector('[data-nav="ocr"]').hidden = $("ocr-btn").hidden;
   nav.querySelector('[data-nav="peli"]').hidden = $("peli-btn").hidden;
+  nav.classList.toggle("many", nav.querySelectorAll("button:not([hidden])").length >= 6);  // kuusi painiketta: pienempi teksti
   const open = Object.keys(NAV_VIEWS).find((k) => !$(NAV_VIEWS[k]).hidden) ||
     (document.body.classList.contains("sidebar-open") || !$("settings-view").hidden ? "more" : "home");
   for (const b of nav.querySelectorAll("button")) {
