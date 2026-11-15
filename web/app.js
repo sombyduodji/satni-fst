@@ -1009,8 +1009,8 @@ function showOnly(view) {
     renderRecent();
   }
   $("loading").hidden = view !== "loading";
-  for (const id of ["results", "word", "tabs"]) $(id).hidden = view !== "word";
-  for (const t of ["table", "meanings", "raw"]) $("panel-" + t).hidden = view !== "word" || state.tab !== t;
+  for (const id of ["results", "word", "tabs", "word-foot"]) $(id).hidden = view !== "word";
+  for (const t of TABS) $("panel-" + t).hidden = view !== "word" || state.tab !== t;
 }
 
 // Haun pituusraja: sama kuin hakukentän maxlength (index.html); koskee myös osoitetta #/sana/… ja jaettua tekstiä.
@@ -1037,7 +1037,9 @@ function search(query, index = 0, pushHistory = true) {
     showOnly("word");
     $("results").hidden = true;
     $("tabs").hidden = true;
-    for (const t of ["table", "meanings", "raw"]) $("panel-" + t).hidden = true;
+    $("word-foot").hidden = true;
+    $("grad-sum").hidden = true;
+    for (const t of TABS) $("panel-" + t).hidden = true;
     $("lemma").textContent = t("noHits", query);
     $("pos-badge").hidden = true;
     $("fav-btn").hidden = true;
@@ -1704,7 +1706,21 @@ function inflectionClassCell(w) {
          `<span class="gc-val">${esc(name)}${rule}</span></div>`;
 }
 
+// Kortissa tiivis rivi (viessu → viesu · ss → s), täydet tiedot Astevaihtelu-välilehdellä (kokeilu B, test-fable)
 function renderGradation() {
+  renderGradationFull();
+  const w = state.word, full = $("gradation"), sum = $("grad-sum");
+  const any = full.innerHTML !== "";
+  $("grade-tab").hidden = !any;
+  if (!any && state.tab === "grade") setTab("table");
+  sum.hidden = !any;
+  if (!any) return;
+  const forms = full.querySelector(".grad-cell.forms .gc-val");
+  sum.innerHTML = (forms
+    ? `<span class="gs-forms" lang="se" translate="no">${forms.innerHTML}</span><span class="gs-clusters"><span class="gd">${esc(w.gd_cluster)}</span> → <span class="hd">${esc(w.hd_cluster)}</span></span>`
+    : `<span class="muted"><i>${esc(t("noGradation"))}</i></span>`) + `<span class="gs-more">${esc(t("gradation"))} ›</span>`;
+}
+function renderGradationFull() {
   const w = state.word;
   const el = $("gradation");
   if (!settings.showGrade || UNINFLECTED_POS.includes(w.pos.toUpperCase()) || !state.paradigm.size) { el.innerHTML = ""; return; }
@@ -1983,11 +1999,12 @@ function renderRaw() {
   $("panel-raw").innerHTML = `<div class="raw">${html || esc(state.word.sme_lemma)}</div>`;
 }
 
+const TABS = ["table", "grade", "meanings", "raw"];
 function setTab(tab) {
   closeFormPop();
   state.tab = tab;
   for (const b of $("tabs").children) b.classList.toggle("active", b.dataset.tab === tab);
-  for (const t of ["table", "meanings", "raw"]) $("panel-" + t).hidden = t !== tab;
+  for (const t of TABS) $("panel-" + t).hidden = t !== tab;
 }
 
 // --- Ääntäminen: Divvunin puhesynteesi, välimuisti selaimen Cache Storagessa ---
@@ -3216,6 +3233,7 @@ function bindEvents() {
   bindBottomNav();
 
   $("tabs").onclick = (e) => { if (e.target.dataset.tab) setTab(e.target.dataset.tab); };
+  $("grad-sum").onclick = () => { setTab("grade"); $("tabs").scrollIntoView({ block: "start", behavior: "smooth" }); };
   $("more-meanings").onclick = (e) => { e.preventDefault(); setTab("meanings"); };
   $("speak-btn").onclick = () => speak(shownLemma(state.word), $("speak-btn"));
   $("fav-btn").onclick = toggleFavourite;

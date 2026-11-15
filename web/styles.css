@@ -1557,3 +1557,20 @@ html.grade-underline .hd { text-decoration-style: dashed; }
   .toast { bottom: calc(24px + var(--nav-h)); }
   .sidebar { bottom: 0; }
 }
+
+/* Kokeilu B (test-fable): astevaihtelu tiiviinä rivinä kortissa, täydet tiedot välilehdellä */
+.grad-sum { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; width: 100%; margin-top: 12px; padding: 9px 12px;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--surface-alt); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.grad-sum[hidden] { display: none; }
+.grad-sum .gs-forms { font-weight: 700; font-size: 16px; }
+.grad-sum .gs-clusters { font-weight: 700; font-size: 14px; }
+.grad-sum .arrow { color: var(--subtle); font-weight: 400; margin: 0 2px; }
+.grad-sum .gs-more { margin-left: auto; color: var(--muted); font-size: 13px; white-space: nowrap; }
+.grad-sum:hover { border-color: var(--accent); }
+#panel-grade .gradation { margin-top: 0; }
+.word-foot { margin-top: 12px; }
+.word-foot .report-line { margin: 0; }
+.word-foot .word-links { margin-top: 12px; }
+.tabs { overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs button { white-space: nowrap; flex: none; }

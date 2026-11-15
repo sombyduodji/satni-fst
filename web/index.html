@@ -134,8 +134,24 @@
         <p id="extra-translations" class="extra-translations" hidden></p>
         <p id="position-line" class="muted small" hidden></p>
         <p id="dialect-line" class="muted small" hidden></p>
-        <div id="gradation" class="gradation"></div>
+        <!-- Astevaihtelu tiiviinä rivinä (kokeilu B, test-fable): täydet tiedot Astevaihtelu-välilehdellä, jotta
+             taivutustaulukko näkyy ensimmäisellä näytöllä -->
+        <button type="button" id="grad-sum" class="grad-sum" hidden></button>
         <p id="word-info" class="muted small"></p>
+      </article>
+
+      <nav id="tabs" class="tabs" hidden>
+        <button data-tab="table" class="active" data-i18n="tabTable">Taivutus</button>
+        <button data-tab="grade" id="grade-tab" data-i18n="gradation">Astevaihtelu</button>
+        <button data-tab="meanings" id="meanings-tab">Merkitykset</button>
+        <button data-tab="raw" data-i18n="tabRaw">Kaikki muodot</button>
+      </nav>
+      <section id="panel-table" class="card panel" hidden></section>
+      <section id="panel-grade" class="card panel" hidden><div id="gradation" class="gradation"></div></section>
+      <section id="panel-meanings" class="card panel" hidden></section>
+      <section id="panel-raw" class="card panel" hidden></section>
+      <!-- Kortin alaosa välilehtien jälkeen: virheilmoitus ja linkit muualle -->
+      <section id="word-foot" class="card word-foot" hidden>
         <!-- Virheilmoitus: lomake, joka valmistelee sähköpostin käyttäjän omaan sovellukseen (app.js: openReport) -->
         <p class="report-line"><a href="#" id="report-btn" class="report-link"><span aria-hidden="true">⚑</span>
           <span data-i18n="reportError">Ilmoita virheestä</span></a></p>
@@ -147,16 +163,7 @@
             <a id="satni-link" class="link-pill satni" target="_blank" rel="noopener" data-i18n-title="satniTitle"><span class="lp-mark">s</span>sátni.org<span class="lp-arrow">↗</span></a>
           </div>
         </section>
-      </article>
-
-      <nav id="tabs" class="tabs" hidden>
-        <button data-tab="table" class="active" data-i18n="tabTable">Taivutus</button>
-        <button data-tab="meanings" id="meanings-tab">Merkitykset</button>
-        <button data-tab="raw" data-i18n="tabRaw">Kaikki muodot</button>
-      </nav>
-      <section id="panel-table" class="card panel" hidden></section>
-      <section id="panel-meanings" class="card panel" hidden></section>
-      <section id="panel-raw" class="card panel" hidden></section>
+      </section>
     </main>
   </div>
 
