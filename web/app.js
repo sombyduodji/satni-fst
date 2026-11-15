@@ -2316,9 +2316,14 @@ function bindBottomNav() {
   const checkKeyboard = () => {
     const w = window.innerWidth, h = Math.min(window.innerHeight, window.visualViewport ? window.visualViewport.height : Infinity);
     tallest[w] = Math.max(tallest[w] || 0, h);
-    document.body.classList.toggle("kbd-open", h < tallest[w] - 150);
+    // Lisäksi tekstikenttä kohdistettuna: pelkkä matalampi ikkuna (jaettu näyttö, matala selainikkuna) ei ole
+    // näppäimistö, eikä palkki saa silloin kadota (yötesti 2026-11-16)
+    const el = document.activeElement, typing = !!el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
+    document.body.classList.toggle("kbd-open", typing && h < tallest[w] - 150);
   };
   window.addEventListener("resize", checkKeyboard);
+  document.addEventListener("focusin", checkKeyboard);
+  document.addEventListener("focusout", () => setTimeout(checkKeyboard, 0));
   if (window.visualViewport) window.visualViewport.addEventListener("resize", checkKeyboard);
   checkKeyboard();
   syncBottomNav();
