@@ -2128,18 +2128,40 @@ function updateFavButton() {
   $("fav-btn").title = on ? t("removeFavourite") : t("addFavourite");
   $("fav-btn").setAttribute("aria-label", $("fav-btn").title);
 }
-const HISTORY_SHOWN = 10;
+const HISTORY_SHOWN = 6;
 let historyExpanded = false;
+let menuTab = "history";  // valikon välilehti: historia tai suosikit
+// Sanan lyhyt käännös valikon riville (käyttöliittymän kielellä); tyhjä, jos sanakirja ei ole vielä auki tai käännöstä ei ole
+const glossCache = new Map();
+function menuGloss(lemma) {
+  if (!db) return "";
+  const key = settings.lang + "|" + lemma;
+  if (!glossCache.has(key)) {
+    let g = "";
+    try {
+      const col = (LANGUAGES[settings.lang] || LANGUAGES.fin).col;
+      const r = all(`SELECT ${col} AS tr FROM dictionary WHERE sme_lemma = ? AND ${col} <> '' ORDER BY freq DESC LIMIT 1`, [lemma])[0];
+      if (r) g = r.tr.split(/[,;]/).slice(0, 2).map((x) => x.trim()).filter(Boolean).join(", ");  // kaksi ensimmäistä merkitystä (giella: ansa, kieli)
+    } catch (e) { /* ei käännöstä riville */ }
+    glossCache.set(key, g);
+  }
+  return glossCache.get(key);
+}
 function renderSidebar() {
   const fill = (id, words, empty) => {
     $(id).innerHTML = words.length
-      ? words.map((w) => `<li><a href="#/sana/${encodeURIComponent(w)}">${esc(w)}</a></li>`).join("")
+      ? words.map((w) => { const g = menuGloss(w); return `<li><a href="#/sana/${encodeURIComponent(w)}"><b class="wl-w">${esc(w)}</b>${g ? `<span class="wl-tr">${esc(g)}</span>` : ""}</a></li>`; }).join("")
       : `<li class="empty">${empty}</li>`;
   };
+  for (const b of document.querySelectorAll(".menu-tabs [data-mtab]")) b.setAttribute("aria-selected", String(b.dataset.mtab === menuTab));
+  $("menu-history").hidden = menuTab !== "history";
+  $("menu-favourites").hidden = menuTab !== "favourites";
+  $("fav-count").textContent = settings.favourites.length ? `(${settings.favourites.length})` : "";
   fill("favourites", settings.favourites, esc(t("noFavourites")));
   // Historiasta 10 viimeisintä; Lisää… näyttää loput, ja valikon avaaminen palauttaa kymmeneen
   fill("history", historyExpanded ? settings.history : settings.history.slice(0, HISTORY_SHOWN), esc(t("noHistory")));
   $("history-more").hidden = historyExpanded || settings.history.length <= HISTORY_SHOWN;
+  $("history-more").textContent = t("historyAll", settings.history.length);
   $("clear-history").disabled = !settings.history.length;
   $("history-clear-menu").hidden = !settings.history.length;
   for (const a of $("history").querySelectorAll("a")) a.title = t("historyHint");
@@ -3254,8 +3276,13 @@ function bindEvents() {
     if (b) setUiLanguage(b.dataset.lang);
   });
   $("sidebar-toggle").onclick = () => {
-    if (document.body.classList.toggle("sidebar-open") && historyExpanded) { historyExpanded = false; renderSidebar(); }
+    // Avattaessa lista lyhyenä ja käännökset ajan tasalla (sanakirja on voinut latautua valikon piirtämisen jälkeen)
+    if (document.body.classList.toggle("sidebar-open")) { historyExpanded = false; renderSidebar(); }
   };
+  document.querySelector(".menu-tabs").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-mtab]");
+    if (b && b.dataset.mtab !== menuTab) { menuTab = b.dataset.mtab; renderSidebar(); }
+  });
   $("drawer-scrim").onclick = closeDrawer;
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector("dialog[open]") && closeDrawer()) e.preventDefault();
@@ -3265,7 +3292,7 @@ function bindEvents() {
   // käännä saamen sanoja suomen tai norjan mukana (käyttöliittymä saa yhä kääntyä). Merkitään keskitetysti valitsimilla,
   // myös myöhemmin piirretty sisältö (MutationObserver), ettei jokaista mallia tarvitse muistaa erikseen.
   const SAMI_SEL = '#lemma, #lause-sme, #sme-def, #welcome-title, #today, .r-lemma, .form, .sme, .sw, .b-word, .lcard-lemma, ' +
-    '.lc-sme, .lc-base, .cv-sme, #lause-pop b, #suggestions li > b, .sugg-form, #examples button:not(.random), .st-prev, [lang="se"], [lang="smn"]';
+    '.lc-sme, .lc-base, .cv-sme, .wl-w, #lause-pop b, #suggestions li > b, .sugg-form, #examples button:not(.random), .st-prev, [lang="se"], [lang="smn"]';
   const markSami = (root) => {
     for (const el of [...(root.matches(SAMI_SEL) ? [root] : []), ...root.querySelectorAll(SAMI_SEL)]) {
       if (el.getAttribute("translate") !== "no") { el.setAttribute("translate", "no"); if (!el.lang) el.lang = "se"; }

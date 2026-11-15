@@ -1704,3 +1704,52 @@ html.grade-underline .hd { text-decoration-style: dashed; }
 .nj:focus-visible { outline: 2px solid var(--tc, var(--accent)); outline-offset: 1px; }
 .num-jump ~ .num-table > .nt-head, .num-jump ~ .num-table > .nt-corner { top: 34px; }
 .num-table .sw.main { font-weight: 600; font-size: 15px; }
+
+/* Valikon kohennus M2 (test-fable): historia ja suosikit välilehtinä käännöksineen, toiminnot kolmena painikkeena;
+   puhelimessa valikko nousee alhaalta Lisää-painikkeen kohdalta, leveällä näytöllä se on yhä vasemman reunan paneeli */
+body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; padding: 16px 14px 14px; }
+.sidebar > * { flex: none; }
+.sidebar .menu-head { order: 0; margin: 0; padding: 0 0 12px; }
+.sidebar .menu-acts { order: 1; }
+.sidebar .menu-tabs { order: 2; }
+.sidebar .menu-pane { order: 3; margin: 0 !important; }
+.sidebar .menu-foot { order: 5; margin-top: auto; }
+.menu-grab { display: none; }
+.menu-pane { display: flex; flex-direction: column; min-height: 0; flex: 0 1 auto !important; }
+.menu-pane[hidden] { display: none; }
+.menu-tabs { display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: var(--chip); }
+.menu-tabs button { flex: 1; min-width: 0; padding: 7px 6px; border: 0; border-radius: 9px; background: none; color: var(--muted); font: inherit;
+  font-size: 13.5px; font-weight: 700; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.menu-tabs button[aria-selected="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, .14); }
+.menu-tabs button:focus-visible, .menu-act:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.menu-tabs .mt-n { font-weight: 600; }
+.sidebar .word-list { border: 1px solid var(--border); border-radius: 13px; overflow-y: auto; min-height: 0; }
+.sidebar .word-list li + li { border-top: 1px solid var(--border); }
+.sidebar .word-list li a { display: flex; align-items: baseline; gap: 10px; padding: 9px 12px; border-radius: 0; font-size: 15px; }
+.wl-w { flex: 0 1 auto; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.wl-tr { flex: 1 1 0; min-width: 0; text-align: right; color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
+.sidebar .word-list .empty { padding: 12px; text-align: center; }
+.sidebar .history-actions { margin-top: 2px; }
+.sidebar .history-actions .link-btn { padding: 8px 2px; }
+.sidebar .history-actions .more { margin-left: auto; color: var(--accent); font-weight: 600; }
+.menu-acts { flex-direction: row !important; gap: 7px; margin: 0 !important; padding: 0 !important; border: 0 !important; }
+.menu-links > .menu-act { flex: 1 1 0; width: auto; min-width: max-content; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 4px 8px;
+  border-radius: 13px; background: var(--chip); font-size: 12.5px; font-weight: 700; text-align: center; line-height: 1.2; }
+.menu-links > .menu-act:hover { background: color-mix(in srgb, var(--accent) 12%, var(--chip)); }
+.menu-act svg { width: 21px; height: 21px; flex: none; }
+.menu-act span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-links > .menu-act.pri { background: var(--select); color: var(--accent); }
+.menu-foot { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.menu-foot .menu-author { padding: 4px 2px; font-size: 12.5px; }
+.menu-foot #menu-version { font-size: 12px; }
+@media (max-width: 700px) {
+  body.drawer-layout .sidebar { top: auto; left: 0; right: 0; bottom: var(--nav-h); width: auto; max-height: calc(100% - var(--nav-h) - 56px);
+    padding: 6px 14px 10px; border: 0; border-radius: 20px 20px 0 0; box-shadow: 0 -6px 24px rgba(0, 0, 0, .3); transform: translateY(105%); }
+  body.sidebar-open .bottom-nav { z-index: 47; }
+  .menu-grab { display: block; order: 0; width: 40px; height: 4px; margin: 2px auto 0; border-radius: 2px; background: var(--border); }
+  .sidebar .menu-head { display: none; }
+  .sidebar .menu-tabs { order: 1; }
+  .sidebar .menu-pane { order: 2; }
+  .sidebar .menu-acts { order: 4; }
+  .sidebar .menu-foot { margin-top: 0; justify-content: center; }
+}

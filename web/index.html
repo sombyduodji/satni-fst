@@ -60,31 +60,35 @@
       <!-- ☰-valikko: sovelluksen nimi ja tekijä, suosikit ja historia, asetukset avattavana ja lopuksi tiedot.
            Käännökset ovat aina käyttöliittymän kielellä (suomi/norja); Muut kielet -asetuksella valittujen kielten
            käännökset näkyvät lisäksi sanakortissa, ja kaikki kielet Merkitykset-välilehdellä. -->
+      <div class="menu-grab" aria-hidden="true"></div>
       <div class="menu-head">
         <a class="home-link" href="./" data-i18n-title="home"><img src="icons/icon-192.png" alt="" class="menu-logo"></a>
-        <div>
-          <a class="home-link menu-name" href="./" data-i18n-title="home">Sátni FST</a>
-          <button class="menu-author" id="author-btn"><span data-i18n="madeBy">Tekijä</span> Juha Somby</button>
-        </div>
+        <a class="home-link menu-name" href="./" data-i18n-title="home">Sátni FST</a>
       </div>
-      <section>
-        <h3 data-i18n="favourites">★ Suosikit</h3>
-        <ul id="favourites" class="word-list"></ul>
-      </section>
-      <section>
-        <h3 data-i18n="history">Historia</h3>
+      <!-- Historia ja suosikit välilehtinä: lista ei työnnä toimintoja (asetukset, palaute, tuki) näytön alle -->
+      <div class="menu-tabs" role="tablist">
+        <button type="button" role="tab" id="menu-tab-history" data-mtab="history" aria-controls="menu-history" aria-selected="true" data-i18n="history">Historia</button>
+        <button type="button" role="tab" id="menu-tab-favourites" data-mtab="favourites" aria-controls="menu-favourites" aria-selected="false"><span data-i18n="favourites">★ Suosikit</span> <span id="fav-count" class="mt-n"></span></button>
+      </div>
+      <section id="menu-history" class="menu-pane" role="tabpanel" aria-labelledby="menu-tab-history">
         <ul id="history" class="word-list"></ul>
         <div class="history-actions">
-          <button class="link-btn" id="history-more" data-i18n="historyMore" hidden>Lisää…</button>
           <button class="link-btn" id="history-clear-menu" data-i18n="clearHistory">Tyhjennä historia</button>
+          <button class="link-btn more" id="history-more" hidden></button>
         </div>
       </section>
-      <nav class="menu-links">
-        <button id="settings-btn" class="menu-settings-btn"><span class="ms-ico" aria-hidden="true">⚙️</span><span data-i18n="settings">Asetukset</span><span class="chev" aria-hidden="true">›</span></button>
-        <button id="feedback-btn" data-i18n="sendFeedback">Lähetä palautetta</button>
-        <button id="support-btn" data-i18n="support">Osallistu ja tue</button>
-        <p class="muted small" id="menu-version"></p>
+      <section id="menu-favourites" class="menu-pane" role="tabpanel" aria-labelledby="menu-tab-favourites" hidden>
+        <ul id="favourites" class="word-list"></ul>
+      </section>
+      <nav class="menu-links menu-acts">
+        <button id="settings-btn" class="menu-act pri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.8 1.2V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-2.8-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.8H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.8-1.2V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 2.8 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.8h.1a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.2 1.1z"/></svg><span data-i18n="settings">Asetukset</span></button>
+        <button id="feedback-btn" class="menu-act" data-i18n-title="sendFeedback"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><span data-i18n="menuFeedback">Palaute</span></button>
+        <button id="support-btn" class="menu-act" data-i18n-title="support"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.600-7 10-7 10z"/></svg><span data-i18n="menuSupport">Tue</span></button>
       </nav>
+      <div class="menu-foot">
+        <button class="menu-author" id="author-btn"><span data-i18n="madeBy">Tekijä</span> Juha Somby</button>
+        <span class="muted small" id="menu-version"></span>
+      </div>
     </aside>
 
     <main id="main">
