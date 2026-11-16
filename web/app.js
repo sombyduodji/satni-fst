@@ -3345,7 +3345,16 @@ function bindEvents() {
     for (const m of list) for (const n of m.addedNodes) if (n.nodeType === 1) markSami(n);
   }).observe(document.body, { childList: true, subtree: true });
   // Suljettu valikko on vain siirretty näytön ulkopuolelle: inert pois ruudunlukijalta ja Tab-järjestyksestä (päivätesti 2026-11-14)
-  const syncDrawer = () => { $("sidebar").inert = !document.body.classList.contains("sidebar-open"); };
+  // Avoimen valikon ajaksi pääsisältö inert (ruudunlukija ja Tab eivät eksy taustan taakse) ja valikon avaavilla
+  // painikkeilla aria-expanded (yötesti 2026-11-17)
+  const syncDrawer = () => {
+    const open = document.body.classList.contains("sidebar-open");
+    $("sidebar").inert = !open;
+    $("main").inert = open;
+    for (const b of [$("sidebar-toggle"), document.querySelector('#bottom-nav [data-nav="more"]')]) {
+      if (b) { b.setAttribute("aria-expanded", String(open)); b.setAttribute("aria-controls", "sidebar"); }
+    }
+  };
   new MutationObserver(syncDrawer).observe(document.body, { attributes: true, attributeFilter: ["class"] });
   syncDrawer();
   $("clear-history").onclick = () => $("clear-history-dlg").showModal();
