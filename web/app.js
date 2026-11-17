@@ -2826,11 +2826,20 @@ const EDIT_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
   stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>`;
 function pickUnknownOcrWord(w) {
   const bubble = $("ocr-bubble");
-  if (!w.cands) w.cands = settings.ocrFrom === "sme" ? ocrRepairs(w.word, /^\p{Lu}/u.test(w.clean)) : [];
-  const cands = w.cands.map((c) => `<span class="b-row b-cand" data-cand="${esc(c.word)}"><span class="b-sme">${esc(c.word)}</span>` +
+  if (!w.cands) {
+    w.cands = settings.ocrFrom === "sme" ? ocrRepairs(w.word, /^\p{Lu}/u.test(w.clean)) : [];
+    // Yhdyssana, jota ei ole sanakirjassa: osat omille riveilleen (almmustahttin + ortnega)
+    w.parts = settings.ocrFrom === "sme" ? splitCompound(w.word) : null;
+    if (w.parts) w.cands = [...w.cands.slice(0, 1), ...w.parts.map((part) => {
+      const g = ocrGloss(part);
+      return { word: part, trans: (g.lemma ? g.form || g.trans : g.trans).split(" / ").slice(0, 2).join(" / "), lemma: g.lemma || "", part: true };
+    })];
+  }
+  const label = w.parts ? (w.cands.length > w.parts.length ? "ocrNearestOrParts" : "ocrParts") : w.cands.length ? "ocrNearest" : "ocrUnknown";
+  const cands = w.cands.map((c) => `<span class="b-row b-cand${c.part ? " b-part" : ""}" data-cand="${esc(c.word)}"><span class="b-sme">${c.part && c !== w.cands.find((x) => x.part) ? "+ " : ""}${esc(c.word)}</span>` +
     `<span class="b-tr">${esc(c.trans)}${c.lemma ? ` <span class="b-more">(${esc(c.lemma)})</span>` : ""}</span></span>`).join("");
   bubble.innerHTML = `<span class="b-text"><span class="b-row b-form b-unknown"><span class="b-sme">${esc(w.word)}</span>` +
-    `<span class="b-tr">${esc(t(w.cands.length ? "ocrNearest" : "ocrUnknown"))}</span></span>${cands}</span>` +
+    `<span class="b-tr">${esc(t(label))}</span></span>${cands}</span>` +
     `<span class="b-actions"><span class="b-open b-edit" role="button" aria-label="${esc(t("ocrEdit"))}">${EDIT_ICON}</span></span>`;
   bubble.setAttribute("aria-label", w.word);
   bubble.hidden = false;
@@ -2840,6 +2849,44 @@ function pickUnknownOcrWord(w) {
 // Yhden kirjaimen korjaukset (puuttuva, väärä tai ylimääräinen kirjain) saamen sanoiksi ja muodoiksi; yleisin sana
 // ensin. Korpuskoe 2026-11-17: pudotetusta kirjaimesta 69 % ainoa ehdokas ja oikea, 23 % oikea ehdokkaiden joukossa.
 const OCR_ALPHABET = [..."abcdefghijklmnopqrstuvwyzáčđŋšŧžåäöâ"];
+// Yhdyssanan jako (almmustahttinortnega = almmustahttin + ortnega): loppuosa on tunnettu sana tai muoto, alkuosa
+// substantiivin tai adjektiivin perusmuoto, substantiivin yksikön genetiivi tai adjektiivin attribuuttimuoto (tai
+// itse kahdesta tällaisesta, kaksi tasoa). Osat vähintään 4 kirjainta (alkuosan osat 3). Pisin loppuosa ensin.
+// Korpuskoe 2026-11-17: sanakirjasta puuttuvista yhdyssanoista 58 % oikea pääsana, selvästi väärin alle 1 %,
+// suomen sanoista jaettiin 0,4 %. Näytetään vain napautuksesta, ei automaattisesti.
+function splitCompound(word) {
+  const w = word.toLowerCase();
+  if (w.length < 8 || !/^\p{L}+$/u.test(w)) return null;
+  const subs = new Set();
+  for (let i = 0; i < w.length; i++) for (let j = i + 3; j <= w.length; j++) subs.add(w.slice(i, j));
+  const list = [...subs], known = new Set(), left = new Set();
+  for (let i = 0; i < list.length; i += 300) {
+    const part = list.slice(i, i + 300), marks = part.map(() => "?").join(",");
+    for (const r of all(`SELECT surface AS v FROM paradigms WHERE surface IN (${marks})
+                         UNION SELECT lemma_fold FROM dictionary WHERE lemma_fold IN (${marks})`, [...part, ...part])) known.add(r.v);
+    for (const r of all(`SELECT lemma_fold AS v FROM dictionary WHERE pos IN ('N', 'A') AND lemma_fold IN (${marks})
+        UNION SELECT p.surface FROM paradigms p JOIN dictionary d ON d.id = p.word_id JOIN tags t ON t.id = p.tag_id
+        WHERE p.surface IN (${marks}) AND ((d.pos = 'N' AND t.tag = 'Sg+Gen') OR (d.pos = 'A' AND t.tag IN ('Attr', 'Sg+Gen')))`,
+      [...part, ...part])) left.add(r.v);
+  }
+  const leftParts = (s, depth) => {
+    if (left.has(s)) return [s];
+    if (depth >= 2) return null;
+    for (let i = 3; i <= s.length - 3; i++) {
+      if (!left.has(s.slice(i))) continue;
+      const head = leftParts(s.slice(0, i), depth + 1);
+      if (head) return [...head, s.slice(i)];
+    }
+    return null;
+  };
+  for (let i = 4; i <= w.length - 4; i++) {
+    if (!known.has(w.slice(i))) continue;
+    const head = leftParts(w.slice(0, i), 0);
+    if (head && head.every((p) => p.length >= 3) && head[0].length >= 4) return [...head, w.slice(i)];
+  }
+  return null;
+}
+
 // Pienellä alkava sana kuvassa: ei nimiä ehdokkaiksi (lij -> Liv, type -> Tyge)
 function ocrRepairs(word, capital = false) {
   const w = [...word].map((c) => OCR_LOOKALIKES[c] || c).join("").replace(/[[\]*?]/g, "");

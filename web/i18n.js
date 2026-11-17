@@ -28,7 +28,7 @@ const UI_TEXTS = {
     ocrStyle: "Merkintätapa ja väri", ocrFrame: "Kehys", ocrUnderline: "Alleviivaus",
     ocrNoText: "Kuvasta ei löytynyt tekstiä. Kokeile ottaa kuva lähempää ja suoraan edestä.",
     ocrNoWords: "Tekstiä löytyi, mutta ei sanakirjan sanoja.",
-    ocrDirSwitched: "suunta vaihdettu", ocrAlso: "tai", ocrUnknown: "ei löytynyt", ocrNearest: "ei löytynyt, lähimmät:", ocrEdit: "Muokkaa hakua", ocrRotateLeft: "Käännä kuvaa vasemmalle", ocrRotateRight: "Käännä kuvaa oikealle",
+    ocrDirSwitched: "suunta vaihdettu", ocrAlso: "tai", ocrUnknown: "ei löytynyt", ocrNearest: "ei löytynyt, lähimmät:", ocrParts: "ei löytynyt, yhdyssanan osat:", ocrNearestOrParts: "ei löytynyt, lähin tai osat:", ocrEdit: "Muokkaa hakua", ocrRotateLeft: "Käännä kuvaa vasemmalle", ocrRotateRight: "Käännä kuvaa oikealle",
     experimental: "Kokeelliset käännökset", experimentalOn: "Käytössä", experimentalOff: "Pois käytöstä",
     experimentalHint: "Konekäännöksiä ja ehdotuksia sanoille, joilla ei ole käännöstä sanakirjoissa. Ne ovat vielä kehitteillä, ja niissä voi olla virheitä. Palaute auttaa!",
     // Lausekääntäjä (test-lauseet, lauseet.js)
@@ -287,7 +287,7 @@ const UI_TEXTS = {
     ocrStyle: "Merking og farge", ocrFrame: "Ramme", ocrUnderline: "Understreking",
     ocrNoText: "Fant ingen tekst i bildet. Prøv å ta bildet nærmere og rett forfra.",
     ocrNoWords: "Fant tekst, men ingen ord fra ordboka.",
-    ocrDirSwitched: "retning byttet", ocrAlso: "eller", ocrUnknown: "ikke funnet", ocrNearest: "ikke funnet, nærmeste:", ocrEdit: "Rediger søket", ocrRotateLeft: "Roter bildet mot venstre", ocrRotateRight: "Roter bildet mot høyre",
+    ocrDirSwitched: "retning byttet", ocrAlso: "eller", ocrUnknown: "ikke funnet", ocrNearest: "ikke funnet, nærmeste:", ocrParts: "ikke funnet, deler av sammensatt ord:", ocrNearestOrParts: "ikke funnet, nærmeste eller deler:", ocrEdit: "Rediger søket", ocrRotateLeft: "Roter bildet mot venstre", ocrRotateRight: "Roter bildet mot høyre",
     experimental: "Eksperimentelle oversettelser", experimentalOn: "På", experimentalOff: "Av",
     experimentalHint: "Maskinoversettelser og forslag for ord som ikke har oversettelse i ordbøkene. De er fortsatt under utvikling og kan inneholde feil. Tilbakemeldinger hjelper!",
     lauseTitle: "Setningsoversetter", lauseBadge: "prøve", lauseShort: "Setning", ocrShort: "Bilde", expLauseDesc: "Kort finsk setning til samisk. Åpnes med snakkeboble-knappen i topplinjen.",
