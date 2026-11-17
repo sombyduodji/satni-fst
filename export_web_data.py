@@ -19,6 +19,7 @@ import subprocess
 import apertium_data
 import pivot_fin
 import wiktionary_eng
+import fin_also
 import skolt_data
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -208,6 +209,8 @@ def main():
         CREATE TABLE pivot_fin (word_id INTEGER PRIMARY KEY, fin TEXT, via TEXT) WITHOUT ROWID;
         -- Englanti Wiktionarysta suomen ja norjan kautta, kun molemmat antavat saman (wiktionary_eng.py, tarkistamaton)
         CREATE TABLE wikt_eng (word_id INTEGER PRIMARY KEY, eng TEXT) WITHOUT ROWID;
+        -- Lisäsuomennokset käänteisestä dict-fin-sme:stä sanakortin Merkitykset-välilehdelle (fin_also.py)
+        CREATE TABLE fin_also (word_id INTEGER PRIMARY KEY, items TEXT) WITHOUT ROWID;
         -- Loukkaavat, halventavat ja alatyyliset käännössanat (Wiktionaryn merkinnät, käyty käsin läpi; wiktionary_eng.py)
         CREATE TABLE register (lang TEXT, term TEXT, tag TEXT, PRIMARY KEY (lang, term)) WITHOUT ROWID;
     """)
@@ -307,6 +310,10 @@ def main():
     apertium_rows = apertium_data.rows(src)
     dst.executemany("INSERT INTO apertium VALUES (?,?)", apertium_rows)
     print(f"Apertium: {len(apertium_rows)} riviä" if apertium_rows else "Apertium: apertium-sme-nob-lähdettä ei löytynyt")
+
+    also_rows = fin_also.rows(src)
+    dst.executemany("INSERT INTO fin_also VALUES (?,?)", also_rows)
+    print(f"Lisäsuomennokset dict-fin-sme:stä: {len(also_rows)} sanaa")
 
     wikt_rows = wiktionary_eng.agree_rows(src)
     dst.executemany("INSERT INTO wikt_eng VALUES (?,?)", wikt_rows)

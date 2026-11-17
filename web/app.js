@@ -980,7 +980,12 @@ function loadWord(id) {
   try {
     definitions = all(`SELECT nr, definition, synonyms, examples FROM sme_definitions WHERE word_id = ? ORDER BY nr`, [id]);
   } catch (e) { /* vanha aineisto ilman määritelmiä */ }
-  return { word, paradigm, grades, meanings, definitions };
+  // Lisäsuomennokset käänteisestä suomi–saame-sanakirjasta (fin_also.py: gieddi -> aho, keto, vainio)
+  let alsoFin = "";
+  try {
+    alsoFin = all(`SELECT items FROM fin_also WHERE word_id = ?`, [id])[0]?.items || "";
+  } catch (e) { /* vanha aineisto ilman lisäsuomennoksia */ }
+  return { word, paradigm, grades, meanings, definitions, alsoFin };
 }
 
 // --- Näkymät ---
@@ -1246,6 +1251,7 @@ function selectResult(i, pushHistory = true) {
   renderExtraTranslations(w, groups);
   // Ensimmäinen saamenkielinen määritelmä kortissa, kaikki Merkitykset-välilehdellä
   state.definitions = data.definitions || [];
+  state.alsoFin = data.alsoFin || "";
   const def = state.definitions[0];
   $("sme-def").hidden = !def;
   $("sme-def").innerHTML = def ? `<b>${esc(t("smeDef"))}</b>${esc(def.definition)}` : "";
@@ -1971,6 +1977,9 @@ function renderMeanings(meanings) {
   for (const [lang, ms] of groups) {
     if (groups.length > 1 || lang !== settings.lang) html += `<h3 class="lang-head">${esc(t("langIn")[lang])}</h3>`;
     html += ms.map((m) => meaningHtml(m, ms.length > 1)).join("");
+    if (lang === "fin" && state.alsoFin) {
+      html += `<div class="meaning also-meanings" lang="fi"><span class="muted" title="${esc(t("alsoFinSource"))}">${esc(t("alsoFin"))}</span> ${esc(state.alsoFin)}</div>`;
+    }
   }
   const defs = state.definitions || [];
   // dict-sme:n esimerkit ovat yleensä jo käännösten alla (sama lähde): vain uudet näytetään

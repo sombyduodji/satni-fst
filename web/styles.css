@@ -766,6 +766,7 @@ table.paradigm.boxed tbody tr:not(.gap):not(.section):nth-child(even) td { backg
 .lang-head { margin: 22px 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 .meaning .head { font-weight: 700; font-size: 16px; }
 .meaning .nr { color: var(--accent); margin-right: 6px; }
+.meaning.also-meanings { margin-top: -6px; font-size: 15px; }
 .meaning .expl { font-style: italic; font-weight: 400; }
 .meaning .restr { font-style: italic; color: var(--muted); font-weight: 400; font-size: 14px; }
 .reg-label { display: inline-block; border: 1px solid var(--reg); color: var(--reg); border-radius: 5px; padding: 0 5px;
