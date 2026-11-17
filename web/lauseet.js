@@ -270,6 +270,18 @@ function lauseParse(text) {
 const LAUSE_BOAT = /(fanas|vanas|láiva|bárku)$/;
 // olla tulossa / menossa / lähdössä = matkalla: saamen progressiivi (olen tulossa = lean boahtime), ei tulo-sanan inessiivi
 const LAUSE_PROGRESSIVE = { tulossa: "tulla", menossa: "mennä", lähdössä: "lähteä" };
+// Sanaa hallitseva verbi saman lauseen sisällä (pilkkujen välissä): lähin verbi, ensin edeltä, sitten perästä.
+// Olla-apuverbin jälkeen partisiippi hallitsee (on viettänyt elämää = eallima). Minulla on jano, voisinko saada vettä = saada (čázi), ei olla
+function lauseGoverningVerb(tokens, i) {
+  const isBreak = (x) => x.punct && /[,.;:!?]/.test(x.punct);
+  const isVerb = (x) => x.pick?.pos === "V";
+  let a0 = i; while (a0 > 0 && !isBreak(tokens[a0 - 1])) a0--;
+  let b0 = i; while (b0 < tokens.length - 1 && !isBreak(tokens[b0 + 1])) b0++;
+  return tokens.slice(a0, i).reverse().find(isVerb) || tokens.slice(i + 1, b0 + 1).find(isVerb) || null;
+}
+function lauseExistential(tokens, i) {
+  return lauseGoverningVerb(tokens, i)?.pick?.base === "olla";
+}
 function lauseDefaultMuoto(choice, fcase, existential = false) {
   if (choice.sem === "surf") return "top";
   // Vene olla-lauseessa on paikka (olemme veneellä = leat fatnasis), muuten kulkuneuvolla liikutaan (menen veneellä = fatnasiin)
@@ -292,7 +304,7 @@ function lauseSamiTag(tokens, i) {
   const hasVerb = tokens.some((x) => x.pick?.pos === "V" || x.neg);
   // Olla-verbin lause (onko täällä vessaa, on kahvia): suomen partitiivi on olemassaolon subjekti, saamessa nominatiivi
   // (Leago dáppe hivsset?), ei objektin akkusatiivi
-  const existential = tokens.some((x) => x.pick?.base === "olla");
+  const existential = lauseExistential(tokens, i);
   const prev = tokens.slice(0, i).reverse().find((x) => !x.punct);
   const [num, fcase] = cell.includes("+") ? cell.split("+") : [null, cell];
   if (pos === "V") {
@@ -316,9 +328,13 @@ function lauseSamiTag(tokens, i) {
   }
   if (t.pick.pos === "Pron" && LAUSE_PRONOUN[t.pick.base]) return samiCaseOfFinCell(cell, "PRON");
   // Luvun 2-6 jälkeen yksikön genetiivi (kaksi kahvia = guokte gáfe), samoin mittasanan jälkeen (palaa kakkua = bihtá gáhku)
-  if (fcase === "Par" && (lauseIsCount(prev) || prev?.pick?.cell === "Sg+Par")) return "Sg+Gen";
+  // (ei pronominin jälkeen: tätä aluetta = dát guovlu, ei mittasana)
+  if (fcase === "Par" && (lauseIsCount(prev) || prev?.pick?.cell === "Sg+Par" && prev.pick.pos !== "Pron")) return "Sg+Gen";
   // Lauseen objekti: suomen genetiivi tai partitiivi -> saamen akkusatiivi (yhden kahvin = ovtta gáfe)
   if (existential && fcase === "Par") return `${num || "Sg"}+Nom`;
+  // Passiivin partitiiviobjekti on saamen passiivin subjekti (sulkeita käytetään = ruođut geavahuvvojit); ei taipumattoman
+  // sanan jälkeen (pyydetään lohta pitkin Tenoa = mielde Deanu)
+  if (fcase === "Par" && !prev?.post && !(prev?.pick && !prev.pick.cell) && /^Pss/.test(lauseGoverningVerb(tokens, i)?.pick?.cell || "")) return `${num || "Sg"}+Nom`;
   // Postposition edellä genetiivi (auton alla = biilla vuolde), ei objektin akkusatiivi
   const next = tokens.slice(i + 1).find((x) => !x.punct);
   if (next?.withPost && fcase === "Gen") return `${num || "Sg"}+Com`;
@@ -571,7 +587,7 @@ function lauseMuotoHtml(i) {
   const m = (tok.pick?.cell || "").match(/^(Sg|Pl)\+(Ade|Abl|All)$/);
   if (!m || tok.pick.pos !== "N" || !tok.choice || tok.choice.subtype === "Prop" || tok.choice.human) return "";
   const owner = m[2] === "Ade" && lause.tokens.slice(i + 1).some((x) => x.pick?.base === "olla" && /(Sg3|Pl3)$/.test(x.pick.cell || ""));
-  const current = tok.muoto || (owner ? "place" : lauseDefaultMuoto(tok.choice, m[2], lause.tokens.some((x) => x.pick?.base === "olla")));
+  const current = tok.muoto || (owner ? "place" : lauseDefaultMuoto(tok.choice, m[2], lauseExistential(lause.tokens, i)));
   const saved = tok.muoto;
   const rows = LAUSE_MUOTOT[m[2]].map((opt) => {
     tok.muoto = opt;
