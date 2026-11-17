@@ -577,7 +577,29 @@ const likeEsc = (s) => s.replace(/[\\%_]/g, "\\$&");
 const TRANS_MATCH = "(? OR instr(t.fold, ?)) AND (t.fold = ? OR t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\')";
 const transMatchParams = (q) => { const e = likeEsc(q); return [0, q, q, `${e},%`, `%, ${e},%`, `%, ${e}`]; };
 
+// Jokerihaku: * = mitä tahansa kirjaimia (myös ei yhtään), ? = yksi kirjain (á?bmogis -> álbmogis, *ortnega).
+// Vain saamen perusmuodot ja taivutusmuodot; yksi rivi sanaa kohden (perusmuoto, jos se täsmää, muuten yleisin
+// täsmäävä muoto), yleisin sana ensin. Vähintään kaksi kirjainta, ettei pelkkä * luettele koko sanakirjaa.
+const WILD_LIMIT = 100;
+const isWildcard = (query) => /[*?]/.test(query) && query.replace(/[*?\s]/g, "").length >= 2;
+function wildcardQuery(query) {
+  const pat = fold(query.trim()).replace(/[[\]]/g, "");
+  const cols = `id, sme_lemma, pos, subtype, freq, ${TRANS_COLS}${hasHumanColumn() ? ", human" : ""}, dial_same`;
+  const rows = all(`SELECT d.${cols.split(", ").join(", d.")}, x.v AS wild FROM (
+      SELECT word_id AS id, surface AS v FROM paradigms WHERE surface GLOB ? OR surface GLOB ?
+      UNION SELECT id, sme_lemma FROM dictionary WHERE lemma_fold GLOB ?) x JOIN dictionary d ON d.id = x.id
+    ORDER BY d.freq DESC, d.id LIMIT 2000`, [pat, capitalize(pat), pat]);
+  const byId = new Map();
+  for (const r of rows) {
+    const prev = byId.get(r.id);
+    if (!prev) byId.set(r.id, { ...r, rank: 1 });
+    else if (fold(r.wild) === fold(r.sme_lemma)) prev.wild = r.wild;
+  }
+  return [...byId.values()].slice(0, WILD_LIMIT);
+}
+
 function queryDatabase(query) {
+  if (isWildcard(query)) return wildcardQuery(query);
   const q = fold(query.trim());
   const found = new Map();
   const add = (row, rank) => {
@@ -1081,6 +1103,7 @@ function letterVariants(word) {
 }
 let SUGGEST_FACTOR = 10;  // vaihtoehdon oltava näin monta kertaa yleisempi kuin löydetty sana
 function didYouMean(query, results) {
+  if (/[*?]/.test(query)) return [];
   const q = fold(query);
   if (results.some((r) => r.rank > 1.2 && r.rank < 5 && !r.clitics)) return [];
   const sami = results.filter((r) => r.clitics || SAMI_HIT_RANKS.includes(r.rank));
@@ -1127,6 +1150,7 @@ function addsLettersOnly(typed, term) {
   return a.every((c, i) => c === b[i] || c === withoutLetters(b[i]));
 }
 function extraDidYouMean(query, results) {
+  if (/[*?]/.test(query)) return [];
   const extra = extraSearchLangs();
   if (!extra.length) return [];
   if (results.some((r) => (r.rank > 1.2 && r.rank < 5 && !r.clitics) || (r.extraLang && r.rank < PREFIX_RANK))) return [];
@@ -1175,7 +1199,9 @@ function renderResults() {
     const b = document.createElement("button");
     const trans = resultTransHtml(r, 2);
     const pos = r.subtype ? `${r.pos} ${r.subtype}` : r.pos;
-    b.innerHTML = `<span class="r-lemma">${esc(shownLemma(r))}</span> <span class="trans">(${esc(pos)})${trans ? " – " + trans : ""}</span>`;
+    // Jokerihaun täsmännyt muoto ennen perusmuotoa (álbmogis → álbmot)
+    const wild = r.wild && fold(r.wild) !== fold(r.sme_lemma) ? `<span class="r-lemma">${esc(r.wild)}</span> → ` : "";
+    b.innerHTML = `${wild}<span class="r-lemma">${esc(r.wild && !wild ? r.wild : shownLemma(r))}</span> <span class="trans">(${esc(pos)})${trans ? " – " + trans : ""}</span>`;
     b.dataset.i = i;
     b.onclick = () => selectResult(i);
     box.appendChild(b);
@@ -1290,8 +1316,10 @@ const ATTESTED_POSITIONS = {
 };
 
 // Saman sanan toinen kirjoitusasu (dialects.py, kirku / girku): näytetään haettu asu otsikkona
+// Haettu sana; jokerihaussa valitun rivin täsmännyt muoto (á?bmogis -> álbmogis)
+const searchedWord = () => state.results?.[state.index]?.wild || state.query;
 function shownLemma(w) {
-  return w.dial_same && fold(state.query) === fold(w.dial_same) ? w.dial_same : w.sme_lemma;
+  return w.dial_same && fold(searchedWord()) === fold(w.dial_same) ? w.dial_same : w.sme_lemma;
 }
 
 // Itä- ja länsisaamen merkintä (dialects.py): sanan oma alue ja toisen alueen sana sekä selite käännösten merkinnöille
@@ -1420,7 +1448,7 @@ function renderInfo(w) {
     const sme = SME_OF_FIN_CLITIC[state.finClitic.clitic].map((c) => "-" + c).join(", ");
     info.push(t("finCliticInfo", state.query, state.finClitic.stem, state.finClitic.clitic, sme));
   }
-  const q = fold(state.clitic ? state.clitic.stem : state.query);
+  const q = fold(state.clitic ? state.clitic.stem : searchedWord());
   const matches = [];
   for (const [tag, forms] of state.paradigm) {
     for (const f of forms) {
@@ -1435,9 +1463,9 @@ function renderInfo(w) {
   // rivillä on vartalo (boađát ≈ du kommer). Partikkeleille, joilla ei ole suomen vastinetta, sama kuin norjassa.
   const finClitics = state.clitic && settings.lang === "fin" && state.clitic.clitics.every((c) => FIN_CLITICS[c])
     ? state.clitic.clitics : null;
-  const formLabel = state.clitic && !finClitics ? state.clitic.stem : state.query;
+  const formLabel = state.clitic && !finClitics ? state.clitic.stem : searchedWord();
   if (matches.length && q !== fold(w.sme_lemma) && q !== fold(w.dial_same || "")) {
-    info.push(t("searchedForm", state.clitic ? state.clitic.stem : state.query, [...new Set(matches)].join(", ")));
+    info.push(t("searchedForm", state.clitic ? state.clitic.stem : searchedWord(), [...new Set(matches)].join(", ")));
     if (FORM_PHRASES[settings.lang]) formTrans = translationOfForm(w, matches.map((m) => m.split(" ")[0]), finClitics);
   }
   // Haetun muodon käännös omalle rivilleen käännöksen alle (viesus ≈ talossa / talosta, i huset / fra huset).
@@ -1737,7 +1765,7 @@ function renderGradationFull() {
   const preferred = ["Inf", "Sg+Nom", "Nom", "Ind+Prs+Sg1", "Sg+Acc", "Acc", "Sg+Gen", "Pl+Nom"];
   const tags = [...preferred, ...[...state.paradigm.keys()].filter((t) => !preferred.includes(t))];
   const examples = {};
-  const q = fold(state.query);
+  const q = fold(searchedWord());
   for (const [key, g] of state.grades) {
     const surface = key.split("|")[1];
     if (fold(surface) === q && !examples[g]) examples[g] = surface;
@@ -2697,13 +2725,19 @@ function analyzeOcr() {
   }
   ocr.autoDir = false;
   const found = new Set(words.map((w) => w.word)).size;
-  ocr.words = words;
+  // Tuntemattomat sanat (vähintään 3 kirjainta, ei numeroita) himmeällä katkoviivalla: napautus näyttää lähimmät
+  // sanakirjan sanat (ocrRepairs) ja jokerihaun (ábmogis -> álbmogis). Ei automaattista korjausta: suomen sana ei
+  // muutu saameksi kysymättä (rasismi, valssi).
+  const at = new Set(words.map((w) => `${w.cx},${w.cy}`));
+  const unknown = r.words.filter((w) => !at.has(`${w.cx},${w.cy}`) && /^[\p{L}-]+$/u.test(w.clean) && /\p{L}{3}/u.test(w.clean))
+    .map((w) => ({ ...w, word: w.clean.toLowerCase(), unknown: true }));
+  ocr.words = [...words, ...unknown];
   ocr.picked = null;
   ocr.status = (!r.words.length ? t("ocrNoText") : found ? t("ocrFound", found) : t("ocrNoWords")) +
     (switched ? ` · ${t("ocrDirSwitched")}` : "");
   $("ocr-bubble").hidden = true;
   $("ocr-photo").innerHTML = `<img src="${r.image}" alt="">`
-    + words.map((w, i) => `<div class="ocr-word" data-i="${i}"></div>`).join("");
+    + ocr.words.map((w, i) => `<div class="ocr-word${w.unknown ? " unknown" : ""}" data-i="${i}"></div>`).join("");
   layoutOcr(!ocr.view);
 }
 
@@ -2763,8 +2797,9 @@ function pickOcrWord(i) {
   ocr.picked = i;
   if (i == null) { bubble.hidden = true; return; }
   const w = ocr.words[i];
-  if (!w.gloss) w.gloss = ocrGloss(w.word, w.clean);
   photo.querySelector(`[data-i="${i}"]`).classList.add("picked");
+  if (w.unknown) { pickUnknownOcrWord(w); return; }
+  if (!w.gloss) w.gloss = ocrGloss(w.word, w.clean);
   // Rivi = saamen sana ja sen käännös: ensin kuvan muoto (beavddis  pöydässä / pöydästä), alla himmeämpänä perusmuoto
   // (beavdi  pöytä). Perusmuotoinen sana yhdellä rivillä; jos muotoa ei voi kääntää, ylärivillä on vain saamen sana.
   // Enintään kaksi muotoa (mus = minulla / minulta …): loput näkyvät sanakortilla
@@ -2783,6 +2818,56 @@ function pickOcrWord(i) {
   bubble.setAttribute("aria-label", w.word);
   bubble.hidden = false;
   placeOcrBubble();
+}
+
+// Tuntematon sana: enintään kolme lähintä saamen sanaa (yksi kirjain eri, puuttuu tai liikaa) ja muokkaa-painike,
+// joka vie sanan hakukenttään jokerihakua varten (á?bmogis). Rivin napautus avaa sen sanan.
+const EDIT_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+  stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>`;
+function pickUnknownOcrWord(w) {
+  const bubble = $("ocr-bubble");
+  if (!w.cands) w.cands = settings.ocrFrom === "sme" ? ocrRepairs(w.word) : [];
+  const cands = w.cands.map((c) => `<span class="b-row b-cand" data-cand="${esc(c.word)}"><span class="b-sme">${esc(c.word)}</span>` +
+    `<span class="b-tr">${esc(c.trans)}${c.lemma ? ` <span class="b-more">(${esc(c.lemma)})</span>` : ""}</span></span>`).join("");
+  bubble.innerHTML = `<span class="b-text"><span class="b-row b-form b-unknown"><span class="b-sme">${esc(w.word)}</span>` +
+    `<span class="b-tr">${esc(t(w.cands.length ? "ocrNearest" : "ocrUnknown"))}</span></span>${cands}</span>` +
+    `<span class="b-actions"><span class="b-open b-edit" role="button" aria-label="${esc(t("ocrEdit"))}">${EDIT_ICON}</span></span>`;
+  bubble.setAttribute("aria-label", w.word);
+  bubble.hidden = false;
+  placeOcrBubble();
+}
+
+// Yhden kirjaimen korjaukset (puuttuva, väärä tai ylimääräinen kirjain) saamen sanoiksi ja muodoiksi; yleisin sana
+// ensin. Korpuskoe 2026-11-17: pudotetusta kirjaimesta 69 % ainoa ehdokas ja oikea, 23 % oikea ehdokkaiden joukossa.
+function ocrRepairs(word) {
+  const w = [...word].map((c) => OCR_LOOKALIKES[c] || c).join("").replace(/[[\]*?]/g, "");
+  const chars = [...w];
+  const pats = new Set(), exact = new Set();
+  for (let i = 0; i <= chars.length; i++) pats.add([...chars.slice(0, i), "?", ...chars.slice(i)].join(""));
+  for (let i = 0; i < chars.length; i++) {
+    pats.add([...chars.slice(0, i), "?", ...chars.slice(i + 1)].join(""));
+    exact.add([...chars.slice(0, i), ...chars.slice(i + 1)].join(""));
+  }
+  // Kirjaimella alkavat kuviot käyttävät hakemistoa; ?-alkuiset yhdellä taulun läpikäynnillä
+  const lead = [...pats].filter((p) => p[0] === "?"), rest = [...pats].filter((p) => p[0] !== "?");
+  const found = new Map();
+  const take = (rows) => { for (const r of rows) if (!found.has(r.v) || r.freq > found.get(r.v)) found.set(r.v, r.freq || 0); };
+  const q = (where, params) => take(all(`SELECT p.surface AS v, MAX(d.freq) AS freq FROM paradigms p JOIN dictionary d ON d.id = p.word_id
+    WHERE ${where} GROUP BY p.surface UNION SELECT d.sme_lemma, d.freq FROM dictionary d
+    WHERE ${where.replace(/p\.surface/g, "d.lemma_fold")}`, [...params, ...params]));
+  for (const p of rest) q("p.surface GLOB ?", [p]);
+  if (lead.length) q(lead.map(() => "p.surface GLOB ?").join(" OR "), lead);
+  q(`p.surface IN (${[...exact].map(() => "?").join(",")})`, [...exact]);
+  const out = [];
+  for (const [v] of [...found].sort((a, b) => b[1] - a[1])) {
+    if (fold(v) === fold(w) || v.length < 2) continue;
+    const g = ocrGloss(v);
+    if (!g.trans) continue;
+    const trans = (g.lemma ? g.form || g.trans : g.trans).split(" / ").slice(0, 2).join(" / ");
+    out.push({ word: v, trans, lemma: g.lemma || "" });
+    if (out.length >= 3) break;
+  }
+  return out;
 }
 
 function placeOcrBubble() {
@@ -2808,10 +2893,17 @@ let suppressClickUntil = 0;
 document.addEventListener("click", (e) => {
   if (Date.now() < suppressClickUntil) { e.preventDefault(); e.stopPropagation(); }
 }, true);
-function openOcrWord() {
+function openOcrWord(cand = null) {
   const w = ocr.words[ocr.picked];
   suppressClickUntil = Date.now() + 700;
   $("ocr-view").hidden = true;
+  // Tuntematon sana: valittu ehdokas, tai sana hakukenttään muokattavaksi (jokerihaku, ks. noHitsHint)
+  if (w.unknown) {
+    search(cand || w.word);
+    ocrReturnHash = location.hash;
+    if (!cand) setTimeout(() => $("search").focus(), 0);
+    return;
+  }
   // Sama sana kuin kuplassa (Máhte avaa nimen, ei verbiä máhttit)
   const q = w.gloss?.query || w.word;
   const index = w.gloss?.id ? queryDatabase(q).findIndex((r) => r.id === w.gloss.id) : 0;
@@ -2894,7 +2986,7 @@ function bindOcrGestures() {
     const speaker = target?.closest(".b-speak");
     if (speaker) {
       if (!speaker.classList.contains("loading")) speak(ocr.words[ocr.picked].gloss.say, speaker);
-    } else if (target?.closest("#ocr-bubble")) openOcrWord();
+    } else if (target?.closest("#ocr-bubble")) openOcrWord(target.closest("[data-cand]")?.dataset.cand || null);
     else if (word) {
       if (Number(word.dataset.i) === ocr.picked) openOcrWord();
       else pickOcrWord(Number(word.dataset.i));

@@ -918,6 +918,11 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .mark-light.style-underline .ocr-word.picked {
   background: color-mix(in srgb, var(--mark) 40%, transparent); box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--mark) 55%, #000);
 }
+/* Tuntematon sana: himmeä katkoviiva, napautus näyttää lähimmät sanat */
+.ocr-photo .ocr-word.unknown { background: transparent; box-shadow: none; border: 1.5px dashed color-mix(in srgb, var(--mark) 45%, transparent); border-radius: 6px; }
+.ocr-photo .ocr-word.unknown.picked { background: color-mix(in srgb, var(--mark) 14%, transparent); border-color: var(--mark); }
+.ocr-bubble .b-unknown .b-tr { color: var(--muted); font-style: italic; }
+.ocr-bubble .b-cand > * { cursor: pointer; border-top: 1px solid var(--border); margin-top: 3px; padding-top: 4px; }
 /* Suunta ja merkintätapa: pilleri ja paletti kuvan yläpuolella */
 .ocr-bar { position: relative; display: flex; align-items: center; gap: 8px; margin-top: 10px; }
 .ocr-dir, .ocr-style-btn {
