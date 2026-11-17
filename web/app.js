@@ -585,10 +585,13 @@ const isWildcard = (query) => /[*?]/.test(query) && query.replace(/[*?\s]/g, "")
 function wildcardQuery(query) {
   const pat = fold(query.trim()).replace(/[[\]]/g, "");
   const cols = `id, sme_lemma, pos, subtype, freq, ${TRANS_COLS}${hasHumanColumn() ? ", human" : ""}, dial_same`;
+  // Isolla alkava muoto (nimet) vain, jos kuvio alkaa kirjaimella: *- ja ?-alkuinen kuvio on sama isolla, ja toinen
+  // GLOB samalle riville lukisi taulun turhaan kahdesti (yötesti 2026-11-18: OnePlus Nord *ortnega 2,7 s -> 1,6 s haussa)
+  const cap = capitalize(pat), caps = cap !== pat;
   const rows = all(`SELECT d.${cols.split(", ").join(", d.")}, x.v AS wild FROM (
-      SELECT word_id AS id, surface AS v FROM paradigms WHERE surface GLOB ? OR surface GLOB ?
+      SELECT word_id AS id, surface AS v FROM paradigms WHERE surface GLOB ?${caps ? " OR surface GLOB ?" : ""}
       UNION SELECT id, sme_lemma FROM dictionary WHERE lemma_fold GLOB ?) x JOIN dictionary d ON d.id = x.id
-    ORDER BY d.freq DESC, d.id LIMIT 2000`, [pat, capitalize(pat), pat]);
+    ORDER BY d.freq DESC, d.id LIMIT 2000`, caps ? [pat, cap, pat] : [pat, pat]);
   const byId = new Map();
   for (const r of rows) {
     const prev = byId.get(r.id);
