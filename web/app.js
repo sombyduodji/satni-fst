@@ -2826,7 +2826,7 @@ const EDIT_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
   stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>`;
 function pickUnknownOcrWord(w) {
   const bubble = $("ocr-bubble");
-  if (!w.cands) w.cands = settings.ocrFrom === "sme" ? ocrRepairs(w.word) : [];
+  if (!w.cands) w.cands = settings.ocrFrom === "sme" ? ocrRepairs(w.word, /^\p{Lu}/u.test(w.clean)) : [];
   const cands = w.cands.map((c) => `<span class="b-row b-cand" data-cand="${esc(c.word)}"><span class="b-sme">${esc(c.word)}</span>` +
     `<span class="b-tr">${esc(c.trans)}${c.lemma ? ` <span class="b-more">(${esc(c.lemma)})</span>` : ""}</span></span>`).join("");
   bubble.innerHTML = `<span class="b-text"><span class="b-row b-form b-unknown"><span class="b-sme">${esc(w.word)}</span>` +
@@ -2839,7 +2839,9 @@ function pickUnknownOcrWord(w) {
 
 // Yhden kirjaimen korjaukset (puuttuva, väärä tai ylimääräinen kirjain) saamen sanoiksi ja muodoiksi; yleisin sana
 // ensin. Korpuskoe 2026-11-17: pudotetusta kirjaimesta 69 % ainoa ehdokas ja oikea, 23 % oikea ehdokkaiden joukossa.
-function ocrRepairs(word) {
+const OCR_ALPHABET = [..."abcdefghijklmnopqrstuvwyzáčđŋšŧžåäöâ"];
+// Pienellä alkava sana kuvassa: ei nimiä ehdokkaiksi (lij -> Liv, type -> Tyge)
+function ocrRepairs(word, capital = false) {
   const w = [...word].map((c) => OCR_LOOKALIKES[c] || c).join("").replace(/[[\]*?]/g, "");
   const chars = [...w];
   const pats = new Set(), exact = new Set();
@@ -2848,19 +2850,21 @@ function ocrRepairs(word) {
     pats.add([...chars.slice(0, i), "?", ...chars.slice(i + 1)].join(""));
     exact.add([...chars.slice(0, i), ...chars.slice(i + 1)].join(""));
   }
-  // Kirjaimella alkavat kuviot käyttävät hakemistoa; ?-alkuiset yhdellä taulun läpikäynnillä
-  const lead = [...pats].filter((p) => p[0] === "?"), rest = [...pats].filter((p) => p[0] !== "?");
+  // Kirjaimella alkavat kuviot käyttävät hakemistoa. Ensimmäisen kirjaimen korjaus kirjaimisto läpi tarkkoina
+  // sanoina (myös hakemistolla): ?-alkuinen GLOB lukisi koko taulun, OnePlus Nordilla 2,4 s.
+  const rest = [...pats].filter((p) => p[0] !== "?");
+  for (const p of pats) if (p[0] === "?") for (const c of OCR_ALPHABET) exact.add(c + p.slice(1));
   const found = new Map();
   const take = (rows) => { for (const r of rows) if (!found.has(r.v) || r.freq > found.get(r.v)) found.set(r.v, r.freq || 0); };
   const q = (where, params) => take(all(`SELECT p.surface AS v, MAX(d.freq) AS freq FROM paradigms p JOIN dictionary d ON d.id = p.word_id
     WHERE ${where} GROUP BY p.surface UNION SELECT d.sme_lemma, d.freq FROM dictionary d
     WHERE ${where.replace(/p\.surface/g, "d.lemma_fold")}`, [...params, ...params]));
   for (const p of rest) q("p.surface GLOB ?", [p]);
-  if (lead.length) q(lead.map(() => "p.surface GLOB ?").join(" OR "), lead);
-  q(`p.surface IN (${[...exact].map(() => "?").join(",")})`, [...exact]);
+  const ex = [...exact];
+  for (let i = 0; i < ex.length; i += 400) q(`p.surface IN (${ex.slice(i, i + 400).map(() => "?").join(",")})`, ex.slice(i, i + 400));
   const out = [];
   for (const [v] of [...found].sort((a, b) => b[1] - a[1])) {
-    if (fold(v) === fold(w) || v.length < 2) continue;
+    if (fold(v) === fold(w) || v.length < 2 || (!capital && /^\p{Lu}/u.test(v))) continue;
     const g = ocrGloss(v);
     if (!g.trans) continue;
     const trans = (g.lemma ? g.form || g.trans : g.trans).split(" / ").slice(0, 2).join(" / ");
