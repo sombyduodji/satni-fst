@@ -1223,6 +1223,8 @@ function renderResults() {
 }
 
 function selectResult(i, pushHistory = true) {
+  // Vanha tulosrivi edellisestä hausta (tyhjä haku piilottaa listan, rivit jäävät DOMiin): ei kaatumista (yötesti 2026-11-18)
+  if (!state.results?.[i]) return;
   closeFormPop();
   state.index = i;
   const r = state.results[i];
