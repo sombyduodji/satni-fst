@@ -1774,3 +1774,4 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
   .sidebar .menu-pane .word-list { overflow: visible; }
   body.drawer-layout .sidebar { overflow-y: auto; overscroll-behavior: contain; }
 }
+.lause-pop select.lp-form { width: 100%; margin: 4px 0 2px; }

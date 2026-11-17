@@ -372,6 +372,8 @@ function lauseSamiForm(tokens, i) {
   if (!t.choice) return null;
   let tag = lauseSamiTag(tokens, i), post = "", guess = false, passive = false;
   if (tag && typeof tag === "object") ({ tag, post = "", guess = false, passive = false } = tag);
+  // Käyttäjän valitsema saamen taivutusmuoto sanan valikosta (tok.smeTag, lauseFormHtml) ohittaa säännöt
+  if (t.smeTag && loadWord(t.choice.id).paradigm.has(t.smeTag)) ({ tag, post, guess, passive } = { tag: t.smeTag, post: "", guess: false, passive: false });
   let form = t.choice.sme_lemma, exact = !t.pick.cell;
   if (passive) {
     let pf = null;
@@ -448,6 +450,7 @@ function lauseSave() {
     if (tok.choice && tok.candidates?.[0] && tok.choice !== tok.candidates[0]) p.c = tok.choice.id;
     if (tok.skip) p.s = 1;
     if (tok.muoto) p.m = tok.muoto;
+    if (tok.smeTag) p.f = tok.smeTag;
     if (Object.keys(p).length) picks[i] = p;
   });
   lause.parsedText = text;
@@ -474,6 +477,7 @@ function lauseParseRestoring(text) {
       if (p.c != null) tok.choice = tok.candidates?.find((c) => c.id === p.c) || tok.choice;
       if (p.s) { tok.skip = true; tok.known = true; }
       if (p.m) tok.muoto = p.m;
+      if (p.f) tok.smeTag = p.f;
     }
   }
   lause.parsedText = text;
@@ -531,7 +535,7 @@ function lauseOpenChip(i) {
     const readings = (tok.analyses || []).length > 1
       ? `<p class="lp-sub">${esc(t("lauseReading"))}</p>` + tok.analyses.map((a, k) =>
           `<label><input type="radio" name="lp-reading" value="${k}"${a === tok.pick ? " checked" : ""}> ${esc(a.base)} · ${esc(lauseCellLabel(a.cell))}</label>`).join("") : "";
-    const muoto = lauseMuotoHtml(i);
+    const muoto = lauseMuotoHtml(i) + lauseFormHtml(i);
     html = lauseHead(`${esc(tok.raw)} = ${esc(tok.pick.base)}${esc(cell)}${tok.clitic ? " + -" + esc(tok.clitic) : ""}`) + muoto + readings +
       (muoto || readings ? `<p class="lp-sub">${esc(t("lauseSamiWord"))}</p>` : "") +
       tok.candidates.map((c, k) => `<div class="lp-row"><label><input type="radio" name="lp" value="${k}"${c === tok.choice ? " checked" : ""}>` +
@@ -554,12 +558,12 @@ function lauseOpenChip(i) {
 // Suomen taivutusmuodon nimi tulkintalistaan (Sg+Par = yks. partitiivi, Prs+ConNeg = preesens, kieltomuoto)
 const LAUSE_LABELS = {
   fi: { Sg: "yks.", Pl: "mon.", Nom: "nominatiivi", Gen: "genetiivi", Acc: "akkusatiivi", Par: "partitiivi", Ine: "inessiivi",
-        Ela: "elatiivi", Ill: "illatiivi", Ade: "adessiivi", Abl: "ablatiivi", All: "allatiivi", Ess: "essiivi", Tra: "translatiivi",
+        Ela: "elatiivi", Ill: "illatiivi", Loc: "lokatiivi", Com: "komitatiivi", Du: "duaali", Ade: "adessiivi", Abl: "ablatiivi", All: "allatiivi", Ess: "essiivi", Tra: "translatiivi",
         Prs: "preesens", Prt: "imperfekti", Cond: "konditionaali", Pot: "potentiaali", Imprt: "imperatiivi", ConNeg: "kieltomuoto",
         Inf: "perusmuoto", PrfPrc: "perfektin partisiippi", PrsPrc: "preesensin partisiippi", PssPrfPrc: "passiivin partisiippi",
         Pss: "passiivi", InfMa: "3. infinitiivi", Comp: "komparatiivi", Superl: "superlatiivi", person: (n, p) => `${p}. persoona ${n}` },
   nb: { Sg: "ent.", Pl: "fl.", Nom: "nominativ", Gen: "genitiv", Acc: "akkusativ", Par: "partitiv", Ine: "inessiv", Ela: "elativ",
-        Ill: "illativ", Ade: "adessiv", Abl: "ablativ", All: "allativ", Ess: "essiv", Tra: "translativ", Prs: "presens",
+        Ill: "illativ", Loc: "lokativ", Com: "komitativ", Du: "dual", Ade: "adessiv", Abl: "ablativ", All: "allativ", Ess: "essiv", Tra: "translativ", Prs: "presens",
         Prt: "preteritum", Cond: "kondisjonalis", Pot: "potensialis", Imprt: "imperativ", ConNeg: "nektende form", Inf: "infinitiv",
         PrfPrc: "perfektum partisipp", PrsPrc: "presens partisipp", PssPrfPrc: "passiv partisipp", Pss: "passiv",
         InfMa: "3. infinitiv", Comp: "komparativ", Superl: "superlativ", person: (n, p) => `${p}. person ${n}` },
@@ -568,7 +572,7 @@ function lauseCellLabel(cell) {
   if (!cell) return "";
   const L = LAUSE_LABELS[settings.uiLang] || LAUSE_LABELS.fi;
   return cell.split("+").map((part) => {
-    const m = part.match(/^(Sg|Pl)([123])$/);
+    const m = part.match(/^(Sg|Du|Pl)([123])$/);
     return m ? L.person(L[m[1]], m[2]) : L[part] || part;
   }).join(", ").replace(/^(yks\.|mon\.|ent\.|fl\.), /, "$1 ");
 }
@@ -597,6 +601,38 @@ function lauseMuotoHtml(i) {
   });
   tok.muoto = saved;
   return `<p class="lp-sub">${esc(t("lauseForm"))}</p>` + rows.join("");
+}
+
+// Saamen taivutusmuodon valinta sanan valikossa: sijamuodot (yks./mon.) tai verbin persoonamuodot samassa
+// tempuksessa ja perusmuoto. Ensimmäinen vaihtoehto on lauseen sääntöjen antama muoto (automaattinen).
+const LAUSE_SME_CASES = ["Nom", "Acc", "Gen", "Ill", "Loc", "Com", "Ess"];
+function lauseFormOptions(tok, autoTag) {
+  const par = loadWord(tok.choice.id).paradigm, tags = [...par.keys()];
+  const pos = (tok.choice.pos || "").toUpperCase();
+  if (pos === "V") {
+    const tm = (autoTag || "").match(/^((?:Ind|Cond|Pot)\+(?:Prs|Prt)|Imprt)\+/);
+    const prefix = tm ? tm[1] : "Ind+Prs";
+    return ["Inf", ...tags.filter((x) => x.startsWith(prefix + "+") && /\+(Sg|Du|Pl)[123]$/.test(x)), prefix + "+ConNeg", "PrfPrc"]
+      .filter((x, k, a) => par.has(x) && a.indexOf(x) === k);
+  }
+  const rank = (x) => { const m = x.match(/^(?:(Sg|Pl)\+)?(\w+)$/); return m ? (m[1] === "Pl" ? 10 : 0) + LAUSE_SME_CASES.indexOf(m[2]) : -1; };
+  return tags.filter((x) => /^(?:(Sg|Pl)\+)?(Nom|Acc|Gen|Ill|Loc|Com|Ess)$/.test(x)).sort((a, b) => rank(a) - rank(b));
+}
+function lauseFormHtml(i) {
+  const tok = lause.tokens[i];
+  if (!tok.choice) return "";
+  const saved = tok.smeTag;
+  tok.smeTag = null;
+  const auto = lauseSamiForm(lause.tokens, i);
+  tok.smeTag = saved;
+  const autoTag = typeof auto?.tag === "string" ? auto.tag.replace(/^Pass\+/, "") : "";
+  const opts = lauseFormOptions(tok, autoTag);
+  if (opts.length < 2) return "";
+  // Jokaisen vaihtoehdon muoto samalla tavalla kuin lauseessa (rinnakkaismuodon valinta, liitepartikkeli, omistuspronomini)
+  const formOf = (x) => { tok.smeTag = x; const f = lauseSamiForm(lause.tokens, i)?.form || ""; tok.smeTag = saved; return f; };
+  const row = (val, form, label) => `<option value="${esc(val)}"${(saved || "") === val ? " selected" : ""}>${esc(form)} · ${esc(label)}</option>`;
+  return `<p class="lp-sub">${esc(t("lauseSmeForm"))}</p><select class="lp-form" name="lp-form" aria-label="${esc(t("lauseSmeForm"))}">` +
+    row("", auto?.form || "", t("lauseAuto")) + opts.map((x) => row(x, formOf(x), lauseCellLabel(x.replace(/^Ind\+/, "")))).join("") + `</select>`;
 }
 
 // Valikon otsikkorivi ja sulkemisrasti
@@ -745,8 +781,16 @@ function bindLause() {
   });
   $("lause-pop").onchange = (e) => {
     const t = lause.tokens[Number($("lause-pop").dataset.i)], r = e.target;
+    if (r.name === "lp-form") {
+      t.smeTag = r.value || null;
+      renderLause();
+      lauseSave();
+      lauseOpenChip(Number($("lause-pop").dataset.i));
+      return;
+    }
     if (r.name === "lp-muoto") {
       t.muoto = r.value;
+      t.smeTag = null;
       renderLause();
       lauseSave();
       lauseOpenChip(Number($("lause-pop").dataset.i));
@@ -754,6 +798,7 @@ function bindLause() {
     }
     if (r.name === "lp-reading") {
       t.muoto = null;
+      t.smeTag = null;
       t.pick = t.analyses[Number(r.value)];
       t.candidates = lauseCandidates(t.pick.base, t.pick.pos);
       t.choice = t.candidates[0] || null;
