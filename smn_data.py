@@ -33,8 +33,16 @@ DB_FILE = os.path.join(SCRIPT_DIR, "satni.db")
 
 # Inarinsaamessa on lisäksi abessiivi ja (yksikön) partitiivi
 SMN_CASES = ["Nom", "Gen", "Acc", "Ill", "Loc", "Com", "Abe"]
-NOMINAL = [(f"{n}+{c}", f"+{n}+{c}") for n in ("Sg", "Pl") for c in SMN_CASES] + [("Ess", "+Ess"), ("Sg+Par", "+Sg+Par")]
-ADJECTIVE = [("Attr", "+Attr")] + NOMINAL
+# Partitiivi ilman lukua (olmooš+N+Par = olmožid); "Sg+Par" ei tuottanut mitään (uutiskoe 2026-11-18)
+NOMINAL = [(f"{n}+{c}", f"+{n}+{c}") for n in ("Sg", "Pl") for c in SMN_CASES] + [("Ess", "+Ess"), ("Par", "+Par")]
+# Transitiiviverbin passiivi (uárnejuvvoo, uárnejuvvojeh, uárnejui): uutisissa yleinen
+PASSIVE = [(f"Pass+{t}", f"+Der/Pass+V+IV+{t}") for t in
+           ["Ind+Prs+Sg3", "Ind+Prs+Pl3", "Ind+Prt+Sg3", "Ind+Prt+Pl3", "PrfPrc", "Inf", "Ind+Prs+ConNeg", "Cond+Prs+Sg3"]] + [("Pass+Actio+Nom", "+Der/Pass+V+Actio+Nom")]
+# Vertailu- ja yliaste (puárásub, muččâdumos) sekä verbin teonnimi (tábáhtume) ja passiivin teonnimi (jurdâččum):
+# uutisteksteissä yleisiä (Anarâš aavis -koe 2026-11-18)
+DEGREE = [(f"{d}+{c}", f"+Der/{d}+A+{c}") for d in ("Comp", "Superl") for c in ("Attr", "Sg+Nom", "Sg+Gen", "Sg+Acc", "Pl+Nom", "Sg+Loc")]
+NOMACT = [(f"NomAct+{c}", f"+Der/NomAct+N+{c}") for c in ("Sg+Nom", "Sg+Acc", "Sg+Loc", "Sg+Ill", "Sg+Com", "Pl+Nom", "Ess")]
+ADJECTIVE = [("Attr", "+Attr")] + NOMINAL + DEGREE
 PRONOUN_PERS = [(c, f"+{c}") for c in SMN_CASES + ["Ess"]]
 CMP_HEADS = ("peivi", "kirje")  # päivä, kirja: yleisiä jälkiosia alkumuodon tarkistukseen
 VOWELS = "aáâeiouyäö"
@@ -67,7 +75,7 @@ def read_dict(pattern, lang):
 
 def forms_for(pos, prefix):
     if pos == "V":
-        return ifd.VERB_FORMS
+        return ifd.VERB_FORMS + NOMACT + (PASSIVE if "+TV" in prefix else [])
     if pos == "A":
         return ADJECTIVE
     if pos == "Pron" and any(p in prefix.split("+") for p in ifd.PERSONS):

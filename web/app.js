@@ -2609,6 +2609,14 @@ const OCR_LOOKALIKES = { "ð": "d", "ɖ": "d", "η": "n", "ţ": "t", "ş": "s", 
   "ấ": "á", "ắ": "á", "ầ": "á", "ạ": "a", "ą": "a", "q": "g" };
 const OCR_DIACRITICS = { a: "á", c: "č", d: "đ", n: "ŋ", s: "š", t: "ŧ", z: "ž" };
 
+// Kaksoiskirjaimen kokeilujärjestys: ensin i ja j (yleisimmät: sámiid, lijjii), sitten konsonantit, viimeisenä muut
+// vokaalit. Lyhyitä sanoja (va, pa) ei tuplata: niistä tuli vääriä sanoja (uutiskoe 2026-11-18).
+function doubleOrder(chars, norm = (c) => c) {
+  const rank = (c) => (/[ij]/.test(c) ? 0 : /[aáâäeéioóuüyåæø]/.test(c) ? 2 : 1);
+  return chars.map((c, i) => i).filter((i) => /\p{L}/u.test(chars[i]) && norm(chars[i]) !== norm(chars[i + 1] || "") && norm(chars[i]) !== norm(chars[i - 1] || ""))
+    .sort((a, b) => rank(chars[a]) - rank(chars[b]) || a - b);
+}
+
 // --- Inarinsaame kuvassa (smn_data.py, export_web_data.py: smn_words, smn_forms, smn_cmp) ---
 // Muodot haetaan tarkkeettomalla asulla (fold), koska tunnistus lukee â:n, đ:n ja ŋ:n usein väärin (mäksid = mäksiđ,
 // mangâčyet = maŋgâčyet; Anarâš aavis -kuvakaappaukset 2026-11-18). Kuvan sanaa lähin oikea asu valitaan.
@@ -2647,6 +2655,15 @@ function smnMatcher() {
     for (const c of SMN_CLITICS) {
       if (w.length > c.length + 2 && w.endsWith(c)) {
         const h = best(w.slice(0, -c.length), lookup(w.slice(0, -c.length)));
+        if (h) return h;
+      }
+    }
+    // Kaksoiskirjain luettu yhdeksi (sáttá -> sátá, iärrás -> iärás, lijjii -> lijii, kevttim -> kevtim)
+    const chars = [...w];
+    if (chars.length >= 4 && chars.length <= 20) {
+      for (const i of doubleOrder(chars, smnFold)) {
+        const v = [...chars.slice(0, i + 1), chars[i], ...chars.slice(i + 1)].join("");
+        const h = best(v, lookup(v));
         if (h) return h;
       }
     }
@@ -2743,6 +2760,24 @@ function ocrCorrector() {
       for (const picked of combos(k)) {
         const v = variant(picked);
         if (isSami(v)) return v;
+      }
+    }
+    // Kaksoiskirjain luettu yhdeksi (sámiid -> sámid, áššiid -> áššid, lii -> li, rávagirjji -> rávagirji; uutiskoe
+    // 2026-11-18: yleisin lukuvirhe, 129 / 8 637 sanaa). Ensin pelkkä tuplaus, sitten tuplaus ja yksi tarke.
+    if (w.length >= 4 && w.length <= 20) {
+      const chars = [...w], doubled = [];
+      for (const i of doubleOrder(chars)) {
+        const v = [...chars.slice(0, i + 1), chars[i], ...chars.slice(i + 1)].join("");
+        if (isSami(v)) return v;
+        doubled.push(v);
+      }
+      for (const v of doubled) {
+        const vc = [...v];
+        for (let i = 0; i < vc.length; i++) {
+          if (!OCR_DIACRITICS[vc[i]]) continue;
+          const d = [...vc.slice(0, i), OCR_DIACRITICS[vc[i]], ...vc.slice(i + 1)].join("");
+          if (isSami(d)) return d;
+        }
       }
     }
     return null;
@@ -2896,12 +2931,27 @@ function ocrResult(r) {
   if (!r) { $("ocr-status").textContent = ocr ? ocr.status : t("ocrIntro"); return; }  // kuvan otto peruttiin
   if (r.error) { $("ocr-status").textContent = t(r.error === "noApp" ? "ocrNoApp" : "ocrError"); return; }
   for (const w of r.words) w.clean = w.t.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, "");
+  joinHyphenated(r.words);
   ocr = { r, view: null, words: [], status: t("ocrFinding"), autoDir: true };
   ocrReturnHash = null;
   // Kuva näkyviin heti; merkinnät tulevat sanojen haun jälkeen
   $("ocr-photo").innerHTML = `<img src="${r.image}" alt="">`;
   layoutOcr(true);
   findOcrWords();
+}
+
+// Rivin lopussa tavutettu sana (sympo- / siumist, oovdân- / puohtui; uutiskoe 2026-11-18): molemmat palat haetaan
+// yhtenä sanana ja merkitään samana sanana. Pienellä alkava jatko liitetään ilman yhdysmerkkiä, isolla alkava
+// yhdysmerkin kanssa (Nuorta- / Lappis = Nuorta-Lappis).
+function joinHyphenated(words) {
+  for (let i = 0; i + 1 < words.length; i++) {
+    const a = words[i], b = words[i + 1];
+    if (!/\p{L}[-‐‑\u00AD]$/u.test(a.t) || !/^\p{L}/u.test(b.t) || !b.clean) continue;
+    if (!(b.cy > a.cy + (a.h || 10) * 0.6 && b.cx < a.cx)) continue;  // jatko seuraavalla rivillä, vasemmalla
+    const joined = /^\p{Ll}/u.test(b.clean) ? a.clean + b.clean : `${a.clean}-${b.clean}`;
+    a.clean = b.clean = joined;
+    i++;
+  }
 }
 
 // Sanojen haku kehän kanssa (uusi kuva tai suunnan vaihto)
@@ -2946,7 +2996,12 @@ function analyzeOcr() {
   const count = (ws) => new Set(ws.map((w) => w.word)).size;
   // Kolme kieltä: pohjoissaame, inari ja suomi/norja. Saamenkielten välillä riittää puolitoistakertainen ero (ne jakavat
   // sanoja, já, lea/lii), suomen ja saamen välillä kolminkertainen kuten ennen.
-  if (ocr.autoDir && r.words.length) {
+  // Koltansaame (sääʹmǩiõl, leʹčči: ʹ ǩ ǥ õ ǯ ʒ) näytti inariksi tunnistettuna (uutiskoe 2026-11-18): ei automaattista
+  // vaihtoa, vaan tilarivillä ilmoitus, ettei koltansaamea vielä tueta
+  const letterWords = r.words.filter((w) => /\p{L}{2}/u.test(w.clean));
+  const skolt = letterWords.filter((w) => /[ʹǩǥõǯʒǨǦÕǮƷ]/u.test(w.t)).length;
+  const isSkolt = skolt >= 3 && skolt >= letterWords.length * 0.08;
+  if (ocr.autoDir && r.words.length && !isSkolt) {
     let best = null;
     for (const other of ocrSources().filter((l) => l !== settings.ocrFrom)) {
       const alt = ocrMatches(r, other), sami = other !== "ui" && settings.ocrFrom !== "ui";
@@ -2985,7 +3040,7 @@ function analyzeOcr() {
   ocr.words = [...words, ...unknown];
   ocr.picked = null;
   ocr.status = (!r.words.length ? t("ocrNoText") : found ? t("ocrFound", found) : t("ocrNoWords")) +
-    (switched ? ` · ${t("ocrDirSwitched")}` : "");
+    (switched ? ` · ${t("ocrDirSwitched")}` : "") + (isSkolt ? ` · ${t("ocrSkolt")}` : "");
   $("ocr-bubble").hidden = true;
   $("ocr-photo").innerHTML = `<img src="${r.image}" alt="">`
     + ocr.words.map((w, i) => `<div class="ocr-word${w.unknown ? " unknown" : ""}" data-i="${i}"></div>`).join("");
