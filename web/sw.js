@@ -23,7 +23,7 @@ const DATA = "data/satni-web.db.gz";
 // v5: astevaihtelun korjaus, dilli ll ~ l, v6: taivutusluokat,
 // v7: muiden saamenkielten käännöksiä lisää ja suomennosehdotukset, v8: espanja, v9: haku ilman sulkeissa olevia tarkenteita,
 // v10: Tarkoititko-hakusanat muille kielille, v11: englantia Wiktionarysta)
-const DATA_CACHE = "satni-data-v41";  // v40: fin_also (lisäsuomennokset dict-fin-sme:stä)
+const DATA_CACHE = "satni-data-v41";  // v41: fin_cmp (suomen yhdyssanojen alkuosat); v40: fin_also
 
 self.addEventListener("install", (event) => {
   // cache: "reload": sovelluksen tiedostot verkosta eikä selaimen HTTP-välimuistista (muuten vanha app.js voisi jäädä);
