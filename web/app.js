@@ -4058,6 +4058,8 @@ function sentRerank(toks) {
     // sanoissa ja inarin/koltan sanoissa (ei lauseyhteyden valitsemia muotoja)
     for (const t of toks) {
       if (!t.opts || t.opts.length < 2 || t.fixed || t.finKey || t.ctx?.tagOf || t.name || t.unknown) continue;
+      // Pohjoissaamessa vain taipumattomat sanat (minun -> minä ja onko -> olla olivat vääriä, esimerkkilausekoe)
+      if (!isMinor(settings.ocrFrom) && !["Adv", "Pcle", "CC", "CS", "Interj"].includes(t.ctx?.pos)) continue;
       const single = (o) => /^[\p{L}-]+$/u.test(o || "");
       if (!single(t.opts[0])) continue;
       const n0 = uni(t.opts[0].toLowerCase());
