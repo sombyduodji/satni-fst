@@ -2921,67 +2921,80 @@ function minorTranslation(lang, row, to) {
 }
 const smnTranslation = (row, to) => minorTranslation("smn", row, to);
 
+// Kuvan sanan korjaukset muistiin kuvien ja suuntien yli (sama sana toistuu; suunnan vaihto ja automaattinen suunta
+// ajavat haun uudelleen): sana -> { word, cmp }
+const ocrCorrectCache = new Map();
 function ocrCorrector() {
-  const lemma = db.prepare("SELECT 1 FROM dictionary WHERE lemma_fold = ? LIMIT 1");
-  const form = db.prepare("SELECT 1 FROM paradigms WHERE surface IN (?, ?) LIMIT 1");
-  // Passiivimuodot (ráhkaduvvon, máksojuvvo) sme_passive-taulusta; vanhassa aineistossa ei ole
-  let pass = null;
-  try { pass = db.prepare("SELECT 1 FROM sme_passive WHERE surface IN (?, ?) LIMIT 1"); } catch (e) { /* vanha aineisto */ }
-  const exists = (stmt, params) => { stmt.bind(params); const found = stmt.step(); stmt.reset(); return found; };
-  const plain = (w) => exists(lemma, [fold(w)]) || exists(form, [w, capitalize(w)]) || (pass && exists(pass, [w, capitalize(w)]));
-  // Liitepartikkelin kanssa (válddátgo = válddát + -go, songe = son + -ge): haku tuntee nämä (queryDatabase)
-  const isSami = (w) => plain(w) || CLITICS.some((c) => w.length > c.length + 1 && w.endsWith(c) && plain(w.slice(0, -c.length)));
-  const cache = new Map();
+  // Olemassaolo erissä: kaikki sanan muunnelmat yhdellä kyselyllä (ennen jopa 525 kyselyä tuntematonta sanaa kohden,
+  // noin 230 ms kuvaa kohden; profiili 2026-11-18)
+  const batchExists = (cands) => {
+    const found = new Set(), list = [...new Set(cands)];
+    const q = (sql, params) => { for (const r of all(sql, params)) found.add(Object.values(r)[0]); };
+    for (let i = 0; i < list.length; i += 250) {
+      const part = list.slice(i, i + 250), marks = part.map(() => "?").join(",");
+      const folds = part.map(fold), both = [...part, ...part.map(capitalize)], m2 = both.map(() => "?").join(",");
+      for (const r of all(`SELECT lemma_fold AS v FROM dictionary WHERE lemma_fold IN (${marks})`, folds)) found.add("fold:" + r.v);
+      q(`SELECT surface FROM paradigms WHERE surface IN (${m2})`, both);
+      try { q(`SELECT surface FROM sme_passive WHERE surface IN (${m2})`, both); } catch (e) { /* vanha aineisto */ }
+    }
+    return (w) => found.has("fold:" + fold(w)) || found.has(w) || found.has(capitalize(w));
+  };
+  const stems = (w) => CLITICS.filter((c) => w.length > c.length + 1 && w.endsWith(c)).map((c) => w.slice(0, -c.length));
   const correct = (word) => {
     const w = [...word.toLowerCase()].map((c) => OCR_LOOKALIKES[c] || c).join("");
-    if (isSami(w)) return w;
     // Yhdysmerkkinen nimi (Biret-Iŋgá, Biret-Iŋggáin): viimeinen osa taipuu, joten se haetaan
-    if (w.includes("-")) return correct(w.slice(w.lastIndexOf("-") + 1));
+    if (w.includes("-")) {
+      const direct = batchExists([w, ...stems(w)]);
+      if (direct(w) || stems(w).some(direct)) return { word: w };
+      return correctCached(w.slice(w.lastIndexOf("-") + 1));
+    }
+    // Ehdokkaat samassa järjestyksessä kuin ennen: sana itse, 1–3 tarketta, kaksoiskirjain, kaksoiskirjain + tarke
+    const cands = [w];
     const spots = [...w].map((c, i) => (OCR_DIACRITICS[c] ? i : -1)).filter((i) => i >= 0).slice(0, 10);
     const variant = (picked) => [...w].map((c, i) => (picked.includes(i) ? OCR_DIACRITICS[c] : c)).join("");
-    const combos = (k, from = 0) => (k === 0 ? [[]] : spots.slice(from).flatMap((s, j) =>
-      combos(k - 1, from + j + 1).map((rest) => [s, ...rest])));
-    for (let k = 1; k <= 3; k++) {
-      for (const picked of combos(k)) {
-        const v = variant(picked);
-        if (isSami(v)) return v;
-      }
-    }
+    const combos = (k, from = 0) => (k === 0 ? [[]] : spots.slice(from).flatMap((sp, j) =>
+      combos(k - 1, from + j + 1).map((rest) => [sp, ...rest])));
+    for (let k = 1; k <= 3; k++) for (const picked of combos(k)) cands.push(variant(picked));
     // Kaksoiskirjain luettu yhdeksi (sámiid -> sámid, áššiid -> áššid, lii -> li, rávagirjji -> rávagirji; uutiskoe
     // 2026-11-18: yleisin lukuvirhe, 129 / 8 637 sanaa). Ensin pelkkä tuplaus, sitten tuplaus ja yksi tarke.
     if (w.length >= 4 && w.length <= 20) {
       const chars = [...w], doubled = [];
       for (const i of doubleOrder(chars)) {
         const v = [...chars.slice(0, i + 1), chars[i], ...chars.slice(i + 1)].join("");
-        if (isSami(v)) return v;
-        doubled.push(v);
+        cands.push(v); doubled.push(v);
       }
       for (const v of doubled) {
         const vc = [...v];
-        for (let i = 0; i < vc.length; i++) {
-          if (!OCR_DIACRITICS[vc[i]]) continue;
-          const d = [...vc.slice(0, i), OCR_DIACRITICS[vc[i]], ...vc.slice(i + 1)].join("");
-          if (isSami(d)) return d;
-        }
+        for (let i = 0; i < vc.length; i++) if (OCR_DIACRITICS[vc[i]]) cands.push([...vc.slice(0, i), OCR_DIACRITICS[vc[i]], ...vc.slice(i + 1)].join(""));
       }
     }
+    const has = batchExists([...cands, ...cands.flatMap(stems)]);
+    // Liitepartikkelin kanssa (válddátgo = válddát + -go, songe = son + -ge): haku tuntee nämä (queryDatabase)
+    const hit = cands.find((c) => has(c) || stems(c).some(has));
+    if (hit) return { word: hit };
     // Viimeisenä sumea haku (useampi tarke ja tuplaus yhdessä: vattisvuodat -> váttisvuođat); yhdyssanat erikseen
-    // (ocrMatches -> compound), koska niitä ei ole sanakirjassa sellaisinaan
+    // (ocrMatches -> compound), koska niitä ei ole sanakirjassa sellaisinaan.
     // Lyhyt isolla alkava sana on yleensä nimi: ei sumeaa hakua (OnePlus 2026-11-18: kuvan haku 1,9 s)
     if (w.length >= 5 && !(/^\p{Lu}/u.test(word) && w.length < 10)) {
       fuzzy ||= ocrFuzzySearch();
       const r = fuzzy.search(w);
-      if (r && !r.parts) return r.word;
-      if (r?.parts) compounds.set(word.toLowerCase(), r);
+      if (r && !r.parts) return { word: r.word };
+      if (r?.parts) return { word: null, cmp: r };
     }
-    return null;
+    return { word: null };
+  };
+  const correctCached = (word) => {
+    if (!ocrCorrectCache.has(word)) {
+      if (ocrCorrectCache.size > 20000) ocrCorrectCache.clear();
+      ocrCorrectCache.set(word, correct(word));
+    }
+    return ocrCorrectCache.get(word);
   };
   let fuzzy = null;
-  const compounds = new Map();
   return {
-    correct: (word) => { if (!cache.has(word)) cache.set(word, correct(word)); return cache.get(word); },
-    compound: (word) => compounds.get(word.toLowerCase()) || null,
-    free: () => { lemma.free(); form.free(); pass?.free(); fuzzy?.free(); },
+    correct: (word) => correctCached(word).word || null,
+    compound: (word) => { const c = ocrCorrectCache.get(word)?.cmp; return c ? c : null; },
+    free: () => { fuzzy?.free(); },
   };
 }
 
