@@ -12,7 +12,8 @@ Sanasto rajataan sanoihin, joita sovellus voi tuottaa: suomen käännökset (dic
 taivutusmuodot (fin_forms). Pari otetaan mukaan, jos se esiintyy vähintään MIN_COUNT kertaa.
 
 Aja: python3 fin_ngrams.py ~/.cache/satni-fst-build/corpora/leipzig/*/*-sentences.txt
-Taulut satni.db:hen: fin_vocab(id, w), fin_bigram(a, b, n).
+Taulut satni.db:hen: fin_vocab(id, w), fin_bigram(a, b, n), fin_unigram(id, n) (sanan yleisyys: harvinainen ensimmäinen
+käännös, kuten "kans", väistyy yleiselle, kuten "myös").
 """
 import collections
 import os
@@ -43,6 +44,7 @@ def main(paths):
     vocab = vocabulary(con)
     print(f"Sanasto: {len(vocab)} sanaa")
     bi = collections.Counter()
+    uni = collections.Counter()
     for path in paths:
         with open(path, encoding="utf-8", errors="ignore") as f:
             for line in f:
@@ -50,17 +52,23 @@ def main(paths):
                 for a, b in zip(ws, ws[1:]):
                     if a in vocab and b in vocab:
                         bi[(a, b)] += 1
+                for w in ws:
+                    if w in vocab:
+                        uni[w] += 1
         print(f"{os.path.basename(path)}: {len(bi)} paria")
     pairs = [(a, b, n) for (a, b), n in bi.items() if n >= MIN_COUNT]
-    used = sorted({w for a, b, _ in pairs for w in (a, b)})
+    unis = {w: n for w, n in uni.items() if n >= MIN_COUNT}
+    used = sorted({w for a, b, _ in pairs for w in (a, b)} | set(unis))
     ids = {w: i for i, w in enumerate(used, 1)}
     con.executescript("""
-        DROP TABLE IF EXISTS fin_vocab; DROP TABLE IF EXISTS fin_bigram;
+        DROP TABLE IF EXISTS fin_vocab; DROP TABLE IF EXISTS fin_bigram; DROP TABLE IF EXISTS fin_unigram;
+        CREATE TABLE fin_unigram (id INTEGER PRIMARY KEY, n INTEGER);
         CREATE TABLE fin_vocab (id INTEGER PRIMARY KEY, w TEXT UNIQUE);
         CREATE TABLE fin_bigram (a INTEGER, b INTEGER, n INTEGER, PRIMARY KEY (a, b)) WITHOUT ROWID;
     """)
     con.executemany("INSERT INTO fin_vocab VALUES (?,?)", ((i, w) for w, i in ids.items()))
     con.executemany("INSERT INTO fin_bigram VALUES (?,?,?)", ((ids[a], ids[b], n) for a, b, n in pairs))
+    con.executemany("INSERT INTO fin_unigram VALUES (?,?)", ((ids[w], n) for w, n in unis.items()))
     con.commit()
     con.close()
     print(f"Sanapareja: {len(pairs)} (vähintään {MIN_COUNT} kertaa), sanoja {len(ids)}")

@@ -3782,7 +3782,7 @@ function sentTokens(raw) {
       tok.opts = verb ? [...new Set([...verb, ...opts.filter((o) => !g.form || !g.form.split(" / ").includes(o))])] : sentNegOrder([...new Set(opts)], prev);
       tok.lemma = g.lemma || "";
       if (!verb && settings.ocrFrom === "sme" && g.id && settings.lang === "fin" && ocrTo() === "fin") tok.ctx = sentWordCtx(g, w.word);
-      else if (verb) tok.ctx = { pos: "V", lemma: g.lemma || w.word };
+      else if (verb) tok.ctx = { pos: "V", lemma: g.lemma || w.word, tagOf: verb.tagOf };
       // Iso alkukirjain keskellä lausetta (Siiddas = Siida-museo, ei "kotona"): oletuksena sana sellaisenaan, käännös valittavissa
       if (cap && n > 0 && !tok.name && !g.prop) tok.opts = [r.clean, ...tok.opts];
     }
@@ -3842,9 +3842,11 @@ function sentVerbForms(g, word, prev, prevLemma) {
     return /(Sg3|Pl3)$/.test(tag) ? 1 : /^(Inf|PrfPrc)/.test(tag) ? 2 : /(Sg1|Sg2|Pl1|Pl2)$/.test(tag) ? 3 : 4;
   };
   const ranked = tags.map((tag) => [score(tag), tag]).filter(([sc]) => sc < 9).sort((a, b) => a[0] - b[0]);
-  const out = ranked.map(([, tag]) => translationOfForm(data.word, [tag], null, [base]).split(" / ")[0].trim())
-    .map((x) => (neg ? x.replace(/^\(ei\)\s+/, "") : x)).filter(Boolean);
-  return out.length ? [...new Set(out)] : null;
+  const pairs = ranked.map(([, tag]) => [tag, translationOfForm(data.word, [tag], null, [base]).split(" / ")[0].trim()])
+    .map(([tag, x]) => [tag, neg ? x.replace(/^\(ei\)\s+/, "") : x]).filter(([, x]) => x);
+  const out = [...new Set(pairs.map(([, x]) => x))];
+  out.tagOf = new Map(pairs.map(([tag, x]) => [x, tag]).reverse());  // teksti -> tagi (lauseyhteyden säännöt)
+  return out.length ? out : null;
 }
 // Jokerihaku sanan korjauskenttään (*oahkkinb*lvalusa, sámi?): enintään viisi yleisintä sanaa ja niiden täsmäävä muoto.
 // Paloissa kuten wildcardSearch, ettei näkymä jäädy; uusi kirjoitus keskeyttää vanhan haun (stale).
@@ -3994,11 +3996,19 @@ function sentContext(toks) {
       const nomToo = has(`${amb}+Nom`);
       if (["N", "A", "Po", "Num"].includes(nextPos)) key = `${amb}+Gen`;
       else if (nomToo) key = `${amb}+Nom`;
-      else if (verbBefore) key = negated ? `${amb}+Par` : amb === "Sg" ? "Sg+Gen" : "Pl+Nom";
+      // Monikon objekti on suomessa yleensä partitiivi (ávžžuha nuoraid = kannustaa nuoria; smi-mt-vertailu kuvien
+      // lauseilla 2026-11-18), yksikön kokonaisobjekti genetiivin näköinen (luin kirjan)
+      else if (verbBefore) key = negated || amb === "Pl" ? `${amb}+Par` : "Sg+Gen";
       else key = `${amb}+Gen`;
-    } else key = sentFinKey(c.tags[0]);
+    } else if (has("Pl+Loc") && has("Sg+Com")) key = "Pl+Ine";  // sápmelaččain = saamelaisissa/-sta, gielddain = kunnissa
+    else key = sentFinKey(c.tags[0]);
     tok.finKey = key;
-    if (key && c.f[key] && (amb || key === "Sg+Par")) put(tok, (c.prefix || "") + c.f[key] + (c.tags.some((t) => t.endsWith("Com")) ? " kanssa" : ""));
+    // Vain yksi mahdollinen sija (ságadoalli = puheenjohtaja): sen muoto ensin
+    // Ei monikon nominatiivia: saamen monikko voi olla suomen yksikkö (beassážat = pääsiäinen, šlámborat = rihkama)
+    const single = key !== "Pl+Nom" && c.tags.every((t) => sentFinKey(t) === sentFinKey(c.tags[0]));
+    if (key && c.f[key] && (amb || key === "Sg+Par" || key === "Pl+Ine" || single)) {
+      put(tok, (c.prefix || "") + c.f[key] + (key !== "Pl+Ine" && c.tags.some((t) => t.endsWith("Com")) ? " kanssa" : ""));
+    }
   });
   // Adjektiivi seuraavan substantiivin muodossa (laajat ongelmat, isossa talossa)
   toks.forEach((tok, i) => {
@@ -4009,7 +4019,27 @@ function sentContext(toks) {
     tok.finKey = next.finKey;
     put(tok, c.f[next.finKey]);
   });
+  // Liittomuodot: leat + partisiippi (lea váldán = on ottanut, lean vásihan = olen kokenut)
+  const isLeat = (t) => t?.ctx?.pos === "V" && t.ctx.lemma === "leat";
+  toks.forEach((tok, i) => {
+    const c = tok.ctx;
+    if (c?.pos !== "V" || !c.tagOf || tok.fixed) return;
+    const tagged = (tok.opts || []).map((o) => [o, c.tagOf.get(o)]);
+    if (!isLeat(tok) && toks.slice(Math.max(0, i - 3), i).some(isLeat)) {
+      const prc = tagged.find(([, tag]) => tag === "PrfPrc");
+      if (prc) put(tok, prc[0]);
+    } else if (isLeat(tok) && toks.slice(i + 1, i + 4).some((t) => t.ctx?.tagOf && [...t.ctx.tagOf.values()].includes("PrfPrc"))) {
+      const fin = tagged.find(([, tag]) => /^Ind\+(Prs|Prt)\+(Sg|Pl)\d$/.test(tag || ""));
+      if (fin) put(tok, fin[0]);
+    }
+  });
+  // go vertailun jälkeen = kuin (unnit bušeahtta go … = pienempi … kuin)
+  toks.forEach((tok, i) => {
+    if ((tok.clean || "").toLowerCase() !== "go" || !tok.opts?.includes("kuin")) return;
+    if (toks.slice(0, i).some((t) => (t.ctx?.tags || []).some((tag) => /Comp/.test(tag)) || SENT_COMPARATIVES.has((t.clean || "").toLowerCase()))) put(tok, "kuin");
+  });
 }
+const SENT_COMPARATIVES = new Set(["eanet", "eambbo", "unnit", "uhcit", "buoret", "buorebut", "heajut", "stuorát", "unnit", "guhkit", "oanehit", "árat", "maŋit", "jođáneappot", "nuorat", "boarrásit"]);
 // Suomen sanaparien mukainen järjestys: vaihtoehto, joka sopii naapurisanojen kanssa (ennen joulua), nousee ensin.
 // Sääntöjen ja sanakirjan järjestys painaa (−2 sijaa kohden), joten pari kumoaa sen vain selvällä erolla.
 // Esimerkkilausekoe 2026-11-18: ensimmäinen vaihtoehto 85,1 % -> 86,1 %.
@@ -4020,7 +4050,21 @@ function sentRerank(toks) {
   const id = (w) => { if (!ids.has(w)) { idSt.bind([w]); ids.set(w, idSt.step() ? idSt.get()[0] : 0); idSt.reset(); } return ids.get(w); };
   const count = (a, b) => { const x = id(a), y = id(b); if (!x || !y) return 0; biSt.bind([x, y]); const n = biSt.step() ? biSt.get()[0] : 0; biSt.reset(); return n; };
   const words = (o) => (o || "").toLowerCase().replace(/\(.*?\)/g, "").match(/[\p{L}-]+/gu) || [];
+  let uniSt = null;
+  try { uniSt = ngramDb.prepare("SELECT n FROM fin_unigram WHERE id = ?"); } catch (e) { /* vanha tiedosto */ }
+  const uni = (w) => { const x = id(w); if (!x || !uniSt) return 0; uniSt.bind([x]); const n = uniSt.step() ? uniSt.get()[0] : 0; uniSt.reset(); return n; };
   try {
+    // Harvinainen ensimmäinen käännös väistyy selvästi yleisemmälle (meiddei: kans -> myös), vain taipumattomissa
+    // sanoissa ja inarin/koltan sanoissa (ei lauseyhteyden valitsemia muotoja)
+    for (const t of toks) {
+      if (!t.opts || t.opts.length < 2 || t.fixed || t.finKey || t.ctx?.tagOf || t.name || t.unknown) continue;
+      const single = (o) => /^[\p{L}-]+$/u.test(o || "");
+      if (!single(t.opts[0])) continue;
+      const n0 = uni(t.opts[0].toLowerCase());
+      let best = -1, bestN = n0 * 30;
+      t.opts.slice(1, 5).forEach((o, k) => { if (single(o)) { const n = uni(o.toLowerCase()); if (n > bestN) { best = k + 1; bestN = n; } } });
+      if (best > 0) t.opts = [t.opts[best], ...t.opts.filter((_, k) => k !== best)];
+    }
     const first = toks.map((t) => words(t.fixed ? t.fixed.trans || t.fixed.word : t.name || t.unknown || !t.opts ? t.clean || t.t : t.opts[0]));
     toks.forEach((t, i) => {
       if (!t.opts || t.opts.length < 2 || t.fixed || t.name || t.unknown) return;
@@ -4036,7 +4080,7 @@ function sentRerank(toks) {
       for (let k = 1; k < Math.min(t.opts.length, 6); k++) { const sc = score(k); if (sc > bestS) { best = k; bestS = sc; } }
       if (best) { t.opts = [t.opts[best], ...t.opts.filter((_, k) => k !== best)]; first[i] = words(t.opts[0]); }
     });
-  } finally { idSt.free(); biSt.free(); }
+  } finally { idSt.free(); biSt.free(); uniSt?.free(); }
 }
 // Yhdyssanan osat käännöksineen (käsin jaettu tai haettu): alkuosat perusmuodon käännöksellä, viimeinen muodon
 // mukaan (čoahkkin + bálvalusa = kokous + palvelun -> kokouspalvelun). Osa, jota ei löydy sellaisenaan, haetaan

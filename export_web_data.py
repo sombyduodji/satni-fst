@@ -138,7 +138,11 @@ def export_fin_ngram(src):
     """)
     pairs = src.execute("SELECT a, b, n FROM fin_bigram WHERE n >= ?", (NGRAM_MIN,)).fetchall()
     m.executemany("INSERT INTO fin_bigram VALUES (?,?,?)", pairs)
-    used = {x for a, b, _ in pairs for x in (a, b)}
+    m.execute("CREATE TABLE fin_unigram (id INTEGER PRIMARY KEY, n INTEGER)")
+    unis = src.execute("SELECT id, n FROM fin_unigram WHERE n >= ?", (NGRAM_MIN,)).fetchall() if src.execute(
+        "SELECT 1 FROM sqlite_master WHERE name = 'fin_unigram'").fetchone() else []
+    m.executemany("INSERT INTO fin_unigram VALUES (?,?)", unis)
+    used = {x for a, b, _ in pairs for x in (a, b)} | {i for i, _ in unis}
     m.executemany("INSERT INTO fin_vocab VALUES (?,?)", ((i, w) for i, w in src.execute("SELECT id, w FROM fin_vocab") if i in used))
     m.commit()
     m.execute("VACUUM")
