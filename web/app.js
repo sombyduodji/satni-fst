@@ -813,7 +813,11 @@ function queryDatabase(query) {
 }
 
 // Muut kielet -asetuksessa valitut kielet, joilla haku myös löytää (ei suomi eikä norja, jotka ovat käyttöliittymän kieliä)
+// uiRows (kuvan suomen/norjan sanat) ohittaa muut kielet: niiden osumat suodatetaan pois, ja trans_search-haku
+// LIKE '%, sana,%' lukee koko taulun (inari Muut kielet -asetuksessa: Samsung 152 sanan kuva 0,3 -> 4 s; yötesti 2026-11-19)
+let skipExtraSearch = false;
 function extraSearchLangs() {
+  if (skipExtraSearch) return [];
   return settings.extraLangs.filter((l) => LANGUAGES[l] && !LANGUAGES[l].main && l !== settings.lang);
 }
 
@@ -3219,7 +3223,11 @@ function scanPhoto(source) {
 // norjankielisessä tekstissä sana löytyy käännöksistä, myös taivutettuna (taloon -> talo -> viessu).
 const SAMI_RANKS = [1, 1.2, 5, 5.5, 6];
 // Muiden kielten osumat (rank 6.5) eivät kuulu kuvan suomen- tai norjankieliseen tekstiin
-const uiRows = (word) => queryDatabase(word).filter((r) => r.rank < PREFIX_RANK && !SAMI_RANKS.includes(r.rank) && !r.extraLang);
+const uiRows = (word) => {
+  skipExtraSearch = true;
+  try { return queryDatabase(word).filter((r) => r.rank < PREFIX_RANK && !SAMI_RANKS.includes(r.rank) && !r.extraLang); }
+  finally { skipExtraSearch = false; }
+};
 
 // Kuplan teksti. Saamesta: perusmuoto ja käännös käyttöliittymän kielellä; kuuntele lausuu kuvan sanan.
 // Suomesta/norjasta: saamennokset; kuuntele lausuu ensimmäisen saamennoksen.
