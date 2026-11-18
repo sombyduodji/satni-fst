@@ -3895,9 +3895,10 @@ function sentWordCtx(g, word) {
 }
 // Saamen sijamuoto -> suomen muoto (taivutusmuodon avain), kun valintaa ei tehdä lauseyhteydestä
 // Postpositio määrää edeltävän sanan suomen sijan ja oman käännöksensä (duorastaga rájes = torstaista lähtien,
-// ođđajagi rádjái = uuteen vuoteen asti, čoahkkima maŋŋil = kokouksen jälkeen, juovllaid ovdal = ennen joulua)
+// ođđajagi rádjái = uuteen vuoteen asti, čoahkkima maŋŋil = kokouksen jälkeen, juovllaid ovdal = ennen joulua);
+// áigge jää sanakirjan järjestykseen (dan áigge = siihen aikaan; esimerkkilausekoe)
 const SENT_POSTPOS = { "rájes": ["Ela", "lähtien"], "rádjái": ["Ill", "asti"], "maŋŋel": ["Gen", "jälkeen"], "maŋŋil": ["Gen", "jälkeen"],
-  "ovdal": ["Par", "ennen", true], "áigge": ["Gen", "aikana"] };
+  "ovdal": ["Par", "ennen", true] };
 const SENT_WEEKDAYS = new Set([...SME_WEEKDAYS, "mánnodat", "disdat", "lávvardat"]);
 const SENT_FIN_CASE = { Nom: "Nom", Gen: "Gen", Acc: "Gen", Ill: "Ill", Loc: "Ine", Com: "Gen", Ess: "Ess" };
 function sentFinKey(tag) {
@@ -3945,7 +3946,11 @@ function sentContext(toks) {
       const nextPos = next?.ctx?.pos;
       const negated = toks.slice(0, i).some((t) => SME_NEG.has((t.clean || "").toLowerCase()));
       const verbBefore = toks.slice(Math.max(0, i - 3), i).some((t) => t.ctx?.pos === "V");
+      // Sama asu myös nominatiivina (ášši, verdde): genetiivi vain substantiivin tai postposition edellä, muuten
+      // nominatiivi (Ášši lea … = Asia on …; esimerkkilausekoe 2026-11-18: 20 virhettä pelkästä ášši-sanasta)
+      const nomToo = has(`${amb}+Nom`);
       if (["N", "A", "Po", "Num"].includes(nextPos)) key = `${amb}+Gen`;
+      else if (nomToo) key = `${amb}+Nom`;
       else if (verbBefore) key = negated ? `${amb}+Par` : amb === "Sg" ? "Sg+Gen" : "Pl+Nom";
       else key = `${amb}+Gen`;
     } else key = sentFinKey(c.tags[0]);
