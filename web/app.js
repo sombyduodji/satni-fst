@@ -3281,6 +3281,21 @@ function ocrMatches(r, from) {
     if (!cache.has(clean)) cache.set(clean, [clean, ...uiOcrVariants(clean)].find((v) => uiRows(v).length)?.toLowerCase() || null);
     return cache.get(clean);
   };
+  // Kahdeksi luettu sana (buresveadj / inguovllu: otsikossa tai rivin lopussa ilman tavuviivaa; OnePlus
+  // 2026-11-18): kumpikaan osa ei ole sana, mutta yhdessä ne ovat (sana tai korjattu yhdyssana)
+  if (corrector) {
+    for (let i = 0; i + 1 < r.words.length; i++) {
+      const a = r.words[i], b = r.words[i + 1];
+      if (!a.clean || !b.clean || a.clean === b.clean || !/^\p{L}+$/u.test(a.clean) || !/^\p{Ll}\p{L}*$/u.test(b.clean)) continue;
+      // Seuraavalla rivillä vasemmalla, tai samalla rivillä kapealla välillä (otsikon iso fontti: buresveadj inguovllu)
+      const nextLine = b.cy > a.cy + (a.h || 10) * 0.6 && b.cx < a.cx;
+      const sameLine = Math.abs(b.cy - a.cy) < (a.h || 10) * 0.4 && a.w && b.w && b.cx > a.cx && (b.cx - b.w / 2) - (a.cx + a.w / 2) < (a.h || 10) * 0.6;
+      if (!(nextLine || sameLine) || a.clean.length < 3 || b.clean.length < 3) continue;
+      if (match(a.clean) || match(b.clean)) continue;
+      const joined = a.clean + b.clean;
+      if (match(joined) || corrector.compound?.(joined)) { a.clean = b.clean = joined; i++; }
+    }
+  }
   const words = r.words.map((w) => ({ ...w, word: match(w.clean) })).filter((w) => w.word);
   // Väärin luettu yhdyssana (coahkkinbalvalusa = čoahkkin + bálvalusa): korjattu asu ja osat tuntemattomalle sanalle
   if (corrector?.compound) ocrFixedCompoundsBy[from] = new Map(r.words.map((w) => [w, corrector.compound(w.clean)]).filter(([, c]) => c));
@@ -3741,7 +3756,9 @@ function ocrSentenceAround(rIndex) {
   return ws.slice(a, b + 1);
 }
 function sentTokens(raw) {
-  const rows = raw.filter((r) => /\p{L}|\d/u.test(r.clean || r.t));
+  // Kahdesta palasta yhdistetty sana (tavuviiva, väli) vain kerran: molemmilla paloilla on sama yhdistetty clean
+  const rows = raw.filter((r) => /\p{L}|\d/u.test(r.clean || r.t))
+    .filter((r, i, all) => !(i > 0 && all[i - 1].clean === r.clean && all[i - 1].t !== r.t));
   const toks = rows.map((r, n) => {
     const w = ocr.words.find((x) => x.cx === r.cx && x.cy === r.cy);
     const prev = n > 0 ? (rows[n - 1].clean || "").toLowerCase() : "";
@@ -4112,13 +4129,14 @@ function compoundPartsInfo(parts) {
   let fz = null;
   const cmpOf = (p) => cmpLemma.get(p) || (hasTable("sme_cmp") ? all("SELECT lemma FROM sme_cmp WHERE stem = ?", [p])[0]?.lemma : null);
   const out = parts.map((raw, k) => {
-    let p = raw.toLowerCase(), base = cmpOf(p), g = ocrGloss(base || p);
+    // Viimeinen osa on taivutettu kokonainen sana (guovllu = seudun), ei yhdysmuodon alkuosa (guovlla = kieleke)
+    const last = k === parts.length - 1;
+    let p = raw.toLowerCase(), base = last ? null : cmpOf(p), g = ocrGloss(base || p);
     if (!g.trans && p.length >= 3) {
       fz ||= ocrFuzzySearch();
       const f = fz.search(p, 3, 3);
-      if (f && !f.parts) { p = f.word; base = cmpOf(p); g = ocrGloss(base || p); }
+      if (f && !f.parts) { p = f.word; base = last ? null : cmpOf(p); g = ocrGloss(base || p); }
     }
-    const last = k === parts.length - 1;
     const trans = ((last && g.form ? g.form.split(" / ").pop() : g.trans) || "").split(", ")[0].replace(/\s*\([^)]*\)/g, "").trim();
     return { word: p, trans, base: base || g.lemma || "" };
   });
