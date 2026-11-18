@@ -89,6 +89,20 @@ The inflection tables are generated with the North Sámi analyser and generator 
 Inga Lill Sigga Mikkelsen, Sjur N. Moshagen, Flammie A Pirinen, Trond Trosterud, Børre Gaup and the
 lang-sme contributors. The compiled models are in [`src/fst/`](src/fst/SOURCE.md).
 
+## Inari Sámi in photos — GiellaLT lang-smn, GPL-3.0 (experimental)
+
+Inari Sámi words in photos (Inari Sámi → Finnish, North Sámi or Norwegian, and North Sámi → Inari Sámi) use the
+Inari Sámi dictionaries above (`dict-smn-fin`, `dict-fin-smn`, `dict-smn-sme`; Marja-Liisa Olthuis, Taarna Valtonen and
+Giellatekno, CC BY) and inflected forms generated with the Inari Sámi analyser and generator from
+[giellalt/lang-smn](https://github.com/giellalt/lang-smn) (GiellaLT / Giellatekno, UiT; Debian package `giella-smn`),
+licensed under the [GNU General Public License v3.0](LICENSE). Compound-word start forms are checked with the Inari Sámi
+speller (`giella-smn-speller`, through Voikko). [`smn_data.py`](smn_data.py) builds the tables; the analyser,
+generator and speller are build tools only. Norwegian is reached through the North Sámi translation and is approximate.
+
+North Sámi compound start forms (*geaidno-* for *geaidnu*) are checked in the same way with the North Sámi speller
+(`giella-sme-speller`), see [`sme_compound.py`](sme_compound.py). Finnish compound start forms (*viranomais-*) are
+checked with Voikko, see [`fin_compound.py`](fin_compound.py).
+
 ## Finnish inflection — GiellaLT lang-fin, GPL-3.0
 
 The inflected forms of the Finnish translations (*talo – talossa – taloon*, *tehdä – teen – tekisin*)

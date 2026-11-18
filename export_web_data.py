@@ -15,6 +15,7 @@ import re
 import shutil
 import sqlite3
 import subprocess
+import unicodedata
 
 import apertium_data
 import pivot_fin
@@ -101,6 +102,13 @@ def lemma_without_brackets(lemma):
         return None
     bare = " ".join(re.sub(r"\([^()]*\)", " ", lemma).split())
     return fold(bare) if bare and bare != lemma else None
+
+
+def smn_fold(text):
+    """Inarin sana ilman tarkkeita (sama kuin web/app.js: smnFold): â á ä -> a, č -> c, đ -> d, ŋ -> n, š -> s, ž -> z"""
+    text = unicodedata.normalize("NFD", text.lower())
+    text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    return text.replace("đ", "d").replace("ŋ", "n").replace("ŧ", "t")
 
 
 def fold(text):
@@ -195,6 +203,12 @@ def main():
         -- Pohjoissaamen yhdyssanan alkumuodot (geaidno -> geaidnu, joavko -> joavku), oikoluvulla tarkistetut
         -- (sme_compound.py): kuvan tuntemattoman sanan jako osiin (web/app.js: splitCompound)
         CREATE TABLE sme_cmp (stem TEXT PRIMARY KEY, lemma TEXT) WITHOUT ROWID;
+        -- Inarinsaame kuvan tunnistukseen (smn_data.py): sanat käännöksineen, taivutusmuodot tarkkeettoman asun mukaan
+        -- (fold: â á ä -> a, đ -> d, ŋ -> n; tunnistus lukee tarkkeet usein väärin) ja yhdyssanan alkumuodot
+        CREATE TABLE smn_words (id INTEGER PRIMARY KEY, lemma TEXT, pos TEXT, fin TEXT, sme TEXT);
+        CREATE TABLE smn_forms (fold TEXT, surface TEXT, word_id INTEGER, tag_id INTEGER,
+                                PRIMARY KEY (fold, surface, word_id, tag_id)) WITHOUT ROWID;
+        CREATE TABLE smn_cmp (stem TEXT PRIMARY KEY, word_id INTEGER) WITHOUT ROWID;
         -- Saamen passiivi (sme_passive.py, GiellaLT lang-sme): lausekääntäjän suomen passiiville (maksetaan = máksojuvvo)
         CREATE TABLE sme_passive (word_id INTEGER, tag TEXT, surface TEXT, PRIMARY KEY (word_id, tag)) WITHOUT ROWID;
         -- Saamen sanamuotojen esiintymät sanakirjan esimerkkilauseissa: lausekääntäjä valitsee rinnakkaismuodoista
@@ -317,6 +331,23 @@ def main():
     cmp_rows = sme_compound.rows(dst)
     dst.executemany("INSERT INTO sme_cmp VALUES (?,?)", cmp_rows)
     print(f"Saamen yhdyssanojen alkumuodot: {len(cmp_rows)}" if cmp_rows else "Saamen yhdyssanojen alkumuodot: oikoluku puuttuu, taulu tyhjä")
+
+    if src.execute("SELECT 1 FROM sqlite_master WHERE name = 'smn_forms'").fetchone():
+        dst.executemany("INSERT INTO smn_words VALUES (?,?,?,?,?)", src.execute("SELECT id, lemma, pos, fin, sme FROM smn_words ORDER BY id"))
+        tag_ids = {t: i for i, t in dst.execute("SELECT id, tag FROM tags")}
+        next_id = max(tag_ids.values(), default=0) + 1
+        rows = []
+        for surface, wid, tag in src.execute("SELECT surface, word_id, tag FROM smn_forms"):
+            if tag not in tag_ids:
+                tag_ids[tag] = next_id
+                dst.execute("INSERT INTO tags VALUES (?,?)", (next_id, tag))
+                next_id += 1
+            rows.append((smn_fold(surface), surface, wid, tag_ids[tag]))
+        dst.executemany("INSERT OR IGNORE INTO smn_forms VALUES (?,?,?,?)", rows)
+        dst.executemany("INSERT INTO smn_cmp VALUES (?,?)", src.execute("SELECT stem, word_id FROM smn_cmp"))
+        print(f"Inarinsaame: {dst.execute('SELECT COUNT(*) FROM smn_words').fetchone()[0]} sanaa, {len(rows)} muotoa")
+    else:
+        print("Inarinsaame: smn_forms puuttuu satni.db:stä (python3 smn_data.py)")
 
     sms_rows = {(lang, fold(word), pos): words for lang, word, pos, words in skolt_data.rows(SCRIPT_DIR)}
     dst.executemany("INSERT INTO sms VALUES (?,?,?,?)", ((*k, v) for k, v in sms_rows.items()))
