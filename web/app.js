@@ -550,6 +550,7 @@ const COMMON_WORD = 50000;  // korpusfrekvenssi, jota yleisemmän sanan taivutus
 // kerran; PWA:n välimuistissa voi vielä olla vanha tietokanta, jolloin käytetään vanhoja (hitaampia) kyselyjä.
 const dbHas = {};
 function hasTable(name) {
+  if (!db) return false;  // ei vielä ladattu: ei myöskään tallenneta vastausta
   if (!(name in dbHas)) dbHas[name] = all("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", [name]).length > 0;
   return dbHas[name];
 }
@@ -2615,7 +2616,9 @@ const smnFold = (s) => (s || "").toLowerCase().normalize("NFD").replace(/\p{M}/g
 const SMN_LOOKALIKES = { ...OCR_LOOKALIKES, "ấ": "â", "ầ": "â", "ắ": "â", "å": "š" };
 // Liitepartikkelit (lii-uv, mäksimgin): sana haetaan ilman niitä
 const SMN_CLITICS = ["uv", "ub", "gin", "ge", "han", "hân", "pâ", "pa"];
-const hasSmn = () => hasTable("smn_forms");
+// Ei ennen tietokannan latausta: kuvan kielivalikko piirretään jo käynnistyksessä (applyOcrLook), ja haku tyhjään
+// tietokantaan kaatoi koko käynnistyksen (DEV 2026111811, Samsung)
+const hasSmn = () => !!db && hasTable("smn_forms");
 function smnMatcher() {
   const st = db.prepare("SELECT surface FROM smn_forms WHERE fold = ?");
   const cache = new Map();
