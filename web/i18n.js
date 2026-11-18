@@ -125,7 +125,7 @@ const UI_TEXTS = {
     navLabel: "Päävalikko", navSearch: "Haku", navGame: "Peli", navSentence: "Lause", navPhoto: "Kuva", navMore: "Lisää",
     sanastoPrev: "edellinen", sanastoNext: "seuraava", menuFeedback: "Palaute", menuSupport: "Tue", menuAbout: "Tietoa ja lisenssit", historyAll: (n) => `Näytä kaikki (${n})`, sanastoCount: (n, w) => `${n} aihetta · ${w} sanaa`,
     recentHead: "Viimeksi haetut", expTools: "Uudet työkalut", expMore: "Lisää käännöksiä",
-    favourites: "★ Suosikit", history: "Historia", searchingForms: "Haetaan muotoja…", clearHistory: "Tyhjennä historia", clearHistoryTitle: "Tyhjennetäänkö historia?",
+    favourites: "★ Suosikit", history: "Historia", searchingForms: "Haetaan muotoja…", wildSearching: (q) => `Jokerihaku ${q}…`, wildHint: "jokerihaku: paina Enter tai napauta", wildShort: "Jokerihaku tarvitsee vähintään 2 kirjainta", clearHistory: "Tyhjennä historia", clearHistoryTitle: "Tyhjennetäänkö historia?",
     clearHistoryBody: "Kaikki hakuhistoria poistetaan. Suosikit säilyvät.", clearHistoryOk: "Tyhjennä", historyMore: "Lisää…",
     supportStory: `<p><strong>Buorre beaivi! Olen Juha Somby.</strong></p>
       <p>UNESCO luokittelee kaikki saamen kielet uhanalaisiksi, ja puhujia on kaikkiaan arviolta alle 30 000. Pienille
@@ -381,7 +381,7 @@ const UI_TEXTS = {
     navLabel: "Hovedmeny", navSearch: "Søk", navGame: "Spill", navSentence: "Setning", navPhoto: "Bilde", navMore: "Mer",
     sanastoPrev: "forrige", sanastoNext: "neste", menuFeedback: "Tilbakemelding", menuSupport: "Støtt", menuAbout: "Om og lisenser", historyAll: (n) => `Vis alle (${n})`, sanastoCount: (n, w) => `${n} emner · ${w} ord`,
     recentHead: "Sist søkt", expTools: "Nye verktøy", expMore: "Flere oversettelser",
-    favourites: "★ Favoritter", history: "Historikk", searchingForms: "Søker etter former…", clearHistory: "Tøm historikken", clearHistoryTitle: "Tømme historikken?",
+    favourites: "★ Favoritter", history: "Historikk", searchingForms: "Søker etter former…", wildSearching: (q) => `Jokersøk ${q}…`, wildHint: "jokersøk: trykk Enter eller her", wildShort: "Jokersøk trenger minst 2 bokstaver", clearHistory: "Tøm historikken", clearHistoryTitle: "Tømme historikken?",
     clearHistoryBody: "All søkehistorikk slettes. Favorittene beholdes.", clearHistoryOk: "Tøm", historyMore: "Flere…",
     supportStory: `<p><strong>Buorre beaivi! Jeg er Juha Somby.</strong></p>
       <p>UNESCO klassifiserer alle samiske språk som truet, og det er anslagsvis under 30 000 talere til sammen. For små

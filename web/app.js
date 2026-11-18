@@ -601,6 +601,77 @@ function wildcardQuery(query) {
   return [...byId.values()].slice(0, WILD_LIMIT);
 }
 
+// *- tai ?-alkuinen kuvio ei voi käyttää hakemistoa ja lukee koko paradigms-taulun (1,5 milj. riviä): OnePlus Nordilla
+// 2-7 s (yötesti 2026-11-18). Haku luetaan siksi paloina sanan id:n mukaan (pääavain word_id, ord) ja jokaisen palan
+// välissä selain saa piirtää ja käyttäjä kirjoittaa: hakukenttää voi muokata, uusi haku peruu tämän ja tilarivi näyttää
+// edistymisen. Tulos on sama kuin wildcardQuery:llä, paitsi että hyvin laajassa kuviossa näytetään aina 100 yleisintä
+// sanaa (wildcardQuery: 2 000 yleisintä täsmäävää riviä ennen sanoittain yhdistämistä).
+let searchRun = 0;
+// Palan koko (sanoja) mukautuu: tavoite noin 30 ms palaa kohden, ettei näppäimistö ja piirto nyki hitaallakaan puhelimella
+const WILD_CHUNK = 2500;
+// Vuoro selaimelle ilman setTimeoutin 4 ms:n minimiä (MessageChannel); syöte ja piirto käsitellään palojen välissä
+const wildChannel = new MessageChannel(), wildWaiting = [];
+wildChannel.port1.onmessage = () => wildWaiting.shift()?.();
+const isSlowWildcard = (query) => isWildcard(query) && /^\s*[*?]/.test(query);
+let wildFreq = null;  // id -> freq, luetaan ensimmäisellä jokerihaulla
+function setSearchBusy(query, share) {
+  const el = $("search-busy");
+  if (query === null) { el.hidden = true; return; }
+  el.querySelector(".search-busy-text").textContent = t("wildSearching", query);
+  el.querySelector(".search-busy-bar").style.width = `${Math.round(share * 100)}%`;
+  el.hidden = false;
+}
+async function wildcardSearch(query, index, pushHistory, run) {
+  const pat = fold(query.trim()).replace(/[[\]]/g, "");
+  const yieldNow = () => new Promise((r) => { wildWaiting.push(r); wildChannel.port2.postMessage(0); });
+  setSearchBusy(query, 0);
+  await yieldNow();
+  if (run !== searchRun) return;
+  if (!wildFreq) {
+    wildFreq = new Map();
+    const st = db.prepare("SELECT id, freq FROM dictionary");
+    while (st.step()) { const [id, f] = st.get(); wildFreq.set(id, f); }
+    st.free();
+  }
+  const hits = new Map();  // id -> pienin täsmäävä muoto
+  const max = all("SELECT MAX(id) AS m FROM dictionary")[0].m;
+  const st = db.prepare("SELECT word_id, surface FROM paradigms WHERE word_id >= ? AND word_id < ? AND surface GLOB ?");
+  try {
+    let lo = 0, step = WILD_CHUNK;
+    while (lo <= max) {
+      const t0 = performance.now();
+      st.bind([lo, lo + step, pat]);
+      while (st.step()) {
+        const [id, v] = st.get();
+        const prev = hits.get(id);
+        if (prev === undefined || v < prev) hits.set(id, v);
+      }
+      st.reset();
+      lo += step;
+      setSearchBusy(query, lo / (max + 1));
+      const took = performance.now() - t0;
+      step = Math.max(200, Math.min(20000, Math.round(took > 40 ? step / 2 : took < 15 ? step * 2 : step)));
+      await yieldNow();
+      if (run !== searchRun) return;
+    }
+  } finally { st.free(); }
+  for (const r of all("SELECT id, sme_lemma FROM dictionary WHERE lemma_fold GLOB ?", [pat])) hits.set(r.id, r.sme_lemma);
+  const f = (id) => wildFreq.get(id) ?? -Infinity;
+  const top = [...hits.keys()].sort((a, b) => f(b) - f(a) || a - b).slice(0, WILD_LIMIT);
+  const cols = `id, sme_lemma, pos, subtype, freq, ${TRANS_COLS}${hasHumanColumn() ? ", human" : ""}, dial_same`;
+  const rows = top.length ? all(`SELECT ${cols} FROM dictionary WHERE id IN (${top.map(() => "?").join(",")})`, top) : [];
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  const results = top.filter((id) => byId.has(id)).map((id) => {
+    const r = byId.get(id), v = hits.get(id);
+    return { ...r, wild: fold(v) === fold(r.sme_lemma) ? r.sme_lemma : v, rank: 1 };
+  });
+  setSearchBusy(null);
+  // Käyttäjä on voinut muokata kenttää haun aikana: hänen tekstinsä jää kenttään
+  const typed = $("search").value;
+  showSearch(query, results, index, pushHistory);
+  if (typed !== query) { $("search").value = typed; syncSearchClear(); }
+}
+
 function queryDatabase(query) {
   if (isWildcard(query)) return wildcardQuery(query);
   const q = fold(query.trim());
@@ -1054,8 +1125,14 @@ function search(query, index = 0, pushHistory = true) {
   hideSuggestions();
   $("search").value = query;
   syncSearchClear();
+  const run = ++searchRun;  // uusi haku peruu kesken olevan jokerihaun
+  if (isSlowWildcard(query)) { wildcardSearch(query, index, pushHistory, run); return; }
+  setSearchBusy(null);
+  showSearch(query, queryDatabase(query), index, pushHistory);
+}
+function showSearch(query, results, index = 0, pushHistory = true) {
   state.query = query;
-  state.results = queryDatabase(query);
+  state.results = results;
   renderDidYouMean(query, state.results);
   state.showPrefix = false;
   state.index = index;
@@ -2216,6 +2293,18 @@ function renderSidebar() {
 let suggestTimer = null, formTimer = null, suggestions = [], activeSuggestion = -1;
 const FORM_SUGGEST_PAUSE = 400;
 function updateSuggestions(withForms = true) {
+  // Jokerimerkki (* tai ?): ehdotusten tilalle yksi rivi, joka kertoo, että Enter (tai napautus) tekee jokerihaun
+  const raw = $("search").value.trim();
+  if (/[*?]/.test(raw)) {
+    const ok = isWildcard(raw);
+    suggestions = ok ? [{ recent: raw, wild: true }] : [];
+    activeSuggestion = -1;
+    $("suggestions").innerHTML = ok
+      ? `<li role="option" data-i="0" class="sugg-wild"><span class="sugg-recent-ico" aria-hidden="true">✱</span><b>${esc(raw)}</b><span class="trans">${esc(t("wildHint"))}</span></li>`
+      : `<li class="sugg-loading" role="status">${esc(t("wildShort"))}</li>`;
+    $("suggestions").hidden = false;
+    return;
+  }
   suggestions = suggestWords($("search").value, withForms);
   activeSuggestion = -1;
   const list = $("suggestions");
@@ -2934,7 +3023,17 @@ function placeOcrBubble() {
   const x = b.left + b.width / 2 - s.left, top = b.top - s.top, bottom = b.bottom - s.top;
   // Sana vieritetty pois näkyvistä: kupla piiloon siksi aikaa
   bubble.style.visibility = bottom < 0 || top > s.height || x < 0 || x > s.width ? "hidden" : "";
-  const below = top < bubble.offsetHeight + 16;
+  // Yläpuolelle, jos kupla mahtuu; muuten sille puolelle, jolla on enemmän tilaa. Jos kupla ei mahdu sinnekään
+  // (matala kuva-alue vaakatasossa), sen rivit rajataan tilaan ja ne vierivät (.tight), ettei alaosa leikkaudu.
+  bubble.classList.remove("tight");
+  const need = bubble.offsetHeight + 16, roomAbove = top - 8, roomBelow = s.height - bottom - 8;
+  const below = need > roomAbove && roomBelow > roomAbove;
+  const room = below ? roomBelow : roomAbove;
+  if (need > room) {
+    const text = bubble.querySelector(".b-text");
+    bubble.style.setProperty("--bmax", `${Math.max(72, text.offsetHeight - (need - room))}px`);
+    bubble.classList.add("tight");
+  }
   bubble.classList.toggle("below", below);
   const half = bubble.offsetWidth / 2;
   const left = Math.min(Math.max(x, half + 8), s.width - half - 8);
@@ -2984,7 +3083,7 @@ function applyOcrView() {
 function bindOcrGestures() {
   const stage = $("ocr-stage");
   const pointers = new Map();
-  let tap = null, lastTap = 0, prev = null, pressed = null;
+  let tap = null, lastTap = 0, prev = null, pressed = null, scrollBox = null;
   // Painettava kuplan painike: kuuntele, tai sanakirjalinkki kun painetaan muuta kuplan kohtaa
   // Korostus pysyy hetken irrottamisen jälkeen, jotta nopeakin napautus näkyy
   const press = (el) => {
@@ -3011,6 +3110,8 @@ function bindOcrGestures() {
     pointers.set(e.pointerId, local(e));
     tap = pointers.size === 1 ? { ...local(e), cx: e.clientX, cy: e.clientY, time: Date.now() } : null;
     prev = pointers.size === 2 ? pinch() : null;
+    const box = e.target.closest?.("#ocr-bubble.tight .b-text");
+    scrollBox = pointers.size === 1 && box && box.scrollHeight > box.clientHeight ? box : null;
     press(tap ? e.target.closest(".b-speak") || (e.target.closest("#ocr-bubble") && $("ocr-bubble").querySelector(".b-open")) : null);
   });
   stage.addEventListener("pointermove", (e) => {
@@ -3018,6 +3119,10 @@ function bindOcrGestures() {
     const p = local(e), old = pointers.get(e.pointerId);
     pointers.set(e.pointerId, p);
     if (tap && Math.hypot(p.x - tap.x, p.y - tap.y) > 10) { tap = null; press(null); }
+    if (pointers.size === 1 && scrollBox) {
+      scrollBox.scrollTop -= p.y - old.y;  // kuplan rivit vierivät, kuva pysyy paikallaan
+      return;
+    }
     if (pointers.size === 1) {
       ocr.view.x += p.x - old.x;
       ocr.view.y += p.y - old.y;
@@ -3034,6 +3139,7 @@ function bindOcrGestures() {
   });
   const end = (e) => {
     pointers.delete(e.pointerId);
+    if (!pointers.size) scrollBox = null;
     prev = pointers.size === 2 ? pinch() : null;
     press(null);
     if (!tap || e.type !== "pointerup" || Date.now() - tap.time > 500) { tap = null; return; }
@@ -3319,7 +3425,7 @@ function routeFromHash() {
   stopTts();  // edellisen sanan ääntämys ei jatku uudella sivulla
   const m = location.hash.match(/^#\/sana\/([^/]+)(?:\/(\d+))?/);
   if (m) search(decodeURIComponent(m[1]), Number(m[2] || 0));
-  else { showOnly("welcome"); $("search").value = ""; syncSearchClear(); $("did-you-mean").hidden = true; }
+  else { searchRun++; setSearchBusy(null); showOnly("welcome"); $("search").value = ""; syncSearchClear(); $("did-you-mean").hidden = true; }
 }
 
 // Logo ja nimi: takaisin aloitussivulle. Sivua ei ladata uudelleen, koska sanakirja on jo muistissa.
@@ -3373,6 +3479,7 @@ function bindEvents() {
     if (li) { e.preventDefault(); pickSuggestion(suggestions[li.dataset.i]); input.blur(); }
   });
   $("search-btn").onclick = () => search(input.value);
+  $("search-busy-cancel").onclick = () => { searchRun++; setSearchBusy(null); };
 
   $("grade-toggle").checked = settings.showGrade;
   $("grade-toggle").onchange = (e) => {

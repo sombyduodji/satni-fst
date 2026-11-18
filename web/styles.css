@@ -888,6 +888,20 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
   user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
   border-radius: 8px; background: #111;
 }
+/* Puhelin vaakatasossa (matala näyttö): painikkeet vasempaan sarakkeeseen, kuva koko korkeudelle oikealle. Ennen kuva
+   jäi painikerivien alle noin 215 px:n korkuiseksi ja sanan kupla leikkautui (yötesti 2026-11-18). */
+@media (orientation: landscape) and (max-height: 520px) {
+  .ocr-view {
+    display: grid; grid-template-columns: minmax(0, 230px) minmax(0, 1fr); grid-template-rows: auto auto 1fr;
+    column-gap: 12px; align-content: start; padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
+  }
+  .ocr-head, .ocr-bar, #ocr-status { grid-column: 1; }
+  .ocr-stage { grid-column: 2; grid-row: 1 / -1; height: calc(100dvh - 16px); }
+  .ocr-head #ocr-close { margin-left: 0; }
+  .ocr-bar { flex-wrap: wrap; }
+  .ocr-style-btn { margin-left: 0; }
+  .ocr-style { left: 0; right: auto; }
+}
 .ocr-photo { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 .ocr-photo img { display: block; width: 100%; height: 100%; pointer-events: none; user-select: none; }
 /* Sanojen merkintä: läpikuultava pyöreäkulmainen kehys tai alleviivaus, väri asetuksista (--mark) */
@@ -925,8 +939,17 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .ocr-bubble .b-unknown > * { grid-column: 1 / -1; }
 .ocr-bubble .b-unknown .b-sme { white-space: normal; overflow-wrap: anywhere; }
 .ocr-bubble .b-unknown .b-tr { color: var(--muted); font-style: italic; font-size: 13px; padding: 0 0 2px; }
-.ocr-bubble .b-cand .b-tr { min-width: 0; overflow-wrap: anywhere; }
-.ocr-bubble .b-cand > * { cursor: pointer; border-top: 1px solid var(--border); margin-top: 3px; padding-top: 4px; }
+/* Ehdokas- ja osarivi: saamen sana ja käännös vierekkäin, kun tilaa on; muuten käännös koko levyisenä sanan alle
+   (suuri tekstikoko 130 %: käännös valui ennen kirjain kirjaimelta kapeaan sarakkeeseen, yötesti 2026-11-18).
+   Saamen sana katkeaa vain, jos se ei mahdu kuplaan yksinkään. */
+.ocr-bubble .b-text .b-cand {
+  grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 12px;
+  cursor: pointer; border-top: 1px solid var(--border); margin-top: 3px; padding-top: 2px;
+}
+.ocr-bubble .b-cand .b-sme { flex: none; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.ocr-bubble .b-cand .b-tr { flex: 1 1 8em; min-width: 0; overflow-wrap: break-word; }
+/* Matala kuva-alue (puhelin vaakatasossa): kupla mahtuu alueeseen ja sen rivit vierivät (app.js: placeOcrBubble) */
+.ocr-bubble.tight .b-text { max-height: var(--bmax); overflow-y: auto; overscroll-behavior: contain; }
 /* Suunta ja merkintätapa: pilleri ja paletti kuvan yläpuolella */
 .ocr-bar { position: relative; display: flex; align-items: center; gap: 8px; margin-top: 10px; }
 .ocr-dir, .ocr-style-btn {
@@ -1114,6 +1137,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
   .tabs { overflow-x: auto; }
   .tabs button { white-space: nowrap; padding: 10px 10px; font-size: 14px; }
   .topbar, .searchbar { padding-left: 12px; padding-right: 12px; }
+  .search-busy { margin-left: 12px; margin-right: 12px; }
   .card { padding: 14px 16px; }
   .lang-switch { float: none; margin-bottom: 10px; }
   .word-title h1 { font-size: 27px; }
@@ -1784,3 +1808,17 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
   body.drawer-layout .sidebar { overflow-y: auto; overscroll-behavior: contain; }
 }
 .lause-pop select.lp-form { width: 100%; margin: 4px 0 2px; }
+
+/* Jokerihaku: ehdotusrivi ja hitaan haun tilarivi hakukentän alla (kenttää voi muokata haun aikana) */
+.suggestions li.sugg-wild .trans { color: var(--muted); font-size: 13px; }
+.search-busy {
+  position: relative; display: flex; align-items: center; gap: 8px; margin: 0 20px 6px; padding: 6px 10px 8px;
+  max-width: 520px; font-size: 14px; color: var(--muted); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+}
+.search-busy[hidden] { display: none; }
+.search-busy-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.search-busy .link-btn { flex: none; }
+.search-busy-bar {
+  position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--accent); transition: width .15s linear;
+}

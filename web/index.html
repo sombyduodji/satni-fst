@@ -51,6 +51,12 @@
     <!-- Kapealla näytöllä Hae on pelkkä suurennuslasi -->
     <button class="primary-btn" id="search-btn" data-i18n-aria="search" disabled><span class="sb-label" data-i18n="search">Hae</span><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></button>
   </div>
+  <!-- Hidas jokerihaku (*ortnega): tila ja edistyminen; hakukenttää voi muokata sillä aikaa (app.js: wildcardSearch) -->
+  <div id="search-busy" class="search-busy" role="status" hidden>
+    <span class="sugg-ring"></span><span class="search-busy-text"></span>
+    <button type="button" id="search-busy-cancel" class="link-btn" data-i18n="cancel">Peruuta</button>
+    <i class="search-busy-bar"></i>
+  </div>
 
   <div id="drawer-scrim" class="drawer-scrim"></div>
   <!-- Kertavihje valikosta (app.js: showMenuTip) -->
