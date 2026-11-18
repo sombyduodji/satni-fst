@@ -409,6 +409,9 @@ function openSkoltDialog() {
 // Käännökset ovat aina käyttöliittymän kielellä (suomi -> suomi, norsk -> norja)
 function setUiLanguage(code) {
   if (!UI_LANGUAGES[code]) return;
+  // Kuvan käännöskieli = vanha käyttöliittymän kieli (esim. ⇄-vaihdon tallentama "fin"): seuraa uutta kieltä. Muuten
+  // norjaksi vaihdon jälkeen kuvan sanat ja lause jäivät suomeksi perusmuotoihin (yötesti 2026-11-19)
+  if (settings.ocrTo && settings.ocrTo === settings.lang) settings.ocrTo = "";
   settings.uiLang = code;
   settings.lang = UI_LANGUAGES[code].translationLang;
   saveSettings();
@@ -2701,6 +2704,9 @@ async function loadNgram() {
     console.warn("loadNgram", e.message);
   } finally {
     ngramLoading = false;
+    // Kieli vaihtui latauksen aikana (fi -> nb -> fi nopeasti): uusi lataus ohitettiin, joten ladataan nyt nykyisen
+    // kielen tiedosto (muuten suomen lauseet järjestyivät norjan sanaparien mukaan; yötesti 2026-11-19)
+    if ((settings.lang === "nob" ? "nob" : "fin") !== lang && settings.exp.ocr && window.SatniOcr) loadNgram();
   }
 }
 // Sanaparitiedoston yksittäiset haut (yhdyssanan käännöksen valinta): valmistellut kyselyt muistissa tiedostoa kohden
@@ -4287,6 +4293,9 @@ function sentRerank(toks) {
     const first = toks.map((t) => words(t.fixed ? t.fixed.trans || t.fixed.word : t.name || t.unknown || !t.opts ? t.clean || t.t : t.opts[0]));
     toks.forEach((t, i) => {
       if (!t.opts || t.opts.length < 2 || t.fixed || t.name || t.unknown) return;
+      // Tyhjä ensimmäinen vaihtoehto = sääntö sulautti sanan naapuriin (norjan postpositio: etter møtet, apuverbi):
+      // ei järjestetä uudelleen, muuten sana palaisi (etter møtet etter; yötesti 2026-11-19)
+      if (t.opts[0] === "") return;
       const score = (k) => {
         const ws = words(t.opts[k]);
         if (!ws.length) return -Infinity;
