@@ -1,6 +1,6 @@
 /* Service worker: sovellus ja sanakirja toimivat ilman verkkoyhteyttä ensimmäisen käynnin jälkeen.
    Kun tiedostoja päivitetään, kasvata VERSION, jolloin selaimet hakevat uudet tiedostot. */
-const VERSION = "satni-v185";
+const VERSION = "satni-v186";
 // Sanastojen äänilistat (suomi + saame ja pelkkä saame): välimuistiin erikseen, jottei puuttuva tiedosto kaada asennusta
 const AUDIO = [
   "audio/kuukaudet.ogg", "audio/kuukaudet-sme.ogg", "audio/viikonpaivat.ogg", "audio/viikonpaivat-sme.ogg", "audio/vuodenajat.ogg", "audio/vuodenajat-sme.ogg", "audio/luvut-1.ogg", "audio/luvut-1-sme.ogg", "audio/luvut-2.ogg", "audio/luvut-2-sme.ogg", "audio/luvut-3.ogg", "audio/luvut-3-sme.ogg", "audio/jarjestysluvut-1.ogg", "audio/jarjestysluvut-1-sme.ogg", "audio/jarjestysluvut-2.ogg", "audio/jarjestysluvut-2-sme.ogg", "audio/jarjestysluvut-3.ogg", "audio/jarjestysluvut-3-sme.ogg",
@@ -23,7 +23,7 @@ const DATA = "data/satni-web.db.gz";
 // v5: astevaihtelun korjaus, dilli ll ~ l, v6: taivutusluokat,
 // v7: muiden saamenkielten käännöksiä lisää ja suomennosehdotukset, v8: espanja, v9: haku ilman sulkeissa olevia tarkenteita,
 // v10: Tarkoititko-hakusanat muille kielille, v11: englantia Wiktionarysta)
-const DATA_CACHE = "satni-data-v45";  // v45: koltansaame kuviin (sms_words, sms_forms, sms_cmp); v44: inarin partitiivi, passiivi, vertailumuodot, teonnimi; v43: inarinsaame kuviin (smn_words, smn_forms, smn_cmp); v42: sme_cmp (saamen yhdysmuodot); v41: fin_cmp (suomen yhdyssanojen alkuosat); v40: fin_also
+const DATA_CACHE = "satni-data-v46";  // v46: inari ja koltta omiin tiedostoihinsa; v45: koltansaame kuviin (sms_words, sms_forms, sms_cmp); v44: inarin partitiivi, passiivi, vertailumuodot, teonnimi; v43: inarinsaame kuviin (smn_words, smn_forms, smn_cmp); v42: sme_cmp (saamen yhdysmuodot); v41: fin_cmp (suomen yhdyssanojen alkuosat); v40: fin_also
 
 self.addEventListener("install", (event) => {
   // cache: "reload": sovelluksen tiedostot verkosta eikä selaimen HTTP-välimuistista (muuten vanha app.js voisi jäädä);
@@ -47,7 +47,8 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (event.request.method !== "GET" || url.origin !== location.origin) return;
 
-  if (url.pathname.endsWith(DATA)) {
+  // Sanakirja ja inarin/koltan kuvasanastot (data/satni-smn.db.gz, satni-sms.db.gz; ladataan vain valittaessa)
+  if (url.pathname.endsWith(DATA) || /\/data\/satni-(smn|sms)\.db\.gz$/.test(url.pathname)) {
     // Sanakirja (~47 Mt): välimuistista, verkosta vain ensimmäisellä kerralla
     event.respondWith(caches.open(DATA_CACHE).then(async (cache) => {
       const cached = await cache.match(event.request);

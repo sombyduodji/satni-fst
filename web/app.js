@@ -59,7 +59,9 @@ const DEFAULT_SETTINGS = {
   // tableTr = muotojen käännökset taivutustaulukossa, apertium = Apertiumin norjan käännökset, pivotFin = suomennosehdotukset. experimental: vanha yhteinen kytkin (= ocr), siirretään exp.ocr:ään.
   exp: { ocr: false, lause: false, tableTr: false, apertium: false, pivotFin: false },
   // Kuvasta haku: suunta ("sme" = saamen teksti, "ui" = käyttöliittymän kielen teksti), merkintätapa ja väri
-  ocrFrom: "sme", ocrTo: "", ocrStyle: "frame", ocrColor: "#2563eb",
+  ocrFrom: "sme", ocrTo: "", ocrStyle: "frame",
+  // Valokuvahaun omat kielet (asetukset → Työkalut → Valokuvahaku): kuvan lisäkielet (inari, koltta) ja käännöskielet
+  ocrLangs: [], ocrTargets: ["fin", "nob", "sme"], ocrColor: "#2563eb",
   // Tekstin koko (Asetukset → Kieli ja ulkoasu): "system" = laitteen tekstikoko (Android: fontScale), muuten prosentti
   textSize: "system",
   // Astevaihtelun merkintä: värit (GRADE_COLORS) ja alleviivaus (vahva yhtenäinen, heikko katkoviiva)
@@ -497,8 +499,9 @@ function wordClassLabel(pos, subtype) {
 
 // --- Tietokannan lataus ---
 
+let sqlModule = null;  // sql.js: myös inarin ja koltan erillisille tietokannoille (loadMinor)
 async function loadDatabase() {
-  const SQL = await initSqlJs({ locateFile: (f) => "vendor/" + f });
+  const SQL = sqlModule = await initSqlJs({ locateFile: (f) => "vendor/" + f });
   const response = await fetch(DATA_URL);
   if (!response.ok) throw new Error(t("loadFailed", response.status));
 
@@ -2637,10 +2640,54 @@ const MINOR_LOOKALIKES = {
 const MINOR_CLITICS = { smn: ["uv", "ub", "gin", "ge", "han", "hân", "pâ", "pa"], sms: [] };
 // Ei ennen tietokannan latausta: kuvan kielivalikko piirretään jo käynnistyksessä (applyOcrLook), ja haku tyhjään
 // tietokantaan kaatoi koko käynnistyksen (DEV 2026111811, Samsung)
-const hasMinor = (lang) => !!db && hasTable(`${lang}_forms`);
+// Inari ja koltta omissa tiedostoissaan (data/satni-smn.db.gz, satni-sms.db.gz): ladataan vain, kun kieli on valittu
+// kuvan kieleksi asetuksista (Valokuvahaku → Kuvan kielet), ja suljetaan, kun valinta poistetaan. Muistia säästyy
+// noin 25-35 Mt kieltä kohden niiltä, jotka eivät kieliä käytä (Samsung 2026-11-18: koko sovellus 193-224 Mt).
+const minorDb = {}, minorLoading = {};
+const hasMinor = (lang) => !!minorDb[lang];
+function mall(lang, sql, params = []) {
+  const stmt = minorDb[lang].prepare(sql);
+  stmt.bind(params);
+  const rows = [];
+  while (stmt.step()) rows.push(stmt.getAsObject());
+  stmt.free();
+  return rows;
+}
+async function loadMinor(lang) {
+  if (minorDb[lang] || minorLoading[lang] || !sqlModule) return;
+  minorLoading[lang] = true;
+  try {
+    const res = await fetch(`data/satni-${lang}.db.gz`);
+    if (!res.ok) return;
+    const raw = new Uint8Array(await res.arrayBuffer());
+    // Palvelin voi jo purkaa gzipin (Content-Encoding); puretaan vain jos tiedosto on yhä pakattu
+    const bytes = raw[0] === 0x1f && raw[1] === 0x8b
+      ? new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()) : raw;
+    if (!settings.ocrLangs.includes(lang)) return;  // valinta poistettiin latauksen aikana
+    minorDb[lang] = new sqlModule.Database(bytes);
+    delete minorCmpCache[lang];
+    applyOcrLook();
+    // Kuva auki: sanat haetaan uudelleen, nyt myös tällä kielellä
+    if (ocr && !$("ocr-view").hidden && ocr.langsKey !== settings.ocrLangs.join()) { ocr.autoDir = true; findOcrWords(); }
+  } catch (e) {
+    console.warn("loadMinor", lang, e.message);
+  } finally {
+    minorLoading[lang] = false;
+  }
+}
+function unloadMinor(lang) {
+  minorDb[lang]?.close();
+  delete minorDb[lang];
+  delete minorCmpCache[lang];
+}
+// Valitut kuvan kielet ladataan, muut suljetaan (käynnistys ja asetusten muutos)
+function syncMinorDbs() {
+  const want = settings.exp.ocr && window.SatniOcr ? settings.ocrLangs : [];
+  for (const lang of MINOR) if (want.includes(lang)) loadMinor(lang); else unloadMinor(lang);
+}
 const hasSmn = () => hasMinor("smn");
 function minorMatcher(lang) {
-  const st = db.prepare(`SELECT surface FROM ${lang}_forms WHERE fold = ?`);
+  const st = minorDb[lang].prepare(`SELECT surface FROM ${lang}_forms WHERE fold = ?`);
   const looks = MINOR_LOOKALIKES[lang], clitics = MINOR_CLITICS[lang], norm = (c) => minorFold(lang, c);
   const cache = new Map();
   const lookup = (w) => {
@@ -2704,11 +2751,11 @@ function splitMinorCompound(lang, word) {
   for (let i = 0; i < list.length; i += 300) {
     const part = list.slice(i, i + 300), marks = part.map(() => "?").join(",");
     // Sama tarkkeeton asu useammalle sanalle (fáddáid / faddâ): kuvan kirjaimin täsmäävä ensin
-    for (const r of all(`SELECT fold, surface, word_id AS id FROM ${lang}_forms WHERE fold IN (${marks}) ORDER BY word_id`, part)) {
+    for (const r of mall(lang, `SELECT fold, surface, word_id AS id FROM ${lang}_forms WHERE fold IN (${marks}) ORDER BY word_id`, part)) {
       const at = wf.indexOf(r.fold), exact = at >= 0 && r.surface === piece(at, at + r.fold.length);
       if (!known.has(r.fold) || (exact && !known.get(r.fold).exact)) known.set(r.fold, { id: r.id, exact });
     }
-    for (const r of all(`SELECT f.fold, MIN(f.word_id) AS id FROM ${lang}_forms f JOIN tags t ON t.id = f.tag_id
+    for (const r of mall(lang, `SELECT f.fold, MIN(f.word_id) AS id FROM ${lang}_forms f JOIN tags t ON t.id = f.tag_id
         JOIN ${lang}_words s ON s.id = f.word_id WHERE f.fold IN (${marks}) AND t.tag IN ('Lemma', 'Sg+Nom', 'Sg+Gen', 'Attr')
         AND s.pos IN ('N', 'A') GROUP BY f.fold`, part)) left.set(r.fold, r.id);
   }
@@ -2737,14 +2784,14 @@ const minorCmpCache = {};
 function minorCmp(lang) {
   if (!minorCmpCache[lang]) {
     minorCmpCache[lang] = new Map();
-    if (hasTable(`${lang}_cmp`)) for (const r of all(`SELECT stem, word_id FROM ${lang}_cmp`)) minorCmpCache[lang].set(minorFold(lang, r.stem), r.word_id);
+    if (hasMinor(lang)) for (const r of mall(lang, `SELECT stem, word_id FROM ${lang}_cmp`)) minorCmpCache[lang].set(minorFold(lang, r.stem), r.word_id);
   }
   return minorCmpCache[lang];
 }
 
 // Kielen sanan rivit (perusmuoto, sanaluokka, käännökset) kuvan muodolle; perusmuoto ensin
 function minorRows(lang, surface) {
-  return all(`SELECT DISTINCT w.* FROM ${lang}_forms f JOIN ${lang}_words w ON w.id = f.word_id
+  return mall(lang, `SELECT DISTINCT w.* FROM ${lang}_forms f JOIN ${lang}_words w ON w.id = f.word_id
     WHERE f.fold = ? AND f.surface = ? ORDER BY (lower(w.lemma) = ?) DESC, w.id`, [minorFold(lang, surface), surface, surface]);
 }
 const smnRows = (surface) => minorRows("smn", surface);
@@ -2833,8 +2880,11 @@ let ocrReturnHash = null;  // kuvasta avatun sanan osoite: takaisin-ele palaa si
 function openOcr() {
   $("ocr-view").hidden = false;
   applyOcrLook();
-  if (ocr) layoutOcr(false);
-  else $("ocr-status").textContent = t("ocrIntro");
+  if (ocr) {
+    layoutOcr(false);
+    // Kuvan kieliä muutettu asetuksista (esim. vihjeen kautta): sanat uudelleen, kielen tunnistus mukaan lukien
+    if (ocr.r && ocr.langsKey !== undefined && ocr.langsKey !== settings.ocrLangs.join() && settings.ocrLangs.every(hasMinor)) { ocr.autoDir = true; findOcrWords(); }
+  } else $("ocr-status").textContent = t("ocrIntro");
 }
 
 // Takaisin-ele (MainActivity.goBackOrFinish): ensin suljetaan sanan kupla, sitten kuva
@@ -2905,7 +2955,7 @@ function ocrGloss(word, original = "") {
     if (names.length && (!rows.length || names[0].rank <= rows[0].rank)) { query = capitalize(word); rows = names; }
   }
   // Käännöskieli: suomi/norja tai inarinsaame (dict-sme-smn)
-  const tl = ocrTo() === "smn" ? "smn" : settings.lang;
+  const tl = ["fin", "nob", "smn"].includes(ocrTo()) ? ocrTo() : settings.lang;
   const col = LANGUAGES[tl].col;
   const translated = rows.filter((r) => r[col]);
   let row = translated[0] || rows[0];
@@ -3040,18 +3090,15 @@ function analyzeOcr() {
   const skolt = letterWords.filter((w) => /[ʹǩǥõǯʒǨǦÕǮƷ]/u.test(w.t)).length;
   const isSkolt = skolt >= 3 && skolt >= letterWords.length * 0.08;
   // Koltan aineisto mukana: koltta on yksi tunnistettavista kielistä; muuten vain ilmoitus
-  const skoltUnsupported = isSkolt && !hasMinor("sms");
+  const skoltUnsupported = isSkolt && !minorOn("sms");
   if (ocr.autoDir && r.words.length && !skoltUnsupported) {
     let best = null;
-    const candidates = [...new Set([...ocrSources(), ...MINOR.filter(hasMinor)])];
+    const candidates = ocrSources();
     for (const other of candidates.filter((l) => l !== settings.ocrFrom)) {
       const alt = ocrMatches(r, other), sami = other !== "ui" && settings.ocrFrom !== "ui";
       if (count(alt) >= 3 && count(alt) >= (sami ? 1.5 : 3) * count(words) && (!best || count(alt) > count(best.words))) best = { lang: other, words: alt };
     }
-    if (best && isMinor(best.lang) && !minorOn(best.lang)) {
-      // Kieli ei käytössä: ei vaihtoa, vaan tarjous kuvan yläpuolella
-      if (!offerDeclined[best.lang]) ocr.offerLang = best.lang;
-    } else if (best) {
+    if (best) {
       settings.ocrFrom = best.lang;
       saveSettings();
       words = best.words;
@@ -3059,7 +3106,12 @@ function analyzeOcr() {
     }
   }
   ocr.autoDir = false;
-  showOcrOffer(ocr.offerLang && !minorOn(ocr.offerLang) && !offerDeclined[ocr.offerLang] ? ocr.offerLang : null);
+  // Vihje: kuvassa näyttää olevan koltan- tai inarinsaamea (kirjaimet ʹ ǩ ǥ õ / â), mutta kieli ei ole valittuna
+  // kuvan kieleksi -> linkki asetuksiin. Ei vaihdeta eikä oteta mitään käyttöön automaattisesti.
+  const share = (re) => letterWords.filter((w) => re.test(w.t)).length / Math.max(1, letterWords.length);
+  const hint = isSkolt && !minorOn("sms") ? "sms" : settings.ocrFrom !== "smn" && !minorOn("smn") && share(/â/iu) >= 0.08 ? "smn" : null;
+  showOcrHint(hint && !hintDismissed[hint] ? hint : null);
+  ocr.langsKey = settings.ocrLangs.join();
   applyOcrLook();
   const found = new Set(words.map((w) => w.word)).size;
   // Tuntemattomat sanat (vähintään 3 kirjainta, ei numeroita) himmeällä katkoviivalla: napautus näyttää lähimmät
@@ -3086,7 +3138,7 @@ function analyzeOcr() {
   ocr.words = [...words, ...unknown];
   ocr.picked = null;
   ocr.status = (!r.words.length ? t("ocrNoText") : found ? t("ocrFound", found) : t("ocrNoWords")) +
-    (switched ? ` · ${t("ocrDirSwitched")}` : "") + (skoltUnsupported ? ` · ${t("ocrSkolt")}` : "");
+    (switched ? ` · ${t("ocrDirSwitched")}` : "");
   $("ocr-bubble").hidden = true;
   $("ocr-photo").innerHTML = `<img src="${r.image}" alt="">`
     + ocr.words.map((w, i) => `<div class="ocr-word${w.unknown ? " unknown" : ""}" data-i="${i}"></div>`).join("");
@@ -3148,7 +3200,7 @@ function setOcrLangs(from, to) {
   saveSettings();
   applyOcrLook();
   if (!ocr) return;
-  if (fromChanged) { ocr.autoDir = false; showOcrOffer(null); findOcrWords(); return; }
+  if (fromChanged) { ocr.autoDir = false; showOcrHint(null); findOcrWords(); return; }
   for (const w of ocr.words) { w.gloss = null; w.cands = null; }
   if (ocr.picked != null) pickOcrWord(ocr.picked);
 }
@@ -3159,40 +3211,39 @@ function swapOcrLangs() {
   if (from === "ui") return setOcrLangs("sme", settings.lang);
   return to === "sme" ? setOcrLangs("sme", from === "smn" ? "smn" : settings.lang) : setOcrLangs("ui", "sme");
 }
-// Tarjous: kuvassa on inarin- tai koltansaamea, mutta kieli ei ole käytössä (Ei nyt = ei kysytä uudelleen tämän
-// käynnistyksen aikana). Koltan käyttöönotto kulkee asetusten varoitusikkunan kautta (tarkistamaton aineisto).
-const offerDeclined = {};
-let pendingOcrLang = null;
-function showOcrOffer(lang) {
+// Vihje kuvan yläpuolella: kieli näyttää olevan inarin- tai koltansaamea, mutta sitä ei ole valittu kuvan kieleksi.
+// Asetukset avaa Työkalut-sivun valokuvahaun kielet; × piilottaa vihjeen tämän käynnistyksen ajaksi.
+const hintDismissed = {};
+function showOcrHint(lang) {
   const el = $("ocr-offer");
   if (!lang) { el.hidden = true; return; }
   el.dataset.lang = lang;
-  el.innerHTML = `<span class="ocr-offer-text">${esc(t("ocrOffer")[lang])}</span><span class="ocr-offer-actions">` +
-    `<button data-offer="no">${esc(t("ocrNotNow"))}</button><button data-offer="yes" class="primary">${esc(t("ocrEnable"))}</button></span>`;
+  el.innerHTML = `<span class="ocr-offer-text">${esc(t("ocrHint")[lang])}</span><span class="ocr-offer-actions">` +
+    `<button data-hint="settings" class="primary">${esc(t("ocrHintSettings"))}</button>` +
+    `<button data-hint="close" class="ocr-offer-x" aria-label="${esc(t("close"))}">×</button></span>`;
   el.hidden = false;
 }
-function enableMinorFromOcr(lang) {
-  showOcrOffer(null);
-  if (lang === "sms") { pendingOcrLang = "sms"; openSkoltDialog(); return; }
-  if (!settings.extraLangs.includes(lang)) settings.extraLangs = [...settings.extraLangs, lang];
-  saveSettings();
-  renderExtraLangs();
-  setOcrLangs(lang, "");
+function openOcrSettings() {
+  $("ocr-view").hidden = true;
+  openSettings();
+  showSettingsPage("tools");
+  setTimeout(() => $("ocr-opts")?.scrollIntoView({ block: "center" }), 50);
 }
 
 // Kuvan kieli (mistä) ja käännöskieli (mihin): pohjoissaame -> suomi/norja (käännöskieli) tai inari;
 // inari -> suomi, pohjoissaame tai norja (pohjoissaamen kautta); suomi/norja -> pohjoissaame
 // Inarinsaame valittavissa vain, kun se on otettu käyttöön asetuksista (Muut kielet); tunnistus kokeilee sitä silti ja
 // tarjoaa käyttöönottoa (showOcrOffer)
-// Koltta käytössä = asetusten koltansaamen kytkin (sanakorttien koltankieliset käännökset)
-const minorOn = (lang) => hasMinor(lang) && (lang === "sms" ? !!settings.skolt : settings.extraLangs.includes(lang));
+// Valokuvahaun omat asetukset: kuvan lisäkielet (settings.ocrLangs: inari, koltta; tiedosto ladattuna) ja käännöskielet
+// (settings.ocrTargets; käyttöliittymän kieli aina mukana)
+const minorOn = (lang) => hasMinor(lang) && settings.ocrLangs.includes(lang);
 const smnOn = () => minorOn("smn");
 const ocrSources = () => ["sme", ...MINOR.filter(minorOn), "ui"];
+const targetOn = (c) => c === settings.lang || settings.ocrTargets.includes(c);
 function ocrTargets(from) {
-  if (from === "sme") return [settings.lang, ...(smnOn() ? ["smn"] : [])];
-  if (from === "smn") return ["fin", "sme", "nob"];
-  if (from === "sms") return ["fin", "nob", "sme"];
-  return ["sme"];
+  const all = from === "sme" ? ["fin", "nob", "smn"] : from === "smn" ? ["fin", "sme", "nob"] : from === "sms" ? ["fin", "nob", "sme"] : ["sme"];
+  const ts = all.filter(targetOn).sort((a, b) => (b === settings.lang) - (a === settings.lang));
+  return ts.length ? ts : [all[0]];
 }
 function ocrTo() {
   const ts = ocrTargets(settings.ocrFrom);
@@ -3271,7 +3322,7 @@ function pickUnknownOcrWord(w) {
     const lang = settings.ocrFrom, parts = splitMinorCompound(lang, w.word), to = ocrTo();
     w.parts = parts && parts.map((p) => p.stem);
     w.cands = (parts || []).map((p) => {
-      const row = all(`SELECT * FROM ${lang}_words WHERE id = ?`, [p.id])[0] || {};
+      const row = mall(lang, `SELECT * FROM ${lang}_words WHERE id = ?`, [p.id])[0] || {};
       const open = splitList(row.sme)[0] || (splitList(row.fin)[0] || "").replace(/\s*\(.*$/, "") || p.stem;
       return { word: p.stem, open, trans: minorTranslation(lang, row, to), lemma: row.lemma && row.lemma.toLowerCase() !== p.stem ? row.lemma : "", part: true };
     });
@@ -3619,9 +3670,38 @@ async function showLicenseFile(file) {
 
 // Kokeelliset ominaisuudet: jokainen oma kytkimensä. Päälle kytkettäessä ikkuna kertoo, mitä ominaisuus tekee,
 // ja Peruuta jättää sen pois päältä; pois kytkettäessä ei kysytä mitään.
+// Valokuvahaun kielet asetuksissa: kuvan kielet (pohjoissaame ja käyttöliittymän kieli aina; inari ja koltta valittavissa,
+// niiden sanasto ladataan vasta valittaessa) ja käännöskielet (käyttöliittymän kieli aina)
+function renderOcrOpts() {
+  const el = $("ocr-opts");
+  el.hidden = !(window.SatniOcr && settings.exp.ocr);
+  if (el.hidden) return;
+  const box = (attr, code, on, extra = "", disabled = false) => `<label class="ocr-opt"><input type="checkbox" ${attr}="${code}"` +
+    `${on ? " checked" : ""}${disabled ? " disabled" : ""}><span>${esc(ocrLangName(code))}${extra}</span></label>`;
+  const unchecked = ` <span class="unchecked-badge">${esc(t("smsUnchecked"))}</span>`;
+  el.innerHTML = `<div class="ocr-opts-head">${esc(t("ocrLangsTitle"))}</div>` +
+    `<div class="ocr-opts-row">${box("data-ocr-lang", "sme", true, "", true)}${box("data-ocr-lang", settings.lang, true, "", true)}` +
+    `${box("data-ocr-lang", "smn", settings.ocrLangs.includes("smn"))}${box("data-ocr-lang", "sms", settings.ocrLangs.includes("sms"), unchecked)}</div>` +
+    `<p class="muted small">${esc(t("ocrLangsNote"))}</p>` +
+    `<div class="ocr-opts-head">${esc(t("ocrTargetsTitle"))}</div>` +
+    `<div class="ocr-opts-row">${["fin", "nob", "sme", "smn"].map((c) => box("data-ocr-target", c, targetOn(c), "", c === settings.lang)).join("")}</div>`;
+}
+function bindOcrOpts() {
+  $("ocr-opts").onchange = (e) => {
+    const lang = e.target.dataset.ocrLang, target = e.target.dataset.ocrTarget;
+    if (lang) settings.ocrLangs = e.target.checked ? [...new Set([...settings.ocrLangs, lang])] : settings.ocrLangs.filter((l) => l !== lang);
+    if (target) settings.ocrTargets = e.target.checked ? [...new Set([...settings.ocrTargets, target])] : settings.ocrTargets.filter((l) => l !== target);
+    saveSettings();
+    syncMinorDbs();
+    applyOcrLook();
+  };
+}
+
 function applyExperimental() {
   for (const box of document.querySelectorAll("[data-exp]")) box.checked = !!settings.exp[box.dataset.exp];
   $("exp-ocr-row").hidden = !window.SatniOcr;
+  renderOcrOpts();
+  if (sqlModule) syncMinorDbs();
   $("ocr-btn").hidden = !(window.SatniOcr && settings.exp.ocr);
   if (!settings.exp.ocr) $("ocr-view").hidden = true;
   // Lausekääntäjä (lauseet.js): painike yläpalkkiin kameran ja sanastojen viereen. Toimii vain suomeksi, joten
@@ -3637,6 +3717,7 @@ function applyExperimental() {
   }
 }
 function bindExperimental() {
+  bindOcrOpts();
   let pending = null;
   const set = (name, on) => {
     settings.exp = { ...settings.exp, [name]: on };
@@ -3690,10 +3771,10 @@ function bindOcr() {
     setOcrLangs(from || settings.ocrFrom, to || settings.ocrTo);
   };
   $("ocr-offer").onclick = (e) => {
-    const b = e.target.closest("[data-offer]");
+    const b = e.target.closest("[data-hint]");
     if (!b) return;
-    const lang = $("ocr-offer").dataset.lang;
-    if (b.dataset.offer === "yes") enableMinorFromOcr(lang); else { offerDeclined[lang] = true; showOcrOffer(null); }
+    if (b.dataset.hint === "settings") openOcrSettings();
+    else { hintDismissed[$("ocr-offer").dataset.lang] = true; showOcrHint(null); }
   };
   $("ocr-style-btn").onclick = (e) => { e.stopPropagation(); $("ocr-style").hidden = !$("ocr-style").hidden; };
   $("ocr-style-seg").onclick = (e) => {
@@ -3931,8 +4012,6 @@ function bindEvents() {
   $("skolt-ok").onclick = () => {
     $("skolt-dlg").close();
     setSkolt(true, $("skolt-via").checked);
-    if (pendingOcrLang === "sms" && ocr && !$("ocr-view").hidden) setOcrLangs("sms", "");  // kuvan tarjouksesta
-    pendingOcrLang = null;
   };
   $("report-btn").onclick = (e) => { e.preventDefault(); openReport(); };
   $("report-cancel").onclick = () => $("report-dlg").close();
@@ -4142,6 +4221,7 @@ async function main() {
   $("search").disabled = false;
   $("search-btn").disabled = false;
   $("ocr-btn").disabled = false;
+  syncMinorDbs();
   // Jaettu teksti ilman sanoja (esim. pelkkä linkki): aloitussivu, ettei latausnäkymä jää näkyviin
   if (!(pendingShared && openShared(pendingShared))) routeFromHash();
   if (!location.hash) $("search").focus();
