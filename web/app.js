@@ -2931,9 +2931,9 @@ function ocrFuzzySearch() {
     }
     return memo.get(k);
   };
-  const search = (word, maxCost = 4) => {
+  const search = (word, maxCost = 4, minLen = 5) => {
     const w = [...word.toLowerCase()].map((c) => OCR_LOOKALIKES[c] || c);
-    if (w.length < 5 || w.length > 40 || !w.every((c) => /\p{L}/u.test(c))) return null;
+    if (w.length < minLen || w.length > 40 || !w.every((c) => /\p{L}/u.test(c))) return null;
     // Tila: [hinta, kohta w:ssä, osat, nykyinen osa]
     const queue = [[0, 0, [], ""]];
     // Osien määrä ja lyhyet osat lisäävät hintaa (coahkkin + balva + lusa < čoahkkin + bálvalusa): kaikki
@@ -3470,8 +3470,11 @@ function pickUnknownOcrWord(w) {
   const label = w.parts ? (w.cands.length > w.parts.length ? "ocrNearestOrParts" : "ocrParts") : w.cands.length ? "ocrNearest" : "ocrUnknown";
   const cands = w.cands.map((c) => `<span class="b-row b-cand${c.part ? " b-part" : ""}" data-cand="${esc(c.open || c.word)}"><span class="b-sme">${c.part && c !== w.cands.find((x) => x.part) ? "+ " : ""}${esc(c.word)}</span>` +
     `<span class="b-tr">${esc(c.trans)}${c.lemma ? ` <span class="b-more">(${esc(c.lemma)})</span>` : ""}</span></span>`).join("");
+  // Jaa osiin: lauseen näkymään sanan jakoon (sanan kirjainten väliin napauttamalla)
+  const split = settings.ocrFrom === "sme" && [...w.word].length >= 6
+    ? `<span class="b-row b-cand b-split" data-split="1"><span class="b-sme">✂ ${esc(t("sentSplit"))}</span><span class="b-tr">${esc(t("sentSplitShort"))}</span></span>` : "";
   bubble.innerHTML = `<span class="b-text"><span class="b-row b-form b-unknown"><span class="b-sme">${esc(w.word)}</span>` +
-    `<span class="b-tr">${esc(t(label))}</span></span>${cands}</span>` +
+    `<span class="b-tr">${esc(t(label))}</span></span>${cands}${split}</span>` +
     `<span class="b-actions"><span class="b-open b-edit" role="button" aria-label="${esc(t("ocrEdit"))}">${EDIT_ICON}</span></span>`;
   bubble.setAttribute("aria-label", w.word);
   bubble.hidden = false;
@@ -3727,6 +3730,92 @@ function sentVerbForms(g, word, prev, prevLemma) {
     .map((x) => (neg ? x.replace(/^\(ei\)\s+/, "") : x)).filter(Boolean);
   return out.length ? [...new Set(out)] : null;
 }
+// Jokerihaku sanan korjauskenttään (*oahkkinb*lvalusa, sámi?): enintään viisi yleisintä sanaa ja niiden täsmäävä muoto.
+// Paloissa kuten wildcardSearch, ettei näkymä jäädy; uusi kirjoitus keskeyttää vanhan haun (stale).
+async function quickWildcard(query, limit, stale) {
+  const pat = fold(query.trim()).replace(/[[\]]/g, "");
+  if (!/[^*?]/.test(pat.replace(/[*?]/g, "")) || pat.replace(/[*?]/g, "").length < 3) return [];
+  if (!wildFreq) {
+    wildFreq = new Map();
+    const st = db.prepare("SELECT id, freq FROM dictionary");
+    while (st.step()) { const [id, f] = st.get(); wildFreq.set(id, f); }
+    st.free();
+  }
+  const hits = new Map(), max = all("SELECT MAX(id) AS m FROM dictionary")[0].m;
+  const st = db.prepare("SELECT word_id, MIN(surface) FROM paradigms WHERE word_id >= ? AND word_id < ? AND surface GLOB ? GROUP BY word_id");
+  const lt = db.prepare("SELECT id, sme_lemma FROM dictionary WHERE id >= ? AND id < ? AND lemma_fold GLOB ?");
+  try {
+    let slice = performance.now();
+    for (let lo = 0; lo <= max; lo += WILD_CHUNK) {
+      for (const q of [st, lt]) {
+        q.bind([lo, lo + WILD_CHUNK, pat]);
+        while (q.step()) { const [id, v] = q.get(); if (q === lt || !hits.has(id)) hits.set(id, v); }
+        q.reset();
+      }
+      if (performance.now() - slice > 60) {
+        await new Promise((r) => setTimeout(r, 0));
+        if (stale()) return null;
+        slice = performance.now();
+      }
+    }
+  } finally { st.free(); lt.free(); }
+  const f = (id) => wildFreq.get(id) ?? -Infinity;
+  return [...hits.keys()].sort((a, b) => f(b) - f(a) || a - b).slice(0, limit).map((id) => hits.get(id));
+}
+let sentWildRun = 0;
+// Yhdyssanan osat käännöksineen (käsin jaettu tai haettu): alkuosat perusmuodon käännöksellä, viimeinen muodon
+// mukaan (čoahkkin + bálvalusa = kokous + palvelun -> kokouspalvelun). Osa, jota ei löydy sellaisenaan, haetaan
+// sumealla haulla (coahkkin -> čoahkkin).
+function compoundPartsInfo(parts) {
+  let fz = null;
+  const cmpOf = (p) => cmpLemma.get(p) || (hasTable("sme_cmp") ? all("SELECT lemma FROM sme_cmp WHERE stem = ?", [p])[0]?.lemma : null);
+  const out = parts.map((raw, k) => {
+    let p = raw.toLowerCase(), base = cmpOf(p), g = ocrGloss(base || p);
+    if (!g.trans && p.length >= 3) {
+      fz ||= ocrFuzzySearch();
+      const f = fz.search(p, 3, 3);
+      if (f && !f.parts) { p = f.word; base = cmpOf(p); g = ocrGloss(base || p); }
+    }
+    const last = k === parts.length - 1;
+    const trans = ((last && g.form ? g.form.split(" / ").pop() : g.trans) || "").split(", ")[0].replace(/\s*\([^)]*\)/g, "").trim();
+    return { word: p, trans, base: base || g.lemma || "" };
+  });
+  fz?.free();
+  const trans = out.every((x) => x.trans) ? out.map((x) => x.trans).join("") : out.map((x) => x.trans || `[${x.word}]`).join(" + ");
+  return { parts: out, word: out.map((x) => x.word).join(""), trans };
+}
+// Käsin jako: oletusjako haun mukaan, jos osien pituudet täsmäävät tekstiin
+function sentDefaultCuts(text) {
+  const w = text.toLowerCase(), cuts = new Set();
+  if (settings.ocrFrom !== "sme" || w.length < 6) return cuts;
+  const fz = ocrFuzzySearch(), f = fz.search(w);
+  fz.free();
+  const parts = f?.parts || splitCompound(w);
+  if (parts && parts.join("").length === [...w].length) {
+    let pos = 0;
+    for (const p of parts.slice(0, -1)) { pos += [...p].length; cuts.add(pos); }
+  }
+  return cuts;
+}
+function sentSplitParts() {
+  const letters = [...sent.split.text], parts = [];
+  let from = 0;
+  for (const c of [...sent.split.cuts].sort((a, b) => a - b)) { parts.push(letters.slice(from, c).join("")); from = c; }
+  parts.push(letters.slice(from).join(""));
+  return parts.filter(Boolean);
+}
+function renderSentSplit() {
+  const box = $("sent-split");
+  if (!box || !sent?.split) return;
+  const letters = [...sent.split.text];
+  const parts = sentSplitParts(), info = parts.length > 1 ? compoundPartsInfo(parts) : null;
+  sent.split.info = info;
+  box.innerHTML = `<p class="sent-lab">${esc(t("sentSplitHint"))}</p><div class="sent-split-w">` +
+    letters.map((c, i) => `<span class="sl">${esc(c)}</span>` + (i < letters.length - 1
+      ? `<button type="button" class="sg${sent.split.cuts.has(i + 1) ? " cut" : ""}" data-cut="${i + 1}" aria-label="${esc(t("sentSplit"))} ${i + 1}"></button>` : "")).join("") +
+    `</div>` + (info ? `<div class="sent-split-res">${info.parts.map((x) => `<span><b>${esc(x.word)}</b> ${esc(x.trans || "?")}</span>`).join(" + ")}` +
+      `<div class="sent-split-tr">→ ${esc(info.trans)}</div></div>` : "");
+}
 const sentKey = (tok) => `${tok.cx},${tok.cy}`;
 function sentWordText(tok) {
   if (tok.fixed) return tok.fixed.trans || (tok.fixed.keep ? tok.fixed.word : `[${tok.fixed.word}]`);
@@ -3757,7 +3846,16 @@ function openSentView(rIndex) {
 }
 function closeSentView() {
   if (!sent || $("sent-view").hidden) return false;
-  if (sent.sheet != null) { sent.sheet = null; renderSentView(); return true; }
+  if (sent.solo != null) {
+    const idx = sent.solo, tok = sent.toks[0], done = sent.soloDone;
+    $("sent-view").hidden = true;
+    $("sent-view").classList.remove("solo");
+    sent = null;
+    if (done) applyOcrFix(idx, tok);
+    if (ocr?.words?.[idx]) { const w = ocr.words[idx]; w.cands = null; pickOcrWord(idx); }
+    return true;
+  }
+  if (sent.sheet != null) { sent.sheet = null; sent.split = null; renderSentView(); return true; }
   $("sent-view").hidden = true;
   sent = null;
   return true;
@@ -3779,12 +3877,15 @@ function renderSentView() {
   if (sent.sheet == null) { sheet.hidden = true; return; }
   const tok = sent.toks[sent.sheet];
   if (tok.unknown || tok.name || tok.fixed?.edited) {
-    const src = sentCutout(tok, 1.8), guess = tok.fixed?.word || (tok.name ? tok.clean || tok.t : (tok.clean || tok.t).toLowerCase());
+    const src = sentCutout(tok, 1.8), guess = sent.split?.text || tok.fixed?.word || (tok.name ? tok.clean || tok.t : (tok.clean || tok.t).toLowerCase());
+    const canSplit = settings.ocrFrom === "sme";
     sheet.innerHTML = `<div class="sent-sh-head">${src ? `<img class="sent-cut" src="${src}" alt="${esc(t("sentInPhoto"))}">` : "<span></span>"}` +
       `<button class="chip-btn" data-act="cancel">${esc(t("cancel"))}</button><button class="chip-btn primary" data-act="done">${esc(t("sentDone"))}</button></div>` +
-      `<input id="sent-input" type="text" autocapitalize="none" spellcheck="false" aria-label="${esc(t("sentWhat"))}" placeholder="${esc(t("sentWhat"))}" value="${esc(guess)}">` +
-      `<div id="sent-sugs" class="sent-opts"></div>`;
-    renderSentSugs(guess);
+      `<div class="sent-in-row"><input id="sent-input" type="text" autocapitalize="none" spellcheck="false" aria-label="${esc(t("sentWhat"))}" placeholder="${esc(t("sentWhat"))}" value="${esc(guess)}">` +
+      (canSplit ? `<button type="button" class="chip-btn sent-split-btn${sent.split ? " on" : ""}" data-act="split" aria-pressed="${!!sent.split}">${esc(t("sentSplit"))}</button>` : "") + `</div>` +
+      (sent.split ? `<div id="sent-split" class="sent-split"></div>` : `<div id="sent-sugs" class="sent-opts"></div>`);
+    if (sent.split) renderSentSplit();
+    else renderSentSugs(guess);
   } else {
     sheet.innerHTML = `<div class="sent-sh-head"><p class="sent-lab">${esc(tok.clean || tok.t)}${tok.lemma ? ` <span class="muted">(${esc(tok.lemma)})</span>` : ""}</p>` +
       `<button class="chip-btn" data-act="edit">${esc(t("sentEditWord"))}</button><button class="chip-btn" data-act="open">${esc(t("sentOpen"))}</button></div>` +
@@ -3795,6 +3896,33 @@ function renderSentView() {
 // Ehdotukset korjattavalle sanalle: tarkka osuma, lähimmät sanat (yksi kirjain eri), yhdyssanan osat, sellaisenaan
 function renderSentSugs(text) {
   const lang = settings.ocrFrom, raw = (text || "").trim(), out = [];
+  const sugs = $("sent-sugs");
+  const show = (list) => {
+    sugs.innerHTML = list.map((o, k) => `<button class="sent-opt${k === 0 ? " sel" : ""}" data-sug="${k}">` +
+      `<span>${esc(o.keep ? t("sentKeep") : o.parts || o.word)}</span>${o.trans ? `<i>${esc(o.trans)}</i>` : ""}</button>`).join("");
+    sugs.sugs = list;
+  };
+  const run = ++sentWildRun;
+  // Jokerit (*oahkkinb*lvalusa): yleisimmät osumat taustalla, kirjoitus keskeyttää
+  if (lang === "sme" && /[*?]/.test(raw)) {
+    sugs.innerHTML = `<p class="sent-lab">${esc(t("wildSearching"))}</p>`;
+    sugs.sugs = [];
+    quickWildcard(raw, 5, () => run !== sentWildRun || !sent).then((hits) => {
+      if (hits == null || run !== sentWildRun || !$("sent-sugs")) return;
+      const list = hits.map((h) => { const g = ocrGloss(h); return { word: h, trans: ((g.lemma ? g.form || g.trans : g.trans) || "").split(" / ")[0].split(", ")[0] }; });
+      show(list.length ? list : [{ word: raw, trans: "", keep: true }]);
+    });
+    return;
+  }
+  // Käsin jaettu: čoahkkin+bálvalusa tai čoahkkin-bálvalusa (pienellä alkava; Microsoft-bálvalusain on nimi + sana)
+  const manual = lang === "sme" && (/\S\s*\+\s*\S/.test(raw) || /^\p{Ll}[^-]*\p{L}-\p{Ll}[^-]*$/u.test(raw));
+  if (manual) {
+    const info = compoundPartsInfo(raw.split(/[+-]/).map((x) => x.trim()).filter(Boolean));
+    out.push({ word: info.word, parts: info.parts.map((x) => x.word).join(" + "), trans: info.trans });
+    out.push({ word: raw.replace(/\s*\+\s*/g, ""), trans: "", keep: true });
+    show(out);
+    return;
+  }
   // Yhdysmerkillä nimeen liitetty sana (Microsoft-bálvalusain): haetaan loppuosa, alkuosa sellaisenaan
   const hy = raw.match(/^(.+-)([^-]+)$/u), pre = hy ? hy[1] : "", w = (hy ? hy[2] : raw).toLowerCase();
   if (w) {
@@ -3833,29 +3961,74 @@ function bindSentView() {
     if (!c) return;
     const i = +c.dataset.i, tok = sent.toks[i];
     sent.sheet = sent.sheet === i ? null : i;
+    sent.split = null;
     renderSentView();
   };
-  $("sent-sheet").oninput = (e) => { if (e.target.id === "sent-input") renderSentSugs(e.target.value); };
+  $("sent-sheet").oninput = (e) => {
+    if (e.target.id !== "sent-input") return;
+    if (sent?.split) { sent.split.text = e.target.value.trim(); sent.split.cuts = sentDefaultCuts(sent.split.text); renderSentSplit(); }
+    else renderSentSugs(e.target.value);
+  };
   $("sent-sheet").onclick = (e) => {
     if (!sent || sent.sheet == null) return;
     const tok = sent.toks[sent.sheet], key = sentKey(tok);
     const save = (patch) => { Object.assign(tok, patch); ocr.sentChoice[key] = { ...(ocr.sentChoice[key] || {}), ...patch }; };
     const opt = e.target.closest("[data-opt]"), sug = e.target.closest("[data-sug]"), act = e.target.closest("[data-act]")?.dataset.act;
+    const cut = e.target.closest("[data-cut]");
+    if (cut && sent.split) { const c = +cut.dataset.cut; sent.split.cuts.has(c) ? sent.split.cuts.delete(c) : sent.split.cuts.add(c); renderSentSplit(); return; }
+    if (act === "split") {
+      const text = ($("sent-input").value || "").trim();
+      sent.split = sent.split ? null : { text, cuts: sentDefaultCuts(text) };
+      renderSentView(); return;
+    }
     if (opt) { save({ choice: +opt.dataset.opt }); sent.sheet = null; renderSentView(); return; }
     if (sug) { $("sent-sugs").querySelectorAll(".sent-opt").forEach((b) => b.classList.toggle("sel", b === sug)); return; }
-    if (act === "cancel") { sent.sheet = null; renderSentView(); return; }
+    if (act === "cancel") { if (sent.solo != null) { closeSentView(); return; } sent.sheet = null; sent.split = null; renderSentView(); return; }
     if (act === "edit") { save({ fixed: { word: tok.clean || tok.t, trans: sentWordText(tok), edited: true } }); renderSentView(); return; }
     if (act === "open") { const q = tok.lemma || tok.word; closeSentView(); closeSentView(); $("ocr-view").hidden = true; search(q); ocrReturnHash = location.hash; return; }
+    if (act === "done" && sent.split) {
+      const info = sent.split.info, text = sent.split.text;
+      if (info) save({ fixed: { word: info.word, trans: info.trans, edited: true }, lemma: info.parts.map((x) => x.word).join(" + "), unknown: false, name: false });
+      else if (text) save({ fixed: { word: text, trans: "", edited: true, keep: true }, unknown: false, name: false });
+      if (sent.solo != null) { sent.soloDone = true; closeSentView(); return; }
+      sent.split = null; sent.sheet = null; renderSentView(); return;
+    }
     if (act === "done") {
       const list = $("sent-sugs").sugs || [], k = [...$("sent-sugs").querySelectorAll(".sent-opt")].findIndex((b) => b.classList.contains("sel"));
       const pick = list[Math.max(0, k)] || { word: $("sent-input").value };
       const word = pick.keep ? $("sent-input").value.trim() : pick.word;
       // Sellaisenaan: kuvan kirjoitusasu (isot kirjaimet säilyvät), ei hakasulkeita
       const kept = pick.keep && word.toLowerCase() === (tok.clean || tok.t).toLowerCase() ? tok.clean || tok.t : word;
-      save({ fixed: { word: kept, trans: pick.keep ? "" : pick.trans, edited: true, keep: !!pick.keep }, unknown: false, name: false });
+      save({ fixed: { word: kept, trans: pick.keep ? "" : pick.trans, edited: true, keep: !!pick.keep }, unknown: false, name: false, ...(pick.parts ? { lemma: pick.parts } : {}) });
+      if (sent.solo != null) { sent.soloDone = true; closeSentView(); return; }
       sent.sheet = null; renderSentView();
     }
   };
+}
+// Kuvan tuntemattoman sanan korjaus suoraan kuvanäkymässä (ilman lausenäkymää): sama korjauspaneeli kuin Poimi lause
+// -näkymässä (kenttä, ehdotukset, jokerit, + -jako, Jaa osiin), kuvan päällä alhaalla. Valmis merkitsee sanan kuvaan
+// korjattuna ja käännettynä; korjaus näkyy myös lausenäkymässä (ocr.sentChoice).
+function openOcrFix(split = false) {
+  const idx = ocr?.picked, w = ocr?.words?.[idx];
+  if (!w) return;
+  ocr.sentChoice ||= {};
+  const raw = ocr.r.words.find((r) => r.cx === w.cx && r.cy === w.cy) || w;
+  const tok = sentTokens([raw])[0];
+  const text = (w.word || tok.clean || tok.t).toLowerCase();
+  if (!tok.unknown && !tok.fixed?.edited) tok.fixed = { word: text, trans: sentWordText(tok), edited: true };
+  sent = { toks: [tok], sheet: 0, solo: idx, split: split ? { text, cuts: sentDefaultCuts(text) } : null };
+  $("ocr-bubble").hidden = true;
+  $("sent-view").classList.add("solo");
+  $("sent-view").hidden = false;
+  renderSentView();
+}
+// Korjaus kuvan sanaan: tunnettu sana käännöksineen (kupla), merkintä ei enää katkoviivalla
+function applyOcrFix(idx, tok) {
+  const w = ocr?.words?.[idx], f = tok.fixed;
+  if (!w || !f) return;
+  if (f.keep || !f.trans) { w.word = f.word.toLowerCase(); w.cands = null; w.parts = null; w.fuzzyParts = null; return; }
+  Object.assign(w, { word: f.word.toLowerCase(), unknown: false, gloss: { lemma: tok.lemma || "", form: "", trans: f.trans, say: f.word, query: (tok.lemma || f.word).split(" + ").pop() } });
+  $("ocr-photo").querySelector(`.ocr-word[data-i="${idx}"]`)?.classList.remove("unknown");
 }
 // Poimi lause -painike: valitun sanan lause; ilman valintaa seuraava napautettu sana valitsee lauseen
 function pickSentence() {
@@ -3972,7 +4145,9 @@ function bindOcrGestures() {
     const speaker = target?.closest(".b-speak");
     if (speaker) {
       if (!speaker.classList.contains("loading")) speak(ocr.words[ocr.picked].gloss.say, speaker);
-    } else if (target?.closest("#ocr-bubble")) openOcrWord(target.closest("[data-cand]")?.dataset.cand || null);
+    } else if (target?.closest("#ocr-bubble [data-split]")) openOcrFix(true);
+    else if (ocr.words[ocr.picked]?.unknown && settings.ocrFrom === "sme" && target?.closest("#ocr-bubble .b-edit")) openOcrFix(false);
+    else if (target?.closest("#ocr-bubble")) openOcrWord(target.closest("[data-cand]")?.dataset.cand || null);
     else if (word) {
       if (Number(word.dataset.i) === ocr.picked) openOcrWord();
       else pickOcrWord(Number(word.dataset.i));
