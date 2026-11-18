@@ -1024,16 +1024,24 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .ocr-bubble {
   position: absolute; z-index: 2; display: flex; align-items: center; gap: 12px;
   width: max-content; max-width: calc(100% - 16px); padding: 8px 8px 8px 14px; border: 0; border-radius: 14px;
-  background: var(--surface); color: var(--text); box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
+  background: var(--surface); color: var(--text); box-shadow: 0 0 0 1.5px var(--bubble-ring, transparent), 0 6px 20px rgba(0, 0, 0, .35);
   font: inherit; text-align: left; cursor: pointer; transform: translate(-50%, calc(-100% - 10px));
 }
+/* Tummassa teemassa reunaviiva (myös nuolessa): tumma kupla ei erottunut tummasta kuvasta (käyttäjän kuva 2026-11-18) */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ocr-bubble { --bubble-ring: rgba(255, 255, 255, .55); } }
+:root[data-theme="dark"] .ocr-bubble { --bubble-ring: rgba(255, 255, 255, .55); }
+.ocr-bubble::before {
+  content: ""; position: absolute; left: var(--arrow, 50%); top: 100%; transform: translateX(-50%);
+  border: 10px solid transparent; border-top-color: var(--bubble-ring, transparent);
+}
+.ocr-bubble.below::before { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--bubble-ring, transparent); }
 .ocr-bubble[hidden] { display: none; }
 .ocr-bubble.below { transform: translate(-50%, 10px); }
 .ocr-bubble::after {
-  content: ""; position: absolute; left: var(--arrow, 50%); top: 100%; transform: translateX(-50%);
+  content: ""; position: absolute; left: var(--arrow, 50%); top: calc(100% - 1px); transform: translateX(-50%);
   border: 8px solid transparent; border-top-color: var(--surface);
 }
-.ocr-bubble.below::after { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--surface); }
+.ocr-bubble.below::after { top: auto; bottom: calc(100% - 1px); border-top-color: transparent; border-bottom-color: var(--surface); }
 .ocr-bubble .b-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .ocr-bubble .b-word { font-weight: 700; font-size: 17px; white-space: nowrap; }
 .ocr-bubble .b-text:has(.b-row) {
