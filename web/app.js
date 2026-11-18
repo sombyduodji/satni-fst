@@ -3003,11 +3003,15 @@ function analyzeOcr() {
   const isSkolt = skolt >= 3 && skolt >= letterWords.length * 0.08;
   if (ocr.autoDir && r.words.length && !isSkolt) {
     let best = null;
-    for (const other of ocrSources().filter((l) => l !== settings.ocrFrom)) {
+    const candidates = [...new Set([...ocrSources(), ...(hasSmn() ? ["smn"] : [])])];
+    for (const other of candidates.filter((l) => l !== settings.ocrFrom)) {
       const alt = ocrMatches(r, other), sami = other !== "ui" && settings.ocrFrom !== "ui";
       if (count(alt) >= 3 && count(alt) >= (sami ? 1.5 : 3) * count(words) && (!best || count(alt) > count(best.words))) best = { lang: other, words: alt };
     }
-    if (best) {
+    if (best && best.lang === "smn" && !smnOn()) {
+      // Inari ei käytössä: ei vaihtoa, vaan tarjous kuvan yläpuolella
+      if (!smnOfferDeclined) ocr.offerSmn = true;
+    } else if (best) {
       settings.ocrFrom = best.lang;
       saveSettings();
       words = best.words;
@@ -3015,6 +3019,8 @@ function analyzeOcr() {
     }
   }
   ocr.autoDir = false;
+  showOcrOffer(!!ocr.offerSmn && !smnOn() && !smnOfferDeclined);
+  applyOcrLook();
   const found = new Set(words.map((w) => w.word)).size;
   // Tuntemattomat sanat (vähintään 3 kirjainta, ei numeroita) himmeällä katkoviivalla: napautus näyttää lähimmät
   // sanakirjan sanat (ocrRepairs) ja jokerihaun (ábmogis -> álbmogis). Ei automaattista korjausta: suomen sana ei
@@ -3074,11 +3080,69 @@ function layoutOcr(reset) {
 // Suuntapainike (Saame → Suomi), merkintätapa ja väri asetuksista
 // Merkinnän värit: saamelaislipun värit, samat kuin otsikon raidassa (styles.css: .stripe)
 const OCR_COLORS = ["#e11d48", "#facc15", "#2563eb", "#16a34a"];
+// Kielilista sirun alle: kuvan kieli tai käännöskieli; valittu merkitty, norjan kohdalla "pohjoissaamen kautta"
+function openOcrLangMenu(kind) {
+  const menu = $("ocr-langs"), chip = $(kind === "from" ? "ocr-from" : "ocr-to");
+  const codes = kind === "from" ? ocrSources() : ocrTargets(settings.ocrFrom);
+  const cur = kind === "from" ? settings.ocrFrom : ocrTo();
+  menu.innerHTML = codes.map((c) => `<button role="option" data-${kind}="${c}" class="ocr-mi${c === cur ? " active" : ""}" aria-selected="${c === cur}">` +
+    `<span>${esc(ocrLangName(c))}${kind === "to" && settings.ocrFrom === "smn" && c === "nob" ? `<small>${esc(t("ocrViaSmeShort"))}</small>` : ""}</span>` +
+    `${c === cur ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>` : ""}</button>`).join("");
+  menu.dataset.kind = kind;
+  menu.hidden = false;
+  // Sirun alle, mutta ei näytön reunan yli (käännöskielen sirun lista oikealla)
+  const room = menu.offsetParent ? menu.offsetParent.clientWidth : innerWidth;
+  menu.style.left = `${Math.max(0, Math.min(chip.offsetLeft, room - menu.offsetWidth))}px`;
+}
+function toggleOcrLangMenu(kind) {
+  $("ocr-style").hidden = true;
+  if (!$("ocr-langs").hidden && $("ocr-langs").dataset.kind === kind) { $("ocr-langs").hidden = true; return; }
+  openOcrLangMenu(kind);
+}
+// Kielten vaihto: kuvan kielen muutos hakee sanat uudelleen, käännöskielen muutos vain kuplan tekstin
+function setOcrLangs(from, to) {
+  const fromChanged = from !== settings.ocrFrom;
+  settings.ocrFrom = from;
+  settings.ocrTo = ocrTargets(from).includes(to) ? to : "";
+  saveSettings();
+  applyOcrLook();
+  if (!ocr) return;
+  if (fromChanged) { ocr.autoDir = false; showOcrOffer(false); findOcrWords(); return; }
+  for (const w of ocr.words) { w.gloss = null; w.cands = null; }
+  if (ocr.picked != null) pickOcrWord(ocr.picked);
+}
+// ⇄: pohjoissaame -> suomi/norja vaihtuu suomi/norja -> pohjoissaame ja päinvastoin; pohjoissaame <-> inari
+function swapOcrLangs() {
+  const from = settings.ocrFrom, to = ocrTo();
+  if (from === "sme") return to === "smn" ? setOcrLangs("smn", "sme") : setOcrLangs("ui", "sme");
+  if (from === "ui") return setOcrLangs("sme", settings.lang);
+  return to === "sme" ? setOcrLangs("sme", "smn") : setOcrLangs("ui", "sme");
+}
+// Tarjous: kuvassa on inarinsaamea, mutta se ei ole käytössä (Ei nyt = ei kysytä uudelleen tämän käynnistyksen aikana)
+let smnOfferDeclined = false;
+function showOcrOffer(on) {
+  const el = $("ocr-offer");
+  if (!on) { el.hidden = true; return; }
+  el.innerHTML = `<span class="ocr-offer-text">${esc(t("ocrSmnOffer"))}</span><span class="ocr-offer-actions">` +
+    `<button data-offer="no">${esc(t("ocrNotNow"))}</button><button data-offer="yes" class="primary">${esc(t("ocrEnable"))}</button></span>`;
+  el.hidden = false;
+}
+function enableSmnFromOcr() {
+  if (!settings.extraLangs.includes("smn")) settings.extraLangs = [...settings.extraLangs, "smn"];
+  saveSettings();
+  renderExtraLangs();
+  showOcrOffer(false);
+  setOcrLangs("smn", "");
+}
+
 // Kuvan kieli (mistä) ja käännöskieli (mihin): pohjoissaame -> suomi/norja (käännöskieli) tai inari;
 // inari -> suomi, pohjoissaame tai norja (pohjoissaamen kautta); suomi/norja -> pohjoissaame
-const ocrSources = () => ["sme", ...(hasSmn() ? ["smn"] : []), "ui"];
+// Inarinsaame valittavissa vain, kun se on otettu käyttöön asetuksista (Muut kielet); tunnistus kokeilee sitä silti ja
+// tarjoaa käyttöönottoa (showOcrOffer)
+const smnOn = () => hasSmn() && settings.extraLangs.includes("smn");
+const ocrSources = () => ["sme", ...(smnOn() ? ["smn"] : []), "ui"];
 function ocrTargets(from) {
-  if (from === "sme") return [settings.lang, ...(hasSmn() ? ["smn"] : [])];
+  if (from === "sme") return [settings.lang, ...(smnOn() ? ["smn"] : [])];
   if (from === "smn") return ["fin", "sme", "nob"];
   return ["sme"];
 }
@@ -3089,17 +3153,14 @@ function ocrTo() {
 }
 const ocrLangName = (code) => (code === "ui" ? t("ocrLangs")[settings.lang] : t("ocrLangs")[code]);
 function applyOcrLook() {
-  // Nuoli alas: painike avaa valikon (ennen vaihtoikoni, kun suuntia oli kaksi)
-  $("ocr-dir").innerHTML = `<span>${esc(ocrLangName(settings.ocrFrom))} → ${esc(ocrLangName(ocrTo()))}</span>` +
-    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
-  $("ocr-dir").setAttribute("aria-haspopup", "true");
-  const langBtn = (kind, code, active) => `<button data-${kind}="${code}"${active ? ' class="active"' : ""}>${esc(ocrLangName(code))}</button>`;
-  $("ocr-langs").innerHTML = `<div class="ocr-langs-head">${esc(t("ocrFromLabel"))}</div>` +
-    `<div class="lang-switch ocr-seg">${ocrSources().map((c) => langBtn("from", c, c === settings.ocrFrom)).join("")}</div>` +
-    `<div class="ocr-langs-head">${esc(t("ocrToLabel"))}</div>` +
-    `<div class="lang-switch ocr-seg">${ocrTargets(settings.ocrFrom).map((c) => langBtn("to", c, c === ocrTo())).join("")}</div>` +
-    (settings.ocrFrom === "smn" && ocrTo() === "nob" ? `<div class="ocr-langs-note">${esc(t("ocrViaSme"))}</div>` : "");
-  $("ocr-dir").title = t("ocrDirTitle");
+  // Inari poistettu käytöstä asetuksista: kuvan kieli takaisin pohjoissaameksi (vain kun tietokanta on ladattu)
+  if (db && settings.ocrFrom === "smn" && !smnOn()) { settings.ocrFrom = "sme"; saveSettings(); }
+  const chev = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
+  $("ocr-from").innerHTML = `<span>${esc(ocrLangName(settings.ocrFrom))}</span>${chev}`;
+  $("ocr-to").innerHTML = `<span>${esc(ocrLangName(ocrTo()))}</span>${chev}`;
+  $("ocr-from").setAttribute("aria-label", `${t("ocrFromLabel")}: ${ocrLangName(settings.ocrFrom)}`);
+  $("ocr-to").setAttribute("aria-label", `${t("ocrToLabel")}: ${ocrLangName(ocrTo())}`);
+  if (!$("ocr-langs").hidden) openOcrLangMenu($("ocr-langs").dataset.kind);
   $("ocr-style-btn").innerHTML = "<span></span>";
   $("ocr-style-btn").style.setProperty("--mark-preview", settings.ocrColor);
   const photo = $("ocr-photo");
@@ -3569,26 +3630,21 @@ function bindOcr() {
   $("ocr-swatches").innerHTML = OCR_COLORS.map((c) =>
     `<button data-color="${c}" style="--c:${c}" aria-label="${c}"></button>`).join("");
   const relook = () => { saveSettings(); if (ocr) layoutOcr(false); else applyOcrLook(); };
-  // Suuntapainike avaa kielivalikon: kuvan kieli ja käännöskieli. Kuvan kielen vaihto hakee sanat uudelleen,
-  // käännöskielen vaihto vain kuplan tekstin.
-  $("ocr-dir").onclick = (e) => { e.stopPropagation(); $("ocr-style").hidden = true; $("ocr-langs").hidden = !$("ocr-langs").hidden; };
+  // Sirut avaavat kielilistan sirun alle; vaihtopainike kääntää suunnan
+  $("ocr-from").onclick = (e) => { e.stopPropagation(); toggleOcrLangMenu("from"); };
+  $("ocr-to").onclick = (e) => { e.stopPropagation(); toggleOcrLangMenu("to"); };
+  $("ocr-swap").onclick = (e) => { e.stopPropagation(); $("ocr-langs").hidden = true; swapOcrLangs(); };
   $("ocr-langs").onclick = (e) => {
     e.stopPropagation();
     const from = e.target.closest("[data-from]")?.dataset.from, to = e.target.closest("[data-to]")?.dataset.to;
     if (!from && !to) return;
-    if (from && from !== settings.ocrFrom) {
-      settings.ocrFrom = from;
-      saveSettings();
-      applyOcrLook();
-      if (ocr) { ocr.autoDir = false; findOcrWords(); }
-      return;
-    }
-    if (to) {
-      settings.ocrTo = to;
-      saveSettings();
-      applyOcrLook();
-      if (ocr) { for (const w of ocr.words) { w.gloss = null; w.cands = null; } if (ocr.picked != null) pickOcrWord(ocr.picked); }
-    }
+    $("ocr-langs").hidden = true;
+    setOcrLangs(from || settings.ocrFrom, to || settings.ocrTo);
+  };
+  $("ocr-offer").onclick = (e) => {
+    const b = e.target.closest("[data-offer]");
+    if (!b) return;
+    if (b.dataset.offer === "yes") enableSmnFromOcr(); else { smnOfferDeclined = true; showOcrOffer(false); }
   };
   $("ocr-style-btn").onclick = (e) => { e.stopPropagation(); $("ocr-style").hidden = !$("ocr-style").hidden; };
   $("ocr-style-seg").onclick = (e) => {
@@ -3601,7 +3657,7 @@ function bindOcr() {
   };
   $("ocr-view").addEventListener("click", (e) => {
     if (!e.target.closest("#ocr-style, #ocr-style-btn")) $("ocr-style").hidden = true;
-    if (!e.target.closest("#ocr-langs, #ocr-dir")) $("ocr-langs").hidden = true;
+    if (!e.target.closest("#ocr-langs, #ocr-from, #ocr-to")) $("ocr-langs").hidden = true;
   });
   applyOcrLook();
   bindOcrGestures();

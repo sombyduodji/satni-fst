@@ -901,6 +901,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
   .ocr-bar { flex-wrap: wrap; }
   .ocr-style-btn { margin-left: 0; }
   .ocr-style { left: 0; right: auto; }
+  .ocr-lang { flex-wrap: wrap; }
 }
 .ocr-photo { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 .ocr-photo img { display: block; width: 100%; height: 100%; pointer-events: none; user-select: none; }
@@ -951,7 +952,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 /* Matala kuva-alue (puhelin vaakatasossa): kupla mahtuu alueeseen ja sen rivit vierivät (app.js: placeOcrBubble) */
 .ocr-bubble.tight .b-text { max-height: var(--bmax); overflow-y: auto; overscroll-behavior: contain; }
 /* Suunta ja merkintätapa: pilleri ja paletti kuvan yläpuolella */
-.ocr-bar { position: relative; display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.ocr-bar { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
 .ocr-dir, .ocr-style-btn {
   display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border); background: var(--surface);
   color: var(--text); border-radius: 99px; padding: 6px 14px; font: inherit; font-weight: 600; cursor: pointer;
@@ -965,16 +966,45 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
   box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
 }
 .ocr-style[hidden] { display: none; }
-/* Kielivalikko suuntapainikkeen alla: kuvan kieli ja käännöskieli */
+/* Kielet: kuvan kieli ▾ ⇄ käännös ▾ (kuten käännössovelluksissa) ja lista sirun alla */
+.ocr-lang { display: flex; align-items: center; gap: 6px; min-width: 0; }
+/* Puhelimessa kielet omalla rivillään, kääntö ja merkintätapa alla */
+@media (max-width: 600px) { .ocr-lang { flex: 1 1 100%; } }
+.ocr-chip {
+  display: inline-flex; align-items: center; gap: 4px; min-width: 0; padding: 7px 10px 7px 14px; border-radius: 99px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-weight: 600; cursor: pointer;
+}
+.ocr-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ocr-chip svg { width: 16px; height: 16px; flex: none; color: var(--muted); }
+.ocr-swap {
+  flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface);
+  color: var(--accent); display: grid; place-items: center; cursor: pointer; padding: 0;
+}
+.ocr-swap svg { width: 18px; height: 18px; }
+.ocr-swap:active { transform: rotate(180deg); transition: transform .2s; }
 .ocr-langs {
-  position: absolute; left: 0; top: calc(100% + 6px); z-index: 5; display: flex; flex-direction: column; gap: 6px;
-  padding: 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, .25); max-width: calc(100vw - 32px);
+  position: absolute; top: calc(100% + 6px); z-index: 5; display: flex; flex-direction: column; min-width: 180px; padding: 4px;
+  border-radius: 12px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
 }
 .ocr-langs[hidden] { display: none; }
-.ocr-langs-head { font-size: 13px; color: var(--muted); font-weight: 600; margin-top: 2px; }
-.ocr-langs .ocr-seg { display: flex; flex-wrap: wrap; }
-.ocr-langs-note { font-size: 12px; color: var(--muted); font-style: italic; }
+.ocr-mi {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 0; border-radius: 8px;
+  background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer;
+}
+.ocr-mi small { display: block; font-size: 12px; color: var(--muted); font-weight: 400; }
+.ocr-mi.active { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 600; }
+.ocr-mi svg { width: 18px; height: 18px; flex: none; }
+/* Tarjous: kuvassa on inarinsaamea, jota ei ole otettu käyttöön */
+.ocr-offer {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; padding: 10px 12px;
+  border-radius: 10px; border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent); font-size: 14px;
+}
+.ocr-offer[hidden] { display: none; }
+.ocr-offer-text { flex: 1 1 200px; }
+.ocr-offer-actions { display: flex; gap: 8px; margin-left: auto; }
+.ocr-offer button { border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 99px; padding: 6px 14px; font: inherit; cursor: pointer; }
+.ocr-offer button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
 .ocr-seg { float: none; }
 .ocr-seg button { padding: 5px 12px; font-size: 14px; }
 .ocr-swatches { display: flex; gap: 10px; justify-content: center; }

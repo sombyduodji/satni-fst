@@ -515,7 +515,12 @@
     </div>
     <!-- Suunta (saame -> käyttöliittymän kieli tai toisin päin) ja merkintätyyli (kehys/alleviivaus, väri) -->
     <div class="ocr-bar">
-      <button class="ocr-dir" id="ocr-dir"></button>
+      <!-- Kielet: kuvan kieli ▾ ⇄ käännös ▾ (app.js: applyOcrLook); valikko sirun alle -->
+      <div class="ocr-lang" role="group">
+        <button class="ocr-chip" id="ocr-from" aria-haspopup="listbox"></button>
+        <button class="ocr-swap" id="ocr-swap" data-i18n-title="ocrSwap" data-i18n-aria="ocrSwap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4L3 8l4 4"/><path d="M3 8h14"/><path d="M17 20l4-4-4-4"/><path d="M21 16H7"/></svg></button>
+        <button class="ocr-chip" id="ocr-to" aria-haspopup="listbox"></button>
+      </div>
       <!-- Kuvan kääntö 90 astetta vasemmalle / oikealle (Ocr.java: rotate) -->
       <button class="ocr-rotate" id="ocr-rotate-left" data-i18n-title="ocrRotateLeft" data-i18n-aria="ocrRotateLeft">⟲</button>
       <button class="ocr-rotate" id="ocr-rotate-right" data-i18n-title="ocrRotateRight" data-i18n-aria="ocrRotateRight">⟳</button>
@@ -531,6 +536,8 @@
       </div>
     </div>
     <p id="ocr-status" class="muted small"></p>
+    <!-- Kuvassa on kieli, jota ei ole otettu käyttöön (inarinsaame): tarjous ottaa se käyttöön (app.js: showOcrOffer) -->
+    <div id="ocr-offer" class="ocr-offer" role="status" hidden></div>
     <!-- Kuva koko jäljellä olevalla alueella: zoomaus kahdella sormella, siirto vetämällä. Sanakirjan sanat
          alleviivattuina; napautus avaa kuplan (sana, käännös, kuuntele), kuplan napautus sanakirjan. -->
     <div id="ocr-stage" class="ocr-stage">
