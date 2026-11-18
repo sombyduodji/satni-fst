@@ -2617,21 +2617,34 @@ function doubleOrder(chars, norm = (c) => c) {
     .sort((a, b) => rank(chars[a]) - rank(chars[b]) || a - b);
 }
 
-// --- Inarinsaame kuvassa (smn_data.py, export_web_data.py: smn_words, smn_forms, smn_cmp) ---
+// --- Inarin- ja koltansaame kuvassa (smn_data.py, sms_data.py; export_web_data.py: {kieli}_words, _forms, _cmp) ---
 // Muodot haetaan tarkkeettomalla asulla (fold), koska tunnistus lukee â:n, đ:n ja ŋ:n usein väärin (mäksid = mäksiđ,
 // mangâčyet = maŋgâčyet; Anarâš aavis -kuvakaappaukset 2026-11-18). Kuvan sanaa lähin oikea asu valitaan.
-const smnFold = (s) => (s || "").toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/đ/g, "d").replace(/ŋ/g, "n").replace(/ŧ/g, "t");
-const SMN_LOOKALIKES = { ...OCR_LOOKALIKES, "ấ": "â", "ầ": "â", "ắ": "â", "å": "š" };
+// Koltasta myös pehmennysmerkki ʹ pois (tunnistus lukee sen ':ksi tai jättää pois), ǥ -> g, ʒ -> z.
+const MINOR = ["smn", "sms"];
+const isMinor = (lang) => MINOR.includes(lang);
+function minorFold(lang, s) {
+  let f = (s || "").toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/đ/g, "d").replace(/ŋ/g, "n").replace(/ŧ/g, "t");
+  if (lang === "sms") f = f.replace(/[ʹ'’ʼ]/g, "").replace(/ǥ/g, "g").replace(/ʒ/g, "z");
+  return f;
+}
+const smnFold = (s) => minorFold("smn", s);
+const MINOR_LOOKALIKES = {
+  smn: { ...OCR_LOOKALIKES, "ấ": "â", "ầ": "â", "ắ": "â", "å": "š" },
+  sms: { ...OCR_LOOKALIKES, "'": "ʹ", "’": "ʹ", "ʼ": "ʹ", "ấ": "â", "ầ": "â" },
+};
 // Liitepartikkelit (lii-uv, mäksimgin): sana haetaan ilman niitä
-const SMN_CLITICS = ["uv", "ub", "gin", "ge", "han", "hân", "pâ", "pa"];
+const MINOR_CLITICS = { smn: ["uv", "ub", "gin", "ge", "han", "hân", "pâ", "pa"], sms: [] };
 // Ei ennen tietokannan latausta: kuvan kielivalikko piirretään jo käynnistyksessä (applyOcrLook), ja haku tyhjään
 // tietokantaan kaatoi koko käynnistyksen (DEV 2026111811, Samsung)
-const hasSmn = () => !!db && hasTable("smn_forms");
-function smnMatcher() {
-  const st = db.prepare("SELECT surface FROM smn_forms WHERE fold = ?");
+const hasMinor = (lang) => !!db && hasTable(`${lang}_forms`);
+const hasSmn = () => hasMinor("smn");
+function minorMatcher(lang) {
+  const st = db.prepare(`SELECT surface FROM ${lang}_forms WHERE fold = ?`);
+  const looks = MINOR_LOOKALIKES[lang], clitics = MINOR_CLITICS[lang], norm = (c) => minorFold(lang, c);
   const cache = new Map();
   const lookup = (w) => {
-    st.bind([smnFold(w)]);
+    st.bind([minorFold(lang, w)]);
     const out = new Set();
     while (st.step()) out.add(st.get()[0]);
     st.reset();
@@ -2640,19 +2653,19 @@ function smnMatcher() {
   const best = (w, cands) => {
     if (!cands.length) return null;
     if (cands.includes(w)) return w;
-    const chars = [...w], diff = (c) => [...c].reduce((n, ch, i) => n + (ch !== chars[i]), 0);
+    const chars = [...w], diff = (c) => [...c].reduce((n, ch, i) => n + (ch !== chars[i]), 0) + Math.abs([...c].length - chars.length);
     return cands.sort((a, b) => diff(a) - diff(b))[0];
   };
   const correct = (word) => {
-    const w = [...word.toLowerCase()].map((c) => SMN_LOOKALIKES[c] || c).join("");
-    if (w.length < 2) return null;
+    const w = [...word.toLowerCase()].map((c) => looks[c] || c).join("");
+    if ([...w].filter((c) => /\p{L}/u.test(c)).length < 2) return null;
     if (w.includes("-")) {
       const head = w.slice(0, w.lastIndexOf("-")), last = w.slice(w.lastIndexOf("-") + 1);
-      return SMN_CLITICS.includes(last) ? correct(head) : correct(last);
+      return clitics.includes(last) ? correct(head) : correct(last);
     }
     const hit = best(w, lookup(w));
     if (hit) return hit;
-    for (const c of SMN_CLITICS) {
+    for (const c of clitics) {
       if (w.length > c.length + 2 && w.endsWith(c)) {
         const h = best(w.slice(0, -c.length), lookup(w.slice(0, -c.length)));
         if (h) return h;
@@ -2661,7 +2674,7 @@ function smnMatcher() {
     // Kaksoiskirjain luettu yhdeksi (sáttá -> sátá, iärrás -> iärás, lijjii -> lijii, kevttim -> kevtim)
     const chars = [...w];
     if (chars.length >= 4 && chars.length <= 20) {
-      for (const i of doubleOrder(chars, smnFold)) {
+      for (const i of doubleOrder(chars, norm)) {
         const v = [...chars.slice(0, i + 1), chars[i], ...chars.slice(i + 1)].join("");
         const h = best(v, lookup(v));
         if (h) return h;
@@ -2671,33 +2684,36 @@ function smnMatcher() {
   };
   return { correct: (w) => { if (!cache.has(w)) cache.set(w, correct(w)); return cache.get(w); }, free: () => st.free() };
 }
-// Inarin yhdyssana, jota ei ole sanakirjassa (tiervâsvuotâtipšo = tiervâsvuotâ + tipšo): loppuosa on inarin
-// sana tai muoto, alkuosa yhdysmuoto (smn_cmp, oikoluvulla tarkistettu) tai substantiivin/adjektiivin perusmuoto tai
-// yksikön genetiivi, enintään kolme alkuosaa. Haku tarkkeettomana (tunnistuksen â/á/ä-virheet). Pisin loppuosa ensin.
-// Palauttaa [{stem, id}] (stem = kuvan kirjaimin, id = smn_words) tai null.
-function splitSmnCompound(word) {
-  const w = [...word.toLowerCase()].map((c) => SMN_LOOKALIKES[c] || c).join("");
-  if (w.length < 7 || !/^\p{L}+$/u.test(w) || !hasSmn()) return null;
-  const wf = smnFold(w);
-  if (wf.length !== w.length) return null;
+const smnMatcher = () => minorMatcher("smn");
+
+// Inarin/koltan yhdyssana, jota ei ole sanakirjassa (tiervâsvuotâtipšo = tiervâsvuotâ + tipšo): loppuosa on kielen
+// sana tai muoto, alkuosa yhdysmuoto ({kieli}_cmp, tarkistettu) tai substantiivin/adjektiivin perusmuoto tai yksikön
+// genetiivi, enintään kolme alkuosaa. Haku tarkkeettomana. Pisin loppuosa ensin. Palauttaa [{stem, id}] tai null.
+function splitMinorCompound(lang, word) {
+  const w = [...word.toLowerCase()].map((c) => MINOR_LOOKALIKES[lang][c] || c).join("");
+  if (w.length < 7 || !/^[\p{L}ʹ]+$/u.test(w) || !hasMinor(lang)) return null;
+  // Kirjainkohtainen fold, jotta palat vastaavat kuvan kirjaimia (koltan ʹ poistuu: osa kuuluu edelliseen kirjaimeen)
+  const map = [];
+  let wf = "";
+  [...w].forEach((ch, i) => { const f = minorFold(lang, ch); for (const c of f) { wf += c; map.push(i); } });
+  if (!wf.length) return null;
+  const orig = [...w], piece = (a, b) => orig.slice(map[a], b < wf.length ? map[b] : orig.length).join("");
   const subs = new Set();
   for (let i = 0; i < wf.length; i++) for (let j = i + 3; j <= wf.length; j++) subs.add(wf.slice(i, j));
   const list = [...subs], known = new Map(), left = new Map();
   for (let i = 0; i < list.length; i += 300) {
     const part = list.slice(i, i + 300), marks = part.map(() => "?").join(",");
     // Sama tarkkeeton asu useammalle sanalle (fáddáid / faddâ): kuvan kirjaimin täsmäävä ensin
-    for (const r of all(`SELECT fold, surface, word_id AS id FROM smn_forms WHERE fold IN (${marks}) ORDER BY word_id`, part)) {
-      const exact = r.surface === w.slice(wf.indexOf(r.fold), wf.indexOf(r.fold) + r.fold.length);
+    for (const r of all(`SELECT fold, surface, word_id AS id FROM ${lang}_forms WHERE fold IN (${marks}) ORDER BY word_id`, part)) {
+      const at = wf.indexOf(r.fold), exact = at >= 0 && r.surface === piece(at, at + r.fold.length);
       if (!known.has(r.fold) || (exact && !known.get(r.fold).exact)) known.set(r.fold, { id: r.id, exact });
     }
-    for (const r of all(`SELECT f.fold, MIN(f.word_id) AS id FROM smn_forms f JOIN tags t ON t.id = f.tag_id
-        JOIN smn_words s ON s.id = f.word_id WHERE f.fold IN (${marks}) AND t.tag IN ('Lemma', 'Sg+Nom', 'Sg+Gen', 'Attr')
+    for (const r of all(`SELECT f.fold, MIN(f.word_id) AS id FROM ${lang}_forms f JOIN tags t ON t.id = f.tag_id
+        JOIN ${lang}_words s ON s.id = f.word_id WHERE f.fold IN (${marks}) AND t.tag IN ('Lemma', 'Sg+Nom', 'Sg+Gen', 'Attr')
         AND s.pos IN ('N', 'A') GROUP BY f.fold`, part)) left.set(r.fold, r.id);
   }
-  for (let i = 0; i < list.length; i += 300) {
-    const part = list.slice(i, i + 300);
-    for (const r of all(`SELECT stem, word_id FROM smn_cmp WHERE stem IN (${part.map(() => "?").join(",")})`, part)) left.set(r.stem, r.word_id);
-  }
+  // Yhdysmuodot (tallennettu tarkkeineen) tarkkeettomina, kerran kielelle
+  for (const sub of list) { const id = minorCmp(lang).get(sub); if (id && !left.has(sub)) left.set(sub, id); }
   const leftParts = (a, b, depth) => {
     const s = wf.slice(a, b);
     if (left.has(s)) return [[a, b]];
@@ -2712,29 +2728,51 @@ function splitSmnCompound(word) {
   for (let i = 4; i <= wf.length - 3; i++) {
     if (!known.has(wf.slice(i))) continue;
     const head = leftParts(0, i, 0);
-    if (head) return [...head.map(([a, b]) => ({ stem: w.slice(a, b), id: left.get(wf.slice(a, b)) })), { stem: w.slice(i), id: known.get(wf.slice(i)).id }];
+    if (head) return [...head.map(([a, b]) => ({ stem: piece(a, b), id: left.get(wf.slice(a, b)) })), { stem: piece(i, wf.length), id: known.get(wf.slice(i)).id }];
   }
   return null;
 }
-
-// Inarin sanan rivit (perusmuoto, sanaluokka, suomennos, pohjoissaame) kuvan muodolle; perusmuoto ensin
-function smnRows(surface) {
-  return all(`SELECT DISTINCT w.id, w.lemma, w.pos, w.fin, w.sme FROM smn_forms f JOIN smn_words w ON w.id = f.word_id
-    WHERE f.fold = ? AND f.surface = ? ORDER BY (lower(w.lemma) = ?) DESC, w.id`, [smnFold(surface), surface, surface]);
-}
-// Inarin sanan käännös valitulla kielellä; norja pohjoissaamen sanan kautta (likimääräinen, ≈)
-function smnTranslation(row, to) {
-  // Sama sana kahdesta lähteestä eri merkkimuodossa (sámegiella, sámegiella) vain kerran
-  const uniq = (xs) => [...new Map(xs.map((x) => [x.normalize("NFC").toLowerCase(), x.normalize("NFC")])).values()];
-  if (to === "fin") return uniq(splitList(row.fin)).slice(0, 3).join(", ");
-  if (to === "sme") return uniq(splitList(row.sme)).slice(0, 3).join(", ");
-  const nob = [];
-  for (const sme of splitList(row.sme).slice(0, 2)) {
-    const r = all(`SELECT nob_translation AS t FROM dictionary WHERE lemma_fold = ? AND nob_translation != '' ORDER BY freq DESC LIMIT 1`, [fold(sme)])[0];
-    if (r) for (const x of splitList(r.t).slice(0, 2)) if (!nob.includes(x)) nob.push(x);
+const splitSmnCompound = (word) => splitMinorCompound("smn", word);
+const minorCmpCache = {};
+function minorCmp(lang) {
+  if (!minorCmpCache[lang]) {
+    minorCmpCache[lang] = new Map();
+    if (hasTable(`${lang}_cmp`)) for (const r of all(`SELECT stem, word_id FROM ${lang}_cmp`)) minorCmpCache[lang].set(minorFold(lang, r.stem), r.word_id);
   }
-  return nob.length ? "≈ " + nob.slice(0, 3).join(", ") : "";
+  return minorCmpCache[lang];
 }
+
+// Kielen sanan rivit (perusmuoto, sanaluokka, käännökset) kuvan muodolle; perusmuoto ensin
+function minorRows(lang, surface) {
+  return all(`SELECT DISTINCT w.* FROM ${lang}_forms f JOIN ${lang}_words w ON w.id = f.word_id
+    WHERE f.fold = ? AND f.surface = ? ORDER BY (lower(w.lemma) = ?) DESC, w.id`, [minorFold(lang, surface), surface, surface]);
+}
+const smnRows = (surface) => minorRows("smn", surface);
+// Käännös valitulla kielellä. Inari: norja pohjoissaamen kautta (≈). Koltta: norja suoraan, pohjoissaame suoraan tai
+// suomennoksen kautta (≈; dict-sms-mul:ssa pohjoissaame on vain noin 400 sanalle)
+function minorTranslation(lang, row, to) {
+  const uniq = (xs) => [...new Map(xs.map((x) => [x.normalize("NFC").toLowerCase(), x.normalize("NFC")])).values()];
+  const direct = uniq(splitList(row[to] || "")).slice(0, 3);
+  if (direct.length) return direct.join(", ");
+  if (lang === "smn" && to === "nob") {
+    const nob = [];
+    for (const sme of splitList(row.sme).slice(0, 2)) {
+      const r = all(`SELECT nob_translation AS t FROM dictionary WHERE lemma_fold = ? AND nob_translation != '' ORDER BY freq DESC LIMIT 1`, [fold(sme)])[0];
+      if (r) for (const x of splitList(r.t).slice(0, 2)) if (!nob.includes(x)) nob.push(x);
+    }
+    return nob.length ? "≈ " + nob.slice(0, 3).join(", ") : "";
+  }
+  if (lang === "sms" && to === "sme" && hasTable("fin_items")) {
+    const sme = [];
+    for (const f of splitList(row.fin).slice(0, 2)) {
+      for (const r of all(`SELECT d.sme_lemma FROM fin_items i JOIN dictionary d ON d.id = i.word_id WHERE i.item = ?
+          ORDER BY i.first, d.freq DESC LIMIT 2`, [f.replace(/\s*\(.*$/, "").toLowerCase()])) if (!sme.includes(r.sme_lemma)) sme.push(r.sme_lemma);
+    }
+    return sme.length ? "≈ " + sme.slice(0, 3).join(", ") : "";
+  }
+  return "";
+}
+const smnTranslation = (row, to) => minorTranslation("smn", row, to);
 
 function ocrCorrector() {
   const lemma = db.prepare("SELECT 1 FROM dictionary WHERE lemma_fold = ? LIMIT 1");
@@ -2842,13 +2880,13 @@ const uiRows = (word) => queryDatabase(word).filter((r) => r.rank < PREFIX_RANK 
 // Kuplan teksti. Saamesta: perusmuoto ja käännös käyttöliittymän kielellä; kuuntele lausuu kuvan sanan.
 // Suomesta/norjasta: saamennokset; kuuntele lausuu ensimmäisen saamennoksen.
 function ocrGloss(word, original = "") {
-  if (settings.ocrFrom === "smn") {
-    const to = ocrTo(), rows = smnRows(word);
-    const row = rows.find((r) => smnTranslation(r, to)) || rows[0];
+  if (isMinor(settings.ocrFrom)) {
+    const lang = settings.ocrFrom, to = ocrTo(), rows = minorRows(lang, word);
+    const row = rows.find((r) => minorTranslation(lang, r, to)) || rows[0];
     if (!row) return { trans: "", say: "" };
     const sme = splitList(row.sme)[0], fin = splitList(row.fin)[0];
     // Napautus avaa pohjoissaamen sanan sanakirjasta, tai haun suomennoksella, jos vastinetta ei ole
-    return { lemma: row.lemma.toLowerCase() !== word ? row.lemma : "", form: "", trans: smnTranslation(row, to), say: "",
+    return { lemma: row.lemma.toLowerCase() !== word ? row.lemma : "", form: "", trans: minorTranslation(lang, row, to), say: "",
       query: sme || (fin || "").replace(/\s*\(.*$/, "") || word };
   }
   if (settings.ocrFrom === "ui") {
@@ -2973,8 +3011,8 @@ function uiOcrVariants(word) {
 
 // Kuvan sanat valitun suunnan mukaan; suunnan vaihto laskee ne uudelleen samasta kuvasta
 function ocrMatches(r, from) {
-  if (from === "smn" && !hasSmn()) return [];
-  const corrector = from === "sme" ? ocrCorrector() : from === "smn" ? smnMatcher() : null;
+  if (isMinor(from) && !hasMinor(from)) return [];
+  const corrector = from === "sme" ? ocrCorrector() : isMinor(from) ? minorMatcher(from) : null;
   const cache = new Map();
   const match = (clean) => {
     if (clean.length < 2) return null;
@@ -3001,16 +3039,18 @@ function analyzeOcr() {
   const letterWords = r.words.filter((w) => /\p{L}{2}/u.test(w.clean));
   const skolt = letterWords.filter((w) => /[ʹǩǥõǯʒǨǦÕǮƷ]/u.test(w.t)).length;
   const isSkolt = skolt >= 3 && skolt >= letterWords.length * 0.08;
-  if (ocr.autoDir && r.words.length && !isSkolt) {
+  // Koltan aineisto mukana: koltta on yksi tunnistettavista kielistä; muuten vain ilmoitus
+  const skoltUnsupported = isSkolt && !hasMinor("sms");
+  if (ocr.autoDir && r.words.length && !skoltUnsupported) {
     let best = null;
-    const candidates = [...new Set([...ocrSources(), ...(hasSmn() ? ["smn"] : [])])];
+    const candidates = [...new Set([...ocrSources(), ...MINOR.filter(hasMinor)])];
     for (const other of candidates.filter((l) => l !== settings.ocrFrom)) {
       const alt = ocrMatches(r, other), sami = other !== "ui" && settings.ocrFrom !== "ui";
       if (count(alt) >= 3 && count(alt) >= (sami ? 1.5 : 3) * count(words) && (!best || count(alt) > count(best.words))) best = { lang: other, words: alt };
     }
-    if (best && best.lang === "smn" && !smnOn()) {
-      // Inari ei käytössä: ei vaihtoa, vaan tarjous kuvan yläpuolella
-      if (!smnOfferDeclined) ocr.offerSmn = true;
+    if (best && isMinor(best.lang) && !minorOn(best.lang)) {
+      // Kieli ei käytössä: ei vaihtoa, vaan tarjous kuvan yläpuolella
+      if (!offerDeclined[best.lang]) ocr.offerLang = best.lang;
     } else if (best) {
       settings.ocrFrom = best.lang;
       saveSettings();
@@ -3019,7 +3059,7 @@ function analyzeOcr() {
     }
   }
   ocr.autoDir = false;
-  showOcrOffer(!!ocr.offerSmn && !smnOn() && !smnOfferDeclined);
+  showOcrOffer(ocr.offerLang && !minorOn(ocr.offerLang) && !offerDeclined[ocr.offerLang] ? ocr.offerLang : null);
   applyOcrLook();
   const found = new Set(words.map((w) => w.word)).size;
   // Tuntemattomat sanat (vähintään 3 kirjainta, ei numeroita) himmeällä katkoviivalla: napautus näyttää lähimmät
@@ -3046,7 +3086,7 @@ function analyzeOcr() {
   ocr.words = [...words, ...unknown];
   ocr.picked = null;
   ocr.status = (!r.words.length ? t("ocrNoText") : found ? t("ocrFound", found) : t("ocrNoWords")) +
-    (switched ? ` · ${t("ocrDirSwitched")}` : "") + (isSkolt ? ` · ${t("ocrSkolt")}` : "");
+    (switched ? ` · ${t("ocrDirSwitched")}` : "") + (skoltUnsupported ? ` · ${t("ocrSkolt")}` : "");
   $("ocr-bubble").hidden = true;
   $("ocr-photo").innerHTML = `<img src="${r.image}" alt="">`
     + ocr.words.map((w, i) => `<div class="ocr-word${w.unknown ? " unknown" : ""}" data-i="${i}"></div>`).join("");
@@ -3086,7 +3126,8 @@ function openOcrLangMenu(kind) {
   const codes = kind === "from" ? ocrSources() : ocrTargets(settings.ocrFrom);
   const cur = kind === "from" ? settings.ocrFrom : ocrTo();
   menu.innerHTML = codes.map((c) => `<button role="option" data-${kind}="${c}" class="ocr-mi${c === cur ? " active" : ""}" aria-selected="${c === cur}">` +
-    `<span>${esc(ocrLangName(c))}${kind === "to" && settings.ocrFrom === "smn" && c === "nob" ? `<small>${esc(t("ocrViaSmeShort"))}</small>` : ""}</span>` +
+    `<span>${esc(ocrLangName(c))}${kind === "to" && settings.ocrFrom === "smn" && c === "nob" ? `<small>${esc(t("ocrViaSmeShort"))}</small>`
+      : kind === "to" && settings.ocrFrom === "sms" && c === "sme" ? `<small>${esc(t("ocrViaFinShort"))}</small>` : ""}</span>` +
     `${c === cur ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>` : ""}</button>`).join("");
   menu.dataset.kind = kind;
   menu.hidden = false;
@@ -3107,7 +3148,7 @@ function setOcrLangs(from, to) {
   saveSettings();
   applyOcrLook();
   if (!ocr) return;
-  if (fromChanged) { ocr.autoDir = false; showOcrOffer(false); findOcrWords(); return; }
+  if (fromChanged) { ocr.autoDir = false; showOcrOffer(null); findOcrWords(); return; }
   for (const w of ocr.words) { w.gloss = null; w.cands = null; }
   if (ocr.picked != null) pickOcrWord(ocr.picked);
 }
@@ -3116,45 +3157,52 @@ function swapOcrLangs() {
   const from = settings.ocrFrom, to = ocrTo();
   if (from === "sme") return to === "smn" ? setOcrLangs("smn", "sme") : setOcrLangs("ui", "sme");
   if (from === "ui") return setOcrLangs("sme", settings.lang);
-  return to === "sme" ? setOcrLangs("sme", "smn") : setOcrLangs("ui", "sme");
+  return to === "sme" ? setOcrLangs("sme", from === "smn" ? "smn" : settings.lang) : setOcrLangs("ui", "sme");
 }
-// Tarjous: kuvassa on inarinsaamea, mutta se ei ole käytössä (Ei nyt = ei kysytä uudelleen tämän käynnistyksen aikana)
-let smnOfferDeclined = false;
-function showOcrOffer(on) {
+// Tarjous: kuvassa on inarin- tai koltansaamea, mutta kieli ei ole käytössä (Ei nyt = ei kysytä uudelleen tämän
+// käynnistyksen aikana). Koltan käyttöönotto kulkee asetusten varoitusikkunan kautta (tarkistamaton aineisto).
+const offerDeclined = {};
+let pendingOcrLang = null;
+function showOcrOffer(lang) {
   const el = $("ocr-offer");
-  if (!on) { el.hidden = true; return; }
-  el.innerHTML = `<span class="ocr-offer-text">${esc(t("ocrSmnOffer"))}</span><span class="ocr-offer-actions">` +
+  if (!lang) { el.hidden = true; return; }
+  el.dataset.lang = lang;
+  el.innerHTML = `<span class="ocr-offer-text">${esc(t("ocrOffer")[lang])}</span><span class="ocr-offer-actions">` +
     `<button data-offer="no">${esc(t("ocrNotNow"))}</button><button data-offer="yes" class="primary">${esc(t("ocrEnable"))}</button></span>`;
   el.hidden = false;
 }
-function enableSmnFromOcr() {
-  if (!settings.extraLangs.includes("smn")) settings.extraLangs = [...settings.extraLangs, "smn"];
+function enableMinorFromOcr(lang) {
+  showOcrOffer(null);
+  if (lang === "sms") { pendingOcrLang = "sms"; openSkoltDialog(); return; }
+  if (!settings.extraLangs.includes(lang)) settings.extraLangs = [...settings.extraLangs, lang];
   saveSettings();
   renderExtraLangs();
-  showOcrOffer(false);
-  setOcrLangs("smn", "");
+  setOcrLangs(lang, "");
 }
 
 // Kuvan kieli (mistä) ja käännöskieli (mihin): pohjoissaame -> suomi/norja (käännöskieli) tai inari;
 // inari -> suomi, pohjoissaame tai norja (pohjoissaamen kautta); suomi/norja -> pohjoissaame
 // Inarinsaame valittavissa vain, kun se on otettu käyttöön asetuksista (Muut kielet); tunnistus kokeilee sitä silti ja
 // tarjoaa käyttöönottoa (showOcrOffer)
-const smnOn = () => hasSmn() && settings.extraLangs.includes("smn");
-const ocrSources = () => ["sme", ...(smnOn() ? ["smn"] : []), "ui"];
+// Koltta käytössä = asetusten koltansaamen kytkin (sanakorttien koltankieliset käännökset)
+const minorOn = (lang) => hasMinor(lang) && (lang === "sms" ? !!settings.skolt : settings.extraLangs.includes(lang));
+const smnOn = () => minorOn("smn");
+const ocrSources = () => ["sme", ...MINOR.filter(minorOn), "ui"];
 function ocrTargets(from) {
   if (from === "sme") return [settings.lang, ...(smnOn() ? ["smn"] : [])];
   if (from === "smn") return ["fin", "sme", "nob"];
+  if (from === "sms") return ["fin", "nob", "sme"];
   return ["sme"];
 }
 function ocrTo() {
   const ts = ocrTargets(settings.ocrFrom);
   if (ts.includes(settings.ocrTo)) return settings.ocrTo;
-  return settings.ocrFrom === "smn" ? (settings.lang === "nob" ? "nob" : "fin") : ts[0];
+  return isMinor(settings.ocrFrom) ? (settings.lang === "nob" ? "nob" : "fin") : ts[0];
 }
 const ocrLangName = (code) => (code === "ui" ? t("ocrLangs")[settings.lang] : t("ocrLangs")[code]);
 function applyOcrLook() {
   // Inari poistettu käytöstä asetuksista: kuvan kieli takaisin pohjoissaameksi (vain kun tietokanta on ladattu)
-  if (db && settings.ocrFrom === "smn" && !smnOn()) { settings.ocrFrom = "sme"; saveSettings(); }
+  if (db && isMinor(settings.ocrFrom) && !minorOn(settings.ocrFrom)) { settings.ocrFrom = "sme"; saveSettings(); }
   const chev = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
   $("ocr-from").innerHTML = `<span>${esc(ocrLangName(settings.ocrFrom))}</span>${chev}`;
   $("ocr-to").innerHTML = `<span>${esc(ocrLangName(ocrTo()))}</span>${chev}`;
@@ -3218,14 +3266,14 @@ function pickUnknownOcrWord(w) {
     w.parts = w.finParts.map((p) => p.word);
     w.cands = w.finParts.map((p) => ({ word: p.word, trans: ocrGloss(p.word).trans, lemma: "", part: true }));
   }
-  if (!w.cands && settings.ocrFrom === "smn") {
-    // Inarin yhdyssana: osat perusmuodossa käännöksineen; napautus avaa pohjoissaamen vastineen
-    const parts = splitSmnCompound(w.word), to = ocrTo();
+  if (!w.cands && isMinor(settings.ocrFrom)) {
+    // Inarin/koltan yhdyssana: osat perusmuodossa käännöksineen; napautus avaa pohjoissaamen vastineen
+    const lang = settings.ocrFrom, parts = splitMinorCompound(lang, w.word), to = ocrTo();
     w.parts = parts && parts.map((p) => p.stem);
     w.cands = (parts || []).map((p) => {
-      const row = all("SELECT id, lemma, pos, fin, sme FROM smn_words WHERE id = ?", [p.id])[0] || {};
+      const row = all(`SELECT * FROM ${lang}_words WHERE id = ?`, [p.id])[0] || {};
       const open = splitList(row.sme)[0] || (splitList(row.fin)[0] || "").replace(/\s*\(.*$/, "") || p.stem;
-      return { word: p.stem, open, trans: smnTranslation(row, to), lemma: row.lemma && row.lemma.toLowerCase() !== p.stem ? row.lemma : "", part: true };
+      return { word: p.stem, open, trans: minorTranslation(lang, row, to), lemma: row.lemma && row.lemma.toLowerCase() !== p.stem ? row.lemma : "", part: true };
     });
   }
   if (!w.cands) {
@@ -3644,7 +3692,8 @@ function bindOcr() {
   $("ocr-offer").onclick = (e) => {
     const b = e.target.closest("[data-offer]");
     if (!b) return;
-    if (b.dataset.offer === "yes") enableSmnFromOcr(); else { smnOfferDeclined = true; showOcrOffer(false); }
+    const lang = $("ocr-offer").dataset.lang;
+    if (b.dataset.offer === "yes") enableMinorFromOcr(lang); else { offerDeclined[lang] = true; showOcrOffer(null); }
   };
   $("ocr-style-btn").onclick = (e) => { e.stopPropagation(); $("ocr-style").hidden = !$("ocr-style").hidden; };
   $("ocr-style-seg").onclick = (e) => {
@@ -3879,7 +3928,12 @@ function bindEvents() {
     saveSettings();
     if (state.results.length) searchAgainKeepingWord();
   };
-  $("skolt-ok").onclick = () => { $("skolt-dlg").close(); setSkolt(true, $("skolt-via").checked); };
+  $("skolt-ok").onclick = () => {
+    $("skolt-dlg").close();
+    setSkolt(true, $("skolt-via").checked);
+    if (pendingOcrLang === "sms" && ocr && !$("ocr-view").hidden) setOcrLangs("sms", "");  // kuvan tarjouksesta
+    pendingOcrLang = null;
+  };
   $("report-btn").onclick = (e) => { e.preventDefault(); openReport(); };
   $("report-cancel").onclick = () => $("report-dlg").close();
   $("report-send").onclick = sendReport;

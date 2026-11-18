@@ -101,6 +101,14 @@ Inari Sámi inflection (photos, experimental): GiellaLT lang-smn
   dict-smn-sme (above). Norwegian is reached through North Sámi and is
   approximate.
 
+Skolt Sámi inflection (photos, experimental): GiellaLT lang-sms
+(Giellatekno, UiT)
+  Licence: GNU GPL version 3 (GPL-3.0.txt)
+  Source: https://github.com/giellalt/lang-sms
+  Skolt Sámi word forms for photo recognition were generated with it;
+  translations come from dict-sms-mul, dict-fin-sms and dict-nob-sms
+  (above). North Sámi mostly goes through Finnish and is approximate.
+
 Finnish inflection: GiellaLT lang-fin, based on the Omorfi lexicon
 (Tommi A. Pirinen, Inari Listenmaa, Ryan Johnson, Francis M. Tyers and
 others)

@@ -111,6 +111,14 @@ def smn_fold(text):
     return text.replace("đ", "d").replace("ŋ", "n").replace("ŧ", "t")
 
 
+def minority_fold(lang, text):
+    """Inarin/koltan sana tarkkeettomana (sama kuin web/app.js: minorFold). Koltasta myös ʹ ja ' pois, ǥ -> g, ʒ -> z."""
+    text = smn_fold(text)
+    if lang == "sms":
+        text = re.sub(r"[ʹ'’ʼ]", "", text).replace("ǥ", "g").replace("ʒ", "z")
+    return text
+
+
 def fold(text):
     return text.lower().translate(SEARCH_FOLD) if isinstance(text, str) else text
 
@@ -209,6 +217,11 @@ def main():
         CREATE TABLE smn_forms (fold TEXT, surface TEXT, word_id INTEGER, tag_id INTEGER,
                                 PRIMARY KEY (fold, surface, word_id, tag_id)) WITHOUT ROWID;
         CREATE TABLE smn_cmp (stem TEXT PRIMARY KEY, word_id INTEGER) WITHOUT ROWID;
+        -- Koltansaame samalla tavalla (sms_data.py); fold poistaa myös pehmennysmerkin ʹ (tunnistus lukee sen ':ksi tai jättää pois)
+        CREATE TABLE sms_words (id INTEGER PRIMARY KEY, lemma TEXT, pos TEXT, fin TEXT, nob TEXT, sme TEXT);
+        CREATE TABLE sms_forms (fold TEXT, surface TEXT, word_id INTEGER, tag_id INTEGER,
+                                PRIMARY KEY (fold, surface, word_id, tag_id)) WITHOUT ROWID;
+        CREATE TABLE sms_cmp (stem TEXT PRIMARY KEY, word_id INTEGER) WITHOUT ROWID;
         -- Saamen passiivi (sme_passive.py, GiellaLT lang-sme): lausekääntäjän suomen passiiville (maksetaan = máksojuvvo)
         CREATE TABLE sme_passive (word_id INTEGER, tag TEXT, surface TEXT, PRIMARY KEY (word_id, tag)) WITHOUT ROWID;
         -- Saamen sanamuotojen esiintymät sanakirjan esimerkkilauseissa: lausekääntäjä valitsee rinnakkaismuodoista
@@ -332,22 +345,29 @@ def main():
     dst.executemany("INSERT INTO sme_cmp VALUES (?,?)", cmp_rows)
     print(f"Saamen yhdyssanojen alkumuodot: {len(cmp_rows)}" if cmp_rows else "Saamen yhdyssanojen alkumuodot: oikoluku puuttuu, taulu tyhjä")
 
-    if src.execute("SELECT 1 FROM sqlite_master WHERE name = 'smn_forms'").fetchone():
-        dst.executemany("INSERT INTO smn_words VALUES (?,?,?,?,?)", src.execute("SELECT id, lemma, pos, fin, sme FROM smn_words ORDER BY id"))
+    for lang, cols in (("smn", "id, lemma, pos, fin, sme"), ("sms", "id, lemma, pos, fin, nob, sme")):
+        if not src.execute(f"SELECT 1 FROM sqlite_master WHERE name = '{lang}_forms'").fetchone():
+            print(f"{lang}: {lang}_forms puuttuu satni.db:stä (python3 {lang}_data.py)")
+            continue
+        dst.executemany(f"INSERT INTO {lang}_words VALUES ({','.join('?' * len(cols.split(',')))})",
+                        src.execute(f"SELECT {cols} FROM {lang}_words ORDER BY id"))
         tag_ids = {t: i for i, t in dst.execute("SELECT id, tag FROM tags")}
         next_id = max(tag_ids.values(), default=0) + 1
-        rows = []
-        for surface, wid, tag in src.execute("SELECT surface, word_id, tag FROM smn_forms"):
+        n, rows = 0, []  # paloittain: koko lista veisi satoja megatavuja muistia (14 Gt)
+        for surface, wid, tag in src.execute(f"SELECT surface, word_id, tag FROM {lang}_forms"):
             if tag not in tag_ids:
                 tag_ids[tag] = next_id
                 dst.execute("INSERT INTO tags VALUES (?,?)", (next_id, tag))
                 next_id += 1
-            rows.append((smn_fold(surface), surface, wid, tag_ids[tag]))
-        dst.executemany("INSERT OR IGNORE INTO smn_forms VALUES (?,?,?,?)", rows)
-        dst.executemany("INSERT INTO smn_cmp VALUES (?,?)", src.execute("SELECT stem, word_id FROM smn_cmp"))
-        print(f"Inarinsaame: {dst.execute('SELECT COUNT(*) FROM smn_words').fetchone()[0]} sanaa, {len(rows)} muotoa")
-    else:
-        print("Inarinsaame: smn_forms puuttuu satni.db:stä (python3 smn_data.py)")
+            rows.append((minority_fold(lang, surface), surface, wid, tag_ids[tag]))
+            if len(rows) >= 50000:
+                dst.executemany(f"INSERT OR IGNORE INTO {lang}_forms VALUES (?,?,?,?)", rows)
+                n += len(rows)
+                rows = []
+        dst.executemany(f"INSERT OR IGNORE INTO {lang}_forms VALUES (?,?,?,?)", rows)
+        rows = range(n + len(rows))
+        dst.executemany(f"INSERT INTO {lang}_cmp VALUES (?,?)", src.execute(f"SELECT stem, word_id FROM {lang}_cmp"))
+        print(f"{lang}: {dst.execute(f'SELECT COUNT(*) FROM {lang}_words').fetchone()[0]} sanaa, {len(rows)} muotoa")
 
     sms_rows = {(lang, fold(word), pos): words for lang, word, pos, words in skolt_data.rows(SCRIPT_DIR)}
     dst.executemany("INSERT INTO sms VALUES (?,?,?,?)", ((*k, v) for k, v in sms_rows.items()))

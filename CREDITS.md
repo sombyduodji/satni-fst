@@ -99,6 +99,12 @@ licensed under the [GNU General Public License v3.0](LICENSE). Compound-word sta
 speller (`giella-smn-speller`, through Voikko). [`smn_data.py`](smn_data.py) builds the tables; the analyser,
 generator and speller are build tools only. Norwegian is reached through the North Sámi translation and is approximate.
 
+Skolt Sámi in photos (Skolt Sámi → Finnish, Norwegian or North Sámi) works the same way: the Skolt dictionaries above
+(`dict-sms-mul`, `dict-fin-sms`, `dict-nob-sms`) and inflected forms and compound start forms from the Skolt Sámi
+analyser and generator of [giellalt/lang-sms](https://github.com/giellalt/lang-sms) (Debian package `giella-sms`, GPL-3.0),
+see [`sms_data.py`](sms_data.py). North Sámi is direct for about 400 words and otherwise goes through the Finnish
+translation (approximate).
+
 North Sámi compound start forms (*geaidno-* for *geaidnu*) are checked in the same way with the North Sámi speller
 (`giella-sme-speller`), see [`sme_compound.py`](sme_compound.py). Finnish compound start forms (*viranomais-*) are
 checked with Voikko, see [`fin_compound.py`](fin_compound.py).
