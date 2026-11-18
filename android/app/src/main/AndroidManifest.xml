@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Ääntäminen haetaan Divvunin puhepalvelusta -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -40,6 +41,22 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/ocr_paths" />
         </provider>
+        <!-- Ei käyttötilastoja Googlelle (verkkoyhteystarkistus, docs/verkkoyhteydet-2026-11-18.md):
+             1) WebView ei lähetä omia tilastojaan, vaikka laitteen diagnostiikkatietojen jako olisi päällä.
+             2) ML Kit (tekstintunnistus) tallentaa jokaisesta tunnistuksesta tapahtumia (pysyvä tunniste, laite, kesto,
+                kuvan koko) ja lähettäisi ne firebaselogging.googleapis.com:iin Googlen datatransport-kirjaston CCT-
+                taustapalvelulla. Palvelun rekisteröinti poistetaan, jolloin tapahtumilla ei ole lähetyskanavaa.
+                Kirjasto itse jää (ML Kit viittaa siihen suoraan), mutta se ei avaa yhteyksiä. -->
+        <meta-data
+            android:name="android.webkit.WebView.MetricsOptOut"
+            android:value="true" />
+        <service
+            android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+            tools:node="merge">
+            <meta-data
+                android:name="backend:com.google.android.datatransport.cct.CctBackendFactory"
+                tools:node="remove" />
+        </service>
     </application>
 
     <!-- Android 11+: kamerasovelluksen löytäminen (pakettien näkyvyys) -->

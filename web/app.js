@@ -2787,6 +2787,16 @@ async function findOcrWords() {
   try { analyzeOcr(); } finally { setOcrBusy(null); }
 }
 
+// Suomen- tai norjankielisen kuvan tunnistusvirheet: tekstintunnistus lukee ä:n usein á:ksi tai ă:ksi (Näytä -> Näytá,
+// vähemmän -> vähemmăn, käyttäjän kuva 2026-11-18). Jos sanaa ei löydy sellaisenaan, kokeillaan suomessa ä/ö ja muuten
+// pelkkä a/o.
+function uiOcrVariants(word) {
+  if (!/[áàâăãóòôõÁÀÂĂÃÓÒÔÕ]/.test(word)) return [];
+  const plain = word.replace(/[áàâăã]/g, "a").replace(/[ÁÀÂĂÃ]/g, "A").replace(/[óòôõ]/g, "o").replace(/[ÓÒÔÕ]/g, "O");
+  if (settings.lang !== "fin") return [plain];
+  return [word.replace(/[áàâăã]/g, "ä").replace(/[ÁÀÂĂÃ]/g, "Ä").replace(/[óòôõ]/g, "ö").replace(/[ÓÒÔÕ]/g, "Ö"), plain];
+}
+
 // Kuvan sanat valitun suunnan mukaan; suunnan vaihto laskee ne uudelleen samasta kuvasta
 function ocrMatches(r, from) {
   const corrector = from === "sme" ? ocrCorrector() : null;
@@ -2794,7 +2804,7 @@ function ocrMatches(r, from) {
   const match = (clean) => {
     if (clean.length < 2) return null;
     if (corrector) return corrector.correct(clean);
-    if (!cache.has(clean)) cache.set(clean, uiRows(clean).length ? clean.toLowerCase() : null);
+    if (!cache.has(clean)) cache.set(clean, [clean, ...uiOcrVariants(clean)].find((v) => uiRows(v).length)?.toLowerCase() || null);
     return cache.get(clean);
   };
   const words = r.words.map((w) => ({ ...w, word: match(w.clean) })).filter((w) => w.word);
@@ -2825,7 +2835,9 @@ function analyzeOcr() {
   // sanakirjan sanat (ocrRepairs) ja jokerihaun (ábmogis -> álbmogis). Ei automaattista korjausta: suomen sana ei
   // muutu saameksi kysymättä (rasismi, valssi).
   const at = new Set(words.map((w) => `${w.cx},${w.cy}`));
-  const unknown = r.words.filter((w) => !at.has(`${w.cx},${w.cy}`) && /^[\p{L}-]+$/u.test(w.clean) && /\p{L}{3}/u.test(w.clean))
+  // Vain saamesta: suomesta/norjasta lähimmät sanat ja yhdyssanan jako eivät toimi, ja saamenkielisessä kuvassa
+  // jokainen saamen sana näkyisi katkoviivalla (käyttäjän kuva 2026-11-18, Suomi -> Saame).
+  const unknown = settings.ocrFrom !== "sme" ? [] : r.words.filter((w) => !at.has(`${w.cx},${w.cy}`) && /^[\p{L}-]+$/u.test(w.clean) && /\p{L}{3}/u.test(w.clean))
     .map((w) => ({ ...w, word: w.clean.toLowerCase(), unknown: true }));
   ocr.words = [...words, ...unknown];
   ocr.picked = null;
