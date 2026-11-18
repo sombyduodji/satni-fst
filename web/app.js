@@ -413,6 +413,9 @@ function setUiLanguage(code) {
   settings.lang = UI_LANGUAGES[code].translationLang;
   saveSettings();
   if (ngramDb && settings.exp.ocr && window.SatniOcr) loadNgram();  // sanaparit uuden kielen mukaan
+  // Kuvan sanojen käännökset uudella kielellä (Nothing Phone 2026-11-18: norjaksi vaihdon jälkeen lause jäi suomeksi)
+  if (ocr?.words) for (const w of ocr.words) { w.gloss = null; w.cands = null; }
+  if (sent && sent.solo == null && sent.rIndex != null && !$("sent-view").hidden) openSentView(sent.rIndex);
   applyStaticTexts();
   applyExperimental();
   renderSidebar();
@@ -4439,7 +4442,7 @@ function sentCutout(tok, scale = 1) {
 }
 function openSentView(rIndex) {
   ocr.sentChoice ||= {};
-  sent = { toks: sentTokens(ocrSentenceAround(rIndex)), sheet: null };
+  sent = { toks: sentTokens(ocrSentenceAround(rIndex)), sheet: null, rIndex };
   renderSentView();
   $("sent-view").hidden = false;
 }
