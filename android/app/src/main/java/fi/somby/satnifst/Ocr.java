@@ -121,6 +121,29 @@ final class Ocr {
         return true;
     }
 
+    /** Vain kehitysversiossa (debuggable): kuvatiedosto sovelluksen omasta kansiosta (Android/data/…/files/ocrbench)
+     *  tunnistetaan ilman kuvanvalitsinta. Tunnistuksen testipenkki ajaa näin satoja kuvia (docs, ocrbench). */
+    @JavascriptInterface
+    public void scanPath(String name) {
+        if ((activity.getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) == 0
+                || name == null || name.contains("/") || name.contains("..")) {
+            sendError("image");
+            return;
+        }
+        File dir = activity.getExternalFilesDir("ocrbench");
+        File file = dir == null ? null : new File(dir, name);
+        worker.execute(() -> {
+            Bitmap bitmap;
+            try {
+                bitmap = load(Uri.fromFile(file));
+            } catch (IOException | RuntimeException e) {
+                sendError("image");
+                return;
+            }
+            recognize(bitmap, false);
+        });
+    }
+
     /** Web-näkymän kääntöpainikkeet: viimeisin kuva käännettynä (90 = myötäpäivään) ja uusi tunnistus. */
     @JavascriptInterface
     public void rotate(int degrees) {
