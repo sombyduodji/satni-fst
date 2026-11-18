@@ -2755,7 +2755,7 @@ function minorMatcher(lang) {
       }
     }
     // Sumea haku: useampi kaksoiskirjain ja väärin luettu yhdyssana (osat erikseen ocrMatches -> compound)
-    if (chars.length >= 5) {
+    if (chars.length >= 5 && !(/^\p{Lu}/u.test(word) && chars.length < 10)) {
       fuzzy ||= minorFuzzySearch(lang);
       const r = fuzzy.search(w);
       if (r && !r.parts) return r.word;
@@ -2967,7 +2967,8 @@ function ocrCorrector() {
     }
     // Viimeisenä sumea haku (useampi tarke ja tuplaus yhdessä: vattisvuodat -> váttisvuođat); yhdyssanat erikseen
     // (ocrMatches -> compound), koska niitä ei ole sanakirjassa sellaisinaan
-    if (w.length >= 5) {
+    // Lyhyt isolla alkava sana on yleensä nimi: ei sumeaa hakua (OnePlus 2026-11-18: kuvan haku 1,9 s)
+    if (w.length >= 5 && !(/^\p{Lu}/u.test(word) && w.length < 10)) {
       fuzzy ||= ocrFuzzySearch();
       const r = fuzzy.search(w);
       if (r && !r.parts) return r.word;
@@ -3292,7 +3293,8 @@ function ocrMatches(r, from) {
   if (corrector) {
     for (let i = 0; i + 1 < r.words.length; i++) {
       const a = r.words[i], b = r.words[i + 1];
-      if (!a.clean || !b.clean || a.clean === b.clean || !/^\p{L}+$/u.test(a.clean) || !/^\p{Ll}\p{L}*$/u.test(b.clean)) continue;
+      // Vain pienellä alkavat palat: isolla alkava on yleensä nimi, ja jokainen kokeilu ajaa sumean haun (hidas)
+      if (!a.clean || !b.clean || a.clean === b.clean || !/^\p{Ll}\p{L}*$/u.test(a.clean) || !/^\p{Ll}\p{L}*$/u.test(b.clean)) continue;
       // Seuraavalla rivillä vasemmalla, tai samalla rivillä kapealla välillä (otsikon iso fontti: buresveadj inguovllu)
       const nextLine = b.cy > a.cy + (a.h || 10) * 0.6 && b.cx < a.cx;
       const sameLine = Math.abs(b.cy - a.cy) < (a.h || 10) * 0.4 && a.w && b.w && b.cx > a.cx && (b.cx - b.w / 2) - (a.cx + a.w / 2) < (a.h || 10) * 0.6;
@@ -3769,7 +3771,10 @@ function sentTokens(raw) {
     const w = ocr.words.find((x) => x.cx === r.cx && x.cy === r.cy);
     const prev = n > 0 ? (rows[n - 1].clean || "").toLowerCase() : "";
     const pw = n > 0 ? ocr.words.find((x) => x.cx === rows[n - 1].cx && x.cy === rows[n - 1].cy) : null;
-    const prevLemma = pw?.gloss?.lemma || pw?.word || prev;
+    // Apuverbi myös kahden sanan päässä (sáhttá dál leat = voi nyt olla; esimerkkilausekoe: ovat -> olla)
+    const pw2 = n > 1 ? ocr.words.find((x) => x.cx === rows[n - 2].cx && x.cy === rows[n - 2].cy) : null;
+    const lem = (x) => x?.gloss?.lemma || x?.word || "";
+    const prevLemma = SME_MODAL.has(lem(pw2)) && !SME_MODAL.has(lem(pw)) ? lem(pw2) : pw?.gloss?.lemma || pw?.word || prev;
     const punct = (r.t.match(/[.,!?:;)"”»]+$/) || [""])[0];
     const tok = { t: r.t, clean: r.clean, cx: r.cx, cy: r.cy, w: r.w, h: r.h, a: r.a, punct, word: w ? w.word : (r.clean || r.t).toLowerCase() };
     const cap = /^\p{Lu}/u.test(r.clean || "");
@@ -4035,6 +4040,15 @@ function sentContext(toks) {
     if (key && c.f[key] && (amb || key === "Sg+Par" || key === "Pl+Ine" || single)) {
       put(tok, (c.prefix || "") + c.f[key] + (key !== "Pl+Ine" && c.tags.some((t) => t.endsWith("Com")) ? " kanssa" : ""));
     }
+  });
+  // Pronomini objektina verbin jälkeen: partitiivi (oidnen su = näin hänet/häntä; esimerkkilausekoe: hänen -> häntä 17,
+  // sinun -> sinua 10, sen -> sitä 7), ei substantiivin edellä (su viessu = hänen talonsa)
+  toks.forEach((tok, i) => {
+    const c = tok.ctx;
+    if (c?.pos !== "Pron" || tok.fixed || !(c.tags || []).some((t) => /(^|\+)Acc$/.test(t)) || !(c.tags || []).some((t) => /(^|\+)Gen$/.test(t))) return;
+    if (["N", "A", "Num"].includes(toks[i + 1]?.ctx?.pos) || !toks.slice(Math.max(0, i - 3), i).some((t) => t.ctx?.pos === "V")) return;
+    const par = (tok.opts || []).find((o) => /^[\p{L}]+(a|ä)$/u.test(o) && !/^(se|hän|tämä|tuo|minä|sinä|me|te|he)$/.test(o));
+    if (par) { tok.opts = [par, ...tok.opts.filter((o) => o !== par)]; tok.choice = 0; }
   });
   // Adjektiivi seuraavan substantiivin muodossa (laajat ongelmat, isossa talossa)
   toks.forEach((tok, i) => {
