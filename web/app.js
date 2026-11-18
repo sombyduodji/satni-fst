@@ -2837,7 +2837,14 @@ function analyzeOcr() {
   const at = new Set(words.map((w) => `${w.cx},${w.cy}`));
   // Vain saamesta: suomesta/norjasta lähimmät sanat ja yhdyssanan jako eivät toimi, ja saamenkielisessä kuvassa
   // jokainen saamen sana näkyisi katkoviivalla (käyttäjän kuva 2026-11-18, Suomi -> Saame).
-  const unknown = settings.ocrFrom !== "sme" ? [] : r.words.filter((w) => !at.has(`${w.cx},${w.cy}`) && /^[\p{L}-]+$/u.test(w.clean) && /\p{L}{3}/u.test(w.clean))
+  // Suomesta: sanakirjasta puuttuva yhdyssana, jonka osat löytyvät (viranomaistiedote), katkoviivalla; napautus
+  // näyttää osat saamennoksineen. Muut tuntemattomat suomen sanat jäävät merkitsemättä.
+  const finCompounds = settings.ocrFrom === "ui" && settings.lang === "fin"
+    ? r.words.filter((w) => !at.has(`${w.cx},${w.cy}`) && /^\p{L}{7,}$/u.test(w.clean))
+      .map((w) => { const finParts = splitFinCompound(w.clean); return finParts && { ...w, word: w.clean.toLowerCase(), unknown: true, finParts }; })
+      .filter(Boolean)
+    : [];
+  const unknown = settings.ocrFrom !== "sme" ? finCompounds : r.words.filter((w) => !at.has(`${w.cx},${w.cy}`) && /^[\p{L}-]+$/u.test(w.clean) && /\p{L}{3}/u.test(w.clean))
     .map((w) => ({ ...w, word: w.clean.toLowerCase(), unknown: true }));
   ocr.words = [...words, ...unknown];
   ocr.picked = null;
@@ -2934,6 +2941,11 @@ const EDIT_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
   stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>`;
 function pickUnknownOcrWord(w) {
   const bubble = $("ocr-bubble");
+  if (!w.cands && w.finParts) {
+    // Suomen yhdyssana: osat perusmuodossa saamennoksineen (viranomainen = eiseváldi …, tiedote = dieđáhus …)
+    w.parts = w.finParts.map((p) => p.word);
+    w.cands = w.finParts.map((p) => ({ word: p.word, trans: ocrGloss(p.word).trans, lemma: "", part: true }));
+  }
   if (!w.cands) {
     w.cands = settings.ocrFrom === "sme" ? ocrRepairs(w.word, /^\p{Lu}/u.test(w.clean)) : [];
     // Yhdyssana, jota ei ole sanakirjassa: osat omille riveilleen (almmustahttin + ortnega)
@@ -2957,6 +2969,45 @@ function pickUnknownOcrWord(w) {
 // Yhden kirjaimen korjaukset (puuttuva, väärä tai ylimääräinen kirjain) saamen sanoiksi ja muodoiksi; yleisin sana
 // ensin. Korpuskoe 2026-11-17: pudotetusta kirjaimesta 69 % ainoa ehdokas ja oikea, 23 % oikea ehdokkaiden joukossa.
 const OCR_ALPHABET = [..."abcdefghijklmnopqrstuvwyzáčđŋšŧžåäöâ"];
+// Suomen yhdyssana, jota ei ole sanakirjassa (viranomaistiedote = viranomainen + tiedote): loppuosa on suomen sana tai
+// sen taivutusmuoto, jolla on saamennos (uiRows), alkuosa Voikolla tarkistettu yhdyssanan alkumuoto (fin_cmp:
+// viranomais -> viranomainen, kansan -> kansa) tai kaksi-kolme sellaista peräkkäin (tieto + suoja + seloste).
+// Pisin loppuosa ensin. Palauttaa [{stem, word}] (word = perusmuoto) tai null.
+function splitFinCompound(word) {
+  const w = word.toLowerCase();
+  if (w.length < 7 || !/^\p{L}+$/u.test(w) || !hasTable("fin_cmp")) return null;
+  const subs = new Set();
+  for (let i = 0; i < w.length; i++) for (let j = i + 2; j <= w.length - 3; j++) subs.add(w.slice(i, j));
+  const list = [...subs], left = new Map();
+  for (let i = 0; i < list.length; i += 400) {
+    const part = list.slice(i, i + 400);
+    for (const r of all(`SELECT stem, word FROM fin_cmp WHERE stem IN (${part.map(() => "?").join(",")})`, part)) {
+      if (!left.has(r.stem)) left.set(r.stem, r.word);
+    }
+  }
+  if (!left.size) return null;
+  const leftParts = (s, depth) => {
+    if (left.has(s)) return [s];
+    if (depth >= 2) return null;
+    for (let i = s.length - 2; i >= 2; i--) {
+      if (!left.has(s.slice(i))) continue;
+      const head = leftParts(s.slice(0, i), depth + 1);
+      if (head) return [...head, s.slice(i)];
+    }
+    return null;
+  };
+  for (let i = 2; i <= w.length - 3; i++) {
+    const head = leftParts(w.slice(0, i), 0);
+    if (!head) continue;
+    // Loppuosa on substantiivi tai adjektiivi (saamennos N/A): suomen yhdyssana päättyy niihin, ja verbinmuoto
+    // jakaisi taivutettuja sanoja väärin (kuva + tulla, kirja + imin, tyypillis + esti; Voikko-koe 2026-11-18)
+    const right = w.slice(i), rows = uiRows(right).filter((r) => r.pos === "N" || r.pos === "A");
+    if (!rows.length) continue;
+    return [...head.map((p) => ({ stem: p, word: left.get(p) })), { stem: right, word: rows.find((r) => r.via)?.via.base || right }];
+  }
+  return null;
+}
+
 // Yhdyssanan jako (almmustahttinortnega = almmustahttin + ortnega): loppuosa on tunnettu sana tai muoto, alkuosa
 // substantiivin tai adjektiivin perusmuoto, substantiivin yksikön genetiivi tai adjektiivin attribuuttimuoto (tai
 // itse kahdesta tällaisesta, kaksi tasoa). Osat vähintään 4 kirjainta (alkuosan osat 3). Pisin loppuosa ensin.

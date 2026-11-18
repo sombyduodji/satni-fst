@@ -20,6 +20,7 @@ import apertium_data
 import pivot_fin
 import wiktionary_eng
 import fin_also
+import fin_compound
 import skolt_data
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -187,6 +188,9 @@ def main():
         CREATE TABLE nob_forms (word TEXT, pos TEXT, forms TEXT, PRIMARY KEY (word, pos)) WITHOUT ROWID;
         -- back: vokaalisointu liitepartikkelia varten (1 = tuletko, talossako; 0 = menetkö, postimerkillekö), ks. fin_harmony
         CREATE TABLE fin_forms (word TEXT, pos TEXT, forms TEXT, back INTEGER, PRIMARY KEY (word, pos)) WITHOUT ROWID;
+        -- Suomen yhdyssanan alkuosat (viranomais -> viranomainen, kansan -> kansa), Voikolla tarkistetut (fin_compound.py):
+        -- kuvan tunnistuksessa sanakirjasta puuttuva yhdyssana jaetaan osiin (web/app.js: splitFinCompound)
+        CREATE TABLE fin_cmp (stem TEXT, word TEXT, PRIMARY KEY (stem, word)) WITHOUT ROWID;
         -- Saamen passiivi (sme_passive.py, GiellaLT lang-sme): lausekääntäjän suomen passiiville (maksetaan = máksojuvvo)
         CREATE TABLE sme_passive (word_id INTEGER, tag TEXT, surface TEXT, PRIMARY KEY (word_id, tag)) WITHOUT ROWID;
         -- Saamen sanamuotojen esiintymät sanakirjan esimerkkilauseissa: lausekääntäjä valitsee rinnakkaismuodoista
@@ -296,6 +300,9 @@ def main():
         rows = src.execute("SELECT word, pos, forms FROM fin_forms ORDER BY word, pos").fetchall()
         back = fin_harmony({r[0] for r in rows})
         dst.executemany("INSERT INTO fin_forms VALUES (?,?,?,?)", ((w, p, f, back.get(w)) for w, p, f in rows))
+        cmp_rows = fin_compound.rows(dst)
+        dst.executemany("INSERT INTO fin_cmp VALUES (?,?)", cmp_rows)
+        print(f"Suomen yhdyssanojen alkuosat: {len(cmp_rows)}" if cmp_rows else "Suomen yhdyssanojen alkuosat: libvoikko puuttuu, taulu tyhjä")
     seen = collections.Counter(w.lower() for (sme,) in src.execute("SELECT sme FROM examples WHERE sme IS NOT NULL")
                                for w in re.findall(r"[\wáčđŋšŧžÁČĐŊŠŦŽ]+", sme) if not w.isdigit())
     dst.executemany("INSERT INTO sme_seen VALUES (?,?)", sorted(seen.items()))
