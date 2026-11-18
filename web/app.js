@@ -3034,6 +3034,15 @@ function ocrResult(r) {
 function joinHyphenated(words) {
   for (let i = 0; i + 1 < words.length; i++) {
     const a = words[i], b = words[i + 1];
+    // Koltan pehmennysmerkin kohdalta kahdeksi sanaksi luettu (Sää' + mkiöll = Sääʹmǩiõll; somekuva 2026-11-18):
+    // sama rivi, ensimmäinen päättyy merkkiin ʹ tai ', ja väli on kapea
+    if (/\p{L}[ʹ'’]$/u.test(a.t) && /^\p{L}/u.test(b.t) && a.w && b.w && Math.abs(b.cy - a.cy) < (a.h || 10) * 0.4
+        && (b.cx - b.w / 2) - (a.cx + a.w / 2) < (a.h || 10) * 0.6 && b.cx > a.cx) {
+      a.t = b.t = a.t + b.t;
+      a.clean = b.clean = a.t.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, "");
+      i++;
+      continue;
+    }
     if (!/\p{L}[-‐‑\u00AD]$/u.test(a.t) || !/^\p{L}/u.test(b.t) || !b.clean) continue;
     if (!(b.cy > a.cy + (a.h || 10) * 0.6 && b.cx < a.cx)) continue;  // jatko seuraavalla rivillä, vasemmalla
     const joined = /^\p{Ll}/u.test(b.clean) ? a.clean + b.clean : `${a.clean}-${b.clean}`;
