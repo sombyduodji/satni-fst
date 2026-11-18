@@ -2609,7 +2609,7 @@ function renderRecent() {
 // vähiten korjauksia ensin).
 // Myös vietnamin yhdistelmäkirjaimet (ávvudii -> ấvvudii) ja q (gudnin -> qudnin): saamessa ei ole q:ta (Yle-koe 2026-11-18)
 const OCR_LOOKALIKES = { "ð": "d", "ɖ": "d", "η": "n", "ţ": "t", "ş": "s", "ș": "s", "ć": "c", "ż": "z",
-  "ấ": "á", "ắ": "á", "ầ": "á", "ạ": "a", "ą": "a", "q": "g" };
+  "ấ": "á", "ắ": "á", "ầ": "á", "ạ": "a", "ą": "a", "q": "g", "ı": "i" };
 const OCR_DIACRITICS = { a: "á", c: "č", d: "đ", n: "ŋ", s: "š", t: "ŧ", z: "ž" };
 
 // Kaksoiskirjaimen kokeilujärjestys: ensin i ja j (yleisimmät: sámiid, lijjii), sitten konsonantit, viimeisenä muut
@@ -3020,7 +3020,8 @@ function ocrResult(r) {
   setOcrBusy(null);
   if (!r) { $("ocr-status").textContent = ocr ? ocr.status : t("ocrIntro"); return; }  // kuvan otto peruttiin
   if (r.error) { $("ocr-status").textContent = t(r.error === "noApp" ? "ocrNoApp" : "ocrError"); return; }
-  for (const w of r.words) w.clean = w.t.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, "");
+  // Pisteetön ı (Prográmmafıtnodat): ei saamessa, suomessa eikä norjassa, aina i
+  for (const w of r.words) { w.t = w.t.replace(/ı/g, "i"); w.clean = w.t.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, ""); }
   joinHyphenated(r.words);
   ocr = { r, view: null, words: [], status: t("ocrFinding"), autoDir: true };
   ocrReturnHash = null;
@@ -3530,8 +3531,10 @@ function ocrSentenceAround(rIndex) {
   return ws.slice(a, b + 1);
 }
 function sentTokens(raw) {
-  return raw.filter((r) => /\p{L}|\d/u.test(r.clean || r.t)).map((r, n) => {
+  const rows = raw.filter((r) => /\p{L}|\d/u.test(r.clean || r.t));
+  return rows.map((r, n) => {
     const w = ocr.words.find((x) => x.cx === r.cx && x.cy === r.cy);
+    const prev = n > 0 ? (rows[n - 1].clean || "").toLowerCase() : "";
     const punct = (r.t.match(/[.,!?:;)"”»]+$/) || [""])[0];
     const tok = { t: r.t, clean: r.clean, cx: r.cx, cy: r.cy, w: r.w, h: r.h, a: r.a, punct, word: w ? w.word : (r.clean || r.t).toLowerCase() };
     const cap = /^\p{Lu}/u.test(r.clean || "");
@@ -3545,24 +3548,40 @@ function sentTokens(raw) {
     } else if (!w) {
       // Ei sanakirjassa eikä merkitty: nimi tai vieras sana (Microsoft, Toppari) sellaisenaan, luku sellaisenaan.
       // Nimeen yhdysmerkillä liitetty tuntematon saamen sana (Microsoft-bálválusain) korjattavaksi.
-      tok.name = (cap && !hy) || /^\d/.test(r.t);
+      // Lauseen alussa iso alkukirjain ei kerro nimestä (Prográmmafitnodat): tuntematon, korjattavissa
+      tok.name = (cap && !hy && n > 0) || /^\d/.test(r.t);
       tok.unknown = !tok.name;
     } else if (w.unknown) tok.unknown = true;
     else {
       const g = w.gloss || (w.gloss = ocrGloss(w.word, w.clean));
-      if (g.prop || /^\p{Lu}/u.test(r.clean || "") && !g.trans) tok.name = true;
+      if (g.prop || cap && n > 0 && !g.trans) tok.name = true;
+      else if (!g.trans) tok.unknown = true;
       const strip = (x) => x.replace(/\s*\([^)]*\)/g, "").trim();
       const opts = [...(g.form ? g.form.split(" / ") : []), ...splitList(g.trans).map(strip), ...(g.alt ? [g.alt.text] : [])]
         .map((x) => x.trim()).filter(Boolean);
-      tok.opts = [...new Set(opts)];
+      tok.opts = sentNegOrder([...new Set(opts)], prev);
       tok.lemma = g.lemma || "";
       // Iso alkukirjain keskellä lausetta (Siiddas = Siida-museo, ei "kotona"): oletuksena sana sellaisenaan, käännös valittavissa
       if (cap && n > 0 && !tok.name) tok.opts = [r.clean, ...tok.opts];
+    }
+    // Tuntematon yhdyssana (prográmma + fitnodat): osien käännökset ehdotukseksi
+    if (tok.unknown && settings.ocrFrom === "sme" && !hy) {
+      const lw = (r.clean || "").toLowerCase(), parts = lw.length >= 6 ? splitCompound(lw) : null;
+      if (parts) { tok.unknown = false; tok.opts = [parts.map((x, k) => { const g = ocrGloss(cmpLemma.get(x) || x); return ((k === parts.length - 1 && g.form ? g.form.split(" / ").pop() : g.trans) || x).split(", ")[0].replace(/\s*\([^)]*\)/g, "").trim(); }).join("")]; tok.lemma = parts.join(" + "); }
     }
     const key = `${r.cx},${r.cy}`;
     if (ocr.sentChoice?.[key]) Object.assign(tok, ocr.sentChoice[key]);
     return tok;
   });
+}
+// Kieltoverbin jälkeinen muoto (ii álgán = ei alkanut): "(ei) …" vain, kun edellinen sana on kieltoverbi; muuten
+// sama muoto on partisiippi (leat álgán = ovat alkaneet), joten "(ei)"-vaihtoehdot pois tai viimeisiksi
+const SME_NEG = new Set(["in", "it", "ii", "ean", "eahppi", "eaba", "eat", "ehpet", "eai", "ale", "allet", "alli", "allo", "allos", "allot"]);
+function sentNegOrder(opts, prev) {
+  const neg = opts.filter((o) => /^\(ei\)\s/.test(o)), other = opts.filter((o) => !/^\(ei\)\s/.test(o));
+  if (!neg.length) return opts;
+  if (settings.ocrFrom === "sme" && SME_NEG.has(prev)) return [...neg.map((o) => o.replace(/^\(ei\)\s+/, "")), ...other];
+  return other.length ? other : opts;
 }
 const sentKey = (tok) => `${tok.cx},${tok.cy}`;
 function sentWordText(tok) {
@@ -3615,8 +3634,8 @@ function renderSentView() {
   const sheet = $("sent-sheet");
   if (sent.sheet == null) { sheet.hidden = true; return; }
   const tok = sent.toks[sent.sheet];
-  if (tok.unknown || tok.fixed?.edited) {
-    const src = sentCutout(tok, 1.8), guess = tok.fixed?.word || (tok.clean || tok.t).toLowerCase();
+  if (tok.unknown || tok.name || tok.fixed?.edited) {
+    const src = sentCutout(tok, 1.8), guess = tok.fixed?.word || (tok.name ? tok.clean || tok.t : (tok.clean || tok.t).toLowerCase());
     sheet.innerHTML = `<div class="sent-sh-head">${src ? `<img class="sent-cut" src="${src}" alt="${esc(t("sentInPhoto"))}">` : "<span></span>"}` +
       `<button class="chip-btn" data-act="cancel">${esc(t("cancel"))}</button><button class="chip-btn primary" data-act="done">${esc(t("sentDone"))}</button></div>` +
       `<input id="sent-input" type="text" autocapitalize="none" spellcheck="false" aria-label="${esc(t("sentWhat"))}" placeholder="${esc(t("sentWhat"))}" value="${esc(guess)}">` +
@@ -3660,7 +3679,6 @@ function bindSentView() {
     const c = e.target.closest("[data-i]");
     if (!c) return;
     const i = +c.dataset.i, tok = sent.toks[i];
-    if (tok.name && !tok.unknown) return;
     sent.sheet = sent.sheet === i ? null : i;
     renderSentView();
   };
