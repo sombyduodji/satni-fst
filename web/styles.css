@@ -1645,7 +1645,7 @@ html.grade-underline .hd { text-decoration-style: dashed; }
   .bottom-nav button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .bottom-nav.many button { font-size: 10px; letter-spacing: -.01em; }
   .bottom-nav.many svg { padding: 2px 10px; }
-  .sanasto-view, .lause-view, .ocr-view, .peli-view, .peli-sheet { bottom: var(--nav-h); }
+  .sanasto-view, .lause-view, .ocr-view, .sent-view, .peli-view, .peli-sheet { bottom: var(--nav-h); }
   .toast { bottom: calc(24px + var(--nav-h)); }
   .sidebar { bottom: 0; }
 }
@@ -1878,3 +1878,36 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
 .search-busy-bar {
   position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--accent); transition: width .15s linear;
 }
+
+/* Lause kuvasta (Poimi lause): sanat siruina, käännös alla, sanan korjaus alapaneelissa */
+.ocr-pick { font-size: 13px; padding: 6px 12px; }
+.sent-view { position: fixed; inset: 0; z-index: 46; background: var(--bg); display: flex; flex-direction: column; }
+.sent-view[hidden] { display: none; }
+.sent-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px 6px; }
+.sent-head h2 { margin: 0; font-size: 18px; }
+.sent-body { flex: 1 1 auto; overflow-y: auto; padding: 4px 14px 16px; }
+.sent-lab { font-size: 13px; color: var(--muted); margin: 10px 0 6px; }
+.sent-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sent-chip { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 5px 9px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font: inherit; text-align: left; cursor: pointer; max-width: 100%; }
+.sent-chip b { font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+.sent-chip b img { display: block; height: 26px; border-radius: 3px; max-width: 100%; }
+.sent-chip span { font-size: 12.5px; color: var(--accent); overflow-wrap: anywhere; }
+.sent-chip.name span { color: var(--muted); }
+.sent-chip.unk { border-style: dashed; border-color: color-mix(in srgb, #d97706 70%, transparent); background: color-mix(in srgb, #d97706 10%, var(--surface)); }
+.sent-chip.unk span { color: #b45309; }
+.sent-chip.on { outline: 2px solid var(--accent); outline-offset: 1px; }
+.sent-tr { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+.sent-tr-head { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); }
+.sent-tr p { margin: 6px 0 0; font-size: 17px; line-height: 1.5; }
+.sent-tr small { display: block; margin-top: 8px; color: var(--muted); font-size: 12px; }
+.sent-sheet { flex: none; max-height: 55%; overflow-y: auto; border-top: 1px solid var(--border); background: var(--surface); padding: 6px 14px 14px;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, .2); }
+.sent-sheet[hidden] { display: none; }
+.sent-cut { display: block; max-width: 100%; height: 50px; border-radius: 6px; border: 1px solid var(--border); background: #fff; }
+.sent-sheet input { width: 100%; padding: 9px 12px; font-size: 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+.sent-opt { display: flex; justify-content: space-between; gap: 10px; width: 100%; padding: 10px 12px; margin-top: 4px; border: 0; border-radius: 10px;
+  background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.sent-opt i { font-style: normal; color: var(--muted); font-size: 13px; }
+.sent-opt.sel { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 600; }
+.sent-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }

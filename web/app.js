@@ -2889,6 +2889,7 @@ function openOcr() {
 
 // Takaisin-ele (MainActivity.goBackOrFinish): ensin suljetaan sanan kupla, sitten kuva
 function closeOcr() {
+  if (closeSentView()) return true;
   if ($("ocr-view").hidden) return false;
   if (ocr && ocr.picked != null) pickOcrWord(null);
   else $("ocr-view").hidden = true;
@@ -2971,7 +2972,8 @@ function ocrGloss(word, original = "") {
     if (form && (row.freq || 0) < form.freq * 0.05) row = form;
   }
   const lemma = fold(row.sme_lemma) !== fold(word) ? row.sme_lemma : "";
-  const gloss = { lemma, form: lemma && tl === settings.lang ? ocrFormTranslation(row, word) : "", trans: translationOf(row, 2, tl), say: word, query, id: row.id };
+  const gloss = { lemma, form: lemma && tl === settings.lang ? ocrFormTranslation(row, word) : "", trans: translationOf(row, 2, tl), say: word, query, id: row.id,
+    prop: row.subtype === "Prop" };
   // Toinen yleinen merkitys pienemmällä rivillä (maid = myös · tai: minkä (mii); mii = me · tai: mikä): eri suomennos
   // ja vähintään 10 % yhtä yleinen (sama sana eri merkityksessä, kuten mii Pers / Rel, aina)
   // Ei harvinaisia muotoja (imperatiivi, potentiaali, duaali, kieltomuoto, 1. ja 2. persoona: bargu ≠ työskennelkäämme,
@@ -3288,6 +3290,13 @@ const SPEAK_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
   stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>`;
 function pickOcrWord(i) {
   const photo = $("ocr-photo"), bubble = $("ocr-bubble");
+  if (ocr?.pickMode && i != null) {
+    ocr.pickMode = false;
+    $("ocr-status").textContent = ocr.status;
+    ocr.picked = i;
+    pickSentence();
+    return;
+  }
   photo.querySelector(".picked")?.classList.remove("picked");
   ocr.picked = i;
   if (i == null) { bubble.hidden = true; return; }
@@ -3502,6 +3511,188 @@ function placeOcrBubble() {
   bubble.style.left = `${left}px`;
   bubble.style.top = `${below ? bottom : top}px`;
   bubble.style.setProperty("--arrow", `${Math.min(Math.max(x - left + half, 16), half * 2 - 16)}px`);
+}
+
+// --- Poimi lause: kuvan lause omaan näkymäänsä (sanat siruina, käännös alla) ---
+// Lause löytyy valitun sanan ympäriltä lukujärjestyksessä (. ! ? : rajaavat). Sirun napautus: merkitykset ja sanan
+// muokkaus; tuntematon sana näytetään kuvasta leikattuna, ja sen voi korjata (lähimmät sanat, yhdyssanan osat).
+// Käännös kootaan sana sanalta: taivutettu sana muotonsa käännöksenä (bálválusain -> palveluissa), nimet sellaisinaan.
+// Suuntaa antava; käyttäjän valinnat säilyvät kuvan ajan (ocr.sentChoice).
+let sent = null;  // { toks: [{ t, clean, cx, cy, w, h, punct, word, unknown, name, opts, choice }], sheet: index }
+function ocrSentenceAround(rIndex) {
+  const ws = ocr.r.words, end = (t) => /[.!?:]["”»)]*$/.test(t || "");
+  // Raja myös otsikon ja leipätekstin välillä (ei pistettä): rivien väli yli 1,65 kertaa korkeamman rivin korkeus
+  // (Yle-otsikossa riviväli 1,3-1,45 x, otsikosta ingressiin 1,8 x; tekstin korkeus vaihtelee rivin kirjaimien mukaan)
+  const brk = (x, y) => Math.abs((y.cy || 0) - (x.cy || 0)) > Math.max(x.h || 10, y.h || 10, 1) * 1.65;
+  let a = rIndex, b = rIndex;
+  while (a > 0 && !end(ws[a - 1].t) && !brk(ws[a - 1], ws[a]) && rIndex - a < 40) a--;
+  while (b < ws.length - 1 && !end(ws[b].t) && !brk(ws[b], ws[b + 1]) && b - rIndex < 40) b++;
+  return ws.slice(a, b + 1);
+}
+function sentTokens(raw) {
+  return raw.filter((r) => /\p{L}|\d/u.test(r.clean || r.t)).map((r, n) => {
+    const w = ocr.words.find((x) => x.cx === r.cx && x.cy === r.cy);
+    const punct = (r.t.match(/[.,!?:;)"”»]+$/) || [""])[0];
+    const tok = { t: r.t, clean: r.clean, cx: r.cx, cy: r.cy, w: r.w, h: r.h, a: r.a, punct, word: w ? w.word : (r.clean || r.t).toLowerCase() };
+    const cap = /^\p{Lu}/u.test(r.clean || "");
+    // Yhdysmerkillä nimeen liitetty saamen sana (Microsoft-bálválusain): nimi sellaisenaan, loppuosa käännettynä
+    const hy = (r.clean || "").match(/^(.+)-([\p{L}]+)$/u);
+    const hyGloss = hy && settings.ocrFrom !== "ui" ? ocrGloss(hy[2].toLowerCase(), hy[2]) : null;
+    if (hyGloss?.trans) {
+      tok.opts = [...new Set([...(hyGloss.form ? hyGloss.form.split(" / ") : []), ...splitList(hyGloss.trans).map((x) => x.replace(/\s*\([^)]*\)/g, "").trim())])]
+        .filter(Boolean).map((x) => `${hy[1]}-${x}`);
+      tok.lemma = hyGloss.lemma || "";
+    } else if (!w) {
+      // Ei sanakirjassa eikä merkitty: nimi tai vieras sana (Microsoft, Toppari) sellaisenaan, luku sellaisenaan.
+      // Nimeen yhdysmerkillä liitetty tuntematon saamen sana (Microsoft-bálválusain) korjattavaksi.
+      tok.name = (cap && !hy) || /^\d/.test(r.t);
+      tok.unknown = !tok.name;
+    } else if (w.unknown) tok.unknown = true;
+    else {
+      const g = w.gloss || (w.gloss = ocrGloss(w.word, w.clean));
+      if (g.prop || /^\p{Lu}/u.test(r.clean || "") && !g.trans) tok.name = true;
+      const strip = (x) => x.replace(/\s*\([^)]*\)/g, "").trim();
+      const opts = [...(g.form ? g.form.split(" / ") : []), ...splitList(g.trans).map(strip), ...(g.alt ? [g.alt.text] : [])]
+        .map((x) => x.trim()).filter(Boolean);
+      tok.opts = [...new Set(opts)];
+      tok.lemma = g.lemma || "";
+      // Iso alkukirjain keskellä lausetta (Siiddas = Siida-museo, ei "kotona"): oletuksena sana sellaisenaan, käännös valittavissa
+      if (cap && n > 0 && !tok.name) tok.opts = [r.clean, ...tok.opts];
+    }
+    const key = `${r.cx},${r.cy}`;
+    if (ocr.sentChoice?.[key]) Object.assign(tok, ocr.sentChoice[key]);
+    return tok;
+  });
+}
+const sentKey = (tok) => `${tok.cx},${tok.cy}`;
+function sentWordText(tok) {
+  if (tok.fixed) return tok.fixed.trans || (tok.fixed.keep ? tok.fixed.word : `[${tok.fixed.word}]`);
+  if (tok.name) return tok.clean || tok.t;
+  if (tok.unknown) return `[${tok.clean || tok.t}]`;
+  return tok.opts?.[tok.choice || 0] || tok.clean;
+}
+function sentTranslation() {
+  let text = sent.toks.map((tok) => sentWordText(tok) + tok.punct).join(" ").replace(/\s+([.,!?:;])/g, "$1");
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+// Tuntemattoman sanan kuva: leikataan kuvasta sanan laatikon kohdalta (canvas)
+function sentCutout(tok, scale = 1) {
+  const img = $("ocr-photo").querySelector("img");
+  if (!img || !img.naturalWidth || !tok.w) return "";
+  const k = img.naturalWidth / ocr.r.width, pad = (tok.h || 20) * 0.25;
+  const sx = Math.max(0, (tok.cx - tok.w / 2 - pad) * k), sy = Math.max(0, (tok.cy - tok.h / 2 - pad) * k);
+  const sw = Math.min(img.naturalWidth - sx, (tok.w + pad * 2) * k), sh = Math.min(img.naturalHeight - sy, (tok.h + pad * 2) * k);
+  const c = document.createElement("canvas"), hh = Math.round(28 * scale);
+  c.height = hh; c.width = Math.max(1, Math.round(sw * hh / sh));
+  try { c.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height); return c.toDataURL("image/png"); } catch (e) { return ""; }
+}
+function openSentView(rIndex) {
+  ocr.sentChoice ||= {};
+  sent = { toks: sentTokens(ocrSentenceAround(rIndex)), sheet: null };
+  renderSentView();
+  $("sent-view").hidden = false;
+}
+function closeSentView() {
+  if (!sent || $("sent-view").hidden) return false;
+  if (sent.sheet != null) { sent.sheet = null; renderSentView(); return true; }
+  $("sent-view").hidden = true;
+  sent = null;
+  return true;
+}
+function renderSentView() {
+  const chip = (tok, i) => {
+    const cls = tok.fixed ? "" : tok.unknown ? " unk" : tok.name ? " name" : "";
+    const src = tok.unknown && !tok.fixed ? sentCutout(tok) : "";
+    const top = src ? `<img src="${src}" alt="${esc(tok.clean || tok.t)}">` : esc(tok.fixed ? tok.fixed.word : tok.clean || tok.t);
+    const sub = tok.fixed ? tok.fixed.trans || "" : tok.unknown ? t("sentUnknown") : tok.name ? t("sentName") : sentWordText(tok) + (tok.opts?.length > 1 ? "…" : "");
+    return `<button class="sent-chip${cls}${sent.sheet === i ? " on" : ""}" data-i="${i}"><b>${top}</b><span>${esc(sub)}</span></button>`;
+  };
+  const from = ocrLangName(settings.ocrFrom), to = ocrLangName(ocrTo());
+  $("sent-body").innerHTML = `<p class="sent-lab">${esc(t("sentWords"))}</p><div class="sent-chips">${sent.toks.map(chip).join("")}</div>` +
+    `<div class="sent-tr"><div class="sent-tr-head"><span>${esc(from)} → ${esc(to)}</span>` +
+    `<button class="link-btn" id="sent-copy">${esc(t("sentCopy"))}</button></div><p id="sent-text">${esc(sentTranslation())}</p>` +
+    `<small>${esc(t("sentGist"))}</small></div>`;
+  const sheet = $("sent-sheet");
+  if (sent.sheet == null) { sheet.hidden = true; return; }
+  const tok = sent.toks[sent.sheet];
+  if (tok.unknown || tok.fixed?.edited) {
+    const src = sentCutout(tok, 1.8), guess = tok.fixed?.word || (tok.clean || tok.t).toLowerCase();
+    sheet.innerHTML = `<p class="sent-lab">${esc(t("sentInPhoto"))}</p>${src ? `<img class="sent-cut" src="${src}" alt="">` : ""}` +
+      `<label class="sent-lab" for="sent-input">${esc(t("sentWhat"))}</label><input id="sent-input" type="text" autocapitalize="none" spellcheck="false" value="${esc(guess)}">` +
+      `<div id="sent-sugs"></div><div class="sent-actions"><button class="chip-btn" data-act="cancel">${esc(t("cancel"))}</button>` +
+      `<button class="chip-btn primary" data-act="done">${esc(t("sentDone"))}</button></div>`;
+    renderSentSugs(guess);
+  } else {
+    sheet.innerHTML = `<p class="sent-lab">${esc(tok.clean || tok.t)}${tok.lemma ? ` <span class="muted">(${esc(tok.lemma)})</span>` : ""} · ${esc(t("sentMeaning"))}</p>` +
+      (tok.opts || []).map((o, k) => `<button class="sent-opt${k === (tok.choice || 0) ? " sel" : ""}" data-opt="${k}">${esc(o)}</button>`).join("") +
+      `<div class="sent-actions"><button class="chip-btn" data-act="edit">${esc(t("sentEditWord"))}</button>` +
+      `<button class="chip-btn" data-act="open">${esc(t("sentOpen"))}</button></div>`;
+  }
+  sheet.hidden = false;
+}
+// Ehdotukset korjattavalle sanalle: tarkka osuma, lähimmät sanat (yksi kirjain eri), yhdyssanan osat, sellaisenaan
+function renderSentSugs(text) {
+  const lang = settings.ocrFrom, raw = (text || "").trim(), out = [];
+  // Yhdysmerkillä nimeen liitetty sana (Microsoft-bálvalusain): haetaan loppuosa, alkuosa sellaisenaan
+  const hy = raw.match(/^(.+-)([^-]+)$/u), pre = hy ? hy[1] : "", w = (hy ? hy[2] : raw).toLowerCase();
+  if (w) {
+    const g = lang === "ui" ? null : ocrGloss(w);
+    if (g?.trans) out.push({ word: w, trans: (g.lemma ? g.form || g.trans : g.trans).split(" / ")[0].split(", ")[0] });
+    if (lang === "sme") {
+      for (const c of ocrRepairs(w, false)) if (!out.some((o) => o.word === c.word)) out.push({ word: c.word, trans: c.trans.split(" / ")[0] });
+      const parts = splitCompound(w);
+      if (parts) out.push({ word: w, trans: parts.map((x) => (ocrGloss(cmpLemma.get(x) || x).trans || x).split(", ")[0]).join(" + "), parts: parts.join(" + ") });
+    } else if (isMinor(lang)) {
+      const parts = splitMinorCompound(lang, w);
+      if (parts) out.push({ word: w, parts: parts.map((p) => p.stem).join(" + "),
+        trans: parts.map((p) => splitList(minorTranslation(lang, mall(lang, `SELECT * FROM ${lang}_words WHERE id = ?`, [p.id])[0] || {}, ocrTo()))[0] || p.stem).join(" + ") });
+    }
+  }
+  if (pre) for (const o of out) { o.word = pre + o.word; if (o.trans) o.trans = pre + o.trans; if (o.parts) o.parts = pre + o.parts; }
+  out.push({ word: raw, trans: "", keep: true });
+  $("sent-sugs").innerHTML = out.slice(0, 5).map((o, k) => `<button class="sent-opt${k === 0 ? " sel" : ""}" data-sug="${k}">` +
+    `<span>${esc(o.keep ? t("sentKeep") : o.parts || o.word)}</span><i>${esc(o.trans || "")}</i></button>`).join("");
+  $("sent-sugs").sugs = out;
+}
+function bindSentView() {
+  $("sent-back").onclick = () => { if (sent) { sent.sheet = null; } closeSentView(); };
+  $("sent-body").onclick = (e) => {
+    if (e.target.closest("#sent-copy")) { copyText($("sent-text").textContent); toast(t("sentCopied"), 1500); return; }
+    const c = e.target.closest("[data-i]");
+    if (!c) return;
+    const i = +c.dataset.i, tok = sent.toks[i];
+    if (tok.name && !tok.unknown) return;
+    sent.sheet = sent.sheet === i ? null : i;
+    renderSentView();
+  };
+  $("sent-sheet").oninput = (e) => { if (e.target.id === "sent-input") renderSentSugs(e.target.value); };
+  $("sent-sheet").onclick = (e) => {
+    const tok = sent.toks[sent.sheet], key = sentKey(tok);
+    const save = (patch) => { Object.assign(tok, patch); ocr.sentChoice[key] = { ...(ocr.sentChoice[key] || {}), ...patch }; };
+    const opt = e.target.closest("[data-opt]"), sug = e.target.closest("[data-sug]"), act = e.target.closest("[data-act]")?.dataset.act;
+    if (opt) { save({ choice: +opt.dataset.opt }); sent.sheet = null; renderSentView(); return; }
+    if (sug) { $("sent-sugs").querySelectorAll(".sent-opt").forEach((b) => b.classList.toggle("sel", b === sug)); return; }
+    if (act === "cancel") { sent.sheet = null; renderSentView(); return; }
+    if (act === "edit") { save({ fixed: { word: tok.clean || tok.t, trans: sentWordText(tok), edited: true } }); renderSentView(); return; }
+    if (act === "open") { const q = tok.lemma || tok.word; closeSentView(); closeSentView(); $("ocr-view").hidden = true; search(q); ocrReturnHash = location.hash; return; }
+    if (act === "done") {
+      const list = $("sent-sugs").sugs || [], k = [...$("sent-sugs").querySelectorAll(".sent-opt")].findIndex((b) => b.classList.contains("sel"));
+      const pick = list[Math.max(0, k)] || { word: $("sent-input").value };
+      const word = pick.keep ? $("sent-input").value.trim() : pick.word;
+      // Sellaisenaan: kuvan kirjoitusasu (isot kirjaimet säilyvät), ei hakasulkeita
+      const kept = pick.keep && word.toLowerCase() === (tok.clean || tok.t).toLowerCase() ? tok.clean || tok.t : word;
+      save({ fixed: { word: kept, trans: pick.keep ? "" : pick.trans, edited: true, keep: !!pick.keep }, unknown: false, name: false });
+      sent.sheet = null; renderSentView();
+    }
+  };
+}
+// Poimi lause -painike: valitun sanan lause; ilman valintaa seuraava napautettu sana valitsee lauseen
+function pickSentence() {
+  if (!ocr?.words?.length) return;
+  if (ocr.picked == null) { ocr.pickMode = true; $("ocr-status").textContent = t("sentTapWord"); return; }
+  const w = ocr.words[ocr.picked], i = ocr.r.words.findIndex((r) => r.cx === w.cx && r.cy === w.cy);
+  pickOcrWord(null);
+  openSentView(Math.max(0, i));
 }
 
 // Kuplasta sanakirjaan; takaisin-ele palaa kuvaan (backToOcr). Napautuksen perään selain lähettää vielä
@@ -3765,6 +3956,8 @@ function bindOcr() {
     $(id).onclick = () => { if (!ocr || !window.SatniOcr.rotate) return; setOcrBusy(t("ocrWorking")); window.SatniOcr.rotate(deg); };
   }
   $("ocr-close").onclick = () => { if (ocr) pickOcrWord(null); $("ocr-view").hidden = true; };
+  $("ocr-pick").onclick = (e) => { e.stopPropagation(); pickSentence(); };
+  bindSentView();
   $("ocr-swatches").innerHTML = OCR_COLORS.map((c) =>
     `<button data-color="${c}" style="--c:${c}" aria-label="${c}"></button>`).join("");
   const relook = () => { saveSettings(); if (ocr) layoutOcr(false); else applyOcrLook(); };
