@@ -3343,7 +3343,9 @@ function analyzeOcr() {
   if (ocr.autoDir && r.words.length && !skoltUnsupported) {
     let best = null;
     const candidates = ocrSources();
-    for (const other of candidates.filter((l) => l !== settings.ocrFrom)) {
+    // Saamen kirjaimia (á č đ ŋ š ŧ ž) selvästi: suomeksi lukemista ei kokeilla (OnePlus: 1,7 s turhaan)
+    const samiShare = letterWords.filter((w) => /[áčđŋšŧžÁČĐŊŠŦŽ]/u.test(w.t)).length / Math.max(1, letterWords.length);
+    for (const other of candidates.filter((l) => l !== settings.ocrFrom && !(l === "ui" && settings.ocrFrom !== "ui" && samiShare >= 0.08))) {
       const alt = ocrMatches(r, other), sami = other !== "ui" && settings.ocrFrom !== "ui";
       if (count(alt) >= 3 && count(alt) >= (sami ? 1.5 : 3) * count(words) && (!best || count(alt) > count(best.words))) best = { lang: other, words: alt };
     }
