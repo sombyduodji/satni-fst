@@ -607,8 +607,7 @@ function wildcardQuery(query) {
 // edistymisen. Tulos on sama kuin wildcardQuery:llä, paitsi että hyvin laajassa kuviossa näytetään aina 100 yleisintä
 // sanaa (wildcardQuery: 2 000 yleisintä täsmäävää riviä ennen sanoittain yhdistämistä).
 let searchRun = 0;
-// Palan koko (sanoja) mukautuu: tavoite noin 30 ms palaa kohden, ettei näppäimistö ja piirto nyki hitaallakaan puhelimella
-const WILD_CHUNK = 2500;
+const WILD_CHUNK = 1000;  // sanaa palassa: noin 19 000 muotoa, OnePlus Nordilla ~27 ms
 // Vuoro selaimelle ilman setTimeoutin 4 ms:n minimiä (MessageChannel); syöte ja piirto käsitellään palojen välissä
 const wildChannel = new MessageChannel(), wildWaiting = [];
 wildChannel.port1.onmessage = () => wildWaiting.shift()?.();
@@ -635,27 +634,30 @@ async function wildcardSearch(query, index, pushHistory, run) {
   }
   const hits = new Map();  // id -> pienin täsmäävä muoto
   const max = all("SELECT MAX(id) AS m FROM dictionary")[0].m;
-  const st = db.prepare("SELECT word_id, surface FROM paradigms WHERE word_id >= ? AND word_id < ? AND surface GLOB ?");
+  // Sanoittain jo SQLitessä (pääavaimen järjestys, ei lajittelua): laajassa kuviossa (*ii*) JS:ään tulee sana eikä joka muoto
+  const st = db.prepare("SELECT word_id, MIN(surface) FROM paradigms WHERE word_id >= ? AND word_id < ? AND surface GLOB ? GROUP BY word_id");
+  const lt = db.prepare("SELECT id, sme_lemma FROM dictionary WHERE id >= ? AND id < ? AND lemma_fold GLOB ?");  // perusmuoto voittaa
   try {
-    let lo = 0, step = WILD_CHUNK;
-    while (lo <= max) {
-      const t0 = performance.now();
-      st.bind([lo, lo + step, pat]);
+    // Palat kootaan noin 80 ms:n viipaleiksi ennen vuoroa selaimelle: liian tiheä vuorottelu (joka pala erikseen) lisäsi
+    // OnePlus Nordilla piirtoja niin, että *ortnega kesti 3,6 s, vaikka itse luku vie 2,1 s
+    let slice = performance.now();
+    for (let lo = 0; lo <= max; lo += WILD_CHUNK) {
+      st.bind([lo, lo + WILD_CHUNK, pat]);
       while (st.step()) {
         const [id, v] = st.get();
-        const prev = hits.get(id);
-        if (prev === undefined || v < prev) hits.set(id, v);
+        hits.set(id, v);
       }
       st.reset();
-      lo += step;
-      setSearchBusy(query, lo / (max + 1));
-      const took = performance.now() - t0;
-      step = Math.max(200, Math.min(20000, Math.round(took > 40 ? step / 2 : took < 15 ? step * 2 : step)));
+      lt.bind([lo, lo + WILD_CHUNK, pat]);
+      while (lt.step()) { const [id, v] = lt.get(); hits.set(id, v); }
+      lt.reset();
+      if (performance.now() - slice < 80) continue;
+      setSearchBusy(query, (lo + WILD_CHUNK) / (max + 1));
       await yieldNow();
       if (run !== searchRun) return;
+      slice = performance.now();
     }
-  } finally { st.free(); }
-  for (const r of all("SELECT id, sme_lemma FROM dictionary WHERE lemma_fold GLOB ?", [pat])) hits.set(r.id, r.sme_lemma);
+  } finally { st.free(); lt.free(); }
   const f = (id) => wildFreq.get(id) ?? -Infinity;
   const top = [...hits.keys()].sort((a, b) => f(b) - f(a) || a - b).slice(0, WILD_LIMIT);
   const cols = `id, sme_lemma, pos, subtype, freq, ${TRANS_COLS}${hasHumanColumn() ? ", human" : ""}, dial_same`;
