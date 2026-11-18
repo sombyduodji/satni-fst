@@ -3894,6 +3894,11 @@ function sentWordCtx(g, word) {
   return ctx;
 }
 // Saamen sijamuoto -> suomen muoto (taivutusmuodon avain), kun valintaa ei tehdä lauseyhteydestä
+// Postpositio määrää edeltävän sanan suomen sijan ja oman käännöksensä (duorastaga rájes = torstaista lähtien,
+// ođđajagi rádjái = uuteen vuoteen asti, čoahkkima maŋŋil = kokouksen jälkeen, juovllaid ovdal = ennen joulua)
+const SENT_POSTPOS = { "rájes": ["Ela", "lähtien"], "rádjái": ["Ill", "asti"], "maŋŋel": ["Gen", "jälkeen"], "maŋŋil": ["Gen", "jälkeen"],
+  "ovdal": ["Par", "ennen", true], "áigge": ["Gen", "aikana"] };
+const SENT_WEEKDAYS = new Set([...SME_WEEKDAYS, "mánnodat", "disdat", "lávvardat"]);
 const SENT_FIN_CASE = { Nom: "Nom", Gen: "Gen", Acc: "Gen", Ill: "Ill", Loc: "Ine", Com: "Gen", Ess: "Ess" };
 function sentFinKey(tag) {
   const parts = tag.split("+"), n = parts[0] === "Pl" ? "Pl" : "Sg", c = SENT_FIN_CASE[parts[parts.length - 1]];
@@ -3919,6 +3924,22 @@ function sentContext(toks) {
     const has = (t) => c.tags.includes(t);
     let key = null;
     const amb = ["Sg", "Pl"].find((n) => has(`${n}+Gen`) && has(`${n}+Acc`));
+    const nextPos0 = next?.ctx?.pos;
+    const pp = SENT_POSTPOS[(next?.clean || "").toLowerCase()];
+    if (pp && (has("Sg+Gen") || has("Pl+Gen"))) {
+      const n = has("Sg+Gen") ? "Sg" : "Pl", form = c.f[`${n}+${pp[0]}`];
+      if (form) {
+        tok.finKey = `${n}+Gen`;
+        put(tok, form);
+        put(next, pp[1]);
+        next.ppBefore = !!pp[2];  // ennen + partitiivi: suomessa postpositio edelle (ennen joulua)
+        return;
+      }
+    }
+    // Aikamääre: viikonpäivä tai kuukausi genetiivissä ilman seuraavaa substantiivia tai postpositiota (lávvardaga =
+    // lauantaina, borgemánu = elokuussa); genetiivi jää siruun (lávvardaga čiekčamat = lauantain ottelu)
+    const timeWord = SENT_WEEKDAYS.has(c.lemma) ? "Sg+Ess" : /mánnu$/.test(c.lemma || "") ? "Sg+Ine" : null;
+    if (timeWord && has("Sg+Gen") && !["N", "A", "Po", "Num"].includes(nextPos0)) { tok.finKey = "Sg+Gen"; put(tok, c.f[timeWord]); return; }
     if (numVal(prev) >= 2 && has("Sg+Gen")) key = "Sg+Par";
     else if (amb) {
       const nextPos = next?.ctx?.pos;
@@ -4032,7 +4053,15 @@ function sentWordText(tok) {
   return tok.opts?.[tok.choice || 0] || tok.clean;
 }
 function sentTranslation() {
-  let text = sent.toks.map((tok) => sentWordText(tok) + tok.punct).join(" ").replace(/\s+([.,!?:;])/g, "$1");
+  const words = sent.toks.map((tok) => [sentWordText(tok), tok.punct]);
+  // Suomessa edelle tuleva (ennen joulua): vaihdetaan edellisen sanan kanssa, jos käyttäjä ei ole valinnut muuta
+  sent.toks.forEach((tok, i) => {
+    if (tok.ppBefore && i > 0 && !tok.choice && !tok.fixed) {
+      const [a, b] = [words[i - 1], words[i]];
+      words[i - 1] = [b[0], ""]; words[i] = [a[0], a[1] + b[1]];
+    }
+  });
+  let text = words.map(([w, p]) => w + p).join(" ").replace(/\s+([.,!?:;])/g, "$1");
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 // Tuntemattoman sanan kuva: leikataan kuvasta sanan laatikon kohdalta (canvas)
