@@ -3660,16 +3660,21 @@ function sentTokens(raw) {
       tok.opts = [...new Set([...(hyGloss.form ? hyGloss.form.split(" / ") : []), ...splitList(hyGloss.trans).map((x) => x.replace(/\s*\([^)]*\)/g, "").trim())])]
         .filter(Boolean).map((x) => `${hy[1]}-${x}`);
       tok.lemma = hyGloss.lemma || "";
+    } else if (/^\d/.test(r.t)) {
+      tok.num = tok.name = true;  // luku sellaisenaan
     } else if (!w) {
       // Ei sanakirjassa eikä merkitty: nimi tai vieras sana (Microsoft, Toppari) sellaisenaan, luku sellaisenaan.
       // Nimeen yhdysmerkillä liitetty tuntematon saamen sana (Microsoft-bálválusain) korjattavaksi.
       // Lauseen alussa iso alkukirjain ei kerro nimestä (Prográmmafitnodat): tuntematon, korjattavissa
-      tok.name = (cap && !hy && n > 0) || /^\d/.test(r.t);
+      tok.num = /^\d/.test(r.t);
+      tok.name = (cap && !hy && n > 0) || tok.num;
       tok.unknown = !tok.name;
     } else if (w.unknown) tok.unknown = true;
     else {
       const g = w.gloss || (w.gloss = ocrGloss(w.word, w.clean));
-      if (g.prop || cap && n > 0 && !g.trans) tok.name = true;
+      // Henkilön nimi sellaisenaan (Máhte = "miehen nimi"); paikannimi käännetään (Ohcejoga = Utsjoen, Romssa = Tromssan)
+      const personName = g.prop && (!g.trans || /\b(nimi|navn|name)\b/i.test(g.trans));
+      if (personName || cap && n > 0 && !g.trans) tok.name = true;
       else if (!g.trans) tok.unknown = true;
       const strip = (x) => x.replace(/\s*\([^)]*\)/g, "").trim();
       const opts = [...(g.form ? g.form.split(" / ") : []), ...splitList(g.trans).map(strip), ...(g.alt ? [g.alt.text] : [])]
@@ -3678,7 +3683,7 @@ function sentTokens(raw) {
       tok.opts = verb ? [...new Set([...verb, ...opts.filter((o) => !g.form || !g.form.split(" / ").includes(o))])] : sentNegOrder([...new Set(opts)], prev);
       tok.lemma = g.lemma || "";
       // Iso alkukirjain keskellä lausetta (Siiddas = Siida-museo, ei "kotona"): oletuksena sana sellaisenaan, käännös valittavissa
-      if (cap && n > 0 && !tok.name) tok.opts = [r.clean, ...tok.opts];
+      if (cap && n > 0 && !tok.name && !g.prop) tok.opts = [r.clean, ...tok.opts];
     }
     // Tuntematon yhdyssana (prográmma + fitnodat): osien käännökset ehdotukseksi
     if (tok.unknown && settings.ocrFrom === "sme" && !hy) {
@@ -3865,7 +3870,7 @@ function renderSentView() {
     const cls = tok.fixed ? "" : tok.unknown ? " unk" : tok.name ? " name" : "";
     const src = tok.unknown && !tok.fixed ? sentCutout(tok) : "";
     const top = src ? `<img src="${src}" alt="${esc(tok.clean || tok.t)}">` : esc(tok.fixed ? tok.fixed.word : tok.clean || tok.t);
-    const sub = tok.fixed ? tok.fixed.trans || "" : tok.unknown ? t("sentUnknown") : tok.name ? t("sentName") : sentWordText(tok) + (tok.opts?.length > 1 ? "…" : "");
+    const sub = tok.fixed ? tok.fixed.trans || "" : tok.unknown ? t("sentUnknown") : tok.num ? "" : tok.name ? t("sentName") : sentWordText(tok) + (tok.opts?.length > 1 ? "…" : "");
     return `<button class="sent-chip${cls}${sent.sheet === i ? " on" : ""}" data-i="${i}"><b>${top}</b><span>${esc(sub)}</span></button>`;
   };
   const from = ocrLangName(settings.ocrFrom), to = ocrLangName(ocrTo());
@@ -3960,6 +3965,7 @@ function bindSentView() {
     const c = e.target.closest("[data-i]");
     if (!c) return;
     const i = +c.dataset.i, tok = sent.toks[i];
+    if (tok.num) return;  // luku sellaisenaan
     sent.sheet = sent.sheet === i ? null : i;
     sent.split = null;
     renderSentView();
