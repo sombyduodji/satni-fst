@@ -2603,7 +2603,9 @@ function renderRecent() {
 // tai tilalle tulee samannäköinen merkki (ð voi olla d tai đ, joten se palautetaan ensin d:ksi). Sana korjataan
 // muotoon, joka löytyy sanakirjasta perusmuotona tai taivutusmuotona (enintään kolme korjattua kirjainta,
 // vähiten korjauksia ensin).
-const OCR_LOOKALIKES = { "ð": "d", "ɖ": "d", "η": "n", "ţ": "t", "ş": "s", "ș": "s", "ć": "c", "ż": "z" };
+// Myös vietnamin yhdistelmäkirjaimet (ávvudii -> ấvvudii) ja q (gudnin -> qudnin): saamessa ei ole q:ta (Yle-koe 2026-11-18)
+const OCR_LOOKALIKES = { "ð": "d", "ɖ": "d", "η": "n", "ţ": "t", "ş": "s", "ș": "s", "ć": "c", "ż": "z",
+  "ấ": "á", "ắ": "á", "ầ": "á", "ạ": "a", "ą": "a", "q": "g" };
 const OCR_DIACRITICS = { a: "á", c: "č", d: "đ", n: "ŋ", s: "š", t: "ŧ", z: "ž" };
 
 function ocrCorrector() {
@@ -2844,7 +2846,13 @@ function analyzeOcr() {
       .map((w) => { const finParts = splitFinCompound(w.clean); return finParts && { ...w, word: w.clean.toLowerCase(), unknown: true, finParts }; })
       .filter(Boolean)
     : [];
-  const unknown = settings.ocrFrom !== "sme" ? finCompounds : r.words.filter((w) => !at.has(`${w.cx},${w.cy}`) && /^[\p{L}-]+$/u.test(w.clean) && /\p{L}{3}/u.test(w.clean))
+  // Isolla alkava tuntematon sana keskellä virkettä on yleensä nimi tai vieras sana (Microsoft, Riestola, Toppari):
+  // ei katkoviivaa, ettei kuva täyty merkinnöistä (Yle-koe 2026-11-18: 25 / 64 tuntemattomasta). Virkkeen alussa
+  // (edellinen sana päättyy . ! ? : tai sana on ensimmäinen) merkitään kuten muutkin.
+  const sentenceStart = new Set();
+  r.words.forEach((w, i) => { if (i === 0 || /[.!?:–—]$/.test(r.words[i - 1].t || "")) sentenceStart.add(w); });
+  const nameLike = (w) => /^\p{Lu}/u.test(w.clean) && !sentenceStart.has(w);
+  const unknown = settings.ocrFrom !== "sme" ? finCompounds : r.words.filter((w) => !at.has(`${w.cx},${w.cy}`) && !nameLike(w) && /^[\p{L}-]+$/u.test(w.clean) && /\p{L}{3}/u.test(w.clean))
     .map((w) => ({ ...w, word: w.clean.toLowerCase(), unknown: true }));
   ocr.words = [...words, ...unknown];
   ocr.picked = null;
@@ -2951,12 +2959,14 @@ function pickUnknownOcrWord(w) {
     // Yhdyssana, jota ei ole sanakirjassa: osat omille riveilleen (almmustahttin + ortnega)
     w.parts = settings.ocrFrom === "sme" ? splitCompound(w.word) : null;
     if (w.parts) w.cands = [...w.cands.slice(0, 1), ...w.parts.map((part) => {
-      const g = ocrGloss(part);
-      return { word: part, trans: (g.lemma ? g.form || g.trans : g.trans).split(" / ").slice(0, 2).join(" / "), lemma: g.lemma || "", part: true };
+      // Yhdysmuoto (geaidno): käännös ja haku perusmuodolla (geaidnu)
+      const base = cmpLemma.get(part), g = ocrGloss(base || part);
+      return { word: part, open: base, trans: (g.lemma ? g.form || g.trans : g.trans).split(" / ").slice(0, 2).join(" / "),
+        lemma: base || g.lemma || "", part: true };
     })];
   }
   const label = w.parts ? (w.cands.length > w.parts.length ? "ocrNearestOrParts" : "ocrParts") : w.cands.length ? "ocrNearest" : "ocrUnknown";
-  const cands = w.cands.map((c) => `<span class="b-row b-cand${c.part ? " b-part" : ""}" data-cand="${esc(c.word)}"><span class="b-sme">${c.part && c !== w.cands.find((x) => x.part) ? "+ " : ""}${esc(c.word)}</span>` +
+  const cands = w.cands.map((c) => `<span class="b-row b-cand${c.part ? " b-part" : ""}" data-cand="${esc(c.open || c.word)}"><span class="b-sme">${c.part && c !== w.cands.find((x) => x.part) ? "+ " : ""}${esc(c.word)}</span>` +
     `<span class="b-tr">${esc(c.trans)}${c.lemma ? ` <span class="b-more">(${esc(c.lemma)})</span>` : ""}</span></span>`).join("");
   bubble.innerHTML = `<span class="b-text"><span class="b-row b-form b-unknown"><span class="b-sme">${esc(w.word)}</span>` +
     `<span class="b-tr">${esc(t(label))}</span></span>${cands}</span>` +
@@ -3013,6 +3023,8 @@ function splitFinCompound(word) {
 // itse kahdesta tällaisesta, kaksi tasoa). Osat vähintään 4 kirjainta (alkuosan osat 3). Pisin loppuosa ensin.
 // Korpuskoe 2026-11-17: sanakirjasta puuttuvista yhdyssanoista 58 % oikea pääsana, selvästi väärin alle 1 %,
 // suomen sanoista jaettiin 0,4 %. Näytetään vain napautuksesta, ei automaattisesti.
+// Yhdysmuoto -> perusmuoto (geaidno -> geaidnu): kuplassa osan käännös ja napautus haetaan perusmuodolla
+const cmpLemma = new Map();
 function splitCompound(word) {
   const w = word.toLowerCase();
   if (w.length < 8 || !/^\p{L}+$/u.test(w)) return null;
@@ -3027,6 +3039,9 @@ function splitCompound(word) {
         UNION SELECT p.surface FROM paradigms p JOIN dictionary d ON d.id = p.word_id JOIN tags t ON t.id = p.tag_id
         WHERE p.surface IN (${marks}) AND ((d.pos = 'N' AND t.tag = 'Sg+Gen') OR (d.pos = 'A' AND t.tag IN ('Attr', 'Sg+Gen')))`,
       [...part, ...part])) left.add(r.v);
+    if (hasTable("sme_cmp")) {
+      for (const r of all(`SELECT stem, lemma FROM sme_cmp WHERE stem IN (${marks})`, part)) { left.add(r.stem); cmpLemma.set(r.stem, r.lemma); }
+    }
   }
   const leftParts = (s, depth) => {
     if (left.has(s)) return [s];

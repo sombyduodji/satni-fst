@@ -21,6 +21,7 @@ import pivot_fin
 import wiktionary_eng
 import fin_also
 import fin_compound
+import sme_compound
 import skolt_data
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -191,6 +192,9 @@ def main():
         -- Suomen yhdyssanan alkuosat (viranomais -> viranomainen, kansan -> kansa), Voikolla tarkistetut (fin_compound.py):
         -- kuvan tunnistuksessa sanakirjasta puuttuva yhdyssana jaetaan osiin (web/app.js: splitFinCompound)
         CREATE TABLE fin_cmp (stem TEXT, word TEXT, PRIMARY KEY (stem, word)) WITHOUT ROWID;
+        -- Pohjoissaamen yhdyssanan alkumuodot (geaidno -> geaidnu, joavko -> joavku), oikoluvulla tarkistetut
+        -- (sme_compound.py): kuvan tuntemattoman sanan jako osiin (web/app.js: splitCompound)
+        CREATE TABLE sme_cmp (stem TEXT PRIMARY KEY, lemma TEXT) WITHOUT ROWID;
         -- Saamen passiivi (sme_passive.py, GiellaLT lang-sme): lausekääntäjän suomen passiiville (maksetaan = máksojuvvo)
         CREATE TABLE sme_passive (word_id INTEGER, tag TEXT, surface TEXT, PRIMARY KEY (word_id, tag)) WITHOUT ROWID;
         -- Saamen sanamuotojen esiintymät sanakirjan esimerkkilauseissa: lausekääntäjä valitsee rinnakkaismuodoista
@@ -309,6 +313,10 @@ def main():
     if src.execute("SELECT 1 FROM sqlite_master WHERE name = 'sme_passive'").fetchone():
         dst.executemany("INSERT OR IGNORE INTO sme_passive VALUES (?,?,?)",
                         src.execute("SELECT word_id, tag, surface FROM sme_passive ORDER BY word_id, tag"))
+
+    cmp_rows = sme_compound.rows(dst)
+    dst.executemany("INSERT INTO sme_cmp VALUES (?,?)", cmp_rows)
+    print(f"Saamen yhdyssanojen alkumuodot: {len(cmp_rows)}" if cmp_rows else "Saamen yhdyssanojen alkumuodot: oikoluku puuttuu, taulu tyhjä")
 
     sms_rows = {(lang, fold(word), pos): words for lang, word, pos, words in skolt_data.rows(SCRIPT_DIR)}
     dst.executemany("INSERT INTO sms VALUES (?,?,?,?)", ((*k, v) for k, v in sms_rows.items()))
