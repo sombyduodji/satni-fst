@@ -3782,7 +3782,7 @@ function sentTokens(raw) {
       tok.opts = verb ? [...new Set([...verb, ...opts.filter((o) => !g.form || !g.form.split(" / ").includes(o))])] : sentNegOrder([...new Set(opts)], prev);
       tok.lemma = g.lemma || "";
       if (!verb && settings.ocrFrom === "sme" && g.id && settings.lang === "fin" && ocrTo() === "fin") tok.ctx = sentWordCtx(g, w.word);
-      else if (verb) tok.ctx = { pos: "V" };
+      else if (verb) tok.ctx = { pos: "V", lemma: g.lemma || w.word };
       // Iso alkukirjain keskellä lausetta (Siiddas = Siida-museo, ei "kotona"): oletuksena sana sellaisenaan, käännös valittavissa
       if (cap && n > 0 && !tok.name && !g.prop) tok.opts = [r.clean, ...tok.opts];
     }
@@ -3907,11 +3907,18 @@ function sentWordCtx(g, word) {
   const data = loadWord(g.id), pos = (data.word.pos || "").toUpperCase(), stem = fold(word);
   const tags = [...new Set([...data.paradigm].filter(([, forms]) => forms.some((f) => fold(f) === stem)).map(([tag]) => tag))]
     .filter((tag) => !/Du\d/.test(tag));
-  const ctx = { pos: data.word.pos, lemma: data.word.sme_lemma, tags };
+  const ctx = { pos: data.word.pos, lemma: data.word.sme_lemma, tags, subtype: data.word.subtype, human: !!data.word.human };
   if (FORM_POS[pos] && pos !== "V") {
     const own = data.meanings.find((m) => m.lang === "fin" && m.translations);
     const base = (own ? splitList(own.translations) : splitList(data.word.finnish_translation || ""))[0];
-    if (base) ctx.f = translationForms("fin", base.replace(/\(.*?\)/g, "").trim(), FORM_POS[pos]);
+    // Pronominin suomennos voi olla adjektiivin tai substantiivin taivutuksella (makkárge = minkäänlainen)
+    const b = base && base.replace(/\(.*?\)/g, "").replace(/^ei\s+/, "").trim();
+    const formsOf = (x) => translationForms("fin", x, FORM_POS[pos]) || (pos === "PRON" ? translationForms("fin", x, "A") || translationForms("fin", x, "N") : null);
+    if (b) ctx.f = formsOf(b);
+    // Muut suomennokset (álbmot = kansa, väestö): samassa muodossa valittaviksi (väestöltä)
+    const more = (own ? splitList(own.translations) : splitList(data.word.finnish_translation || "")).slice(1, 4)
+      .map((x) => x.replace(/\(.*?\)/g, "").trim()).filter((x) => x && !/\s/.test(x));
+    ctx.alts = more.map(formsOf).filter(Boolean);
   }
   return ctx;
 }
@@ -3920,7 +3927,11 @@ function sentWordCtx(g, word) {
 // ođđajagi rádjái = uuteen vuoteen asti, čoahkkima maŋŋil = kokouksen jälkeen, juovllaid ovdal = ennen joulua);
 // áigge jää sanakirjan järjestykseen (dan áigge = siihen aikaan; esimerkkilausekoe)
 const SENT_POSTPOS = { "rájes": ["Ela", "lähtien"], "rádjái": ["Ill", "asti"], "maŋŋel": ["Gen", "jälkeen"], "maŋŋil": ["Gen", "jälkeen"],
-  "ovdal": ["Par", "ennen", true] };
+  "ovdal": ["Par", "ennen", true], "vuostá": ["Par", "vastaan"], "vuostái": ["Par", "vastaan"] };
+// Verbit, joiden paikallissija on lähde (mistä tai keneltä): vaatia, kysyä, pyytää, saada, ottaa, ostaa, lainata, hakea
+// Suomessa taipumaton määräyssana (juohke geasi = joka kesä, ei "jonka kesän")
+const SENT_NO_AGREE = new Set(["juohke"]);
+const SENT_SOURCE_VERBS = new Set(["gáibidit", "jearrat", "bivdit", "oažžut", "váldit", "oastit", "luoikkahit", "viežžat", "háhkat", "ožžot"]);
 const SENT_WEEKDAYS = new Set([...SME_WEEKDAYS, "mánnodat", "disdat", "lávvardat"]);
 const SENT_FIN_CASE = { Nom: "Nom", Gen: "Gen", Acc: "Gen", Ill: "Ill", Loc: "Ine", Com: "Gen", Ess: "Ess" };
 function sentFinKey(tag) {
@@ -3935,9 +3946,12 @@ function sentFinKey(tag) {
 // partitiivi: in lohkan girjji = en lukenut kirjaa); 3) verbin persoona (sentVerbForms). Muut vaihtoehdot jäävät siruun.
 function sentContext(toks) {
   const numVal = (t) => !t ? 0 : t.num ? parseInt(t.clean || t.t, 10) || 0 : t.ctx?.pos === "Num" && !/^(okta|akta)$/.test(t.ctx.lemma || "") ? 2 : 0;
+  // Valittu muoto ensin; muiden suomennosten sama muoto heti perään (kansalta, väestöltä), sitten loput
   const put = (tok, text) => {
     if (!text || tok.fixed) return;
-    tok.opts = [text, ...(tok.opts || []).filter((o) => o !== text)];
+    const key = tok.finKey, c = tok.ctx;
+    const alts = key && c?.alts ? c.alts.map((f) => f[key] && (c.prefix || "") + f[key] + (text.endsWith(" kanssa") ? " kanssa" : "")).filter(Boolean) : [];
+    tok.opts = [...new Set([text, ...alts, ...(tok.opts || [])])];
     tok.choice = 0;
   };
   toks.forEach((tok, i) => {
@@ -3952,7 +3966,7 @@ function sentContext(toks) {
     if (pp && (has("Sg+Gen") || has("Pl+Gen"))) {
       const n = has("Sg+Gen") ? "Sg" : "Pl", form = c.f[`${n}+${pp[0]}`];
       if (form) {
-        tok.finKey = `${n}+Gen`;
+        tok.finKey = `${n}+${pp[0]}`;
         put(tok, form);
         put(next, pp[1]);
         next.ppBefore = !!pp[2];  // ennen + partitiivi: suomessa postpositio edelle (ennen joulua)
@@ -3962,7 +3976,14 @@ function sentContext(toks) {
     // Aikamääre: viikonpäivä tai kuukausi genetiivissä ilman seuraavaa substantiivia tai postpositiota (lávvardaga =
     // lauantaina, borgemánu = elokuussa); genetiivi jää siruun (lávvardaga čiekčamat = lauantain ottelu)
     const timeWord = SENT_WEEKDAYS.has(c.lemma) ? "Sg+Ess" : /mánnu$/.test(c.lemma || "") ? "Sg+Ine" : null;
-    if (timeWord && has("Sg+Gen") && !["N", "A", "Po", "Num"].includes(nextPos0)) { tok.finKey = "Sg+Gen"; put(tok, c.f[timeWord]); return; }
+    if (timeWord && has("Sg+Gen") && !["N", "A", "Po", "Num"].includes(nextPos0)) { tok.finKey = timeWord; put(tok, c.f[timeWord]); return; }
+    // Paikallissija lähteenä (gáibidit álbmogis = vaatia kansalta, oažžut girjjis = saada kirjasta): ihmisestä -lta,
+    // muusta -sta (käyttäjän kuva 2026-11-18: "vaadi kansassa")
+    const loc = ["Sg", "Pl"].find((n) => has(`${n}+Loc`));
+    if (loc && toks.some((t) => t.ctx?.pos === "V" && SENT_SOURCE_VERBS.has(t.ctx.lemma))) {
+      const k = `${loc}+${c.human ? "Abl" : "Ela"}`;
+      if (c.f[k]) { tok.finKey = k; put(tok, (c.prefix || "") + c.f[k]); return; }
+    }
     if (numVal(prev) >= 2 && has("Sg+Gen")) key = "Sg+Par";
     else if (amb) {
       const nextPos = next?.ctx?.pos;
@@ -3982,8 +4003,10 @@ function sentContext(toks) {
   // Adjektiivi seuraavan substantiivin muodossa (laajat ongelmat, isossa talossa)
   toks.forEach((tok, i) => {
     const c = tok.ctx, next = toks[i + 1];
-    if (c?.pos !== "A" || !c.f || !next?.finKey || !["N", "Pron"].includes(next.ctx?.pos)) return;
-    if (!c.tags.some((t) => t === "Attr" || /^(Sg|Pl)\+/.test(t))) return;
+    // Adjektiivi tai määräävä pronomini (makkárge doaimmaid = minkäänlaisia toimia), ei persoonapronomini
+    if (!(c?.pos === "A" || (c?.pos === "Pron" && c.subtype !== "Pers" && !SENT_NO_AGREE.has(c.lemma))) || !c.f || !next?.finKey || !["N", "Pron"].includes(next.ctx?.pos)) return;
+    if (!c.tags.some((t) => t === "Attr" || /^(Sg|Pl)\+/.test(t)) && !(c.pos === "Pron" && !c.tags.length)) return;
+    tok.finKey = next.finKey;
     put(tok, c.f[next.finKey]);
   });
 }
