@@ -2700,6 +2700,73 @@ async function loadNgram() {
     ngramLoading = false;
   }
 }
+// Sanaparitiedoston yksittäiset haut (yhdyssanan käännöksen valinta): valmistellut kyselyt muistissa tiedostoa kohden
+let ngramStmts = null;
+function ngramQ() {
+  if (!ngramDb) return null;
+  if (ngramStmts?.db !== ngramDb) {
+    ngramStmts = { db: ngramDb, id: ngramDb.prepare("SELECT id FROM fin_vocab WHERE w = ?"), bi: ngramDb.prepare("SELECT n FROM fin_bigram WHERE a = ? AND b = ?"), ids: new Map() };
+    try { ngramStmts.uni = ngramDb.prepare("SELECT n FROM fin_unigram WHERE id = ?"); } catch (e) { /* vanha tiedosto */ }
+  }
+  const q = ngramStmts;
+  const id = (w) => { if (!q.ids.has(w)) { q.id.bind([w]); q.ids.set(w, q.id.step() ? q.id.get()[0] : 0); q.id.reset(); } return q.ids.get(w); };
+  const one = (st, params) => { st.bind(params); const n = st.step() ? st.get()[0] : 0; st.reset(); return n; };
+  return {
+    uni: (w) => { const x = id(w); return x && q.uni ? one(q.uni, [x]) : 0; },
+    bi: (a, b) => { const x = id(a), y = id(b); return x && y ? one(q.bi, [x, y]) : 0; },
+  };
+}
+// Yhdyssanan käännös suomeksi sen mukaan, mikä on suomea (Leipzigin sanojen yleisyys): osien merkitysvaihtoehdot ja
+// alkuosa perus- tai genetiivimuodossa, yhteen tai erikseen kirjoitettuna (algâ + mudo = alkuvaihe, ei alkioaste;
+// sääʹm + ǩiõl = saamen kieli). cands = osien perusmuotoiset vaihtoehdot. null, jos mikään ei esiinny korpuksessa.
+let finCmpByWord = null;
+function chooseCompoundFin(cands) {
+  const q = ngramLang === "fin" && !window.NO_CMP_PICK ? ngramQ() : null;  // NO_CMP_PICK: vertailukoe
+  if (!q || cands.length < 2 || cands.length > 3 || cands.some((c) => !c.length)) return null;
+  const gen = (w) => translationForms("fin", w, "N")?.["Sg+Gen"];
+  // Alkuosan muodot: perusmuoto, genetiivi ja suomen yhdyssanojen alkumuodot (fin_cmp: saamelais-, kielen-)
+  if (!finCmpByWord && hasTable("fin_cmp")) {
+    finCmpByWord = new Map();
+    for (const r of all("SELECT stem, word FROM fin_cmp")) (finCmpByWord.get(r.word) || finCmpByWord.set(r.word, []).get(r.word)).push(r.stem);
+  }
+  const forms = (w, r) => {
+    const out = [[w, r]], g = gen(w);
+    if (g && g !== w) out.push([g, r + 0.3]);
+    for (const st of finCmpByWord?.get(w) || []) if (!out.some(([x]) => x === st)) out.push([st, r + 0.2]);
+    return out;
+  };
+  const heads = cands.slice(0, -1).map((list) => list.slice(0, 3).flatMap((w, r) => forms(w, r)));
+  const lasts = cands[cands.length - 1].slice(0, 3).map((w, r) => [w, r]);
+  let best = null;
+  const combos = heads.reduce((acc, list) => acc.flatMap((a) => list.map((h) => [...a, h])), [[]]);
+  for (const hs of combos) for (const [last, lr] of lasts) {
+    const rank = hs.reduce((n, h) => n + h[1], 0) + lr;
+    const words = [...hs.map((h) => h[0]), last].map((w) => w.toLowerCase());
+    if (words.some((w) => /\s/.test(w))) continue;
+    // Yhteen (vokaalien kohdatessa yhdysmerkillä: alku-urheilu) tai kahdessa osassa (vain kaksiosainen: saamen kieli)
+    const glue = words.reduce((acc, w) => acc + (acc && /[aeiouyäö]$/.test(acc) && acc.slice(-1) === w[0] ? "-" : "") + w, "");
+    const nj = q.uni(glue);
+    if (nj > 0) { const sc = Math.log(nj) + 1.5 - 0.4 * rank; if (!best || sc > best.sc) best = { sc, heads: hs.map((h) => h[0]), last, spaced: false, glue }; }
+    if (words.length === 2) {
+      const nb = q.bi(words[0], words[1]);
+      if (nb > 0) { const sc = Math.log(nb) - 0.4 * rank; if (!best || sc > best.sc) best = { sc, heads: hs.map((h) => h[0]), last, spaced: true }; }
+    }
+  }
+  if (!best) {
+    // Ei korpuksessa: yleisin merkitys kullekin osalle ja alkuosa yhdyssanan alkumuodossa (sámi + giella =
+    // saamelaiskieli, ei saamelainenansa; monikko ilman t:tä: saamelaiskäräjät + laki = saamelaiskäräjälaki)
+    const pickW = (list) => list.slice(0, 3).map((w, r) => [w, Math.log1p(q.uni(w.toLowerCase())) - 0.5 * r]).sort((a, b) => b[1] - a[1])[0][0];
+    const stem = (w) => {
+      const st = (finCmpByWord?.get(w) || []).filter((x) => !/n$/.test(x) || x === w).sort((a, b) => a.length - b.length)[0];
+      return st || (/[aeiouyäö]t$/.test(w) ? w.slice(0, -1) : w);
+    };
+    const hs = cands.slice(0, -1).map((list) => stem(pickW(list))), last = pickW(cands[cands.length - 1]);
+    if (hs.some((h) => /\s/.test(h)) || /\s/.test(last)) return null;
+    return { prefix: hs.join("").toLowerCase(), last, guessed: true };
+  }
+  const prefix = best.spaced ? best.heads[0] + " " : best.glue.slice(0, best.glue.length - best.last.length);
+  return { prefix, last: best.last };
+}
 function unloadMinor(lang) {
   minorDb[lang]?.close();
   delete minorDb[lang];
@@ -3839,7 +3906,11 @@ function sentTokens(raw) {
         // Yhdyssana taipuu viimeisen osansa mukaan: alkuosat + viimeisen osan muoto lauseyhteydestä (uuden kokouspalvelun)
         if (lang === "sme" && settings.lang === "fin" && ocrTo() === "fin" && info.parts.every((x) => x.trans)) {
           const lastPart = info.parts[info.parts.length - 1].word, lg = ocrGloss(lastPart);
-          if (lg.id) { tok.ctx = sentWordCtx(lg, lastPart); tok.ctx.prefix = info.parts.slice(0, -1).map((x) => x.trans).join(""); }
+          if (lg.id) {
+            tok.ctx = sentWordCtx(lg, lastPart);
+            tok.ctx.prefix = info.prefix ?? info.parts.slice(0, -1).map((x) => x.trans).join("");
+            if (info.lastLemma) tok.ctx.f = translationForms("fin", info.lastLemma, "N") || tok.ctx.f;
+          }
         }
       }
     }
@@ -4239,8 +4310,8 @@ function minorPartInfo(lang, raw, fz) {
     const f = fz().search(p, 3, 3);
     if (f && !f.parts) { p = f.word; row = minorRows(lang, p)[0]; }
   }
-  const trans = row ? (splitList(minorTranslation(lang, row, ocrTo()))[0] || "").replace(/^≈\s*/, "").replace(/\s*\([^)]*\)/g, "").trim() : "";
-  return { word: p, trans, base: row && row.lemma.toLowerCase() !== p ? row.lemma : "" };
+  const all3 = row ? splitList(minorTranslation(lang, row, ocrTo())).map((x) => x.replace(/^≈\s*/, "").replace(/\s*\([^)]*\)/g, "").trim()).filter(Boolean) : [];
+  return { word: p, trans: all3[0] || "", cands: all3.slice(0, 3), base: row && row.lemma.toLowerCase() !== p ? row.lemma : "" };
 }
 function compoundPartsInfo(parts) {
   const lang = settings.ocrFrom;
@@ -4249,6 +4320,8 @@ function compoundPartsInfo(parts) {
     const fz = () => (mf ||= minorFuzzySearch(lang));
     const out = parts.map((x) => minorPartInfo(lang, x, fz));
     mf?.free();
+    const pick = ocrTo() === "fin" && out.every((x) => x.cands?.length) ? chooseCompoundFin(out.map((x) => x.cands)) : null;
+    if (pick) return { parts: out, word: out.map((x) => x.word).join(""), trans: pick.prefix + pick.last, prefix: pick.prefix, lastLemma: pick.last };
     const trans = out.every((x) => x.trans) ? out.map((x) => x.trans).join("") : out.map((x) => x.trans || `[${x.word}]`).join(" + ");
     return { parts: out, word: out.map((x) => x.word).join(""), trans };
   }
@@ -4264,9 +4337,23 @@ function compoundPartsInfo(parts) {
       if (f && !f.parts) { p = f.word; base = last ? null : cmpOf(p); g = ocrGloss(base || p); }
     }
     const trans = ((last && g.form ? g.form.split(" / ").pop() : g.trans) || "").split(", ")[0].replace(/\s*\([^)]*\)/g, "").trim();
-    return { word: p, trans, base: base || g.lemma || "" };
+    const cands = splitList(g.trans || "").map((x) => x.replace(/\s*\([^)]*\)/g, "").trim()).filter(Boolean).slice(0, 3);
+    return { word: p, trans, cands, base: base || g.lemma || "", tag: g.lemma ? null : null };
   });
   fz?.free();
+  // Suomeksi: osien merkitys ja liitos sen mukaan, mikä on suomea; viimeinen osa saman muodon mukaan kuin ennen
+  const pick = ocrTo() === "fin" && settings.lang === "fin" && out.every((x) => x.cands.length) ? chooseCompoundFin(out.map((x) => x.cands)) : null;
+  if (pick) {
+    const lastForm = out[out.length - 1].trans, firstLemma = out[out.length - 1].cands[0];
+    let lastText = pick.last;
+    // Viimeisen osan taivutettu muoto: sama muoto valitulle merkitykselle (palvelua -> vaihetta)
+    if (lastForm && lastForm !== firstLemma) {
+      const fFirst = translationForms("fin", firstLemma, "N"), fPick = translationForms("fin", pick.last, "N");
+      const key = fFirst && Object.keys(fFirst).find((k) => !k.startsWith("__") && fFirst[k] === lastForm);
+      lastText = (key && fPick?.[key]) || (pick.last === firstLemma ? lastForm : pick.last);
+    }
+    return { parts: out, word: out.map((x) => x.word).join(""), trans: pick.prefix + lastText, prefix: pick.prefix, lastLemma: pick.last };
+  }
   const trans = out.every((x) => x.trans) ? out.map((x) => x.trans).join("") : out.map((x) => x.trans || `[${x.word}]`).join(" + ");
   return { parts: out, word: out.map((x) => x.word).join(""), trans };
 }

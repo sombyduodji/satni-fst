@@ -27,6 +27,9 @@ import sys
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(SCRIPT_DIR, "satni.db")
 MIN_COUNT = 2
+# Muut korpuksen sanat (ei sovelluksen käännöksissä) yleisyyksineen, jos ainakin näin monta kertaa: yhdyssanan
+# käännöksen valinta (alkuvaihe on suomea, alkioaste ei; 2026-11-18)
+WORD_MIN = 5
 WORD = re.compile(r"[\wåäöšžæø-]+")
 COLS = {"fin": "finnish_translation", "nob": "nob_translation"}
 
@@ -57,11 +60,10 @@ def main(paths, lang="fin"):
                     if a in vocab and b in vocab:
                         bi[(a, b)] += 1
                 for w in ws:
-                    if w in vocab:
-                        uni[w] += 1
+                    uni[w] += 1
         print(f"{os.path.basename(path)}: {len(bi)} paria")
     pairs = [(a, b, n) for (a, b), n in bi.items() if n >= MIN_COUNT]
-    unis = {w: n for w, n in uni.items() if n >= MIN_COUNT}
+    unis = {w: n for w, n in uni.items() if (n >= MIN_COUNT and w in vocab) or (n >= WORD_MIN and len(w) >= 4 and not any(c.isdigit() for c in w))}
     used = sorted({w for a, b, _ in pairs for w in (a, b)} | set(unis))
     ids = {w: i for i, w in enumerate(used, 1)}
     con.executescript("""
