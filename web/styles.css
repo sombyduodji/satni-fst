@@ -1881,7 +1881,7 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
 
 /* Lause kuvasta (Poimi lause): sanat siruina, käännös alla, sanan korjaus alapaneelissa */
 .ocr-pick { font-size: 13px; padding: 6px 12px; }
-.sent-view { position: fixed; inset: 0; z-index: 46; background: var(--bg); display: flex; flex-direction: column; }
+.sent-view { position: fixed; inset: 0 0 var(--nav-h, 0px) 0; z-index: 46; background: var(--bg); display: flex; flex-direction: column; }
 .sent-view[hidden] { display: none; }
 .sent-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px 6px; }
 .sent-head h2 { margin: 0; font-size: 18px; }
@@ -1901,13 +1901,17 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
 .sent-tr-head { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); }
 .sent-tr p { margin: 6px 0 0; font-size: 17px; line-height: 1.5; }
 .sent-tr small { display: block; margin-top: 8px; color: var(--muted); font-size: 12px; }
-.sent-sheet { flex: none; max-height: 55%; overflow-y: auto; border-top: 1px solid var(--border); background: var(--surface); padding: 6px 14px 14px;
+.sent-sheet { flex: none; max-height: 50%; overflow-y: auto; border-top: 1px solid var(--border); background: var(--surface); padding: 0 12px 10px;
   box-shadow: 0 -8px 24px rgba(0, 0, 0, .2); }
 .sent-sheet[hidden] { display: none; }
-.sent-cut { display: block; max-width: 100%; height: 50px; border-radius: 6px; border: 1px solid var(--border); background: #fff; }
-.sent-sheet input { width: 100%; padding: 9px 12px; font-size: 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
-.sent-opt { display: flex; justify-content: space-between; gap: 10px; width: 100%; padding: 10px 12px; margin-top: 4px; border: 0; border-radius: 10px;
-  background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
-.sent-opt i { font-style: normal; color: var(--muted); font-size: 13px; }
-.sent-opt.sel { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 600; }
-.sent-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+.sent-sh-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 6px; padding: 8px 0 6px; background: var(--surface); }
+.sent-sh-head > :first-child { flex: 1 1 auto; max-width: 60%; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sent-sh-head .chip-btn { flex: none; }
+.sent-sh-head > p.sent-lab { white-space: normal; line-height: 1.3; }
+.sent-cut { display: block; max-width: 100%; height: 34px; object-fit: contain; object-position: left; border-radius: 6px; border: 1px solid var(--border); background: #fff; }
+.sent-sheet input { width: 100%; padding: 7px 10px; font-size: 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+.sent-opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.sent-opt { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px; max-width: 100%; padding: 5px 10px; border: 1px solid var(--border);
+  border-radius: 10px; background: none; color: var(--text); font: inherit; font-size: 15px; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.sent-opt i { font-style: normal; color: var(--muted); font-size: 12.5px; font-weight: 400; }
+.sent-opt.sel { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 600; }

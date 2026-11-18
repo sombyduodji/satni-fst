@@ -3617,16 +3617,15 @@ function renderSentView() {
   const tok = sent.toks[sent.sheet];
   if (tok.unknown || tok.fixed?.edited) {
     const src = sentCutout(tok, 1.8), guess = tok.fixed?.word || (tok.clean || tok.t).toLowerCase();
-    sheet.innerHTML = `<p class="sent-lab">${esc(t("sentInPhoto"))}</p>${src ? `<img class="sent-cut" src="${src}" alt="">` : ""}` +
-      `<label class="sent-lab" for="sent-input">${esc(t("sentWhat"))}</label><input id="sent-input" type="text" autocapitalize="none" spellcheck="false" value="${esc(guess)}">` +
-      `<div id="sent-sugs"></div><div class="sent-actions"><button class="chip-btn" data-act="cancel">${esc(t("cancel"))}</button>` +
-      `<button class="chip-btn primary" data-act="done">${esc(t("sentDone"))}</button></div>`;
+    sheet.innerHTML = `<div class="sent-sh-head">${src ? `<img class="sent-cut" src="${src}" alt="${esc(t("sentInPhoto"))}">` : "<span></span>"}` +
+      `<button class="chip-btn" data-act="cancel">${esc(t("cancel"))}</button><button class="chip-btn primary" data-act="done">${esc(t("sentDone"))}</button></div>` +
+      `<input id="sent-input" type="text" autocapitalize="none" spellcheck="false" aria-label="${esc(t("sentWhat"))}" placeholder="${esc(t("sentWhat"))}" value="${esc(guess)}">` +
+      `<div id="sent-sugs" class="sent-opts"></div>`;
     renderSentSugs(guess);
   } else {
-    sheet.innerHTML = `<p class="sent-lab">${esc(tok.clean || tok.t)}${tok.lemma ? ` <span class="muted">(${esc(tok.lemma)})</span>` : ""} · ${esc(t("sentMeaning"))}</p>` +
-      (tok.opts || []).map((o, k) => `<button class="sent-opt${k === (tok.choice || 0) ? " sel" : ""}" data-opt="${k}">${esc(o)}</button>`).join("") +
-      `<div class="sent-actions"><button class="chip-btn" data-act="edit">${esc(t("sentEditWord"))}</button>` +
-      `<button class="chip-btn" data-act="open">${esc(t("sentOpen"))}</button></div>`;
+    sheet.innerHTML = `<div class="sent-sh-head"><p class="sent-lab">${esc(tok.clean || tok.t)}${tok.lemma ? ` <span class="muted">(${esc(tok.lemma)})</span>` : ""}</p>` +
+      `<button class="chip-btn" data-act="edit">${esc(t("sentEditWord"))}</button><button class="chip-btn" data-act="open">${esc(t("sentOpen"))}</button></div>` +
+      `<div class="sent-opts">${(tok.opts || []).map((o, k) => `<button class="sent-opt${k === (tok.choice || 0) ? " sel" : ""}" data-opt="${k}">${esc(o)}</button>`).join("")}</div>`;
   }
   sheet.hidden = false;
 }
@@ -3651,7 +3650,7 @@ function renderSentSugs(text) {
   if (pre) for (const o of out) { o.word = pre + o.word; if (o.trans) o.trans = pre + o.trans; if (o.parts) o.parts = pre + o.parts; }
   out.push({ word: raw, trans: "", keep: true });
   $("sent-sugs").innerHTML = out.slice(0, 5).map((o, k) => `<button class="sent-opt${k === 0 ? " sel" : ""}" data-sug="${k}">` +
-    `<span>${esc(o.keep ? t("sentKeep") : o.parts || o.word)}</span><i>${esc(o.trans || "")}</i></button>`).join("");
+    `<span>${esc(o.keep ? t("sentKeep") : o.parts || o.word)}</span>${o.trans ? `<i>${esc(o.trans)}</i>` : ""}</button>`).join("");
   $("sent-sugs").sugs = out;
 }
 function bindSentView() {
