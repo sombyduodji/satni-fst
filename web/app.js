@@ -3535,6 +3535,8 @@ function sentTokens(raw) {
   return rows.map((r, n) => {
     const w = ocr.words.find((x) => x.cx === r.cx && x.cy === r.cy);
     const prev = n > 0 ? (rows[n - 1].clean || "").toLowerCase() : "";
+    const pw = n > 0 ? ocr.words.find((x) => x.cx === rows[n - 1].cx && x.cy === rows[n - 1].cy) : null;
+    const prevLemma = pw?.gloss?.lemma || pw?.word || prev;
     const punct = (r.t.match(/[.,!?:;)"”»]+$/) || [""])[0];
     const tok = { t: r.t, clean: r.clean, cx: r.cx, cy: r.cy, w: r.w, h: r.h, a: r.a, punct, word: w ? w.word : (r.clean || r.t).toLowerCase() };
     const cap = /^\p{Lu}/u.test(r.clean || "");
@@ -3559,7 +3561,8 @@ function sentTokens(raw) {
       const strip = (x) => x.replace(/\s*\([^)]*\)/g, "").trim();
       const opts = [...(g.form ? g.form.split(" / ") : []), ...splitList(g.trans).map(strip), ...(g.alt ? [g.alt.text] : [])]
         .map((x) => x.trim()).filter(Boolean);
-      tok.opts = sentNegOrder([...new Set(opts)], prev);
+      const verb = settings.ocrFrom === "sme" && settings.lang === ocrTo() ? sentVerbForms(g, w.word, prev, prevLemma) : null;
+      tok.opts = verb ? [...new Set([...verb, ...opts.filter((o) => !g.form || !g.form.split(" / ").includes(o))])] : sentNegOrder([...new Set(opts)], prev);
       tok.lemma = g.lemma || "";
       // Iso alkukirjain keskellä lausetta (Siiddas = Siida-museo, ei "kotona"): oletuksena sana sellaisenaan, käännös valittavissa
       if (cap && n > 0 && !tok.name) tok.opts = [r.clean, ...tok.opts];
@@ -3567,6 +3570,7 @@ function sentTokens(raw) {
     // Tuntematon yhdyssana (prográmma + fitnodat): osien käännökset ehdotukseksi
     if (tok.unknown && settings.ocrFrom === "sme" && !hy) {
       const lw = (r.clean || "").toLowerCase(), parts = lw.length >= 6 ? splitCompound(lw) : null;
+      if (!parts && n === 0 && /^\p{Lu}/u.test(r.clean || "")) { tok.unknown = false; tok.name = true; }  // Microsoft lauseen alussa: nimenä, napautettavissa
       if (parts) { tok.unknown = false; tok.opts = [parts.map((x, k) => { const g = ocrGloss(cmpLemma.get(x) || x); return ((k === parts.length - 1 && g.form ? g.form.split(" / ").pop() : g.trans) || x).split(", ")[0].replace(/\s*\([^)]*\)/g, "").trim(); }).join("")]; tok.lemma = parts.join(" + "); }
     }
     const key = `${r.cx},${r.cy}`;
@@ -3582,6 +3586,36 @@ function sentNegOrder(opts, prev) {
   if (!neg.length) return opts;
   if (settings.ocrFrom === "sme" && SME_NEG.has(prev)) return [...neg.map((o) => o.replace(/^\(ei\)\s+/, "")), ...other];
   return other.length ? other : opts;
+}
+// Verbin muoto lauseyhteyden mukaan (leat = olet / olemme / ovat / ei ole / olla): kieltoverbin jälkeen kieltomuoto
+// (ii leat = ei ole), persoonapronominin jälkeen sen persoona (mii leat = olemme), apuverbin jälkeen infinitiivi
+// (sáhttá leat = voi olla), muuten ensin 3. persoona, infinitiivi ja partisiippi (leat álgán = alkanut)
+const SME_PRON = { mun: "Sg1", don: "Sg2", son: "Sg3", moai: "Du1", doai: "Du2", soai: "Du3", mii: "Pl1", dii: "Pl2", sii: "Pl3" };
+const SME_MODAL = new Set(["sáhttit", "galgat", "áigut", "berret", "fertet", "háliidit", "oažžut", "máhttit", "viggat", "dárbbašit", "lohpidit"]);
+function sentVerbForms(g, word, prev, prevLemma) {
+  if (!g.id || !FORM_PHRASES[settings.lang]) return null;
+  const data = loadWord(g.id);
+  if (data.word.pos !== "V") return null;
+  const stem = fold(word);
+  const tags = [...new Set([...data.paradigm].filter(([, forms]) => forms.some((f) => fold(f) === stem)).map(([tag]) => tag))]
+    .filter((tag) => !/Du\d/.test(tag) || /^(moai|doai|soai)$/.test(prev));
+  if (!tags.length) return null;
+  const own = data.meanings.find((m) => m.lang === settings.lang && m.translations);
+  const base = (own ? splitList(own.translations) : splitList(data.word[LANGUAGES[settings.lang].col]))[0];
+  if (!base) return null;
+  const neg = SME_NEG.has(prev), person = SME_PRON[prev], modal = SME_MODAL.has(prevLemma);
+  const score = (tag) => {
+    if (/ConNeg/.test(tag)) return neg ? 0 : 9;
+    if (neg) return 5;
+    if (person) return tag.endsWith(person) ? 0 : /(Sg|Pl|Du)\d$/.test(tag) ? 6 : 4;
+    if (modal) return tag === "Inf" ? 0 : 5;
+    if (/^Imprt|Pot/.test(tag)) return 7;
+    return /(Sg3|Pl3)$/.test(tag) ? 1 : /^(Inf|PrfPrc)/.test(tag) ? 2 : /(Sg1|Sg2|Pl1|Pl2)$/.test(tag) ? 3 : 4;
+  };
+  const ranked = tags.map((tag) => [score(tag), tag]).filter(([sc]) => sc < 9).sort((a, b) => a[0] - b[0]);
+  const out = ranked.map(([, tag]) => translationOfForm(data.word, [tag], null, [base]).split(" / ")[0].trim())
+    .map((x) => (neg ? x.replace(/^\(ei\)\s+/, "") : x)).filter(Boolean);
+  return out.length ? [...new Set(out)] : null;
 }
 const sentKey = (tok) => `${tok.cx},${tok.cy}`;
 function sentWordText(tok) {
