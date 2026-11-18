@@ -2727,9 +2727,22 @@ function minorMatcher(lang) {
         if (h) return h;
       }
     }
+    // Sumea haku: useampi kaksoiskirjain ja väärin luettu yhdyssana (osat erikseen ocrMatches -> compound)
+    if (chars.length >= 5) {
+      fuzzy ||= minorFuzzySearch(lang);
+      const r = fuzzy.search(w);
+      if (r && !r.parts) return r.word;
+      if (r?.parts) compounds.set(word.toLowerCase(), { word: r.word, parts: r.parts.map((x) => x.stem), ids: r.parts.map((x) => x.id) });
+    }
     return null;
   };
-  return { correct: (w) => { if (!cache.has(w)) cache.set(w, correct(w)); return cache.get(w); }, free: () => st.free() };
+  let fuzzy = null;
+  const compounds = new Map();
+  return {
+    correct: (w) => { if (!cache.has(w)) cache.set(w, correct(w)); return cache.get(w); },
+    compound: (word) => compounds.get(word.toLowerCase()) || null,
+    free: () => { st.free(); fuzzy?.free(); },
+  };
 }
 const smnMatcher = () => minorMatcher("smn");
 
@@ -2787,6 +2800,66 @@ function minorCmp(lang) {
     if (hasMinor(lang)) for (const r of mall(lang, `SELECT stem, word_id FROM ${lang}_cmp`)) minorCmpCache[lang].set(minorFold(lang, r.stem), r.word_id);
   }
   return minorCmpCache[lang];
+}
+
+// Inarin ja koltan sumea haku (kuten ocrFuzzySearch pohjoissaamelle): tarkkeettomassa asussa (fold: ʹ, ǩ, õ, đ, â
+// eivät haittaa), joten kokeiltavana on kaksoiskirjain (luettu yhdeksi: lijjii -> lijii, ii -> i, tt -> t) ja yhdyssanan
+// raja alkuosan (perusmuoto, Sg+Nom, Sg+Gen, Attr tai {kieli}_cmp) jälkeen. Palauttaa { word, parts: [{ stem, id }] | null }.
+function minorFuzzySearch(lang) {
+  const pre = minorDb[lang].prepare(`SELECT 1 FROM ${lang}_forms WHERE fold >= ? AND fold < ? LIMIT 1`);
+  const ex = minorDb[lang].prepare(`SELECT surface, word_id FROM ${lang}_forms WHERE fold = ?`);
+  const lf = minorDb[lang].prepare(`SELECT 1 FROM ${lang}_forms f JOIN tags t ON t.id = f.tag_id JOIN ${lang}_words s ON s.id = f.word_id
+    WHERE f.fold = ? AND t.tag IN ('Lemma', 'Sg+Nom', 'Sg+Gen', 'Attr') AND s.pos IN ('N', 'A') LIMIT 1`);
+  const memo = new Map();
+  const cached = (k, fn) => { if (!memo.has(k)) memo.set(k, fn()); return memo.get(k); };
+  const has = (s) => cached("p" + s, () => { pre.bind([s, s + "\uffff"]); const f = pre.step(); pre.reset(); return f; });
+  const rows = (s) => cached("w" + s, () => { const out = []; ex.bind([s]); while (ex.step()) out.push(ex.get()); ex.reset(); return out; });
+  const isLeft = (s) => cached("l" + s, () => { if (minorCmp(lang).has(s)) return true; lf.bind([s]); const f = lf.step(); lf.reset(); return f; });
+  // Lähin oikea asu kuvan kirjaimista (fáddáid / faddâ)
+  const pick = (fs, piece) => {
+    const list = rows(fs), chars = [...piece];
+    const diff = (c) => [...c].reduce((n, ch, i) => n + (ch !== chars[i]), 0) + Math.abs([...c].length - chars.length);
+    return list.sort((a, b) => diff(a[0]) - diff(b[0]))[0] || null;
+  };
+  const search = (word, maxCost = 3, minLen = 5) => {
+    const orig = [...[...word.toLowerCase()].map((c) => MINOR_LOOKALIKES[lang][c] || c).join("")];
+    if (orig.length < minLen || orig.length > 40 || !orig.every((c) => /[\p{L}ʹ]/u.test(c))) return null;
+    const w = [], map = [];
+    orig.forEach((ch, i) => { for (const c of minorFold(lang, ch)) { w.push(c); map.push(i); } });
+    const piece = (a, b) => orig.slice(map[a], b < w.length ? map[b] : orig.length).join("");
+    // Tila: [hinta, kohta, osat [[alku, loppu, fold]], osan alku, nykyinen osa]
+    const queue = [[0, 0, [], 0, ""]];
+    const score = (r) => r.cost + 0.8 * (r.parts.length - 1) + 0.7 * r.parts.filter((x) => x[2].length < 4).length;
+    let best = null, steps = 0;
+    while (queue.length && steps++ < 3000) {
+      let bi = 0;
+      for (let i = 1; i < queue.length; i++) if (queue[i][0] < queue[bi][0]) bi = i;
+      const [cost, i, parts, from, seg] = queue.splice(bi, 1)[0];
+      if (best && cost > best.cost + 1.2) break;
+      if (i === w.length) {
+        if (seg && (!parts.length || seg.length >= 3) && rows(seg).length) {
+          const r = { parts: [...parts, [from, i, seg]], cost };
+          if (!best || score(r) < score(best)) best = r;
+        }
+        continue;
+      }
+      const ch = w[i];
+      if (has(seg + ch)) queue.push([cost, i + 1, parts, from, seg + ch]);
+      // Ei sanan viimeistä kirjainta (vueiʹnet -> vueinett oli väärä korjaus, koltan testikuvat 2026-11-18)
+      if (/\p{L}/u.test(ch) && i < w.length - 1 && w[i + 1] !== ch && seg.slice(-1) !== ch) {
+        const c2 = cost + (/[ij]/.test(ch) ? 0.5 : 0.8);
+        if (c2 <= maxCost && has(seg + ch + ch)) queue.push([c2, i + 1, parts, from, seg + ch + ch]);
+      }
+      if (seg.length >= (parts.length ? 3 : 4) && w.length - i >= 3 && parts.length < 3 && isLeft(seg)) queue.push([cost + 0.3, i, [...parts, [from, i, seg]], i, ""]);
+    }
+    if (!best) return null;
+    const out = best.parts.map(([a, b, fs]) => { const r = pick(fs, piece(a, b)); return r ? { stem: r[0], id: r[1] } : null; });
+    if (out.some((x) => !x)) return null;
+    // Yksittäinen sana enintään kahdella i/j-tuplauksella tai yhdellä muulla: muuten liian kaukana kuvan sanasta
+    if (out.length === 1 && best.cost > 1.0) return null;
+    return { word: out.map((x) => x.stem).join(""), parts: out.length > 1 ? out : null, cost: best.cost };
+  };
+  return { search, free: () => { pre.free(); ex.free(); lf.free(); } };
 }
 
 // Kielen sanan rivit (perusmuoto, sanaluokka, käännökset) kuvan muodolle; perusmuoto ensin
@@ -3174,7 +3247,8 @@ function uiOcrVariants(word) {
   return [word.replace(/[áàâăã]/g, "ä").replace(/[ÁÀÂĂÃ]/g, "Ä").replace(/[óòôõ]/g, "ö").replace(/[ÓÒÔÕ]/g, "Ö"), plain];
 }
 
-let ocrFixedCompounds = new Map();
+let ocrFixedCompoundsBy = {};  // kieli -> Map(kuvan sana -> korjattu yhdyssana)
+const ocrFixedCompound = (w) => ocrFixedCompoundsBy[settings.ocrFrom]?.get(w) || null;
 // Kuvan sanat valitun suunnan mukaan; suunnan vaihto laskee ne uudelleen samasta kuvasta
 function ocrMatches(r, from) {
   if (isMinor(from) && !hasMinor(from)) return [];
@@ -3188,7 +3262,7 @@ function ocrMatches(r, from) {
   };
   const words = r.words.map((w) => ({ ...w, word: match(w.clean) })).filter((w) => w.word);
   // Väärin luettu yhdyssana (coahkkinbalvalusa = čoahkkin + bálvalusa): korjattu asu ja osat tuntemattomalle sanalle
-  if (corrector?.compound) ocrFixedCompounds = new Map(r.words.map((w) => [w, corrector.compound(w.clean)]).filter(([, c]) => c));
+  if (corrector?.compound) ocrFixedCompoundsBy[from] = new Map(r.words.map((w) => [w, corrector.compound(w.clean)]).filter(([, c]) => c));
   corrector?.free();
   return words;
 }
@@ -3250,12 +3324,13 @@ function analyzeOcr() {
   // (edellinen sana päättyy . ! ? : tai sana on ensimmäinen) merkitään kuten muutkin.
   const sentenceStart = new Set();
   r.words.forEach((w, i) => { if (i === 0 || /[.!?:–—]$/.test(r.words[i - 1].t || "")) sentenceStart.add(w); });
-  // Yhdyssanaksi korjautuva sana ei ole nimi (Luossabivdogildosa virkkeen alussa, kun rivijärjestys ei näytä pistettä)
-  const nameLike = (w) => /^\p{Lu}/u.test(w.clean) && !sentenceStart.has(w) && !(settings.ocrFrom === "sme" && ocrFixedCompounds.has(w));
-  const unknown = settings.ocrFrom === "ui" ? finCompounds : r.words.filter((w) => !at.has(`${w.cx},${w.cy}`) && !nameLike(w) && /^[\p{L}-]+$/u.test(w.clean) && /\p{L}{3}/u.test(w.clean))
+  // Iso alkukirjain ei jätä sanaa pois (käyttäjä 2026-11-18): myös nimeltä näyttävä tuntematon sana merkitään, jotta sen
+  // voi korjata tai jakaa osiin; nimeltä näyttävä (iso alkukirjain keskellä virkettä) himmeämmin (.cap)
+  const nameLike = (w) => /^\p{Lu}/u.test(w.clean) && !sentenceStart.has(w) && !ocrFixedCompound(w);
+  const unknown = settings.ocrFrom === "ui" ? finCompounds : r.words.filter((w) => !at.has(`${w.cx},${w.cy}`) && /^[\p{L}ʹ'-]+$/u.test(w.clean) && /\p{L}{3}/u.test(w.clean))
     .map((w) => {
-      const fixed = settings.ocrFrom === "sme" ? ocrFixedCompounds.get(w) : null;
-      return { ...w, word: fixed ? fixed.word : w.clean.toLowerCase(), unknown: true, ...(fixed ? { fuzzyParts: fixed.parts } : {}) };
+      const fixed = ocrFixedCompound(w);
+      return { ...w, word: fixed ? fixed.word : w.clean.toLowerCase(), unknown: true, cap: nameLike(w), ...(fixed ? { fuzzyParts: fixed.parts, fuzzyIds: fixed.ids } : {}) };
     });
   ocr.words = [...words, ...unknown];
   ocr.picked = null;
@@ -3263,7 +3338,7 @@ function analyzeOcr() {
     (switched ? ` · ${t("ocrDirSwitched")}` : "");
   $("ocr-bubble").hidden = true;
   $("ocr-photo").innerHTML = `<img src="${r.image}" alt="">`
-    + ocr.words.map((w, i) => `<div class="ocr-word${w.unknown ? " unknown" : ""}" data-i="${i}"></div>`).join("");
+    + ocr.words.map((w, i) => `<div class="ocr-word${w.unknown ? " unknown" : ""}${w.cap ? " cap" : ""}" data-i="${i}"></div>`).join("");
   layoutOcr(!ocr.view);
 }
 
@@ -3448,7 +3523,8 @@ function pickUnknownOcrWord(w) {
   }
   if (!w.cands && isMinor(settings.ocrFrom)) {
     // Inarin/koltan yhdyssana: osat perusmuodossa käännöksineen; napautus avaa pohjoissaamen vastineen
-    const lang = settings.ocrFrom, parts = splitMinorCompound(lang, w.word), to = ocrTo();
+    const lang = settings.ocrFrom, to = ocrTo();
+    const parts = w.fuzzyParts ? w.fuzzyParts.map((stem, k) => ({ stem, id: w.fuzzyIds[k] })) : splitMinorCompound(lang, w.word);
     w.parts = parts && parts.map((p) => p.stem);
     w.cands = (parts || []).map((p) => {
       const row = mall(lang, `SELECT * FROM ${lang}_words WHERE id = ?`, [p.id])[0] || {};
@@ -3471,7 +3547,7 @@ function pickUnknownOcrWord(w) {
   const cands = w.cands.map((c) => `<span class="b-row b-cand${c.part ? " b-part" : ""}" data-cand="${esc(c.open || c.word)}"><span class="b-sme">${c.part && c !== w.cands.find((x) => x.part) ? "+ " : ""}${esc(c.word)}</span>` +
     `<span class="b-tr">${esc(c.trans)}${c.lemma ? ` <span class="b-more">(${esc(c.lemma)})</span>` : ""}</span></span>`).join("");
   // Jaa osiin: lauseen näkymään sanan jakoon (sanan kirjainten väliin napauttamalla)
-  const split = settings.ocrFrom === "sme" && [...w.word].length >= 6
+  const split = sentCanSplit() && [...w.word].length >= 6
     ? `<span class="b-row b-cand b-split" data-split="1"><span class="b-sme">✂ ${esc(t("sentSplit"))}</span><span class="b-tr">${esc(t("sentSplitShort"))}</span></span>` : "";
   bubble.innerHTML = `<span class="b-text"><span class="b-row b-form b-unknown"><span class="b-sme">${esc(w.word)}</span>` +
     `<span class="b-tr">${esc(t(label))}</span></span>${cands}${split}</span>` +
@@ -3667,15 +3743,17 @@ function sentTokens(raw) {
       // Nimeen yhdysmerkillä liitetty tuntematon saamen sana (Microsoft-bálválusain) korjattavaksi.
       // Lauseen alussa iso alkukirjain ei kerro nimestä (Prográmmafitnodat): tuntematon, korjattavissa
       tok.num = /^\d/.test(r.t);
-      tok.name = (cap && !hy && n > 0) || tok.num;
+      // Iso alkukirjain ei tee sanasta nimeä: tuntematon, korjattavissa; käännöksessä sellaisenaan (Microsoft, Toppari)
+      tok.name = !!tok.num;
       tok.unknown = !tok.name;
-    } else if (w.unknown) tok.unknown = true;
+      tok.capKeep = cap && !hy;
+    } else if (w.unknown) { tok.unknown = true; tok.capKeep = cap; }
     else {
       const g = w.gloss || (w.gloss = ocrGloss(w.word, w.clean));
       // Henkilön nimi sellaisenaan (Máhte = "miehen nimi"); paikannimi käännetään (Ohcejoga = Utsjoen, Romssa = Tromssan)
       const personName = g.prop && (!g.trans || /\b(nimi|navn|name)\b/i.test(g.trans));
-      if (personName || cap && n > 0 && !g.trans) tok.name = true;
-      else if (!g.trans) tok.unknown = true;
+      if (personName) tok.name = true;
+      else if (!g.trans) { tok.unknown = true; tok.capKeep = cap; }
       const strip = (x) => x.replace(/\s*\([^)]*\)/g, "").trim();
       const opts = [...(g.form ? g.form.split(" / ") : []), ...splitList(g.trans).map(strip), ...(g.alt ? [g.alt.text] : [])]
         .map((x) => x.trim()).filter(Boolean);
@@ -3686,10 +3764,10 @@ function sentTokens(raw) {
       if (cap && n > 0 && !tok.name && !g.prop) tok.opts = [r.clean, ...tok.opts];
     }
     // Tuntematon yhdyssana (prográmma + fitnodat): osien käännökset ehdotukseksi
-    if (tok.unknown && settings.ocrFrom === "sme" && !hy) {
-      const lw = w?.fuzzyParts ? w.word : (r.clean || "").toLowerCase(), parts = w?.fuzzyParts || (lw.length >= 6 ? splitCompound(lw) : null);
-      if (!parts && n === 0 && /^\p{Lu}/u.test(r.clean || "")) { tok.unknown = false; tok.name = true; }  // Microsoft lauseen alussa: nimenä, napautettavissa
-      if (parts) { tok.unknown = false; tok.opts = [parts.map((x, k) => { const g = ocrGloss(cmpLemma.get(x) || x); return ((k === parts.length - 1 && g.form ? g.form.split(" / ").pop() : g.trans) || x).split(", ")[0].replace(/\s*\([^)]*\)/g, "").trim(); }).join("")]; tok.lemma = parts.join(" + "); }
+    if (tok.unknown && sentCanSplit() && !hy) {
+      const lang = settings.ocrFrom, lw = w?.fuzzyParts ? w.word : (r.clean || "").toLowerCase();
+      const parts = w?.fuzzyParts || (lw.length >= 6 ? (isMinor(lang) ? splitMinorCompound(lang, lw)?.map((x) => x.stem) : splitCompound(lw)) : null);
+      if (parts) { const info = compoundPartsInfo(parts); tok.unknown = false; tok.opts = [info.trans]; tok.lemma = parts.join(" + "); }
     }
     const key = `${r.cx},${r.cy}`;
     if (ocr.sentChoice?.[key]) Object.assign(tok, ocr.sentChoice[key]);
@@ -3767,11 +3845,54 @@ async function quickWildcard(query, limit, stale) {
   const f = (id) => wildFreq.get(id) ?? -Infinity;
   return [...hits.keys()].sort((a, b) => f(b) - f(a) || a - b).slice(0, limit).map((id) => hits.get(id));
 }
+// Inarin/koltan jokerihaku tarkkeettomasta asusta: viisi ensimmäistä eri sanaa
+async function minorQuickWildcard(lang, query, limit, stale) {
+  const pat = minorFold(lang, query.trim()).replace(/[[\]]/g, "");
+  if (pat.replace(/[*?]/g, "").length < 3) return [];
+  const st = minorDb[lang].prepare(`SELECT surface, word_id FROM ${lang}_forms WHERE fold GLOB ?`);
+  const seen = new Map();
+  try {
+    st.bind([pat]);
+    let n = 0, slice = performance.now();
+    while (st.step()) {
+      const [surface, id] = st.get();
+      if (!seen.has(id)) seen.set(id, surface);
+      if (seen.size >= limit) break;
+      if (++n % 2000 === 0 && performance.now() - slice > 60) {
+        await new Promise((r) => setTimeout(r, 0));
+        if (stale()) return null;
+        slice = performance.now();
+      }
+    }
+  } finally { st.free(); }
+  return [...seen.values()];
+}
 let sentWildRun = 0;
 // Yhdyssanan osat käännöksineen (käsin jaettu tai haettu): alkuosat perusmuodon käännöksellä, viimeinen muodon
 // mukaan (čoahkkin + bálvalusa = kokous + palvelun -> kokouspalvelun). Osa, jota ei löydy sellaisenaan, haetaan
 // sumealla haulla (coahkkin -> čoahkkin).
+// Inarin/koltan osa: sana (tarkka asu, tarkkeeton asu, yhdysmuoto tai sumea haku) ja ensimmäinen käännös
+function minorPartInfo(lang, raw, fz) {
+  let p = raw.toLowerCase(), row = minorRows(lang, p)[0];
+  if (!row) row = mall(lang, `SELECT w.* FROM ${lang}_forms f JOIN ${lang}_words w ON w.id = f.word_id WHERE f.fold = ? LIMIT 1`, [minorFold(lang, p)])[0];
+  if (!row) { const id = minorCmp(lang).get(minorFold(lang, p)); if (id) row = mall(lang, `SELECT * FROM ${lang}_words WHERE id = ?`, [id])[0]; }
+  if (!row && p.length >= 3) {
+    const f = fz().search(p, 3, 3);
+    if (f && !f.parts) { p = f.word; row = minorRows(lang, p)[0]; }
+  }
+  const trans = row ? (splitList(minorTranslation(lang, row, ocrTo()))[0] || "").replace(/^≈\s*/, "").replace(/\s*\([^)]*\)/g, "").trim() : "";
+  return { word: p, trans, base: row && row.lemma.toLowerCase() !== p ? row.lemma : "" };
+}
 function compoundPartsInfo(parts) {
+  const lang = settings.ocrFrom;
+  if (isMinor(lang)) {
+    let mf = null;
+    const fz = () => (mf ||= minorFuzzySearch(lang));
+    const out = parts.map((x) => minorPartInfo(lang, x, fz));
+    mf?.free();
+    const trans = out.every((x) => x.trans) ? out.map((x) => x.trans).join("") : out.map((x) => x.trans || `[${x.word}]`).join(" + ");
+    return { parts: out, word: out.map((x) => x.word).join(""), trans };
+  }
   let fz = null;
   const cmpOf = (p) => cmpLemma.get(p) || (hasTable("sme_cmp") ? all("SELECT lemma FROM sme_cmp WHERE stem = ?", [p])[0]?.lemma : null);
   const out = parts.map((raw, k) => {
@@ -3789,13 +3910,24 @@ function compoundPartsInfo(parts) {
   const trans = out.every((x) => x.trans) ? out.map((x) => x.trans).join("") : out.map((x) => x.trans || `[${x.word}]`).join(" + ");
   return { parts: out, word: out.map((x) => x.word).join(""), trans };
 }
+// Osiin jako ja korjauspaneeli: pohjoissaame sekä inari ja koltta, kun niiden sanasto on ladattu
+const sentCanSplit = () => settings.ocrFrom === "sme" || (isMinor(settings.ocrFrom) && hasMinor(settings.ocrFrom));
 // Käsin jako: oletusjako haun mukaan, jos osien pituudet täsmäävät tekstiin
 function sentDefaultCuts(text) {
   const w = text.toLowerCase(), cuts = new Set();
-  if (settings.ocrFrom !== "sme" || w.length < 6) return cuts;
-  const fz = ocrFuzzySearch(), f = fz.search(w);
-  fz.free();
-  const parts = f?.parts || splitCompound(w);
+  const lang = settings.ocrFrom;
+  if (!sentCanSplit() || w.length < 6) return cuts;
+  // Sanakirjan sana sellaisenaan: ei oletusjakoa (tuʹtǩǩummša ei ole tuʹtǩǩ + ummša)
+  if (isMinor(lang) ? mall(lang, `SELECT 1 FROM ${lang}_forms WHERE fold = ? LIMIT 1`, [minorFold(lang, w)]).length : ocrGloss(w).trans) return cuts;
+  let parts;
+  if (isMinor(lang)) {
+    parts = splitMinorCompound(lang, w)?.map((x) => x.stem);
+    if (!parts) { const fz = minorFuzzySearch(lang), f = fz.search(w); fz.free(); parts = f?.parts?.map((x) => x.stem); }
+  } else {
+    const fz = ocrFuzzySearch(), f = fz.search(w);
+    fz.free();
+    parts = f?.parts || splitCompound(w);
+  }
   if (parts && parts.join("").length === [...w].length) {
     let pos = 0;
     for (const p of parts.slice(0, -1)) { pos += [...p].length; cuts.add(pos); }
@@ -3825,7 +3957,7 @@ const sentKey = (tok) => `${tok.cx},${tok.cy}`;
 function sentWordText(tok) {
   if (tok.fixed) return tok.fixed.trans || (tok.fixed.keep ? tok.fixed.word : `[${tok.fixed.word}]`);
   if (tok.name) return tok.clean || tok.t;
-  if (tok.unknown) return `[${tok.clean || tok.t}]`;
+  if (tok.unknown) return tok.capKeep ? tok.clean || tok.t : `[${tok.clean || tok.t}]`;
   return tok.opts?.[tok.choice || 0] || tok.clean;
 }
 function sentTranslation() {
@@ -3883,7 +4015,7 @@ function renderSentView() {
   const tok = sent.toks[sent.sheet];
   if (tok.unknown || tok.name || tok.fixed?.edited) {
     const src = sentCutout(tok, 1.8), guess = sent.split?.text || tok.fixed?.word || (tok.name ? tok.clean || tok.t : (tok.clean || tok.t).toLowerCase());
-    const canSplit = settings.ocrFrom === "sme";
+    const canSplit = sentCanSplit();
     sheet.innerHTML = `<div class="sent-sh-head">${src ? `<img class="sent-cut" src="${src}" alt="${esc(t("sentInPhoto"))}">` : "<span></span>"}` +
       `<button class="chip-btn" data-act="cancel">${esc(t("cancel"))}</button><button class="chip-btn primary" data-act="done">${esc(t("sentDone"))}</button></div>` +
       `<div class="sent-in-row"><input id="sent-input" type="text" autocapitalize="none" spellcheck="false" aria-label="${esc(t("sentWhat"))}" placeholder="${esc(t("sentWhat"))}" value="${esc(guess)}">` +
@@ -3909,18 +4041,22 @@ function renderSentSugs(text) {
   };
   const run = ++sentWildRun;
   // Jokerit (*oahkkinb*lvalusa): yleisimmät osumat taustalla, kirjoitus keskeyttää
-  if (lang === "sme" && /[*?]/.test(raw)) {
+  if (sentCanSplit() && /[*?]/.test(raw)) {
     sugs.innerHTML = `<p class="sent-lab">${esc(t("wildSearching"))}</p>`;
     sugs.sugs = [];
-    quickWildcard(raw, 5, () => run !== sentWildRun || !sent).then((hits) => {
+    const stale = () => run !== sentWildRun || !sent;
+    (isMinor(lang) ? minorQuickWildcard(lang, raw, 5, stale) : quickWildcard(raw, 5, stale)).then((hits) => {
       if (hits == null || run !== sentWildRun || !$("sent-sugs")) return;
-      const list = hits.map((h) => { const g = ocrGloss(h); return { word: h, trans: ((g.lemma ? g.form || g.trans : g.trans) || "").split(" / ")[0].split(", ")[0] }; });
+      const list = hits.map((h) => {
+        if (isMinor(lang)) { const row = minorRows(lang, h)[0]; return { word: h, trans: row ? (splitList(minorTranslation(lang, row, ocrTo()))[0] || "") : "" }; }
+        const g = ocrGloss(h); return { word: h, trans: ((g.lemma ? g.form || g.trans : g.trans) || "").split(" / ")[0].split(", ")[0] };
+      });
       show(list.length ? list : [{ word: raw, trans: "", keep: true }]);
     });
     return;
   }
   // Käsin jaettu: čoahkkin+bálvalusa tai čoahkkin-bálvalusa (pienellä alkava; Microsoft-bálvalusain on nimi + sana)
-  const manual = lang === "sme" && (/\S\s*\+\s*\S/.test(raw) || /^\p{Ll}[^-]*\p{L}-\p{Ll}[^-]*$/u.test(raw));
+  const manual = sentCanSplit() && (/\S\s*\+\s*\S/.test(raw) || /^\p{Ll}[^-]*\p{L}-\p{Ll}[^-]*$/u.test(raw));
   if (manual) {
     const info = compoundPartsInfo(raw.split(/[+-]/).map((x) => x.trim()).filter(Boolean));
     out.push({ word: info.word, parts: info.parts.map((x) => x.word).join(" + "), trans: info.trans });
@@ -3946,10 +4082,18 @@ function renderSentSugs(text) {
           ? { word: f.word, parts: f.parts.join(" + "), trans: f.parts.map((x) => (ocrGloss(cmpLemma.get(x) || x).trans || x).split(", ")[0]).join(" + ") }
           : { word: f.word, trans: ((fg.lemma ? fg.form || fg.trans : fg.trans) || "").split(" / ")[0].split(", ")[0] });
       }
-    } else if (isMinor(lang)) {
+    } else if (isMinor(lang) && hasMinor(lang)) {
       const parts = splitMinorCompound(lang, w);
       if (parts) out.push({ word: w, parts: parts.map((p) => p.stem).join(" + "),
         trans: parts.map((p) => splitList(minorTranslation(lang, mall(lang, `SELECT * FROM ${lang}_words WHERE id = ?`, [p.id])[0] || {}, ocrTo()))[0] || p.stem).join(" + ") });
+      // Sumea haku (kaksoiskirjain, väärin luettu yhdyssana)
+      const fz = minorFuzzySearch(lang), f = fz.search(w);
+      fz.free();
+      if (f && !out.some((o) => o.word === f.word)) {
+        const info = f.parts ? compoundPartsInfo(f.parts.map((x) => x.stem)) : null, row = f.parts ? null : minorRows(lang, f.word)[0];
+        out.splice(out.length ? 1 : 0, 0, f.parts ? { word: f.word, parts: f.parts.map((x) => x.stem).join(" + "), trans: info.trans }
+          : { word: f.word, trans: row ? splitList(minorTranslation(lang, row, ocrTo()))[0] || "" : "" });
+      }
     }
   }
   if (pre) for (const o of out) { o.word = pre + o.word; if (o.trans) o.trans = pre + o.trans; if (o.parts) o.parts = pre + o.parts; }
@@ -4152,7 +4296,7 @@ function bindOcrGestures() {
     if (speaker) {
       if (!speaker.classList.contains("loading")) speak(ocr.words[ocr.picked].gloss.say, speaker);
     } else if (target?.closest("#ocr-bubble [data-split]")) openOcrFix(true);
-    else if (ocr.words[ocr.picked]?.unknown && settings.ocrFrom === "sme" && target?.closest("#ocr-bubble .b-edit")) openOcrFix(false);
+    else if (ocr.words[ocr.picked]?.unknown && sentCanSplit() && target?.closest("#ocr-bubble .b-edit")) openOcrFix(false);
     else if (target?.closest("#ocr-bubble")) openOcrWord(target.closest("[data-cand]")?.dataset.cand || null);
     else if (word) {
       if (Number(word.dataset.i) === ocr.picked) openOcrWord();

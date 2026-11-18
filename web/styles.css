@@ -935,6 +935,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 }
 /* Tuntematon sana: himmeä katkoviiva, napautus näyttää lähimmät sanat */
 .ocr-photo .ocr-word.unknown { background: transparent; box-shadow: none; border: 1.5px dashed color-mix(in srgb, var(--mark) 45%, transparent); border-radius: 6px; }
+.ocr-photo .ocr-word.unknown.cap { border-style: dotted; border-color: color-mix(in srgb, var(--mark) 28%, transparent); }
 .ocr-photo .ocr-word.unknown.picked { background: color-mix(in srgb, var(--mark) 14%, transparent); border-color: var(--mark); }
 /* Tuntemattoman sanan otsikko koko kuplan levyinen (pitkä yhdyssana ei kavenna käännössaraketta), selite alle */
 .ocr-bubble .b-unknown > * { grid-column: 1 / -1; }
