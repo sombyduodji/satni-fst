@@ -3721,7 +3721,7 @@ function ocrSentenceAround(rIndex) {
 }
 function sentTokens(raw) {
   const rows = raw.filter((r) => /\p{L}|\d/u.test(r.clean || r.t));
-  return rows.map((r, n) => {
+  const toks = rows.map((r, n) => {
     const w = ocr.words.find((x) => x.cx === r.cx && x.cy === r.cy);
     const prev = n > 0 ? (rows[n - 1].clean || "").toLowerCase() : "";
     const pw = n > 0 ? ocr.words.find((x) => x.cx === rows[n - 1].cx && x.cy === rows[n - 1].cy) : null;
@@ -3760,6 +3760,8 @@ function sentTokens(raw) {
       const verb = settings.ocrFrom === "sme" && settings.lang === ocrTo() ? sentVerbForms(g, w.word, prev, prevLemma) : null;
       tok.opts = verb ? [...new Set([...verb, ...opts.filter((o) => !g.form || !g.form.split(" / ").includes(o))])] : sentNegOrder([...new Set(opts)], prev);
       tok.lemma = g.lemma || "";
+      if (!verb && settings.ocrFrom === "sme" && g.id && settings.lang === "fin" && ocrTo() === "fin") tok.ctx = sentWordCtx(g, w.word);
+      else if (verb) tok.ctx = { pos: "V" };
       // Iso alkukirjain keskellä lausetta (Siiddas = Siida-museo, ei "kotona"): oletuksena sana sellaisenaan, käännös valittavissa
       if (cap && n > 0 && !tok.name && !g.prop) tok.opts = [r.clean, ...tok.opts];
     }
@@ -3767,12 +3769,21 @@ function sentTokens(raw) {
     if (tok.unknown && sentCanSplit() && !hy) {
       const lang = settings.ocrFrom, lw = w?.fuzzyParts ? w.word : (r.clean || "").toLowerCase();
       const parts = w?.fuzzyParts || (lw.length >= 6 ? (isMinor(lang) ? splitMinorCompound(lang, lw)?.map((x) => x.stem) : splitCompound(lw)) : null);
-      if (parts) { const info = compoundPartsInfo(parts); tok.unknown = false; tok.opts = [info.trans]; tok.lemma = parts.join(" + "); }
+      if (parts) {
+        const info = compoundPartsInfo(parts);
+        tok.unknown = false; tok.opts = [info.trans]; tok.lemma = parts.join(" + ");
+        // Yhdyssana taipuu viimeisen osansa mukaan: alkuosat + viimeisen osan muoto lauseyhteydestä (uuden kokouspalvelun)
+        if (lang === "sme" && settings.lang === "fin" && ocrTo() === "fin" && info.parts.every((x) => x.trans)) {
+          const lastPart = info.parts[info.parts.length - 1].word, lg = ocrGloss(lastPart);
+          if (lg.id) { tok.ctx = sentWordCtx(lg, lastPart); tok.ctx.prefix = info.parts.slice(0, -1).map((x) => x.trans).join(""); }
+        }
+      }
     }
-    const key = `${r.cx},${r.cy}`;
-    if (ocr.sentChoice?.[key]) Object.assign(tok, ocr.sentChoice[key]);
     return tok;
   });
+  sentContext(toks);
+  for (const tok of toks) { const key = `${tok.cx},${tok.cy}`; if (ocr.sentChoice?.[key]) Object.assign(tok, ocr.sentChoice[key]); }
+  return toks;
 }
 // Kieltoverbin jälkeinen muoto (ii álgán = ei alkanut): "(ei) …" vain, kun edellinen sana on kieltoverbi; muuten
 // sama muoto on partisiippi (leat álgán = ovat alkaneet), joten "(ei)"-vaihtoehdot pois tai viimeisiksi
@@ -3868,6 +3879,66 @@ async function minorQuickWildcard(lang, query, limit, stale) {
   return [...seen.values()];
 }
 let sentWildRun = 0;
+// --- Merkityksen ja muodon valinta lauseyhteydestä (pohjoissaame -> suomi) ---
+// Sanan sanaluokka, kuvan muodon tagit ja suomen käännöksen taivutusmuodot (fin_forms)
+function sentWordCtx(g, word) {
+  const data = loadWord(g.id), pos = (data.word.pos || "").toUpperCase(), stem = fold(word);
+  const tags = [...new Set([...data.paradigm].filter(([, forms]) => forms.some((f) => fold(f) === stem)).map(([tag]) => tag))]
+    .filter((tag) => !/Du\d/.test(tag));
+  const ctx = { pos: data.word.pos, lemma: data.word.sme_lemma, tags };
+  if (FORM_POS[pos] && pos !== "V") {
+    const own = data.meanings.find((m) => m.lang === "fin" && m.translations);
+    const base = (own ? splitList(own.translations) : splitList(data.word.finnish_translation || ""))[0];
+    if (base) ctx.f = translationForms("fin", base.replace(/\(.*?\)/g, "").trim(), FORM_POS[pos]);
+  }
+  return ctx;
+}
+// Saamen sijamuoto -> suomen muoto (taivutusmuodon avain), kun valintaa ei tehdä lauseyhteydestä
+const SENT_FIN_CASE = { Nom: "Nom", Gen: "Gen", Acc: "Gen", Ill: "Ill", Loc: "Ine", Com: "Gen", Ess: "Ess" };
+function sentFinKey(tag) {
+  const parts = tag.split("+"), n = parts[0] === "Pl" ? "Pl" : "Sg", c = SENT_FIN_CASE[parts[parts.length - 1]];
+  if (tag === "Attr") return "Sg+Nom";
+  if (!c) return null;
+  return c === "Ess" ? `${n}+Ess` : n === "Pl" && parts[parts.length - 1] === "Acc" ? "Pl+Nom" : `${n}+${c}`;
+}
+// Säännöt (käyttäjä 2026-11-18): 1) adjektiivi substantiivin edellä saa sen suomen sijan ja luvun (viiddis váttisvuođat =
+// laajat ongelmat); 2) genetiivi/akkusatiivi-muoto: substantiivin tai postposition edellä genetiivi (čoahkkima áigge =
+// kokouksen aikana), lukusanan (2+) jälkeen partitiivi (150 jagi = 150 vuotta), verbin jälkeen objekti (kieltolauseessa
+// partitiivi: in lohkan girjji = en lukenut kirjaa); 3) verbin persoona (sentVerbForms). Muut vaihtoehdot jäävät siruun.
+function sentContext(toks) {
+  const numVal = (t) => !t ? 0 : t.num ? parseInt(t.clean || t.t, 10) || 0 : t.ctx?.pos === "Num" && !/^(okta|akta)$/.test(t.ctx.lemma || "") ? 2 : 0;
+  const put = (tok, text) => {
+    if (!text || tok.fixed) return;
+    tok.opts = [text, ...(tok.opts || []).filter((o) => o !== text)];
+    tok.choice = 0;
+  };
+  toks.forEach((tok, i) => {
+    const c = tok.ctx;
+    if (!c?.f || !["N", "Num", "Pron"].includes(c.pos) || !c.tags.length) return;
+    const prev = toks[i - 1], next = toks[i + 1];
+    const has = (t) => c.tags.includes(t);
+    let key = null;
+    const amb = ["Sg", "Pl"].find((n) => has(`${n}+Gen`) && has(`${n}+Acc`));
+    if (numVal(prev) >= 2 && has("Sg+Gen")) key = "Sg+Par";
+    else if (amb) {
+      const nextPos = next?.ctx?.pos;
+      const negated = toks.slice(0, i).some((t) => SME_NEG.has((t.clean || "").toLowerCase()));
+      const verbBefore = toks.slice(Math.max(0, i - 3), i).some((t) => t.ctx?.pos === "V");
+      if (["N", "A", "Po", "Num"].includes(nextPos)) key = `${amb}+Gen`;
+      else if (verbBefore) key = negated ? `${amb}+Par` : amb === "Sg" ? "Sg+Gen" : "Pl+Nom";
+      else key = `${amb}+Gen`;
+    } else key = sentFinKey(c.tags[0]);
+    tok.finKey = key;
+    if (key && c.f[key] && (amb || key === "Sg+Par")) put(tok, (c.prefix || "") + c.f[key] + (c.tags.some((t) => t.endsWith("Com")) ? " kanssa" : ""));
+  });
+  // Adjektiivi seuraavan substantiivin muodossa (laajat ongelmat, isossa talossa)
+  toks.forEach((tok, i) => {
+    const c = tok.ctx, next = toks[i + 1];
+    if (c?.pos !== "A" || !c.f || !next?.finKey || !["N", "Pron"].includes(next.ctx?.pos)) return;
+    if (!c.tags.some((t) => t === "Attr" || /^(Sg|Pl)\+/.test(t))) return;
+    put(tok, c.f[next.finKey]);
+  });
+}
 // Yhdyssanan osat käännöksineen (käsin jaettu tai haettu): alkuosat perusmuodon käännöksellä, viimeinen muodon
 // mukaan (čoahkkin + bálvalusa = kokous + palvelun -> kokouspalvelun). Osa, jota ei löydy sellaisenaan, haetaan
 // sumealla haulla (coahkkin -> čoahkkin).
