@@ -2675,6 +2675,25 @@ async function loadMinor(lang) {
     minorLoading[lang] = false;
   }
 }
+// Suomen sanaparit (data/satni-fin-ngram.db.gz; Leipzig Corpora Collection, CC BY): vaihtoehtojen järjestys
+// lausenäkymässä. Ladataan valokuvahaun kanssa; ilman sitä järjestys on sääntöjen mukainen.
+let ngramDb = null, ngramLoading = false;
+async function loadNgram() {
+  if (ngramDb || ngramLoading || !sqlModule) return;
+  ngramLoading = true;
+  try {
+    const res = await fetch("data/satni-fin-ngram.db.gz");
+    if (!res.ok) return;
+    const raw = new Uint8Array(await res.arrayBuffer());
+    const bytes = raw[0] === 0x1f && raw[1] === 0x8b
+      ? new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()) : raw;
+    ngramDb = new sqlModule.Database(bytes);
+  } catch (e) {
+    console.warn("loadNgram", e.message);
+  } finally {
+    ngramLoading = false;
+  }
+}
 function unloadMinor(lang) {
   minorDb[lang]?.close();
   delete minorDb[lang];
@@ -2684,6 +2703,8 @@ function unloadMinor(lang) {
 function syncMinorDbs() {
   const want = settings.exp.ocr && window.SatniOcr ? settings.ocrLangs : [];
   for (const lang of MINOR) if (want.includes(lang)) loadMinor(lang); else unloadMinor(lang);
+  if (settings.exp.ocr && window.SatniOcr) loadNgram();
+  else if (ngramDb) { ngramDb.close(); ngramDb = null; }
 }
 const hasSmn = () => hasMinor("smn");
 function minorMatcher(lang) {
@@ -3782,6 +3803,7 @@ function sentTokens(raw) {
     return tok;
   });
   sentContext(toks);
+  sentRerank(toks);
   for (const tok of toks) { const key = `${tok.cx},${tok.cy}`; if (ocr.sentChoice?.[key]) Object.assign(tok, ocr.sentChoice[key]); }
   return toks;
 }
@@ -3964,6 +3986,34 @@ function sentContext(toks) {
     if (!c.tags.some((t) => t === "Attr" || /^(Sg|Pl)\+/.test(t))) return;
     put(tok, c.f[next.finKey]);
   });
+}
+// Suomen sanaparien mukainen järjestys: vaihtoehto, joka sopii naapurisanojen kanssa (ennen joulua), nousee ensin.
+// Sääntöjen ja sanakirjan järjestys painaa (−2 sijaa kohden), joten pari kumoaa sen vain selvällä erolla.
+// Esimerkkilausekoe 2026-11-18: ensimmäinen vaihtoehto 85,1 % -> 86,1 %.
+function sentRerank(toks) {
+  if (!ngramDb || settings.lang !== "fin" || ocrTo() !== "fin") return;
+  const idSt = ngramDb.prepare("SELECT id FROM fin_vocab WHERE w = ?"), biSt = ngramDb.prepare("SELECT n FROM fin_bigram WHERE a = ? AND b = ?");
+  const ids = new Map();
+  const id = (w) => { if (!ids.has(w)) { idSt.bind([w]); ids.set(w, idSt.step() ? idSt.get()[0] : 0); idSt.reset(); } return ids.get(w); };
+  const count = (a, b) => { const x = id(a), y = id(b); if (!x || !y) return 0; biSt.bind([x, y]); const n = biSt.step() ? biSt.get()[0] : 0; biSt.reset(); return n; };
+  const words = (o) => (o || "").toLowerCase().replace(/\(.*?\)/g, "").match(/[\p{L}-]+/gu) || [];
+  try {
+    const first = toks.map((t) => words(t.fixed ? t.fixed.trans || t.fixed.word : t.name || t.unknown || !t.opts ? t.clean || t.t : t.opts[0]));
+    toks.forEach((t, i) => {
+      if (!t.opts || t.opts.length < 2 || t.fixed || t.name || t.unknown) return;
+      const score = (k) => {
+        const ws = words(t.opts[k]);
+        if (!ws.length) return -Infinity;
+        let s = -2 * k;
+        if (first[i - 1]?.length) s += Math.log1p(count(first[i - 1][first[i - 1].length - 1], ws[0]));
+        if (first[i + 1]?.length) s += Math.log1p(count(ws[ws.length - 1], first[i + 1][0]));
+        return s;
+      };
+      let best = 0, bestS = score(0);
+      for (let k = 1; k < Math.min(t.opts.length, 6); k++) { const sc = score(k); if (sc > bestS) { best = k; bestS = sc; } }
+      if (best) { t.opts = [t.opts[best], ...t.opts.filter((_, k) => k !== best)]; first[i] = words(t.opts[0]); }
+    });
+  } finally { idSt.free(); biSt.free(); }
 }
 // Yhdyssanan osat käännöksineen (käsin jaettu tai haettu): alkuosat perusmuodon käännöksellä, viimeinen muodon
 // mukaan (čoahkkin + bálvalusa = kokous + palvelun -> kokouspalvelun). Osa, jota ei löydy sellaisenaan, haetaan

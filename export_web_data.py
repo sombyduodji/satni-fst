@@ -119,6 +119,37 @@ def minority_fold(lang, text):
     return text
 
 
+NGRAM_MIN = 3  # sanapari mukaan, jos se esiintyy vähintään näin monesti (koe 2026-11-18: 3 = 5,6 Mt, 5 = 3,2 Mt)
+
+
+def export_fin_ngram(src):
+    """Suomen sanaparit (fin_ngrams.py, Leipzig Corpora Collection, CC BY) omaan tiedostoonsa
+    web/data/satni-fin-ngram.db.gz: kuvan lausenäkymä lataa sen vain, kun valokuvahaku on käytössä."""
+    out = os.path.join(OUT_DIR, "satni-fin-ngram.db")
+    if os.path.exists(out):
+        os.remove(out)
+    if not src.execute("SELECT 1 FROM sqlite_master WHERE name = 'fin_bigram'").fetchone():
+        print("fin_bigram puuttuu satni.db:stä (python3 fin_ngrams.py ...)")
+        return
+    m = sqlite3.connect(out)
+    m.executescript("""
+        CREATE TABLE fin_vocab (id INTEGER PRIMARY KEY, w TEXT UNIQUE);
+        CREATE TABLE fin_bigram (a INTEGER, b INTEGER, n INTEGER, PRIMARY KEY (a, b)) WITHOUT ROWID;
+    """)
+    pairs = src.execute("SELECT a, b, n FROM fin_bigram WHERE n >= ?", (NGRAM_MIN,)).fetchall()
+    m.executemany("INSERT INTO fin_bigram VALUES (?,?,?)", pairs)
+    used = {x for a, b, _ in pairs for x in (a, b)}
+    m.executemany("INSERT INTO fin_vocab VALUES (?,?)", ((i, w) for i, w in src.execute("SELECT id, w FROM fin_vocab") if i in used))
+    m.commit()
+    m.execute("VACUUM")
+    m.close()
+    with open(out, "rb") as f_in, gzip.open(out + ".gz", "wb", compresslevel=9) as f_out:
+        shutil.copyfileobj(f_in, f_out)
+    packed = os.path.getsize(out + ".gz")
+    os.remove(out)
+    print(f"web/data/satni-fin-ngram.db.gz: {packed / 1e6:.1f} Mt ({len(pairs)} sanaparia)")
+
+
 def export_minor(src, lang, cols):
     """Inarin/koltan kuvatunnistuksen taulut omaan tiedostoonsa web/data/satni-{lang}.db.gz: sovellus lataa sen vain,
     kun kieli on valittu kuvan kieleksi asetuksista (muisti: noin 25-35 Mt kieltä kohden)."""
@@ -380,6 +411,7 @@ def main():
 
     for lang, cols in (("smn", "id, lemma, pos, fin, sme"), ("sms", "id, lemma, pos, fin, nob, sme")):
         export_minor(src, lang, cols)
+    export_fin_ngram(src)
 
     sms_rows = {(lang, fold(word), pos): words for lang, word, pos, words in skolt_data.rows(SCRIPT_DIR)}
     dst.executemany("INSERT INTO sms VALUES (?,?,?,?)", ((*k, v) for k, v in sms_rows.items()))
