@@ -109,12 +109,13 @@ Skolt Sámi inflection (photos, experimental): GiellaLT lang-sms
   translations come from dict-sms-mul, dict-fin-sms and dict-nob-sms
   (above). North Sámi mostly goes through Finnish and is approximate.
 
-Finnish word pairs (photo sentence view, experimental): Leipzig Corpora
-Collection, Finnish corpora (news 2020 and 2022, Wikipedia 2021),
+Finnish and Norwegian word pairs (photo sentence view, experimental):
+Leipzig Corpora Collection, Finnish corpora (news 2020 and 2022, Wikipedia
+2021) and Norwegian corpora (bokmål newscrawl 2019, Wikipedia 2021),
 Wortschatz Leipzig, Universität Leipzig
   Licence: Creative Commons Attribution (CC BY), see
   https://wortschatz.uni-leipzig.de/en/usage (CC-BY-4.0.txt)
-  Source: https://wortschatz.uni-leipzig.de/en/download/fin
+  Source: https://wortschatz.uni-leipzig.de/en/download/fin and /nob
   Only counts of word pairs (at least three occurrences) are included,
   no sentences. Goldhahn, Eckart & Quasthoff (2012), LREC 2012.
 

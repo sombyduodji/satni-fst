@@ -122,28 +122,29 @@ def minority_fold(lang, text):
 NGRAM_MIN = 3  # sanapari mukaan, jos se esiintyy vähintään näin monesti (koe 2026-11-18: 3 = 5,6 Mt, 5 = 3,2 Mt)
 
 
-def export_fin_ngram(src):
+def export_fin_ngram(src, lang="fin"):
     """Suomen sanaparit (fin_ngrams.py, Leipzig Corpora Collection, CC BY) omaan tiedostoonsa
     web/data/satni-fin-ngram.db.gz: kuvan lausenäkymä lataa sen vain, kun valokuvahaku on käytössä."""
-    out = os.path.join(OUT_DIR, "satni-fin-ngram.db")
+    out = os.path.join(OUT_DIR, f"satni-{lang}-ngram.db")
     if os.path.exists(out):
         os.remove(out)
-    if not src.execute("SELECT 1 FROM sqlite_master WHERE name = 'fin_bigram'").fetchone():
-        print("fin_bigram puuttuu satni.db:stä (python3 fin_ngrams.py ...)")
+    if not src.execute(f"SELECT 1 FROM sqlite_master WHERE name = '{lang}_bigram'").fetchone():
+        print(f"{lang}_bigram puuttuu satni.db:stä (python3 fin_ngrams.py ...)")
         return
     m = sqlite3.connect(out)
     m.executescript("""
         CREATE TABLE fin_vocab (id INTEGER PRIMARY KEY, w TEXT UNIQUE);
         CREATE TABLE fin_bigram (a INTEGER, b INTEGER, n INTEGER, PRIMARY KEY (a, b)) WITHOUT ROWID;
     """)
-    pairs = src.execute("SELECT a, b, n FROM fin_bigram WHERE n >= ?", (NGRAM_MIN,)).fetchall()
+    # Sovellus lukee aina taulut fin_vocab, fin_bigram, fin_unigram (tiedosto on kielikohtainen)
+    pairs = src.execute(f"SELECT a, b, n FROM {lang}_bigram WHERE n >= ?", (NGRAM_MIN,)).fetchall()
     m.executemany("INSERT INTO fin_bigram VALUES (?,?,?)", pairs)
     m.execute("CREATE TABLE fin_unigram (id INTEGER PRIMARY KEY, n INTEGER)")
-    unis = src.execute("SELECT id, n FROM fin_unigram WHERE n >= ?", (NGRAM_MIN,)).fetchall() if src.execute(
-        "SELECT 1 FROM sqlite_master WHERE name = 'fin_unigram'").fetchone() else []
+    unis = src.execute(f"SELECT id, n FROM {lang}_unigram WHERE n >= ?", (NGRAM_MIN,)).fetchall() if src.execute(
+        f"SELECT 1 FROM sqlite_master WHERE name = '{lang}_unigram'").fetchone() else []
     m.executemany("INSERT INTO fin_unigram VALUES (?,?)", unis)
     used = {x for a, b, _ in pairs for x in (a, b)} | {i for i, _ in unis}
-    m.executemany("INSERT INTO fin_vocab VALUES (?,?)", ((i, w) for i, w in src.execute("SELECT id, w FROM fin_vocab") if i in used))
+    m.executemany("INSERT INTO fin_vocab VALUES (?,?)", ((i, w) for i, w in src.execute(f"SELECT id, w FROM {lang}_vocab") if i in used))
     m.commit()
     m.execute("VACUUM")
     m.close()
@@ -151,7 +152,7 @@ def export_fin_ngram(src):
         shutil.copyfileobj(f_in, f_out)
     packed = os.path.getsize(out + ".gz")
     os.remove(out)
-    print(f"web/data/satni-fin-ngram.db.gz: {packed / 1e6:.1f} Mt ({len(pairs)} sanaparia)")
+    print(f"web/data/satni-{lang}-ngram.db.gz: {packed / 1e6:.1f} Mt ({len(pairs)} sanaparia)")
 
 
 def export_minor(src, lang, cols):
@@ -416,6 +417,7 @@ def main():
     for lang, cols in (("smn", "id, lemma, pos, fin, sme"), ("sms", "id, lemma, pos, fin, nob, sme")):
         export_minor(src, lang, cols)
     export_fin_ngram(src)
+    export_fin_ngram(src, "nob")
 
     sms_rows = {(lang, fold(word), pos): words for lang, word, pos, words in skolt_data.rows(SCRIPT_DIR)}
     dst.executemany("INSERT INTO sms VALUES (?,?,?,?)", ((*k, v) for k, v in sms_rows.items()))

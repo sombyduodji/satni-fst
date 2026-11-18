@@ -412,6 +412,7 @@ function setUiLanguage(code) {
   settings.uiLang = code;
   settings.lang = UI_LANGUAGES[code].translationLang;
   saveSettings();
+  if (ngramDb && settings.exp.ocr && window.SatniOcr) loadNgram();  // sanaparit uuden kielen mukaan
   applyStaticTexts();
   applyExperimental();
   renderSidebar();
@@ -2677,17 +2678,22 @@ async function loadMinor(lang) {
 }
 // Suomen sanaparit (data/satni-fin-ngram.db.gz; Leipzig Corpora Collection, CC BY): vaihtoehtojen järjestys
 // lausenäkymässä. Ladataan valokuvahaun kanssa; ilman sitä järjestys on sääntöjen mukainen.
-let ngramDb = null, ngramLoading = false;
+// Kieli: suomi (fin) tai norja (nob) käyttöliittymän kielen mukaan; vaihto lataa toisen tiedoston
+let ngramDb = null, ngramLoading = false, ngramLang = null;
 async function loadNgram() {
-  if (ngramDb || ngramLoading || !sqlModule) return;
+  const lang = settings.lang === "nob" ? "nob" : "fin";
+  if (ngramDb && ngramLang === lang) return;
+  if (ngramLoading || !sqlModule) return;
   ngramLoading = true;
   try {
-    const res = await fetch("data/satni-fin-ngram.db.gz");
+    const res = await fetch(`data/satni-${lang}-ngram.db.gz`);
     if (!res.ok) return;
     const raw = new Uint8Array(await res.arrayBuffer());
     const bytes = raw[0] === 0x1f && raw[1] === 0x8b
       ? new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()) : raw;
+    ngramDb?.close();
     ngramDb = new sqlModule.Database(bytes);
+    ngramLang = lang;
   } catch (e) {
     console.warn("loadNgram", e.message);
   } finally {
@@ -3798,7 +3804,7 @@ function sentTokens(raw) {
       const verb = settings.ocrFrom === "sme" && settings.lang === ocrTo() ? sentVerbForms(g, w.word, prev, prevLemma) : null;
       tok.opts = verb ? [...new Set([...verb, ...opts.filter((o) => !g.form || !g.form.split(" / ").includes(o))])] : sentNegOrder([...new Set(opts)], prev);
       tok.lemma = g.lemma || "";
-      if (!verb && settings.ocrFrom === "sme" && g.id && settings.lang === "fin" && ocrTo() === "fin") tok.ctx = sentWordCtx(g, w.word);
+      if (!verb && settings.ocrFrom === "sme" && g.id && ["fin", "nob"].includes(settings.lang) && ocrTo() === settings.lang) tok.ctx = sentWordCtx(g, w.word);
       else if (verb) tok.ctx = { pos: "V", lemma: g.lemma || w.word, tagOf: verb.tagOf };
       // Iso alkukirjain keskellä lausetta (Siiddas = Siida-museo, ei "kotona"): oletuksena sana sellaisenaan, käännös valittavissa
       if (cap && n > 0 && !tok.name && !g.prop) tok.opts = [r.clean, ...tok.opts];
@@ -3928,16 +3934,18 @@ function sentWordCtx(g, word) {
     .filter((tag) => !/Du\d/.test(tag));
   const ctx = { pos: data.word.pos, lemma: data.word.sme_lemma, tags, subtype: data.word.subtype, human: !!data.word.human };
   if (FORM_POS[pos] && pos !== "V") {
-    const own = data.meanings.find((m) => m.lang === "fin" && m.translations);
-    const base = (own ? splitList(own.translations) : splitList(data.word.finnish_translation || ""))[0];
+    const own = data.meanings.find((m) => m.lang === settings.lang && m.translations);
+    const base = (own ? splitList(own.translations) : splitList(data.word[LANGUAGES[settings.lang].col] || ""))[0];
     // Pronominin suomennos voi olla adjektiivin tai substantiivin taivutuksella (makkárge = minkäänlainen)
     const b = base && base.replace(/\(.*?\)/g, "").replace(/^ei\s+/, "").trim();
-    const formsOf = (x) => translationForms("fin", x, FORM_POS[pos]) || (pos === "PRON" ? translationForms("fin", x, "A") || translationForms("fin", x, "N") : null);
+    const tl = settings.lang === "nob" ? "nob" : "fin";
+    ctx.lang = tl;
+    const formsOf = (x) => translationForms(tl, x, FORM_POS[pos]) || (pos === "PRON" ? translationForms(tl, x, "A") || translationForms(tl, x, "N") : null);
     if (b) ctx.f = formsOf(b);
     // Muut suomennokset (álbmot = kansa, väestö): samassa muodossa valittaviksi (väestöltä)
-    const more = (own ? splitList(own.translations) : splitList(data.word.finnish_translation || "")).slice(1, 4)
+    const more = (own ? splitList(own.translations) : splitList(data.word[LANGUAGES[settings.lang].col] || "")).slice(1, 4)
       .map((x) => x.replace(/\(.*?\)/g, "").trim()).filter((x) => x && !/\s/.test(x));
-    ctx.alts = more.map(formsOf).filter(Boolean);
+    ctx.alts = tl === "fin" ? more.map(formsOf).filter(Boolean) : [];
   }
   return ctx;
 }
@@ -3964,6 +3972,7 @@ function sentFinKey(tag) {
 // kokouksen aikana), lukusanan (2+) jälkeen partitiivi (150 jagi = 150 vuotta), verbin jälkeen objekti (kieltolauseessa
 // partitiivi: in lohkan girjji = en lukenut kirjaa); 3) verbin persoona (sentVerbForms). Muut vaihtoehdot jäävät siruun.
 function sentContext(toks) {
+  if (settings.lang === "nob") return sentContextNob(toks);
   const numVal = (t) => !t ? 0 : t.num ? parseInt(t.clean || t.t, 10) || 0 : t.ctx?.pos === "Num" && !/^(okta|akta)$/.test(t.ctx.lemma || "") ? 2 : 0;
   // Valittu muoto ensin; muiden suomennosten sama muoto heti perään (kansalta, väestöltä), sitten loput
   const put = (tok, text) => {
@@ -4037,7 +4046,7 @@ function sentContext(toks) {
     put(tok, c.f[next.finKey]);
   });
   // Liittomuodot: leat + partisiippi (lea váldán = on ottanut, lean vásihan = olen kokenut)
-  const isLeat = (t) => t?.ctx?.pos === "V" && t.ctx.lemma === "leat";
+  const isLeat = (t) => t?.ctx?.pos === "V" && SME_LEAT.has(t.ctx.lemma);
   toks.forEach((tok, i) => {
     const c = tok.ctx;
     if (c?.pos !== "V" || !c.tagOf || tok.fixed) return;
@@ -4056,12 +4065,100 @@ function sentContext(toks) {
     if (toks.slice(0, i).some((t) => (t.ctx?.tags || []).some((tag) => /Comp/.test(tag)) || SENT_COMPARATIVES.has((t.clean || "").toLowerCase()))) put(tok, "kuin");
   });
 }
+// Norjan säännöt (pohjoissaame -> norja; norjassa ei ole sijoja): sija näkyy prepositiona ja sanajärjestyksenä.
+// Esimerkkilausekoe 4 805 norjankielisellä esimerkillä (2026-11-18).
+// leat-verbin sanakirjamuodot (lea -> leahkit sanakirjassa)
+const SME_LEAT = new Set(["leat", "leahkit"]);
+const NOB_POSTPOS = { "rájes": "siden", "rádjái": "til", "maŋŋel": "etter", "maŋŋil": "etter", "ovdal": "før", "vuostá": "mot", "vuostái": "mot", "áigge": "under" };
+const NOB_POSSESSIVE = /^(min|mitt|mine|din|ditt|dine|hans|hennes|vår|vårt|våre|deres|sin|sitt|sine)$/;
+function sentContextNob(toks) {
+  const numVal = (t) => !t ? 0 : t.num ? parseInt(t.clean || t.t, 10) || 0 : t.ctx?.pos === "Num" && !/^(okta|akta)$/.test(t.ctx.lemma || "") ? 2 : 0;
+  const put = (tok, text) => {
+    if (text == null || tok.fixed) return;
+    tok.opts = [...new Set([text, ...(tok.opts || [])])];
+    tok.choice = 0;
+  };
+  const isLeat = (t) => t?.ctx?.pos === "V" && SME_LEAT.has(t.ctx.lemma);
+  toks.forEach((tok, i) => {
+    const c = tok.ctx, prev = toks[i - 1], next = toks[i + 1];
+    if (!c || c.pos === "V") return;
+    const has = (t) => (c.tags || []).includes(t), f = c.f;
+    // Persoonapronomini substantiivin edellä: omistusmuoto (mu ahkásaš = min alder)
+    if (c.pos === "Pron" && c.subtype === "Pers" && next?.ctx?.pos === "N") {
+      const pos = (tok.opts || []).find((o) => NOB_POSSESSIVE.test(o.toLowerCase()));
+      if (pos) put(tok, pos);
+      return;
+    }
+    if (!f || !["N", "Num", "Pron", "A"].includes(c.pos)) return;
+    const pl = (c.tags || []).some((t) => t.startsWith("Pl+")) && !(c.tags || []).some((t) => t.startsWith("Sg+"));
+    const def = f[pl ? "Pl+Def" : "Sg+Def"], indef = f[pl ? "Pl+Indef" : "Sg+Indef"];
+    const pp = NOB_POSTPOS[(next?.clean || "").toLowerCase()];
+    if (c.pos === "N" && pp && (has("Sg+Gen") || has("Pl+Gen")) && def) {
+      // Postpositio prepositioksi eteen (čoahkkima maŋŋil = etter møtet); viikonpäivä ilman artikkelia (siden torsdag)
+      const weekday = SENT_WEEKDAYS.has(c.lemma);
+      put(tok, `${pp} ${weekday ? f["Sg+Indef"] : def}`);
+      put(next, "");
+      return;
+    }
+    if (c.pos === "N" && SENT_WEEKDAYS.has(c.lemma) && has("Sg+Gen") && !["N", "A", "Po"].includes(next?.ctx?.pos)) { put(tok, `på ${f["Sg+Indef"]}`); return; }
+    if (c.pos === "N" && /mánnu$/.test(c.lemma || "") && has("Sg+Gen") && !["N", "A", "Po"].includes(next?.ctx?.pos)) { put(tok, `i ${f["Sg+Indef"]}`); return; }
+    // Lukusanan jälkeen monikko (150 jagi = 150 år)
+    if (c.pos === "N" && numVal(prev) >= 2 && has("Sg+Gen") && f["Pl+Indef"]) { put(tok, f["Pl+Indef"]); return; }
+    // Paikallissija: lähdeverbin kanssa fra, muuten i
+    const loc = ["Sg", "Pl"].find((n) => has(`${n}+Loc`));
+    if (c.pos === "N" && loc && f[`${loc}+Def`]) {
+      const src = toks.some((t) => t.ctx?.pos === "V" && SENT_SOURCE_VERBS.has(t.ctx.lemma));
+      put(tok, `${src ? "fra" : "i"} ${f[`${loc}+Def`]}`);
+      return;
+    }
+    // Objekti (genetiivin/akkusatiivin näköinen verbin jälkeen): epämääräinen muoto (fállat aviissa = tilby en avis)
+    const amb = ["Sg", "Pl"].find((n) => has(`${n}+Gen`) && has(`${n}+Acc`));
+    if (c.pos === "N" && amb && !["N", "A", "Po"].includes(next?.ctx?.pos) && !has(`${amb}+Nom`)
+        && toks.slice(Math.max(0, i - 3), i).some((t) => t.ctx?.pos === "V") && f[`${amb}+Indef`]) { put(tok, f[`${amb}+Indef`]); return; }
+    // Genetiivi substantiivin edellä: norjassa yleensä ilman -s:ää (sámi giella = samisk språk, gáfe = kaffe)
+    if (c.pos === "N" && (has("Sg+Gen") || has("Pl+Gen")) && next?.ctx?.pos === "N" && indef && !has("Sg+Nom")) put(tok, indef);
+    // Adjektiivi monikollisen substantiivin edellä: monikko (viiddis váttisvuođat = store problemer)
+    if (c.pos === "A" && next?.ctx?.pos === "N" && (next.ctx.tags || []).some((t) => t.startsWith("Pl+")) && f.Pl) put(tok, f.Pl);
+  });
+  // Verbit: subjektipronomini pois, kun lauseessa on jo subjekti (son lea = han/hun er, ei "han/hun han/hun er");
+  // leat + partisiippi = har/hadde + partisiippi; infinitiivi apuverbin jälkeen ilman å:ta (áigut fállat = skal tilby)
+  const pron = new RegExp("^(" + Object.values(NOB_PRONOUNS).map((x) => x.replace(/[()]/g, "\\$&")).join("|") + ")\\s+");
+  toks.forEach((tok, i) => {
+    const c = tok.ctx;
+    if (c?.pos !== "V" || !tok.opts || tok.fixed) return;
+    const subjBefore = toks.slice(0, i).some((t) => t.name || ["N", "Pron"].includes(t.ctx?.pos));
+    if (isLeat(tok) && toks.slice(i + 1, i + 4).some((t) => t.ctx?.tagOf && [...t.ctx.tagOf.values()].includes("PrfPrc"))) {
+      tok.auxPast = [...(c.tagOf?.entries() || [])].some(([o, tag]) => o === tok.opts[0] && /Prt/.test(tag));
+      put(tok, "");
+      return;
+    }
+    const tagged = tok.opts.map((o) => [o, c.tagOf?.get(o)]);
+    const aux = toks.slice(Math.max(0, i - 3), i).find(isLeat);
+    if (aux) {
+      const prc = tagged.find(([, tag]) => tag === "PrfPrc");
+      if (prc) { put(tok, aux.auxPast ? prc[0].replace(/^har /, "hadde ") : prc[0]); return; }
+    }
+    if (toks.slice(Math.max(0, i - 3), i).some((t) => t.ctx?.pos === "V" && SME_MODAL.has(t.ctx.lemma))) {
+      const inf = tagged.find(([, tag]) => tag === "Inf");
+      if (inf) { put(tok, inf[0].replace(/^å /, "")); return; }
+    }
+    if (subjBefore) tok.opts = [...new Set(tok.opts.map((o) => o.replace(pron, "")))];
+    // Kieltoverbin jälkeen: er ikke (ii leat), ei "ikke er"
+    const prevNeg = SME_NEG.has((toks[i - 1]?.clean || "").toLowerCase());
+    if (prevNeg) { tok.opts = tok.opts.map((o) => o.replace(/^\(ikke\)\s+/, "")); tok.swapPrev = true; }
+  });
+  // go vertailun jälkeen = enn
+  toks.forEach((tok, i) => {
+    if ((tok.clean || "").toLowerCase() !== "go") return;
+    if (toks.slice(0, i).some((t) => (t.ctx?.tags || []).some((tag) => /Comp/.test(tag)) || SENT_COMPARATIVES.has((t.clean || "").toLowerCase()))) put(tok, "enn");
+  });
+}
 const SENT_COMPARATIVES = new Set(["eanet", "eambbo", "unnit", "uhcit", "buoret", "buorebut", "heajut", "stuorát", "unnit", "guhkit", "oanehit", "árat", "maŋit", "jođáneappot", "nuorat", "boarrásit"]);
 // Suomen sanaparien mukainen järjestys: vaihtoehto, joka sopii naapurisanojen kanssa (ennen joulua), nousee ensin.
 // Sääntöjen ja sanakirjan järjestys painaa (−2 sijaa kohden), joten pari kumoaa sen vain selvällä erolla.
 // Esimerkkilausekoe 2026-11-18: ensimmäinen vaihtoehto 85,1 % -> 86,1 %.
 function sentRerank(toks) {
-  if (!ngramDb || settings.lang !== "fin" || ocrTo() !== "fin") return;
+  if (!ngramDb || ngramLang !== settings.lang || ocrTo() !== settings.lang) return;
   const idSt = ngramDb.prepare("SELECT id FROM fin_vocab WHERE w = ?"), biSt = ngramDb.prepare("SELECT n FROM fin_bigram WHERE a = ? AND b = ?");
   const ids = new Map();
   const id = (w) => { if (!ids.has(w)) { idSt.bind([w]); ids.set(w, idSt.step() ? idSt.get()[0] : 0); idSt.reset(); } return ids.get(w); };
@@ -4192,18 +4289,25 @@ function sentWordText(tok) {
   if (tok.fixed) return tok.fixed.trans || (tok.fixed.keep ? tok.fixed.word : `[${tok.fixed.word}]`);
   if (tok.name) return tok.clean || tok.t;
   if (tok.unknown) return tok.capKeep ? tok.clean || tok.t : `[${tok.clean || tok.t}]`;
-  return tok.opts?.[tok.choice || 0] || tok.clean;
+  const o = tok.opts?.[tok.choice || 0];
+  return o === "" ? "" : o || tok.clean;  // tyhjä = sana sulautui naapuriin (norjan postpositio, apuverbi)
 }
 function sentTranslation() {
   const words = sent.toks.map((tok) => [sentWordText(tok), tok.punct]);
   // Suomessa edelle tuleva (ennen joulua): vaihdetaan edellisen sanan kanssa, jos käyttäjä ei ole valinnut muuta
   sent.toks.forEach((tok, i) => {
+    // Norja: er ikke (kieltosana verbin jälkeen)
+    if (tok.swapPrev && i > 0 && !tok.fixed) {
+      const [a, b] = [words[i - 1], words[i]];
+      words[i - 1] = [b[0], ""]; words[i] = [a[0], a[1] + b[1]];
+      return;
+    }
     if (tok.ppBefore && i > 0 && !tok.choice && !tok.fixed) {
       const [a, b] = [words[i - 1], words[i]];
       words[i - 1] = [b[0], ""]; words[i] = [a[0], a[1] + b[1]];
     }
   });
-  let text = words.map(([w, p]) => w + p).join(" ").replace(/\s+([.,!?:;])/g, "$1");
+  let text = words.filter(([w, p]) => w || p).map(([w, p]) => w + p).join(" ").replace(/\s+([.,!?:;])/g, "$1").replace(/\s{2,}/g, " ").trim();
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 // Tuntemattoman sanan kuva: leikataan kuvasta sanan laatikon kohdalta (canvas)

@@ -126,12 +126,13 @@ spoken and dialect variants (*haluun*, *kauns*) and corrects forms that lang-fin
 *pelastusliiveiltä*). A change is made only when Voikko analyses the new form as the same word and the same grammatical form.
 Voikko is a build tool only. None of its data is distributed with the app.
 
-## Finnish word pairs — Leipzig Corpora Collection, CC BY
+## Finnish and Norwegian word pairs — Leipzig Corpora Collection, CC BY
 
 In the photo search's sentence view (experimental), the order of the Finnish translation options uses counts of Finnish word
 pairs (*ennen joulua* rather than *ennen jouluja*). The counts come from the Finnish text corpora of the
 [Leipzig Corpora Collection](https://wortschatz.uni-leipzig.de/en/download/fin) (news 2020 and 2022, Wikipedia 2021,
-1 million sentences each), Wortschatz Leipzig, Universität Leipzig. Downloadable text corpora are licensed under
+1 million sentences each) and its Norwegian corpora (bokmål newscrawl 2019, Norwegian Wikipedia 2021), Wortschatz Leipzig,
+Universität Leipzig. Downloadable text corpora are licensed under
 [CC BY](https://wortschatz.uni-leipzig.de/en/usage) (checked 2026-11-18). Changes: [`fin_ngrams.py`](fin_ngrams.py) keeps
 only counts of word pairs that occur at least three times and whose words the app can produce as translations. No sentences
 are included. The corpora are not part of this repository.
