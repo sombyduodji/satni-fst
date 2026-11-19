@@ -1987,6 +1987,8 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
 .hj-opts { margin-top: 14px; padding: 2px 12px; border-radius: 16px; background: var(--surface-alt); border: 1px solid var(--border); }
 .hj-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 10px; padding: 7px 0; }
 .hj-row + .hj-row { border-top: 1px solid var(--border); }
+.hj-row[hidden] { display: none; }
+.hj-row[hidden] + .hj-row { border-top: 0; }
 .hj-rl { font-size: 13.5px; font-weight: 600; }
 .hj-seg { display: inline-flex; flex-wrap: wrap; padding: 3px; gap: 2px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); }
 .hj-seg button { min-height: 30px; padding: 3px 10px; border: 0; border-radius: 999px; background: none; color: var(--muted); font: inherit; font-size: 13.5px;
