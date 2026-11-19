@@ -56,10 +56,10 @@ function lauseCandidatesUncached(base, pos, exactOnly) {
   // fin_items (export_web_data.py) on sama lista sanoittain indeksoituna; vanhassa aineistossa LIKE-haku
   let rows;
   try {
-    rows = all(`SELECT d.id, d.sme_lemma, d.pos, d.subtype, d.freq, d.human, d.sem, MIN(COALESCE(i.nr, 9)) AS nr, MIN(i.first) AS at
+    rows = all(`SELECT d.id, d.sme_lemma, d.pos, d.subtype, d.freq, d.human, d.sem, MIN(CASE WHEN i.nr = -1 THEN 10 ELSE COALESCE(i.nr, 9) END) AS nr, MIN(i.first) AS at
       FROM fin_items i JOIN dictionary d ON d.id = i.word_id WHERE i.item = ? GROUP BY d.id`, [f]);
   } catch (e) {
-    rows = all(`SELECT DISTINCT d.id, d.sme_lemma, d.pos, d.subtype, d.freq, d.human, d.sem, MIN(COALESCE(t.nr, 9)) AS nr,
+    rows = all(`SELECT DISTINCT d.id, d.sme_lemma, d.pos, d.subtype, d.freq, d.human, d.sem, MIN(CASE WHEN t.nr = -1 THEN 10 ELSE COALESCE(t.nr, 9) END) AS nr,
       MIN(CASE WHEN t.fold = ? OR t.fold LIKE ? ESCAPE '\\' THEN 0 ELSE 1 END) AS at FROM trans_search t
       JOIN dictionary d ON d.id = t.word_id WHERE t.lang = 'fin'
       AND (t.fold = ? OR t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\') GROUP BY d.id`,

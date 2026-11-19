@@ -2088,3 +2088,13 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
   .hj-ctl .hj-main { width: 50px; height: 50px; }
   .hj-card .hj-note { display: none; }
 }
+
+/* Sanakirjahaku: yhdyssanan osat, kun sanaa ei löytynyt (app.js: renderSearchParts) */
+.search-parts { margin: 12px 0 4px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.search-parts[hidden] { display: none; }
+.sp-head { font-size: 13px; color: var(--muted); font-style: italic; margin-bottom: 6px; }
+.sp-whole { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.sp-row { display: flex; align-items: baseline; gap: 12px; padding: 6px 0; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.sp-sme { font-weight: 700; color: var(--text); text-decoration: none; }
+.sp-sme:hover { color: var(--accent); }
+.sp-fi { color: var(--text); }

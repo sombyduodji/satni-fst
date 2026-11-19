@@ -716,7 +716,8 @@ function queryDatabase(query) {
      ORDER BY t.rowid`,
     [searchLang, ...(items ? [q] : []), ...transMatchParams(q)]
   )) {
-    add(r, r.nr !== null ? (r.fold === q ? 1.5 + Math.min(r.nr, 9) / 100 : 4)
+    // nr -1 = johdettu suomennos (der_fin.py: váralašvuohta ≈ vaarallisuus): sanakirjan omien käännösten jälkeen
+    add(r, r.nr === -1 ? 4.2 : r.nr !== null ? (r.fold === q ? 1.5 + Math.min(r.nr, 9) / 100 : 4)
       : r.fold === q ? 2 : r.fold.startsWith(`${q},`) ? 3 : 4);
   }
   // 5 = taivutusmuoto (manan -> mannat); hyvin yleisen sanan muoto 1.2 eli käännösten edelle
@@ -747,7 +748,7 @@ function queryDatabase(query) {
        AND ${TRANS_MATCH} ORDER BY t.rowid`,
       [searchLang, pos, ...(bItems ? [b] : []), ...transMatchParams(b)]
     )) {
-      const rank = r.nr !== null ? (r.fold === b ? 1.5 + Math.min(r.nr, 9) / 100 : 4)
+      const rank = r.nr === -1 ? 4.2 : r.nr !== null ? (r.fold === b ? 1.5 + Math.min(r.nr, 9) / 100 : 4)
         : r.fold === b ? 2 : r.fold.startsWith(`${b},`) ? 3 : 4;
       // Pronominilla pitää olla tämä muoto (jolle: guhte, jolla on Sg+Ill, eikä juohke "jokainen", jolla ei ole)
       if (pos === "Pron" && !all(`SELECT 1 FROM paradigms p JOIN tags t ON t.id = p.tag_id WHERE p.word_id = ? AND t.tag = ? LIMIT 1`,
@@ -1173,6 +1174,7 @@ function showSearch(query, results, index = 0, pushHistory = true) {
     $("speak-btn").hidden = true;
     $("word-links").hidden = true;
     $("translation").textContent = t("noHitsHint");
+    renderSearchParts(query);
     $("form-translation").hidden = true;  // edellisen sanan rivit pois
     $("extra-translations").hidden = true;
     $("more-meanings").textContent = "";
@@ -1180,8 +1182,46 @@ function showSearch(query, results, index = 0, pushHistory = true) {
     $("word-info").textContent = "";
     return;
   }
+  $("search-parts").hidden = true;
   renderResults();
   selectResult(Math.min(index, state.results.length - 1), pushHistory);
+}
+
+// Haku ei löytänyt sanaa: yhdyssanan osat kuten kuvahaussa (váralašvuođadieđáhusaid = váralašvuođa + dieđáhusaid),
+// osien käännökset ja koko sanan suomennos korpuksen mukaan (≈ vaaratiedotteiden). Sanaparit ladataan tarvittaessa.
+function searchCompoundInfo(word) {
+  const keep = { from: settings.ocrFrom, to: settings.ocrTo };
+  settings.ocrFrom = "sme"; settings.ocrTo = ["fin", "nob"].includes(settings.lang) ? settings.lang : keep.to;
+  try {
+    const parts = splitCompound(word);
+    return parts ? compoundPartsInfo(parts) : null;
+  } finally { settings.ocrFrom = keep.from; settings.ocrTo = keep.to; }
+}
+function renderSearchParts(query) {
+  const box = $("search-parts");
+  box.hidden = true;
+  box.innerHTML = "";
+  const word = query.trim().toLowerCase();
+  if (word.length < 8 || /[\s*?]/.test(word)) return;
+  const info = searchCompoundInfo(word);
+  if (!info || !info.parts?.length) return;
+  const draw = (inf) => {
+    const rows = inf.parts.map((p, k) => `<div class="sp-row"><a class="sp-sme" href="#/sana/${encodeURIComponent(p.base || p.word)}">${k ? "+ " : ""}${esc(p.word)}</a>` +
+      `<span class="sp-fi">${esc(p.trans || "–")}${p.base && p.base !== p.word ? ` <span class="muted">(${esc(p.base)})</span>` : ""}</span></div>`).join("");
+    const whole = inf.prefix != null && inf.trans ? `<div class="sp-whole">≈ ${esc(inf.trans)}</div>` : "";
+    box.innerHTML = `<div class="sp-head">${esc(t("ocrParts"))}</div>${whole}${rows}`;
+    box.hidden = false;
+  };
+  draw(info);
+  // Suomeksi: koko sanan käännös vaatii sanaparit (Leipzig); ladataan ja piirretään uudelleen
+  if (settings.lang === "fin" && !(ngramDb && ngramLang === "fin") && sqlModule) {
+    ngramForSearch = true;
+    loadNgram().then(() => {
+      if (state.query !== query || state.results.length) return;
+      const again = searchCompoundInfo(word);
+      if (again) draw(again);
+    }).finally(ngramForSearchDone);
+  } else if (ngramForSearch) ngramForSearchDone();
 }
 
 // "Tarkoititko": saamen erikoiskirjaimet lisättyinä (a -> á, c -> č, d -> đ, n -> ŋ, s -> š, t -> ŧ, z -> ž). Suomalaisella näppäimistöllä
@@ -1376,6 +1416,7 @@ function selectResult(i, pushHistory = true) {
   else $("translation").textContent = t("noTranslationIn")[settings.lang] + note;
   renderApertium(w, trans);
   renderPivotFin(w, trans);
+  renderDerFin(w, trans);
   renderExtraTranslations(w, groups);
   // Ensimmäinen saamenkielinen määritelmä kortissa, kaikki Merkitykset-välilehdellä
   state.definitions = data.definitions || [];
@@ -1474,6 +1515,28 @@ function renderApertium(w, trans) {
 
 // Suomennosehdotus (kokeellinen, tietokannan taulu pivot_fin, pivot_fin.py): inarinsaamen tai norjan kautta
 // muodostettu suomennos, vain jos sanalla ei ole suomennosta. Ei vaikuta hakuun, ja rivi merkitään tarkistamattomaksi.
+// Johdokset (der_fin.py): pohjasanat (der_base) ja johdettu suomennos (der_fin). Vanhassa tietokannassa tauluja ei ole.
+function derFinOf(id) {
+  if (!hasTable("der_fin")) return null;
+  return all("SELECT fin, base, suffix FROM der_fin WHERE word_id = ?", [id])[0] || null;
+}
+function derBasesOf(lemma) {
+  if (!hasTable("der_base")) return [];
+  const r = all("SELECT b.bases FROM der_base b JOIN dictionary d ON d.id = b.word_id WHERE d.sme_lemma = ? LIMIT 1", [lemma])[0];
+  return r ? r.bases.split(",") : [];
+}
+// Sanakortti: johdettu suomennos, jos sanakirjassa ei ole suomennosta (váralašvuohta ≈ vaarallisuus, váralaš + -vuohta).
+// Oletuksena päällä: jokainen on Voikon tuntema sana ja rakenne näkyy; merkitty johdetuksi.
+function renderDerFin(w, trans) {
+  const line = $("der-fin-line");
+  line.hidden = true;
+  if (trans || settings.lang !== "fin") return;
+  const d = derFinOf(w.id);
+  if (!d) return;
+  line.innerHTML = `≈ ${esc(d.fin)} <span class="muted small">(${esc(t("derFinNote"))}: <a href="#/sana/${encodeURIComponent(d.base)}">${esc(d.base)}</a> + -${esc(d.suffix)})</span>`;
+  line.hidden = false;
+}
+
 function renderPivotFin(w, trans) {
   const line = $("pivot-fin-line");
   line.hidden = true;
@@ -2882,6 +2945,16 @@ function loadNgram() {
   if ((ngramDb && ngramLang === lang) || !sqlModule) return Promise.resolve();
   return (ngramLoading ||= loadNgramNow(lang));
 }
+// Sanakirjahaku (yhdyssana, jota ei ole sanakirjassa) voi ladata sanaparit myös ilman kuvanäkymää; ne vapautetaan
+// kahden minuutin päästä viimeisestä tällaisesta hausta, jos kuvanäkymä ei niitä tarvitse
+let ngramForSearch = false, ngramSearchTimer = null;
+function ngramForSearchDone() {
+  clearTimeout(ngramSearchTimer);
+  ngramSearchTimer = setTimeout(() => {
+    ngramForSearch = false;
+    if (!photoData.wanted && ngramDb) { ngramDb.close(); ngramDb = null; ngramStmts = null; ngramLang = null; }
+  }, 120000);
+}
 async function loadNgramNow(lang) {
   try {
     const res = await fetch(`data/satni-${lang}-ngram.db.gz`);
@@ -2889,7 +2962,7 @@ async function loadNgramNow(lang) {
     const raw = new Uint8Array(await res.arrayBuffer());
     const bytes = raw[0] === 0x1f && raw[1] === 0x8b
       ? new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()) : raw;
-    if (!photoData.wanted) return;  // muisti vapautettiin latauksen aikana
+    if (!photoData.wanted && !ngramForSearch) return;  // muisti vapautettiin latauksen aikana
     ngramDb?.close();
     ngramDb = new sqlModule.Database(bytes);
     ngramLang = lang;
@@ -3499,6 +3572,8 @@ function ocrGloss(word, original = "") {
   const lemma = fold(row.sme_lemma) !== fold(word) ? row.sme_lemma : "";
   const gloss = { lemma, form: lemma && tl === settings.lang ? ocrFormTranslation(row, word) : "", trans: translationOf(row, 2, tl), say: word, query, id: row.id,
     prop: row.subtype === "Prop" };
+  // Ei suomennosta: johdettu (der_fin.py, váralašvuohta ≈ vaarallisuus), merkitty ≈:llä
+  if (!gloss.trans && tl === "fin") { const d = derFinOf(row.id); if (d) gloss.trans = "≈ " + d.fin; }
   // Toinen yleinen merkitys pienemmällä rivillä (maid = myös · tai: minkä (mii); mii = me · tai: mikä): eri suomennos
   // ja vähintään 10 % yhtä yleinen (sama sana eri merkityksessä, kuten mii Pers / Rel, aina)
   // Ei harvinaisia muotoja (imperatiivi, potentiaali, duaali, kieltomuoto, 1. ja 2. persoona: bargu ≠ työskennelkäämme,
@@ -4581,8 +4656,19 @@ function compoundPartsInfo(parts) {
       const f = fz.search(p, 3, 3);
       if (f && !f.parts) { p = f.word; base = last ? null : cmpOf(p); g = ocrGloss(base || p); }
     }
-    const trans = ((last && g.form ? g.form.split(" / ").pop() : g.trans) || "").split(", ")[0].replace(/\s*\([^)]*\)/g, "").trim();
-    const cands = splitList(g.trans || "").map((x) => x.replace(/\s*\([^)]*\)/g, "").trim()).filter(Boolean).slice(0, 3);
+    const trans = ((last && g.form ? g.form.split(" / ").pop() : g.trans) || "").split(", ")[0].replace(/\s*\([^)]*\)/g, "").replace(/^≈\s*/, "").trim();
+    let cands = splitList(g.trans || "").map((x) => x.replace(/\s*\([^)]*\)/g, "").replace(/^≈\s*/, "").trim()).filter(Boolean).slice(0, 3);
+    // Alkuosan pohjasanat (der_base): váralašvuođa -> váralaš (vaarallinen), várra (vaara); valinta korpuksen mukaan
+    // (vaara + tiedote = vaaratiedote). Omat käännökset ensin.
+    if (!last && settings.lang === "fin" && cands.length < 3) {
+      for (const b of derBasesOf(base || g.lemma || p)) {
+        // Pohjasana on substantiivi tai adjektiivi (várra = vaara, ei adverbi várra = ehkä)
+        const row = all("SELECT finnish_translation AS f FROM dictionary WHERE sme_lemma = ? AND pos IN ('N', 'A') AND finnish_translation != '' ORDER BY freq DESC LIMIT 1", [b])[0];
+        const bt = row ? splitList(row.f).map((x) => x.replace(/\s*\([^)]*\)/g, "").trim()).filter(Boolean)[0] : "";
+        if (bt && !cands.includes(bt)) cands.push(bt);
+      }
+      cands = cands.slice(0, 3);
+    }
     return { word: p, trans, cands, base: base || g.lemma || "", tag: g.lemma ? null : null };
   });
   fz?.free();

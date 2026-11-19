@@ -19,6 +19,7 @@ import unicodedata
 
 import apertium_data
 import pivot_fin
+import der_fin
 import wiktionary_eng
 import fin_also
 import fin_compound
@@ -311,6 +312,9 @@ def main():
         CREATE TABLE apertium (word_id INTEGER PRIMARY KEY, nob TEXT) WITHOUT ROWID;
         -- Suomennosehdotukset (kokeellinen, pivot_fin.py): via = smn (inarinsaamen kautta) tai nob (norjan kautta)
         CREATE TABLE pivot_fin (word_id INTEGER PRIMARY KEY, fin TEXT, via TEXT) WITHOUT ROWID;
+        -- Johdokset (der_fin.py): pohjasanat yhdyssanojen käännökseen ja johdetut -vuohta-suomennokset (-uus/-yys)
+        CREATE TABLE der_base (word_id INTEGER PRIMARY KEY, bases TEXT) WITHOUT ROWID;
+        CREATE TABLE der_fin (word_id INTEGER PRIMARY KEY, fin TEXT, base TEXT, suffix TEXT) WITHOUT ROWID;
         -- Englanti Wiktionarysta suomen ja norjan kautta, kun molemmat antavat saman (wiktionary_eng.py, tarkistamaton)
         CREATE TABLE wikt_eng (word_id INTEGER PRIMARY KEY, eng TEXT) WITHOUT ROWID;
         -- Lisäsuomennokset käänteisestä dict-fin-sme:stä sanakortin Merkitykset-välilehdelle (fin_also.py)
@@ -351,6 +355,10 @@ def main():
         bare = without_brackets(head)
         if bare:
             search_rows.append((w, lang, fold(bare), nr))
+    # Johdetut suomennokset (der_fin.py) hakuun: vaarallisuus -> váralašvuohta. nr = -1: app.js järjestää ne sanakirjan
+    # omien käännösten jälkeen (ei käänteisen sanakirjan hakusanojen tavoin kärkeen)
+    der_base_rows, der_fin_rows = der_fin.rows(src)
+    search_rows += [(w, "fin", fold(f), -1) for w, f, _, _ in der_fin_rows]
     dst.executemany("INSERT INTO trans_search VALUES (?, ?, ?, ?)", search_rows)
     # Hakusanat ilman saamen erikoiskirjaimia (čáhci -> cahci): hakukentän ehdotukset kirjoitettaessa tavallisilla
     # kirjaimilla (cah -> čáhci). Vain sanat, joissa erikoiskirjaimia on (app.js: suggestWords).
@@ -442,6 +450,10 @@ def main():
     pivot_rows = pivot_fin.rows(src)
     dst.executemany("INSERT INTO pivot_fin VALUES (?,?,?)", pivot_rows)
     print(f"Suomennosehdotukset: {len(pivot_rows)} riviä" if pivot_rows else "Suomennosehdotukset: dict-smn-fin puuttuu (hae_sanakirjat.sh)")
+    dst.executemany("INSERT INTO der_base VALUES (?,?)", der_base_rows)
+    dst.executemany("INSERT INTO der_fin VALUES (?,?,?,?)", der_fin_rows)
+    print(f"Johdokset: {len(der_base_rows)} pohjasanaa, {len(der_fin_rows)} johdettua suomennosta"
+          if der_base_rows else "Johdokset: analysaattori puuttuu (rakenna_fst.sh)")
 
     # Taivutusmuodot, jotka eivät ala perusmuodon kahdella ensimmäisellä kirjaimella (pienillä tai isolla alkukirjaimella)
     for forms_lang in ("fin", "nob"):
