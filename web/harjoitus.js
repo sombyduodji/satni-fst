@@ -57,24 +57,48 @@ function openHarj(listId) {
   }).catch(() => toast(t("loadFailed", "harjoitus.json")));
 }
 
+// Aiheen ryhmä (Sanastojen värit ja kuvakkeet): järjestysluvut kulkevat lukujen kanssa
+function harjGroup(id) {
+  const key = id === "jarjestysluvut" ? "luvut" : id;
+  return SANASTO_GROUPS.find((g) => g.lists.includes(key)) || SANASTO_GROUPS[SANASTO_GROUPS.length - 1];
+}
+function harjIcon(id) {
+  const l = sanastot && sanastot.find((x) => x.id === (id === "jarjestysluvut" ? "luvut" : id));
+  return l ? sanastoSvg(l.icon) : HARJ_ICON;
+}
+const HJ_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const HJ_MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>';
+const HJ_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+
+// Asetusikkuna: aiheet ryhmittäin laattoina (kuvake, nimi, sanamäärä), sitten suunta, miettimisaika ja järjestys
+// valitsimina, alareunassa aina näkyvä Aloita sanamäärineen
 function harjRenderSetup(o) {
   const el = $("harj");
-  const chip = (group, val, label, on) => `<button type="button" class="hj-chip" data-g="${group}" data-v="${esc(String(val))}" aria-pressed="${on}">${esc(label)}</button>`;
-  const words = harjIndex.lists.filter((l) => o.lists.includes(l.id)).reduce((n, l) => n + l.rows.length, 0);
-  el.innerHTML = `<div class="hj-sheet" role="dialog" aria-modal="true" aria-labelledby="hj-title">` +
-    `<div class="hj-top"><h3 id="hj-title">${HARJ_ICON}${esc(t("harjTitle"))}</h3><button type="button" class="chip-btn" data-act="close">${esc(t("close"))}</button></div>` +
-    `<p class="hj-help">${esc(t("harjHelp"))}</p>` +
-    `<div class="hj-lbl">${esc(t("harjLists"))} <span class="hj-n">${esc(t("harjWords", words))}</span></div>` +
-    `<div class="hj-chips">${harjIndex.lists.map((l) => chip("list", l.id, harjTitle(l.id), o.lists.includes(l.id))).join("")}</div>` +
-    `<div class="hj-lbl">${esc(t("harjDir"))}</div><div class="hj-chips">${chip("dir", "fi", t("harjDirFi"), o.dir === "fi")}${chip("dir", "sme", t("harjDirSme"), o.dir === "sme")}</div>` +
-    `<div class="hj-lbl">${esc(t("harjThink"))}</div><div class="hj-chips">${[2, 3, 4, 5, 7].map((s) => chip("think", s, `${s} s`, o.think === s)).join("")}</div>` +
-    `<div class="hj-lbl">${esc(t("harjOrder"))}</div><div class="hj-chips">${chip("shuffle", 1, t("harjShuffle"), o.shuffle)}${chip("shuffle", 0, t("harjInOrder"), !o.shuffle)}</div>` +
-    (harjNative() ? `<p class="hj-help">${esc(t("harjScreenOff"))}</p>` : "") +
-    `<p class="hj-err" role="alert" hidden>${esc(t("harjPickList"))}</p>` +
-    `<button type="button" class="hj-start" data-act="start">${PLAY_ICON_HJ}<span>${esc(t("harjStart"))}</span></button></div>`;
+  const ids = harjIndex.lists.map((l) => l.id);
+  const count = Object.fromEntries(harjIndex.lists.map((l) => [l.id, l.rows.length]));
+  // Aiheet pieninä valintanappeina Sanastojen järjestyksessä, kuvake ryhmän värillä; useita voi valita
+  const order = SANASTO_GROUPS.flatMap((g) => ids.filter((id) => harjGroup(id) === g));
+  const chip = (id) => { const c = harjGroup(id).color;
+    return `<button type="button" class="hj-chip" data-g="list" data-v="${esc(id)}" aria-pressed="${o.lists.includes(id)}" title="${esc(t("harjWords", count[id]))}" style="--tc: var(--flag-${c}); --tb: var(--btn-${c})">` +
+      `<span class="hj-ci">${harjIcon(id)}</span>${esc(harjTitle(id))}</button>`; };
+  const seg = (group, opts, label) => `<div class="hj-row"><span class="hj-rl" id="hj-l-${group}">${esc(label)}</span><div class="hj-seg" role="group" aria-labelledby="hj-l-${group}">` +
+    opts.map(([v, txt]) => `<button type="button" data-g="${group}" data-v="${esc(String(v))}" aria-pressed="false">${esc(txt)}</button>`).join("") + `</div></div>`;
+  el.innerHTML = `<div class="hj-sheet" role="dialog" aria-modal="true" aria-labelledby="hj-title"><div class="hj-grab" aria-hidden="true"></div>` +
+    `<div class="hj-top"><div class="hj-tt2"><h3 id="hj-title">${HARJ_ICON}${esc(t("harjTitle"))}</h3><p>${esc(t("harjHelp"))}</p></div>` +
+    `<button type="button" class="hj-x" data-act="close" aria-label="${esc(t("close"))}">${HJ_X}</button></div>` +
+    `<div class="hj-sec"><span>${esc(t("harjTopics"))}</span><button type="button" class="hj-link" data-act="all"></button></div>` +
+    `<div class="hj-chips">${order.map(chip).join("")}</div>` +
+    `<div class="hj-opts">` +
+    seg("dir", [["fi", t("harjDirFi")], ["sme", t("harjDirSme")]], t("harjDir")) +
+    seg("think", [2, 3, 4, 5, 7].map((x) => [x, `${x} s`]), t("harjThink")) +
+    seg("shuffle", [[1, t("harjShuffle")], [0, t("harjInOrder")]], t("harjOrder")) + `</div>` +
+    `<div class="hj-foot"><p class="hj-err" role="alert" hidden>${esc(t("harjPickList"))}</p>` +
+    `<button type="button" class="hj-start" data-act="start">${PLAY_ICON_HJ}<span></span></button>` +
+    (harjNative() ? `<p class="hj-note">${HJ_MOON}<span>${esc(t("harjScreenOff"))}</span></p>` : "") + `</div></div>`;
   el.dataset.mode = "setup";
   el.hidden = false;
   el._opts = o;
+  harjSyncSetup(o);
 }
 const PLAY_ICON_HJ = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>';
 
@@ -89,8 +113,10 @@ function harjSetupClick(e) {
     harjSave(o);
     return harjStart(o);
   }
+  const ids = harjIndex.lists.map((l) => l.id);
+  if (b.dataset.act === "all") o.lists = o.lists.length === ids.length ? [] : ids.slice();
   const g = b.dataset.g, v = b.dataset.v;
-  if (g === "list") o.lists = o.lists.includes(v) ? o.lists.filter((x) => x !== v) : harjIndex.lists.map((l) => l.id).filter((id) => id === v || o.lists.includes(id));
+  if (g === "list") o.lists = o.lists.includes(v) ? o.lists.filter((x) => x !== v) : ids.filter((id) => id === v || o.lists.includes(id));
   else if (g === "dir") o.dir = v;
   else if (g === "think") o.think = Number(v);
   else if (g === "shuffle") o.shuffle = v === "1";
@@ -101,13 +127,15 @@ function harjSetupClick(e) {
 // (ikkuna välähti alas ja ylös joka napautuksella, Samsung 2026-11-19)
 function harjSyncSetup(o) {
   const el = $("harj");
-  for (const b of el.querySelectorAll(".hj-chip")) {
+  for (const b of el.querySelectorAll("[data-g]")) {
     const g = b.dataset.g, v = b.dataset.v;
     const on = g === "list" ? o.lists.includes(v) : g === "dir" ? o.dir === v : g === "think" ? o.think === Number(v) : o.shuffle === (v === "1");
-    b.setAttribute("aria-pressed", String(on));
+    if (b.getAttribute("aria-pressed") !== String(on)) b.setAttribute("aria-pressed", String(on));
   }
   const words = harjIndex.lists.filter((l) => o.lists.includes(l.id)).reduce((n, l) => n + l.rows.length, 0);
-  el.querySelector(".hj-n").textContent = t("harjWords", words);
+  el.querySelector(".hj-start span").textContent = o.lists.length ? t("harjStartN", words) : t("harjStart");
+  el.querySelector(".hj-start").classList.toggle("off", !o.lists.length);
+  el.querySelector(".hj-link").textContent = o.lists.length === harjIndex.lists.length ? t("harjNone") : t("harjAll");
   if (o.lists.length) el.querySelector(".hj-err").hidden = true;
 }
 
@@ -143,27 +171,78 @@ function harjStart(o) {
   harjStep();
 }
 
+const HJ_PAUSE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5.5" width="4" height="13" rx="1.2" fill="currentColor"/><rect x="13.5" y="5.5" width="4" height="13" rx="1.2" fill="currentColor"/></svg>';
+// Kortti rakennetaan kerran ja vaiheiden välillä päivitetään vain tekstit ja kehä: koko kortin uudelleenpiirto
+// välähti puhelimella joka vaiheessa (kysymys, laskenta, vastaus; Samsung 2026-11-19)
+const HJ_SPEAK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path class="w1" d="M16.5 8.5a5 5 0 0 1 0 7"/><path class="w2" d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
 function harjRenderRun() {
   const r = harjRun, it = r.deck[r.pos % r.deck.length];
   const [q, a] = harjSides(it, r.opts.dir);
-  const shown = r.phase === "show";
-  const askText = r.opts.dir === "sme" ? t("harjAskFi") : t("harjAskSme");
-  const num = it.n && r.opts.dir === "fi" ? `<span class="hj-digit">${it.n}</span>` : "";
-  // Ponnahdusanimaatio vain ensimmäisellä piirrolla, ei joka vaiheessa (välähti puhelimella läpikuultavana)
-  const fresh = !$("harj").querySelector(".hj-card");
-  $("harj").innerHTML = `<div class="hj-card${fresh ? " hj-new" : ""}" role="dialog" aria-modal="true" aria-label="${esc(t("harjTitle"))}">` +
-    `<div class="hj-meta">${esc(harjTitle(it.list))} · ${(r.pos % r.deck.length) + 1} / ${r.deck.length}${r.round > 1 ? ` · ${esc(t("harjRound", r.round))}` : ""}</div>` +
-    `<div class="hj-q" lang="${q.lang}">${num}${esc(q.text)}</div>` +
-    `<div class="hj-ask">${esc(shown ? "" : askText)}</div>` +
-    `<div class="hj-ring${shown ? " done" : ""}${r.phase === "think" ? " run" : ""}" style="--think: ${r.opts.think}s">` +
-    `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" pathLength="100"/><circle class="hj-arc" cx="50" cy="50" r="44" pathLength="100"/></svg>` +
-    `<span class="hj-count" aria-live="off">${shown ? "✓" : r.phase === "think" ? r.count : ""}</span></div>` +
-    `<div class="hj-a" lang="${a.lang}" aria-live="polite">${shown ? esc(a.text) : ""}</div>` +
-    `<div class="hj-ctl">` +
-    `<button type="button" data-act="stop" aria-label="${esc(t("stop"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2" fill="currentColor"/></svg></button>` +
-    `<button type="button" data-act="pause" class="hj-main" aria-label="${esc(r.paused ? t("harjResume") : t("harjPause"))}">${r.paused ? PLAY_ICON_HJ : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5.5" width="4" height="13" rx="1.2" fill="currentColor"/><rect x="13.5" y="5.5" width="4" height="13" rx="1.2" fill="currentColor"/></svg>'}</button>` +
-    `<button type="button" data-act="next" aria-label="${esc(t("harjNext"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5.5v13l9-6.5z" fill="currentColor"/><rect x="16" y="5.5" width="2.6" height="13" rx="1" fill="currentColor"/></svg></button>` +
-    `</div>${harjNative() ? `<p class="hj-help hj-off">${esc(t("harjScreenOff"))}</p>` : ""}</div>`;
+  const shown = r.phase === "show", think = r.phase === "think";
+  const el = $("harj");
+  let card = el.querySelector(".hj-card");
+  if (!card) {
+    el.innerHTML = `<div class="hj-card hj-new" role="dialog" aria-modal="true" aria-label="${esc(t("harjTitle"))}">` +
+      `<div class="hj-head"><span class="hj-li"></span><span class="hj-ln"></span><span class="hj-round"></span><span class="hj-pos"></span></div>` +
+      `<div class="hj-prog"><span></span></div>` +
+      `<div class="hj-say">${HJ_SPEAK}<span></span></div>` +
+      `<div class="hj-q"><span class="hj-digit"></span><span class="hj-qt"></span></div>` +
+      `<div class="hj-ring" style="--think: ${r.opts.think}s">` +
+      `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" pathLength="100"/><circle class="hj-arc" cx="50" cy="50" r="44" pathLength="100"/></svg>` +
+      `<span class="hj-count" aria-live="off"></span></div>` +
+      `<div class="hj-a" aria-live="polite"><span class="hj-at"></span><span class="hj-ask"></span></div>` +
+      `<div class="hj-ctl">` +
+      `<button type="button" data-act="stop" aria-label="${esc(t("stop"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2" fill="currentColor"/></svg></button>` +
+      `<button type="button" data-act="pause" class="hj-main"></button>` +
+      `<button type="button" data-act="next" aria-label="${esc(t("harjNext"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5.5v13l9-6.5z" fill="currentColor"/><rect x="16" y="5.5" width="2.6" height="13" rx="1" fill="currentColor"/></svg></button>` +
+      `</div>${harjNative() ? `<p class="hj-note">${HJ_MOON}<span>${esc(t("harjScreenOff"))}</span></p>` : ""}</div>`;
+    card = el.querySelector(".hj-card");
+  }
+  const set = (sel, text) => { const n = card.querySelector(sel); if (n.textContent !== text) n.textContent = text; return n; };
+  const n = r.deck.length, i = r.pos % n;
+  // Otsikkorivi: aiheen kuvake ryhmän värillä, nimi, kierros ja sijainti; edistymispalkki
+  const grp = harjGroup(it.list);
+  card.style.setProperty("--tc", `var(--flag-${grp.color})`);
+  card.style.setProperty("--tb", `var(--btn-${grp.color})`);
+  const li = card.querySelector(".hj-li");
+  if (li.dataset.id !== it.list) { li.innerHTML = harjIcon(it.list); li.dataset.id = it.list; }
+  set(".hj-ln", harjTitle(it.list));
+  set(".hj-round", r.round > 1 ? t("harjRound", r.round) : "").hidden = r.round < 2;
+  set(".hj-pos", `${i + 1} / ${n}`);
+  card.querySelector(".hj-prog span").style.width = `${Math.round(((i + (shown ? 1 : 0.5)) / n) * 1000) / 10}%`;
+  // Kumpi kieli kuuluu nyt: kysymys ja vastaus; aaltoviivat liikkuvat soiton ajan
+  const sayLang = shown ? a.lang : q.lang;
+  const say = card.querySelector(".hj-say");
+  set(".hj-say span", sayLang === "fi" ? t("harjHearFi") : t("harjHearSme"));
+  say.classList.toggle("on", !r.paused && (r.phase === "ask" || shown));
+  say.classList.toggle("sme", sayLang === "se");
+  card.querySelector(".hj-q").lang = q.lang;
+  const digit = set(".hj-digit", it.n && r.opts.dir === "fi" ? String(it.n) : "");
+  digit.hidden = !digit.textContent;
+  set(".hj-qt", q.text);
+  const ring = card.querySelector(".hj-ring");
+  // Kehän täyttö alkaa alusta vain laskennan alkaessa (uusi sana tai jatko tauolta)
+  const key = think ? `${r.pos}:${r.paused}` : "";
+  if (ring.dataset.run !== key) {
+    ring.classList.remove("run");
+    if (think) { void ring.offsetWidth; ring.classList.add("run"); }
+    ring.dataset.run = key;
+  }
+  ring.classList.toggle("done", shown);
+  set(".hj-count", shown ? "✓" : think ? String(r.count) : "?");
+  // Vastaus: ennen paljastusta kysymys harmaana, sitten sana nousee esiin (animaatio vain paljastuksessa)
+  const ans = card.querySelector(".hj-a");
+  ans.lang = a.lang;
+  if (ans.classList.contains("shown") !== shown) {
+    ans.classList.toggle("shown", shown);
+    if (shown) { ans.classList.remove("rise"); void ans.offsetWidth; ans.classList.add("rise"); }
+  }
+  set(".hj-at", shown ? a.text : "");
+  set(".hj-ask", shown ? "" : r.opts.dir === "sme" ? t("harjAskFi") : t("harjAskSme"));
+  const pb = card.querySelector('[data-act="pause"]');
+  const label = r.paused ? t("harjResume") : t("harjPause");
+  if (pb.getAttribute("aria-label") !== label) { pb.setAttribute("aria-label", label); pb.innerHTML = r.paused ? PLAY_ICON_HJ : HJ_PAUSE_ICON; }
+  card.classList.toggle("paused", r.paused);
 }
 
 // Selaimen soitin: yksi Audio-olio koko harjoituksen ajan (Android WebView sallii vain rajallisen määrän soittimia)
