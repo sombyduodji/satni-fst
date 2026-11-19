@@ -3573,7 +3573,7 @@ function ocrGloss(word, original = "") {
   const gloss = { lemma, form: lemma && tl === settings.lang ? ocrFormTranslation(row, word) : "", trans: translationOf(row, 2, tl), say: word, query, id: row.id,
     prop: row.subtype === "Prop" };
   // Ei suomennosta: johdettu (der_fin.py, váralašvuohta ≈ vaarallisuus), merkitty ≈:llä
-  if (!gloss.trans && tl === "fin") { const d = derFinOf(row.id); if (d) gloss.trans = "≈ " + d.fin; }
+  if (!gloss.trans && tl === "fin" && !window.NO_DER_BASES) { const d = derFinOf(row.id); if (d) gloss.trans = "≈ " + d.fin; }
   // Toinen yleinen merkitys pienemmällä rivillä (maid = myös · tai: minkä (mii); mii = me · tai: mikä): eri suomennos
   // ja vähintään 10 % yhtä yleinen (sama sana eri merkityksessä, kuten mii Pers / Rel, aina)
   // Ei harvinaisia muotoja (imperatiivi, potentiaali, duaali, kieltomuoto, 1. ja 2. persoona: bargu ≠ työskennelkäämme,
@@ -4659,8 +4659,11 @@ function compoundPartsInfo(parts) {
     const trans = ((last && g.form ? g.form.split(" / ").pop() : g.trans) || "").split(", ")[0].replace(/\s*\([^)]*\)/g, "").replace(/^≈\s*/, "").trim();
     let cands = splitList(g.trans || "").map((x) => x.replace(/\s*\([^)]*\)/g, "").replace(/^≈\s*/, "").trim()).filter(Boolean).slice(0, 3);
     // Alkuosan pohjasanat (der_base): váralašvuođa -> váralaš (vaarallinen), várra (vaara); valinta korpuksen mukaan
-    // (vaara + tiedote = vaaratiedote). Omat käännökset ensin.
-    if (!last && settings.lang === "fin" && cands.length < 3) {
+    // (vaara + tiedote = vaaratiedote). Vain, jos osalla ei ole omaa suomennosta: vertailussa sanakirjan 10 624
+    // yhdyssanalla pohjasanat omien käännösten lisänä muuttivat 14 käännöstä eikä yhtään parempaan
+    // (julkisuusperiaate -> julkinenperiaate, työttömyyseläke -> työeläke)
+    // Johdettu suomennos (≈, der_fin) ei ole sanakirjan oma: pohjasanat mukaan myös silloin (váralašvuođa ≈ vaarallisuus)
+    if (!last && settings.lang === "fin" && (!cands.length || /^≈/.test(g.trans || "")) && !window.NO_DER_BASES) {  // NO_DER_BASES: vertailukoe
       for (const b of derBasesOf(base || g.lemma || p)) {
         // Pohjasana on substantiivi tai adjektiivi (várra = vaara, ei adverbi várra = ehkä)
         const row = all("SELECT finnish_translation AS f FROM dictionary WHERE sme_lemma = ? AND pos IN ('N', 'A') AND finnish_translation != '' ORDER BY freq DESC LIMIT 1", [b])[0];
