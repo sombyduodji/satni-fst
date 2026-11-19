@@ -2664,9 +2664,11 @@ function mall(lang, sql, params = []) {
   stmt.free();
   return rows;
 }
-async function loadMinor(lang) {
-  if (minorDb[lang] || minorLoading[lang] || !sqlModule) return;
-  minorLoading[lang] = true;
+function loadMinor(lang) {
+  if (minorDb[lang] || !sqlModule) return Promise.resolve();
+  return (minorLoading[lang] ||= loadMinorNow(lang));
+}
+async function loadMinorNow(lang) {
   try {
     const res = await fetch(`data/satni-${lang}.db.gz`);
     if (!res.ok) return;
@@ -2674,7 +2676,7 @@ async function loadMinor(lang) {
     // Palvelin voi jo purkaa gzipin (Content-Encoding); puretaan vain jos tiedosto on yhä pakattu
     const bytes = raw[0] === 0x1f && raw[1] === 0x8b
       ? new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()) : raw;
-    if (!settings.ocrLangs.includes(lang)) return;  // valinta poistettiin latauksen aikana
+    if (!settings.ocrLangs.includes(lang) || !photoData.wanted) return;  // valinta poistettiin tai muisti vapautettiin latauksen aikana
     minorDb[lang] = new sqlModule.Database(bytes);
     delete minorCmpCache[lang];
     applyOcrLook();
@@ -2683,34 +2685,36 @@ async function loadMinor(lang) {
   } catch (e) {
     console.warn("loadMinor", lang, e.message);
   } finally {
-    minorLoading[lang] = false;
+    minorLoading[lang] = null;
   }
 }
 // Suomen sanaparit (data/satni-fin-ngram.db.gz; Leipzig Corpora Collection, CC BY): vaihtoehtojen järjestys
 // lausenäkymässä. Ladataan valokuvahaun kanssa; ilman sitä järjestys on sääntöjen mukainen.
 // Kieli: suomi (fin) tai norja (nob) käyttöliittymän kielen mukaan; vaihto lataa toisen tiedoston
-let ngramDb = null, ngramLoading = false, ngramLang = null;
-async function loadNgram() {
+let ngramDb = null, ngramLoading = null, ngramLang = null;
+function loadNgram() {
   const lang = settings.lang === "nob" ? "nob" : "fin";
-  if (ngramDb && ngramLang === lang) return;
-  if (ngramLoading || !sqlModule) return;
-  ngramLoading = true;
+  if ((ngramDb && ngramLang === lang) || !sqlModule) return Promise.resolve();
+  return (ngramLoading ||= loadNgramNow(lang));
+}
+async function loadNgramNow(lang) {
   try {
     const res = await fetch(`data/satni-${lang}-ngram.db.gz`);
     if (!res.ok) return;
     const raw = new Uint8Array(await res.arrayBuffer());
     const bytes = raw[0] === 0x1f && raw[1] === 0x8b
       ? new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()) : raw;
+    if (!photoData.wanted) return;  // muisti vapautettiin latauksen aikana
     ngramDb?.close();
     ngramDb = new sqlModule.Database(bytes);
     ngramLang = lang;
   } catch (e) {
     console.warn("loadNgram", e.message);
   } finally {
-    ngramLoading = false;
+    ngramLoading = null;
     // Kieli vaihtui latauksen aikana (fi -> nb -> fi nopeasti): uusi lataus ohitettiin, joten ladataan nyt nykyisen
     // kielen tiedosto (muuten suomen lauseet järjestyivät norjan sanaparien mukaan; yötesti 2026-11-19)
-    if ((settings.lang === "nob" ? "nob" : "fin") !== lang && settings.exp.ocr && window.SatniOcr) loadNgram();
+    if ((settings.lang === "nob" ? "nob" : "fin") !== lang && settings.exp.ocr && window.SatniOcr && photoData.wanted) loadNgram();
   }
 }
 // Sanaparitiedoston yksittäiset haut (yhdyssanan käännöksen valinta): valmistellut kyselyt muistissa tiedostoa kohden
@@ -2785,13 +2789,42 @@ function unloadMinor(lang) {
   delete minorDb[lang];
   delete minorCmpCache[lang];
 }
-// Valitut kuvan kielet ladataan, muut suljetaan (käynnistys ja asetusten muutos)
+// Kuvahaun lisätiedostot (inari, koltta, sanaparit) muistiin vasta, kun kuvanäkymä avataan, ja pois, kun kuvaa ei ole
+// käytetty PHOTO_IDLE_MS:ään (kuvanäkymä ja lausenäkymä kiinni tai sovellus taustalla). Säästää 30-100 Mt niiltä,
+// jotka eivät käytä kuvahakua tai käyttävät sitä harvoin (Nothing Phone 2026-11-18: kaikki päällä 610-653 Mt).
+// Kuva ja sen sanat säilyvät; palatessa tiedostot ladataan uudelleen (puhelimessa noin 0,5-2 s, kehä näkyy).
+const PHOTO_IDLE_MS = 10 * 60 * 1000;
+const photoData = { wanted: false, lastUsed: 0 };
+const photoEnabled = () => !!(settings.exp.ocr && window.SatniOcr);
+const photoInUse = () => !document.hidden && (!$("ocr-view").hidden || !$("sent-view").hidden);
+// Valitut kuvan kielet ladataan, muut suljetaan (kuvanäkymän avaus ja asetusten muutos); lupaus täyttyy, kun ladattu
 function syncMinorDbs() {
-  const want = settings.exp.ocr && window.SatniOcr ? settings.ocrLangs : [];
-  for (const lang of MINOR) if (want.includes(lang)) loadMinor(lang); else unloadMinor(lang);
-  if (settings.exp.ocr && window.SatniOcr) loadNgram();
-  else if (ngramDb) { ngramDb.close(); ngramDb = null; }
+  if (!photoEnabled()) photoData.wanted = false;  // kuvahaku pois: seuraavan kerran vasta kuvanäkymää avattaessa
+  const want = photoEnabled() && photoData.wanted ? settings.ocrLangs : [];
+  const loads = [];
+  for (const lang of MINOR) if (want.includes(lang)) loads.push(loadMinor(lang)); else unloadMinor(lang);
+  if (photoEnabled() && photoData.wanted) loads.push(loadNgram());
+  else if (ngramDb) { ngramDb.close(); ngramDb = null; ngramStmts = null; ngramLang = null; }
+  return Promise.all(loads);
 }
+const photoDataMissing = () => photoEnabled() && sqlModule
+  && (settings.ocrLangs.some((l) => MINOR.includes(l) && !minorDb[l]) || !ngramDb || ngramLang !== (settings.lang === "nob" ? "nob" : "fin"));
+function ensurePhotoData() {
+  photoData.wanted = true;
+  photoData.lastUsed = Date.now();
+  return syncMinorDbs();
+}
+function releasePhotoData() {
+  photoData.wanted = false;
+  syncMinorDbs();
+}
+setInterval(() => {
+  if (!photoData.wanted) return;
+  if (photoInUse()) photoData.lastUsed = Date.now();
+  else if (Date.now() - photoData.lastUsed > PHOTO_IDLE_MS) releasePhotoData();
+}, 60 * 1000);
+// Testeille: window.satniPhotoRelease() vapauttaa heti
+window.satniPhotoRelease = releasePhotoData;
 const hasSmn = () => hasMinor("smn");
 function minorMatcher(lang) {
   const st = minorDb[lang].prepare(`SELECT surface FROM ${lang}_forms WHERE fold = ?`);
@@ -3174,8 +3207,14 @@ function ocrFuzzySearch() {
 let ocr = null;  // { r: Ocr.java:n tulos, words, status, base: sovitettu koko, view: { s, x, y }, picked: sanan nro }
 let ocrReturnHash = null;  // kuvasta avatun sanan osoite: takaisin-ele palaa siitä kuvaan
 
-function openOcr() {
+async function openOcr() {
   $("ocr-view").hidden = false;
+  if (photoDataMissing()) {
+    $("ocr-busy").hidden = false;
+    await ensurePhotoData();
+    $("ocr-busy").hidden = true;
+    if ($("ocr-view").hidden) return;  // suljettiin latauksen aikana
+  } else ensurePhotoData();
   applyOcrLook();
   if (ocr) {
     layoutOcr(false);
@@ -3359,6 +3398,7 @@ function joinHyphenated(words) {
 async function findOcrWords() {
   setOcrBusy(t("ocrFinding"));
   await nextPaint();
+  if (photoDataMissing()) await ensurePhotoData();  // tulos tuli ennen tiedostojen latausta
   try { analyzeOcr(); } finally { setOcrBusy(null); }
 }
 

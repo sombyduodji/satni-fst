@@ -116,8 +116,8 @@ Wortschatz Leipzig, Universität Leipzig
   Licence: Creative Commons Attribution (CC BY), see
   https://wortschatz.uni-leipzig.de/en/usage (CC-BY-4.0.txt)
   Source: https://wortschatz.uni-leipzig.de/en/download/fin and /nob
-  Only counts of word pairs (at least three occurrences) are included,
-  no sentences. Goldhahn, Eckart & Quasthoff (2012), LREC 2012.
+  Only counts are included: word pairs that occur at least three times
+  and how often single words occur (at least five times); no sentences. Goldhahn, Eckart & Quasthoff (2012), LREC 2012.
 
 Finnish inflection: GiellaLT lang-fin, based on the Omorfi lexicon
 (Tommi A. Pirinen, Inari Listenmaa, Ryan Johnson, Francis M. Tyers and
@@ -233,8 +233,9 @@ Android app only
 Google ML Kit Text Recognition v2 16.0.1 (experimental photo search)
   Closed source, used under the ML Kit Terms of Service:
   https://developers.google.com/ml-kit/terms
-  It runs on the phone; according to Google, it may send anonymous usage
-  statistics to Google.
+  It runs on the phone and photos are not sent anywhere. ML Kit's upload of
+  usage statistics to Google (its datatransport CCT backend) is removed from
+  the app, so no statistics are sent.
 
 AndroidX libraries (incl. AndroidX Core 1.13.1) and the Kotlin standard
 library

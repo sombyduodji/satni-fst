@@ -134,8 +134,8 @@ pairs (*ennen joulua* rather than *ennen jouluja*). The counts come from the Fin
 1 million sentences each) and its Norwegian corpora (bokmål newscrawl 2019, Norwegian Wikipedia 2021), Wortschatz Leipzig,
 Universität Leipzig. Downloadable text corpora are licensed under
 [CC BY](https://wortschatz.uni-leipzig.de/en/usage) (checked 2026-11-18). Changes: [`fin_ngrams.py`](fin_ngrams.py) keeps
-only counts of word pairs that occur at least three times and whose words the app can produce as translations. No sentences
-are included. The corpora are not part of this repository.
+only counts of word pairs that occur at least three times and whose words the app can produce as translations, and how
+often single words occur (at least five times; used to choose compound translations). No sentences are included. The corpora are not part of this repository.
 Goldhahn, D., Eckart, T. & Quasthoff, U. (2012): Building Large Monolingual Dictionaries at the Leipzig Corpora Collection:
 From 100 to 200 Languages. LREC 2012.
 
@@ -206,7 +206,7 @@ Linux app, the Debian copyright files of the bundled system libraries.
 | [certifi](https://github.com/certifi/python-certifi) | desktop builds only | MPL-2.0 |
 | [ICU](https://icu.unicode.org/) (inside Qt) | desktop builds only | Unicode License |
 | [HFST](https://hfst.github.io/) (`hfst-lookup`) | used when building the database, not distributed | see HFST |
-| [Google ML Kit Text Recognition v2](https://developers.google.com/ml-kit/vision/text-recognition/v2) 16.0.1 (bundled model) | Android app only (experimental photo search), downloaded by Gradle, not in this repository | [ML Kit Terms of Service](https://developers.google.com/ml-kit/terms); closed source, free to use. Runs on the phone: photos are not sent anywhere. According to Google, ML Kit sends anonymous usage and performance statistics to Google and may download model updates (only when the photo search is used) |
+| [Google ML Kit Text Recognition v2](https://developers.google.com/ml-kit/vision/text-recognition/v2) 16.0.1 (bundled model) | Android app only (experimental photo search), downloaded by Gradle, not in this repository | [ML Kit Terms of Service](https://developers.google.com/ml-kit/terms); closed source, free to use. Runs on the phone: photos are not sent anywhere. ML Kit's upload of usage statistics to Google (its datatransport CCT backend) is removed from the app's manifest, so no statistics are sent |
 | [AndroidX Core](https://developer.android.com/jetpack/androidx/releases/core) 1.13.1 (FileProvider) | Android app only, downloaded by Gradle | Apache-2.0 |
 | Libraries that ML Kit depends on (AndroidX, Kotlin standard library, Google Play services base libraries) | Android app only, downloaded by Gradle | AndroidX and Kotlin: Apache-2.0; Google Play services libraries: [Android Software Development Kit License](https://developer.android.com/studio/terms) |
 

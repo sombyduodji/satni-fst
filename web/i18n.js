@@ -249,8 +249,13 @@ const UI_TEXTS = {
          <a href="mailto:satni@somby.fi">satni@somby.fi</a> ·
          <a href="https://github.com/sombyduodji/satni-fst" target="_blank" rel="noopener">GitHub</a></p>
       <h3>Kielidata ja kieliteknologia</h3>
-      <p>Sanakirjadata ja kieliteknologiapohja ovat peräisin Giellateknolta ja Divvunilta. Kielidata ja
-         taivutussäännöt on laskettu Giellateknon / Divvunin avoimilla FST-malleilla ja XML-sanakirjoilla.</p>
+      <p>Sanakirjat ovat GiellaLT-yhteisön avoimia sanakirjoja (CC BY 4.0), joita ylläpitävät Giellatekno ja Divvun
+         (UiT Norjan arktinen yliopisto). Niiden tekijöitä ovat muun muassa Nils Jernsletten (pohjoissaame–norja ja osa
+         pohjoissaame–suomesta), Kotimaisten kielten keskus (suomi–pohjoissaame ja pohjoissaame–suomi), Marja-Liisa
+         Olthuis ja Taarna Valtonen (inarinsaame–suomi), Ángel Díaz de Rada ja Kjell Kemi (pohjoissaame–espanja),
+         AKU ja Koneen Säätiö (koltansaame) sekä kieliyhteisöjen jäsenet.</p>
+      <p>Taivutusmuodot on laskettu GiellaLT:n avoimilla kielimalleilla (pohjoissaame lang-sme, suomi lang-fin,
+         inarinsaame lang-smn ja koltansaame lang-sms), norjan taivutus Norsk ordbankista (Språkbanken).</p>
       <p>Ääntäminen: Divvunin ja Giellateknon puhesynteesi (UiT Norjan arktinen yliopisto), äänet Biret,
          Máhtte ja Sunná. Äänet haetaan palvelusta api-giellalt.uit.no samaan tapaan kuin sátni.org-sivustolla.</p>
       <h3>Palaute</h3>
@@ -265,7 +270,7 @@ const UI_TEXTS = {
          tekstintunnistus: Google ML Kit (Googlen käyttöehdot). Kuva käsitellään puhelimessa eikä lähde laitteelta,
          ja ML Kitin käyttötilastojen lähetys Googlelle on poistettu käytöstä. Kuvan inarin- ja koltansaamen
          taivutusmuodot: GiellaLT lang-smn ja lang-sms (GPL-3.0). Kuvan lausenäkymän suomen ja norjan sanaparit:
-         Leipzig Corpora Collection (Wortschatz Leipzig, CC BY; vain sanaparien määrät, ei lauseita). Sátni FST on vapaa ohjelma (GPL-3.0).
+         Leipzig Corpora Collection (Wortschatz Leipzig, CC BY; vain sanaparien ja sanojen määrät, ei lauseita). Sátni FST on vapaa ohjelma (GPL-3.0).
          Astevaihtelun ryhmät: Oahpa (Giellatekno). Kaikki lähteet, lisenssit ja tehdyt muutokset: Lisenssit-painike alla.
          Lähdekoodi: <a href="https://github.com/sombyduodji/satni-fst" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst</a>.</p>
       </details>`,
@@ -506,8 +511,13 @@ const UI_TEXTS = {
          <a href="mailto:satni@somby.fi">satni@somby.fi</a> ·
          <a href="https://github.com/sombyduodji/satni-fst" target="_blank" rel="noopener">GitHub</a></p>
       <h3>Språkdata og språkteknologi</h3>
-      <p>Ordbokdataene og språkteknologien kommer fra Giellatekno og Divvun. Språkdataene og
-         bøyingsreglene er beregnet med Giellateknos og Divvuns åpne FST-modeller og XML-ordbøker.</p>
+      <p>Ordbøkene er åpne ordbøker fra GiellaLT-fellesskapet (CC BY 4.0), som vedlikeholdes av Giellatekno og Divvun
+         (UiT Norges arktiske universitet). Blant forfatterne er Nils Jernsletten (nordsamisk–norsk og deler av
+         nordsamisk–finsk), Institutt for de nasjonale språkene i Finland, Kotus (finsk–nordsamisk og nordsamisk–finsk),
+         Marja-Liisa Olthuis og Taarna Valtonen (enaresamisk–finsk), Ángel Díaz de Rada og Kjell Kemi
+         (nordsamisk–spansk), AKU og Kone-stiftelsen (skoltesamisk) og medlemmer av språksamfunnene.</p>
+      <p>Bøyingsformene er laget med GiellaLTs åpne språkmodeller (nordsamisk lang-sme, finsk lang-fin,
+         enaresamisk lang-smn og skoltesamisk lang-sms), norsk bøying med Norsk ordbank (Språkbanken).</p>
       <p>Uttale: talesyntese fra Divvun og Giellatekno (UiT Norges arktiske universitet), stemmene Biret,
          Máhtte og Sunná. Lyden hentes fra tjenesten api-giellalt.uit.no på samme måte som på nettstedet sátni.org.</p>
       <h3>Tilbakemelding</h3>
@@ -522,7 +532,7 @@ const UI_TEXTS = {
          Android-appen: Google ML Kit (Googles vilkår). Bildet behandles på telefonen og forlater ikke enheten,
          og ML Kits sending av bruksstatistikk til Google er slått av. Bøyingsformer for enaresamisk og
          skoltesamisk i bilder: GiellaLT lang-smn og lang-sms (GPL-3.0). Finske og norske ordpar i setningsvisningen
-         for bilder: Leipzig Corpora Collection (Wortschatz Leipzig, CC BY; bare antall ordpar, ingen setninger). Sátni FST er fri programvare (GPL-3.0).
+         for bilder: Leipzig Corpora Collection (Wortschatz Leipzig, CC BY; bare antall ordpar og ord, ingen setninger). Sátni FST er fri programvare (GPL-3.0).
          Stadievekslingsgrupper: Oahpa (Giellatekno). Alle kilder, lisenser og endringer: Lisenser-knappen nedenfor.
          Kildekode: <a href="https://github.com/sombyduodji/satni-fst" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst</a>.</p>
       </details>`,
