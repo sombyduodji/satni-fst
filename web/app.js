@@ -2193,20 +2193,39 @@ async function playTtsBlob(blob) {
 // Cache Storage ei kerro, milloin sanaa viimeksi kuunneltiin, joten sen rinnalla on hakemisto localStoragessa:
 // avain -> [viimeksi kuunneltu, koko tavuina]. Uuden sanan tallennuksen jälkeen, jos yhteiskoko ylittää rajan
 // (settings.ttsLimitMb), pisimpään kuuntelematta olleet poistetaan. Työpöytäsovelluksessa sama tehdään Pythonissa (tts.py).
-const TTS_INDEX = "satni-tts-index";
+const TTS_INDEX = "satni-tts-index";  // vanha sijainti (localStorage, 2026-11-19 DEV): siirretään välimuistiin
+const TTS_INDEX_KEY = "tts-meta/index";  // hakemisto samassa Cache Storagessa kuin äänet: ei localStoragen ~5 Mt:n rajaa,
+                                         // joka on yhteinen asetusten, suosikkien ja historian kanssa
 const TTS_LIMITS = [100, 250, 500, 1024, 2048];
 const MEMORY_TTS_MAX = 60;  // istunnon muistissa pidettävät äänet (ennen rajaton)
-let ttsIndex = null, ttsIndexTimer = null, ttsScanned = null, ttsPruning = null;
-function ttsIdx() {
-  if (!ttsIndex) { try { ttsIndex = JSON.parse(localStorage.getItem(TTS_INDEX) || "{}") || {}; } catch (e) { ttsIndex = {}; } }
-  return ttsIndex;
+let ttsIndex = null, ttsIndexLoad = null, ttsIndexTimer = null, ttsScanned = null, ttsPruning = null;
+const ttsCacheOpen = () => caches.open("satni-tts");
+function ttsIdxReady() {
+  if (ttsIndex) return Promise.resolve(ttsIndex);
+  if (!ttsIndexLoad) {
+    ttsIndexLoad = (async () => {
+      let idx = null;
+      try { const hit = await (await ttsCacheOpen()).match(TTS_INDEX_KEY); if (hit) idx = await hit.json(); } catch (e) { /* ei hakemistoa */ }
+      let legacy = false;
+      if (!idx) { try { idx = JSON.parse(localStorage.getItem(TTS_INDEX) || "null"); legacy = !!idx; } catch (e) { /* ei vanhaa */ } }
+      try { localStorage.removeItem(TTS_INDEX); } catch (e) { /* yksityinen tila */ }
+      ttsIndex = idx && typeof idx === "object" ? idx : {};
+      if (legacy) ttsIdxSave();  // vanha hakemisto välimuistiin kerran
+      return ttsIndex;
+    })().finally(() => { ttsIndexLoad = null; });
+  }
+  return ttsIndexLoad;
 }
+const ttsIdx = () => ttsIndex || {};
 function ttsIdxSave() {
   clearTimeout(ttsIndexTimer);
-  ttsIndexTimer = setTimeout(() => { try { localStorage.setItem(TTS_INDEX, JSON.stringify(ttsIdx())); } catch (e) { /* yksityinen tila */ } }, 400);
+  ttsIndexTimer = setTimeout(() => {
+    if (!ttsIndex) return;
+    ttsCacheOpen().then((c) => c.put(TTS_INDEX_KEY, new Response(JSON.stringify(ttsIndex), { headers: { "Content-Type": "application/json" } }))).catch(() => {});
+  }, 600);
 }
-function ttsTouch(key, size) {
-  const i = ttsIdx();
+async function ttsTouch(key, size) {
+  const i = await ttsIdxReady();
   i[key] = [Date.now(), size != null ? size : (i[key] ? i[key][1] : 0)];
   ttsIdxSave();
 }
@@ -2215,7 +2234,8 @@ const ttsKeyOf = (req) => { const k = req.url.indexOf("tts-cache/"); return k < 
 function ttsScan(cache, force) {
   if (ttsScanned && !force) return ttsScanned;
   ttsScanned = (async () => {
-    const i = ttsIdx(), now = Date.now(), seen = new Set();
+    const i = await ttsIdxReady(), now = Date.now(), seen = new Set();
+    let changed = false;  // tallennus vain muutoksesta: tyhjennyksen jälkeinen laskenta ei luo tyhjää hakemistoa
     for (const req of await cache.keys()) {
       const key = ttsKeyOf(req);
       if (!key) continue;
@@ -2223,10 +2243,11 @@ function ttsScan(cache, force) {
       if (!i[key] || !i[key][1]) {
         const hit = await cache.match(req);
         i[key] = [i[key] ? i[key][0] : now, hit ? (await hit.blob()).size : 0];
+        changed = true;
       }
     }
-    for (const key of Object.keys(i)) if (!seen.has(key)) delete i[key];
-    ttsIdxSave();
+    for (const key of Object.keys(i)) if (!seen.has(key)) { delete i[key]; changed = true; }
+    if (changed) ttsIdxSave();
   })().catch(() => {});
   return ttsScanned;
 }
@@ -2234,7 +2255,7 @@ function ttsPrune(cache) {
   if (ttsPruning) return ttsPruning;
   ttsPruning = (async () => {
     await ttsScan(cache);
-    const i = ttsIdx(), limit = (settings.ttsLimitMb || 1024) * 1048576;
+    const i = await ttsIdxReady(), limit = (settings.ttsLimitMb || 1024) * 1048576;
     let total = Object.values(i).reduce((n, v) => n + (v[1] || 0), 0);
     if (total <= limit) return;
     for (const [key, v] of Object.entries(i).sort((a, b) => a[1][0] - b[1][0])) {
@@ -2259,6 +2280,7 @@ async function ttsStoreStats() {
     try { return await (await fetch("ttsinfo")).json(); } catch (e) { return null; }
   }
   if (!("caches" in window)) return null;
+  if (!(await caches.has("satni-tts"))) return { n: 0, bytes: 0 };
   await ttsScan(await caches.open("satni-tts"), true);
   const v = Object.values(ttsIdx());
   return { n: v.length, bytes: v.reduce((n, x) => n + (x[1] || 0), 0) };
@@ -2266,6 +2288,7 @@ async function ttsStoreStats() {
 async function ttsStoreClear() {
   memoryCache.clear();
   if (IS_DESKTOP) { try { await fetch("ttsclear"); } catch (e) { /* ei mitään poistettavaa */ } return; }
+  clearTimeout(ttsIndexTimer);
   if ("caches" in window) await caches.delete("satni-tts");
   ttsIndex = {};
   ttsScanned = null;
@@ -2276,6 +2299,9 @@ async function ttsStoreApplyLimit() {
   if (IS_DESKTOP) { try { await fetch(`ttsprune?limit=${settings.ttsLimitMb}`); } catch (e) { /* ei mitään */ } return; }
   if ("caches" in window) await ttsPrune(await caches.open("satni-tts"));
 }
+// Käsin kirjoitettu tai rikkinäinen osoite (#/sana/100%) ei saa kaataa reititystä: decodeURIComponent heittää
+// URIError-virheen, jolloin käynnistys jäi Puretaan…-tilaan (julkaisutesti 2026-11-19)
+const safeDecode = (s) => { try { return decodeURIComponent(s); } catch (e) { return s; } };
 const fmtBytes = (b) => {
   const nb = settings.uiLang === "nb", loc = nb ? "nb-NO" : "fi-FI";
   const [v, u] = b >= 1073741824 ? [b / 1073741824, nb ? "GB" : "Gt"] : b >= 1048576 ? [b / 1048576, nb ? "MB" : "Mt"] : [b / 1024, nb ? "kB" : "kt"];
@@ -5279,7 +5305,7 @@ function openShared(text) {
 function routeFromHash() {
   stopTts();  // edellisen sanan ääntämys ei jatku uudella sivulla
   const m = location.hash.match(/^#\/sana\/([^/]+)(?:\/(\d+))?/);
-  if (m) search(decodeURIComponent(m[1]), Number(m[2] || 0));
+  if (m) search(safeDecode(m[1]), Number(m[2] || 0));
   else { searchRun++; setSearchBusy(null); showOnly("welcome"); $("search").value = ""; syncSearchClear(); $("did-you-mean").hidden = true; }
 }
 
@@ -5491,7 +5517,7 @@ function bindEvents() {
     a.classList.add("pressing");
     histPress = setTimeout(() => {
       histLong = true;
-      const w = decodeURIComponent(a.getAttribute("href").replace("#/sana/", ""));
+      const w = safeDecode(a.getAttribute("href").replace("#/sana/", ""));
       settings.history = settings.history.filter((x) => x !== w);
       saveSettings();
       renderSidebar();
