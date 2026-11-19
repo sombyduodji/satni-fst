@@ -94,9 +94,21 @@ function harjSetupClick(e) {
   else if (g === "dir") o.dir = v;
   else if (g === "think") o.think = Number(v);
   else if (g === "shuffle") o.shuffle = v === "1";
-  const scroll = el.querySelector(".hj-sheet").scrollTop;
-  harjRenderSetup(o);
-  el.querySelector(".hj-sheet").scrollTop = scroll;
+  harjSyncSetup(o);
+}
+
+// Valintojen muutos päivittää vain painikkeet ja sanamäärän: koko ikkunan uudelleenpiirto toisti avausanimaation
+// (ikkuna välähti alas ja ylös joka napautuksella, Samsung 2026-11-19)
+function harjSyncSetup(o) {
+  const el = $("harj");
+  for (const b of el.querySelectorAll(".hj-chip")) {
+    const g = b.dataset.g, v = b.dataset.v;
+    const on = g === "list" ? o.lists.includes(v) : g === "dir" ? o.dir === v : g === "think" ? o.think === Number(v) : o.shuffle === (v === "1");
+    b.setAttribute("aria-pressed", String(on));
+  }
+  const words = harjIndex.lists.filter((l) => o.lists.includes(l.id)).reduce((n, l) => n + l.rows.length, 0);
+  el.querySelector(".hj-n").textContent = t("harjWords", words);
+  if (o.lists.length) el.querySelector(".hj-err").hidden = true;
 }
 
 // --- Harjoitus ---
