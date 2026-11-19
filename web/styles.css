@@ -2108,10 +2108,15 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
   .hj-count { font-size: 20px; }
   .hj-a { min-height: 40px; padding: 4px 12px; }
   .hj-at { font-size: 22px; }
-  .hj-ctl { margin-top: 8px; gap: 16px; }
+  .hj-ctl { margin-top: 6px; gap: 16px; }
   .hj-ctl button { width: 40px; height: 40px; }
   .hj-ctl .hj-main { width: 50px; height: 50px; }
   .hj-card .hj-note { display: none; }
+  /* Pidä näyttö päällä ja Ilmoita virheestä samalle riville (yötesti 2026-11-20: Samsung 880×315, molemmat jäivät
+     kortin alareunan alle 9a03119:n ja 73784b5:n jälkeen) */
+  .hj-card { padding-bottom: 6px; }
+  .hj-awake, .hj-report { display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; margin: 2px 4px 0; padding: 4px 10px; }
+  .hj-awake { gap: 10px; }
 }
 
 /* Sanakirjahaku: yhdyssanan osat, kun sanaa ei löytynyt (app.js: renderSearchParts) */
