@@ -134,6 +134,9 @@
             <button id="speak-btn" class="speak-btn" data-i18n-title="listen" data-i18n-aria="listen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
             <button id="fav-btn" class="star-btn">☆</button>
             </span>
+            <!-- Virheilmoitus kaiuttimen ja suosikin vieressä: lomake, joka valmistelee sähköpostin käyttäjän omaan
+                 sovellukseen (app.js: openReport). Ei mahdu samalle riville pitkän sanan kanssa: rivittyy oikealle. -->
+            <a href="#" id="report-btn" class="report-top"><span aria-hidden="true">⚑</span> <span data-i18n="reportError">Ilmoita virheestä</span></a>
           </div>
         </div>
         <p class="translation"><span id="translation"></span> <a href="#" id="more-meanings" class="more"></a></p>
@@ -166,9 +169,6 @@
       <section id="panel-raw" class="card panel" hidden></section>
       <!-- Kortin alaosa välilehtien jälkeen: virheilmoitus ja linkit muualle -->
       <section id="word-foot" class="card word-foot" hidden>
-        <!-- Virheilmoitus: lomake, joka valmistelee sähköpostin käyttäjän omaan sovellukseen (app.js: openReport) -->
-        <p class="report-line"><a href="#" id="report-btn" class="report-link"><span aria-hidden="true">⚑</span>
-          <span data-i18n="reportError">Ilmoita virheestä</span></a></p>
         <!-- Sanasta muualla: pyöristetyt linkkipillerit kortin alaosassa (styles.css) -->
         <section id="word-links" class="word-links" hidden>
           <h3 class="links-head" data-i18n="elsewhere">Sanasta muualla</h3>

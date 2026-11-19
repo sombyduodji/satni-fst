@@ -1212,6 +1212,7 @@ function showSearch(query, results, index = 0, pushHistory = true) {
     $("pos-badge").hidden = true;
     $("fav-btn").hidden = true;
     $("speak-btn").hidden = true;
+    $("report-btn").hidden = true;
     $("word-links").hidden = true;
     $("translation").textContent = t("noHitsHint");
     renderSearchParts(query);
@@ -1438,6 +1439,7 @@ function selectResult(i, pushHistory = true) {
   $("pos-badge").textContent = wordClassLabel(w.pos, w.subtype);
   $("fav-btn").hidden = false;
   $("speak-btn").hidden = false;
+  $("report-btn").hidden = false;
   $("word-links").hidden = false;
   $("gt-link").href = SANIT_URL.replace("{lang}", settings.lang === "nob" ? "nob" : "fin")
     .replace("{word}", encodeURIComponent(w.sme_lemma));

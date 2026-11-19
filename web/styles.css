@@ -412,6 +412,10 @@ main > * + * { margin-top: 12px; }
 .badge { background: var(--chip); color: var(--chip-text); border-radius: 6px; padding: 2px 8px; font-size: 13px; font-weight: 600; }
 .star-btn { background: none; border: 0; font-size: 24px; color: var(--muted); cursor: pointer; padding: 0 4px; }
 .star-btn.on { color: #eab308; }
+/* Virheilmoitus otsikkorivin lopussa (ei kilpaile kuuntelun kanssa): himmeä pilleri, oikeaan reunaan */
+.report-top { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--border); color: var(--muted); font-size: 13px; text-decoration: none; white-space: nowrap; }
+.report-top:hover { color: var(--accent); border-color: var(--accent); }
 .speak-btn {
   position: relative; flex: none; display: inline-grid; place-items: center; width: 40px; height: 40px;
   padding: 0; border: 0; border-radius: 50%; cursor: pointer; background: var(--speak-bg); color: var(--speak);
@@ -2119,3 +2123,5 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
 .sp-sme { font-weight: 700; color: var(--text); text-decoration: none; }
 .sp-sme:hover { color: var(--accent); }
 .sp-fi { color: var(--text); }
+/* Alaosa piiloon, jos siinä ei ole linkkejä (virheilmoitus siirtyi otsikkoriville 2026-11-19) */
+.word-foot:not(:has(> .word-links:not([hidden]))) { display: none; }
