@@ -187,7 +187,7 @@ function sanastoReport() {
   $("report-about").textContent = `${t("reportList")}: ${l.title[sanastoLang()]}`;
   $("report-word").value = sanastoLastWord || "";
   // Äänitevaihtoehto vain listoilla, joilla on valmis äänilista (kuukaudet, viikonpäivät, vuodenajat, luvut)
-  dlg.querySelector('input[value="audio"]').closest("label").hidden = !(l.audio || l.numSections);
+  dlg.querySelector('input[value="audio"]').closest("label").hidden = sanastoSami() === "smn";  // jokaisella sanalla ääni
   $("report-text").value = "";
   dlg.querySelector('input[value="trans"]').checked = true;
   dlg.showModal();
@@ -242,7 +242,8 @@ function renderSanasto(listId) {
   $("sanasto-back").hidden = false;
   sanastoStopAudio();
   // Inarinsaamessa ei ääntä: ei kaiutinta (Biret ja äänilistat ovat pohjoissaamea)
-  $("sanasto-speak").hidden = sanastoSami() === "smn" || (canOpus && !!(l.audio || (l.numSections && l.numSections.some((x) => x.card))));
+  // Koko listan kaiutin poistettu 2026-11-19: sanat soivat yksitellen (paketoidut äänet) ja harjoituksessa
+  $("sanasto-speak").hidden = true;
   // Ohje esimerkkeinä riveittäin: "saame = suomi" -> saame lihavoituna, suomi harmaana; muu teksti sellaisenaan
   const hintLine = (x) => {
     const m = x.match(/^(.+?) = (.+)$/);
@@ -643,8 +644,6 @@ function sanastoRunAudio(a, b, durKey) {
 }
 
 function sanastoPlayAudio(src, b) {
-  // Norjankielinen käyttöliittymä: pelkkä saame (…-sme.ogg), ei suomenkielistä sanaa ennen saamea
-  if (sanastoLang() === "nb") src = src.replace(/\.ogg$/, "-sme.ogg");
   const a = new Audio(src);
   sanastoBeginAudio(a, b, false);
   sanastoRunAudio(a, b, src);

@@ -495,13 +495,15 @@ if __name__ == "__main__":
     # Valmiit äänilistat (suomi + saame, Ogg Opus, web/audio/, ks. ~/Git/fi-tts): listan yläreunan kaiutin soittaa
     # <id>.ogg:n; lukutaulukon osioilla omat painikkeet perus- ja järjestysluvuille (luvut-N.ogg, jarjestysluvut-N.ogg)
     audio = lambda name: f"audio/{name}.ogg" if os.path.exists(os.path.join(os.path.dirname(OUT), "..", "audio", name + ".ogg")) else None
+    # 2026-11-19: koko listan äänitteet poistettu (kuunteluharjoitus ja sanojen omat äänet korvaavat ne); jäljellä vain
+    # tervehdysten keskustelu saameksi (Máhtte ja Biret), sama kummassakin käyttöliittymässä. Sanojen napautus soittaa
+    # paketoidun äänen (web/audio/s/, kolme ääntä).
     for lst in L:
-        if audio(lst["id"]):
-            lst["audio"] = audio(lst["id"])
+        if lst["id"] == "tervehdykset" and audio("tervehdykset-sme"):
+            lst["audio"] = audio("tervehdykset-sme")
         if lst["id"] == "luvut":
-            # label = taulukon osio, playLabel = mitä äänite sisältää (osio 3: luvut 100–120, kuten pyydetty)
-            lst["numSections"] = [{"label": lab, "playLabel": pl, "from": start, "card": audio(f"luvut-{k}"), "ord": audio(f"jarjestysluvut-{k}")}
-                                  for k, (lab, pl, start) in enumerate([("1–29", "1–29", 1), ("30–100", "30–100", 30), ("101–1000", "100–120", 101)], 1)]
+            lst["numSections"] = [{"label": lab, "playLabel": pl, "from": start, "card": None, "ord": None}
+                                  for lab, pl, start in [("1–29", "1–29", 1), ("30–100", "30–100", 30), ("101–1000", "100–120", 101)]]
     check_spelling(L)
     add_inari(L)
     # Äänilistojen kestot (s): Android WebView ilmoittaa sovelluksen omien Ogg-tiedostojen keston äärettömäksi, joten

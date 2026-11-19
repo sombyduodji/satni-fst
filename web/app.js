@@ -2308,11 +2308,30 @@ const fmtBytes = (b) => {
   return `${v.toLocaleString(loc, { maximumFractionDigits: v < 10 ? 1 : 0 })} ${u}`;
 };
 
+// Sanastojen sanat ja lauseet paketoituina kolmella äänellä (web/audio/s/<ääni>/<n>.ogg, hakemisto index.json:
+// { ääni: { teksti: n } }): soivat heti ja ilman verkkoa. Puuttuva sana tai ääni haetaan Divvunilta kuten ennen.
+let sayIndex = null, sayIndexLoad = null;
+function sayIndexReady() {
+  if (sayIndex) return Promise.resolve(sayIndex);
+  return (sayIndexLoad ||= fetch("audio/s/index.json").then((r) => (r.ok ? r.json() : {})).catch(() => ({}))
+    .then((d) => (sayIndex = d)).finally(() => { sayIndexLoad = null; }));
+}
+async function bundledSay(text, voice) {
+  if (typeof canOpus === "undefined" || !canOpus) return null;
+  const n = (await sayIndexReady())[voice]?.[text.trim()];
+  if (n == null) return null;
+  try { const r = await fetch(`audio/s/${voice}/${n}.ogg`); return r.ok ? await r.blob() : null; } catch (e) { return null; }
+}
+
 async function ttsBlob(text, signal, voiceName = settings.voice) {
   const voice = VOICES[voiceName] || "biret";
   const key = `tts-cache/${voice}/${encodeURIComponent(text)}`;
   let blob = memoryCache.get(key);
-  if (blob) { memoryTtsSet(key, blob); if (!IS_DESKTOP) ttsTouch(key); }
+  if (blob) { memoryTtsSet(key, blob); if (!IS_DESKTOP && !blob.type.includes("ogg")) ttsTouch(key); }
+  if (!blob) {
+    blob = await bundledSay(text, voice);
+    if (blob) { memoryTtsSet(key, blob); return signal.aborted ? null : blob; }
+  }
   // Selaimen välimuisti vain verkkosivulla: Cache Storage hyväksyy vain http(s)-osoitteet.
   // Työpöytäsovelluksessa Python tallentaa äänet levylle (~/.cache/satni-fst/tts).
   const cache = !IS_DESKTOP && "caches" in window ? await caches.open("satni-tts") : null;
