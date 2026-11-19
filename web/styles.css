@@ -1792,6 +1792,8 @@ html.grade-underline .hd { text-decoration-style: dashed; }
 .num-jump { position: sticky; top: -12px; z-index: 3; display: flex; gap: 5px; margin: -12px -4px 0; padding: 10px 4px 8px; background: var(--bg);
   overflow-x: auto; scrollbar-width: none; flex: none; }
 .num-jump::-webkit-scrollbar { display: none; }
+/* Harjoittele kuunnellen -painike yläpuolella: ei negatiivista ylämarginaalia, joka peitti painikkeen alareunan */
+.hj-open ~ .num-jump { margin-top: 0; }
 .nj { flex: 1 1 auto; padding: 6px 4px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
   font: inherit; font-size: 13px; font-weight: 700; white-space: nowrap; cursor: pointer; font-variant-numeric: tabular-nums; }
 .nj.on { background: var(--tb, var(--accent)); border-color: var(--tb, var(--accent)); color: var(--surface); }
