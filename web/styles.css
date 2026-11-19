@@ -1963,6 +1963,9 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
 .hj-open svg { width: 20px; height: 20px; color: var(--btn-green); flex: none; }
 .hj-open:active { transform: scale(.985); }
 .hj-open:focus-visible { outline: 2px solid var(--btn-green); outline-offset: 2px; }
+/* flex: none: #sanasto-body on vierittyvä flex-sarake, jossa laatta kutistui 44 px:iin ja kaksirivinen alateksti valui
+   reunan yli (yötesti 2026-11-20, Samsung: WebView ja Firefox) */
+.hj-open { flex: none; }
 .hj-tile { justify-content: flex-start; border-radius: 14px; padding: 10px 14px; text-align: left; margin-bottom: 4px; }
 .hj-tile svg { width: 26px; height: 26px; }
 .hj-tt { display: flex; flex-direction: column; min-width: 0; }
