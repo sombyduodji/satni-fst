@@ -1,6 +1,6 @@
 /* Service worker: sovellus ja sanakirja toimivat ilman verkkoyhteyttä ensimmäisen käynnin jälkeen.
    Kun tiedostoja päivitetään, kasvata VERSION, jolloin selaimet hakevat uudet tiedostot. */
-const VERSION = "satni-v233";
+const VERSION = "satni-v234";
 // Sanastojen äänet: tervehdysten keskustelu saameksi; sanat ja lauseet kolmella äänellä hakemistosta (audio/s/index.json)
 const AUDIO = ["audio/tervehdykset-sme.ogg"];
 // Minipelin palauteäänet (Biret): viikonpäivät, vuodenajat ja kuukaudet, oikein ja väärin
@@ -20,7 +20,7 @@ const DATA = "data/satni-web.db.gz";
 // v5: astevaihtelun korjaus, dilli ll ~ l, v6: taivutusluokat,
 // v7: muiden saamenkielten käännöksiä lisää ja suomennosehdotukset, v8: espanja, v9: haku ilman sulkeissa olevia tarkenteita,
 // v10: Tarkoititko-hakusanat muille kielille, v11: englantia Wiktionarysta)
-const DATA_CACHE = "satni-data-v54";  // v54: yhdyssanojen suomennokset + ryhmä C; v53: yhdyssanojen tarkistetut suomennokset (cmp_fin); v52: suomen sanojen yleisyys vain Voikon hyväksymille; v51: johdokset (der_base, der_fin: váralašvuohta ≈ vaarallisuus); v50: suomen yleiset sanat yhdyssanojen käännökseen; v49: norjan sanaparit (satni-nob-ngram.db.gz); v48: suomen sanojen yleisyys (fin_unigram); v47: suomen sanaparit (satni-fin-ngram.db.gz, Leipzig CC BY); v46: inari ja koltta omiin tiedostoihinsa; v45: koltansaame kuviin (sms_words, sms_forms, sms_cmp); v44: inarin partitiivi, passiivi, vertailumuodot, teonnimi; v43: inarinsaame kuviin (smn_words, smn_forms, smn_cmp); v42: sme_cmp (saamen yhdysmuodot); v41: fin_cmp (suomen yhdyssanojen alkuosat); v40: fin_also
+const DATA_CACHE = "satni-data-v55";  // v55: yhdyssanojen suomennokset + ryhmä B; v54: yhdyssanojen suomennokset + ryhmä C; v53: yhdyssanojen tarkistetut suomennokset (cmp_fin); v52: suomen sanojen yleisyys vain Voikon hyväksymille; v51: johdokset (der_base, der_fin: váralašvuohta ≈ vaarallisuus); v50: suomen yleiset sanat yhdyssanojen käännökseen; v49: norjan sanaparit (satni-nob-ngram.db.gz); v48: suomen sanojen yleisyys (fin_unigram); v47: suomen sanaparit (satni-fin-ngram.db.gz, Leipzig CC BY); v46: inari ja koltta omiin tiedostoihinsa; v45: koltansaame kuviin (sms_words, sms_forms, sms_cmp); v44: inarin partitiivi, passiivi, vertailumuodot, teonnimi; v43: inarinsaame kuviin (smn_words, smn_forms, smn_cmp); v42: sme_cmp (saamen yhdysmuodot); v41: fin_cmp (suomen yhdyssanojen alkuosat); v40: fin_also
 
 self.addEventListener("install", (event) => {
   // cache: "reload": sovelluksen tiedostot verkosta eikä selaimen HTTP-välimuistista (muuten vanha app.js voisi jäädä);
