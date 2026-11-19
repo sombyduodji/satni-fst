@@ -944,6 +944,9 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .ocr-bubble .b-unknown > * { grid-column: 1 / -1; }
 .ocr-bubble .b-unknown .b-sme { white-space: normal; overflow-wrap: anywhere; }
 .ocr-bubble .b-unknown .b-tr { color: var(--muted); font-style: italic; font-size: 13px; padding: 0 0 2px; }
+/* Koko yhdyssanan suomennos korpuksesta vahvistettuna (≈ vaaratiedotteita) osien yläpuolella */
+.ocr-bubble .b-whole > * { grid-column: 1 / -1; }
+.ocr-bubble .b-whole .b-tr { font-weight: 600; overflow-wrap: anywhere; }
 /* Ehdokas- ja osarivi: saamen sana ja käännös vierekkäin, kun tilaa on; muuten käännös koko levyisenä sanan alle
    (suuri tekstikoko 130 %: käännös valui ennen kirjain kirjaimelta kapeaan sarakkeeseen, yötesti 2026-11-18).
    Saamen sana katkeaa vain, jos se ei mahdu kuplaan yksinkään. */

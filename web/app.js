@@ -4006,13 +4006,25 @@ function pickUnknownOcrWord(w) {
     })];
   }
   const label = w.parts ? (w.cands.length > w.parts.length ? "ocrNearestOrParts" : "ocrParts") : w.cands.length ? "ocrNearest" : "ocrUnknown";
+  // Koko yhdyssanan suomennos kuten haussa ja lausenäkymässä (váralašvuođa + dieđáhusaid ≈ vaaratiedotteita), vain
+  // korpuksesta vahvistettuna; arvattua ei näytetä, osat näkyvät riveillään. Lasketaan joka avauksella, koska
+  // sanaparit voivat latautua vasta kuvan jälkeen.
+  let whole = "";
+  if (w.parts && !w.finParts && settings.ocrFrom === "sme" && ocrTo() === "fin" && settings.lang === "fin") {
+    const info = compoundPartsInfo(w.parts, { named: /^\p{Lu}/u.test(w.clean || "") });
+    if (info?.trans && !info.guessed) whole = `<span class="b-row b-whole"><span class="b-tr">≈ ${esc(info.trans)}</span></span>`;
+    else if (!(ngramDb && ngramLang === "fin") && ngramLoading) {
+      const idx = ocr.picked;
+      ngramLoading.then(() => { if (ocr?.picked === idx && !$("ocr-bubble").hidden) pickUnknownOcrWord(w); }).catch(() => {});
+    }
+  }
   const cands = w.cands.map((c) => `<span class="b-row b-cand${c.part ? " b-part" : ""}" data-cand="${esc(c.open || c.word)}"><span class="b-sme">${c.part && c !== w.cands.find((x) => x.part) ? "+ " : ""}${esc(c.word)}</span>` +
     `<span class="b-tr">${esc(c.trans)}${c.lemma ? ` <span class="b-more">(${esc(c.lemma)})</span>` : ""}</span></span>`).join("");
   // Jaa osiin: lauseen näkymään sanan jakoon (sanan kirjainten väliin napauttamalla)
   const split = sentCanSplit() && [...w.word].length >= 6
     ? `<span class="b-row b-cand b-split" data-split="1"><span class="b-sme">✂ ${esc(t("sentSplit"))}</span><span class="b-tr">${esc(t("sentSplitShort"))}</span></span>` : "";
   bubble.innerHTML = `<span class="b-text"><span class="b-row b-form b-unknown"><span class="b-sme">${esc(w.word)}</span>` +
-    `<span class="b-tr">${esc(t(label))}</span></span>${cands}${split}</span>` +
+    `<span class="b-tr">${esc(t(label))}</span></span>${whole}${cands}${split}</span>` +
     `<span class="b-actions"><span class="b-open b-edit" role="button" aria-label="${esc(t("ocrEdit"))}">${EDIT_ICON}</span></span>`;
   bubble.setAttribute("aria-label", w.word);
   bubble.hidden = false;
@@ -4175,7 +4187,18 @@ function ocrSentenceAround(rIndex) {
   const ws = ocr.r.words, end = (t) => /[.!?:]["”»)]*$/.test(t || "");
   // Raja myös otsikon ja leipätekstin välillä (ei pistettä): rivien väli yli 1,65 kertaa korkeamman rivin korkeus
   // (Yle-otsikossa riviväli 1,3-1,45 x, otsikosta ingressiin 1,8 x; tekstin korkeus vaihtelee rivin kirjaimien mukaan)
-  const brk = (x, y) => Math.abs((y.cy || 0) - (x.cy || 0)) > Math.max(x.h || 10, y.h || 10, 1) * 1.65;
+  // Väli mitataan tekstin kallistuksen suunnassa: vinossa kuvassa rivin loppu on selvästi seuraavan rivin alkua
+  // ylempänä, ja pystysuora ero katkaisi lauseen joka rivinvaihdossa (FI-Alert-kuva 2026-11-19: "Dát lea
+  // váralašvuođadieđáhusaid" ilman jatkoa). Kulma pidemmästä sanasta (lyhyen sanan kulma on epävarma), muuten
+  // kuvan pitkien sanojen mediaani.
+  const longA = ws.filter((x) => (x.w || 0) > 2 * (x.h || 1)).map((x) => x.a || 0).sort((p, q) => p - q);
+  const medA = longA.length ? longA[longA.length >> 1] : 0;
+  const brk = (x, y) => {
+    const ref = (x.w || 0) >= (y.w || 0) ? x : y;
+    const deg = (ref.w || 0) > 2 * (ref.h || 1) ? ref.a || 0 : medA, rad = (deg * Math.PI) / 180;
+    const perp = Math.abs(((y.cy || 0) - (x.cy || 0)) * Math.cos(rad) - ((y.cx || 0) - (x.cx || 0)) * Math.sin(rad));
+    return perp > Math.max(x.h || 10, y.h || 10, 1) * 1.65;
+  };
   let a = rIndex, b = rIndex;
   while (a > 0 && !end(ws[a - 1].t) && !brk(ws[a - 1], ws[a]) && rIndex - a < 40) a--;
   while (b < ws.length - 1 && !end(ws[b].t) && !brk(ws[b], ws[b + 1]) && b - rIndex < 40) b++;
