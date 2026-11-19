@@ -356,13 +356,14 @@ function openReport() {
   $("report-about").textContent = `${shownLemma(state.word)} (${$("pos-badge").textContent}) · ` +
     `${t("reportLabels").search}: ${state.query}`;
   $("report-text").value = "";
-  $("report-dlg").classList.remove("list-mode", "game-mode");
+  $("report-dlg").classList.remove("list-mode", "game-mode", "ctx-mode");
   $("report-dlg").querySelector('input[value="trans"]').checked = true;
   $("report-dlg").showModal();
 }
 
 function sendReport() {
   if ($("report-dlg").classList.contains("game-mode")) return peliSendReport();  // minipeli (minipeli.js)
+  if ($("report-dlg").classList.contains("ctx-mode")) return ctxSendReport();  // kuva, lauseet, harjoitus
   if ($("report-dlg").classList.contains("list-mode")) return sanastoSendReport();  // sanastolista (sanastot.js)
   const w = state.word, L = t("reportLabels");
   const kind = $("report-dlg").querySelector('input[name="report-kind"]:checked').value;
@@ -394,6 +395,45 @@ function openReportMail(subject, body) {
   a.href = `mailto:${REPORT_ADDRESS}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   a.click();
 }
+
+// Virheilmoitus muista näkymistä (kuvahaku, lausenäkymä, lausekääntäjä, kuunteluharjoitus): sama lomake kuin
+// sanastoissa (Mikä sana? -kenttä), tiedot ctx:stä. ctx = { place, word, lines: [[nimi, arvo], …], audio }
+let reportCtx = null;
+function openCtxReport(ctx) {
+  reportCtx = ctx;
+  const dlg = $("report-dlg");
+  dlg.classList.remove("game-mode");
+  dlg.classList.add("list-mode", "ctx-mode");
+  $("report-about").textContent = [t("reportPlaces")[ctx.place], ctx.word].filter(Boolean).join(": ");
+  $("report-word").value = ctx.word || "";
+  dlg.querySelector('input[value="audio"]').closest("label").hidden = !ctx.audio;
+  $("report-text").value = "";
+  dlg.querySelector('input[value="trans"]').checked = true;
+  dlg.showModal();
+}
+function ctxSendReport() {
+  const c = reportCtx || { place: "photo", lines: [] }, L = t("reportLabels"), place = t("reportPlaces")[c.place];
+  const kind = $("report-dlg").querySelector('input[name="report-kind"]:checked').value;
+  const kindText = { trans: t("reportKindTrans"), sme: t("reportKindSme"), audio: t("reportKindAudio"), other: t("reportKindOther") }[kind];
+  const word = $("report-word").value.trim().slice(0, 80);
+  const subject = `${t("reportSubject")} – ${place}${word ? ": " + word : ""} (${t("reportSubjectKind")[kind]})`;
+  const body = [
+    $("report-text").value.trim().slice(0, 1200), "",
+    `--- ${t("reportDetails")} ---`,
+    `${L.error}: ${kindText}`,
+    `${L.place}: ${place}`,
+    word ? `${L.word}: ${word}` : "",
+    ...(c.lines || []).filter(([, v]) => v).map(([k, v]) => `${L[k] || k}: ${String(v).slice(0, 400)}`),
+    `${L.ui}: ${UI_LANGUAGES[settings.uiLang].name}`,
+    `${L.version}: ${$("about-version").textContent}`,
+    `${L.link}: ${PUBLIC_APP_URL}`,
+  ].filter((line, i) => line !== "" || i === 1).join("\n");
+  reportCtx = null;
+  openReportMail(subject, body);
+}
+// Virheilmoituksen linkki näkymän loppuun (sama ulkoasu kuin sanakortissa)
+const reportLinkHtml = (cls) => `<p class="report-line ${cls}"><a href="#" class="report-link" data-report="1">` +
+  `<span aria-hidden="true">⚑</span> <span>${esc(t("reportError"))}</span></a></p>`;
 
 function setSkolt(on, viaSme) {
   settings.skolt = on;
@@ -3285,30 +3325,41 @@ function minorRows(lang, surface) {
     WHERE f.fold = ? AND f.surface = ? ORDER BY (lower(w.lemma) = ?) DESC, w.id`, [minorFold(lang, surface), surface, surface]);
 }
 const smnRows = (surface) => minorRows("smn", surface);
-// Käännös valitulla kielellä. Inari: norja pohjoissaamen kautta (≈). Koltta: norja suoraan, pohjoissaame suoraan tai
-// suomennoksen kautta (≈; dict-sms-mul:ssa pohjoissaame on vain noin 400 sanalle)
-function minorTranslation(lang, row, to) {
+// Käännös valitulla kielellä. Inari: suomi ja norja pohjoissaamen kautta, jos inarin sanakirjassa ei ole (≈; koe
+// 2026-11-19 tunnetuilla inarin suomennoksilla: ensimmäinen sama 80 %, kolmesta jokin sama 87 %). Koltta: norja suoraan,
+// pohjoissaame suoraan tai suomennoksen kautta (≈; dict-sms-mul:ssa pohjoissaame on vain noin 400 sanalle).
+// via = välikieli ja sen sanat, jotka näytetään käännöksen alla (pohjoissaamen kautta: strategalaš).
+function minorTransInfo(lang, row, to) {
   const uniq = (xs) => [...new Map(xs.map((x) => [x.normalize("NFC").toLowerCase(), x.normalize("NFC")])).values()];
   const direct = uniq(splitList(row[to] || "")).slice(0, 3);
-  if (direct.length) return direct.join(", ");
-  if (lang === "smn" && to === "nob") {
-    const nob = [];
-    for (const sme of splitList(row.sme).slice(0, 2)) {
-      const r = all(`SELECT nob_translation AS t FROM dictionary WHERE lemma_fold = ? AND nob_translation != '' ORDER BY freq DESC LIMIT 1`, [fold(sme)])[0];
-      if (r) for (const x of splitList(r.t).slice(0, 2)) if (!nob.includes(x)) nob.push(x);
+  if (direct.length) return { text: direct.join(", "), via: null };
+  if (lang === "smn" && (to === "nob" || to === "fin")) {
+    const col = to === "nob" ? "nob_translation" : "finnish_translation", out = [], via = [];
+    for (const sme of uniq(splitList(row.sme || "")).slice(0, 2)) {
+      const r = all(`SELECT sme_lemma AS l, ${col} AS t FROM dictionary WHERE lemma_fold = ? AND ${col} != '' ORDER BY freq DESC LIMIT 1`, [fold(sme)])[0];
+      if (!r) continue;
+      if (!via.includes(r.l)) via.push(r.l);
+      for (const x of splitList(r.t).slice(0, 2)) if (!out.includes(x)) out.push(x);
     }
-    return nob.length ? "≈ " + nob.slice(0, 3).join(", ") : "";
+    return out.length ? { text: "≈ " + out.slice(0, 3).join(", "), via: { lang: "sme", words: via } } : { text: "", via: null };
   }
   if (lang === "sms" && to === "sme" && hasTable("fin_items")) {
-    const sme = [];
+    const sme = [], via = [];
     for (const f of splitList(row.fin).slice(0, 2)) {
+      const item = f.replace(/\s*\(.*$/, "");
       for (const r of all(`SELECT d.sme_lemma FROM fin_items i JOIN dictionary d ON d.id = i.word_id WHERE i.item = ?
-          ORDER BY i.first, d.freq DESC LIMIT 2`, [f.replace(/\s*\(.*$/, "").toLowerCase()])) if (!sme.includes(r.sme_lemma)) sme.push(r.sme_lemma);
+          ORDER BY i.first, d.freq DESC LIMIT 2`, [item.toLowerCase()])) {
+        if (!sme.includes(r.sme_lemma)) sme.push(r.sme_lemma);
+        if (!via.includes(item)) via.push(item);
+      }
     }
-    return sme.length ? "≈ " + sme.slice(0, 3).join(", ") : "";
+    return sme.length ? { text: "≈ " + sme.slice(0, 3).join(", "), via: { lang: "fin", words: via } } : { text: "", via: null };
   }
-  return "";
+  return { text: "", via: null };
 }
+function minorTranslation(lang, row, to) { return minorTransInfo(lang, row, to).text; }
+// Välikielen rivi kuplassa ja virheilmoituksessa: "pohjoissaamen kautta: strategalaš"
+function viaText(via) { return via?.words?.length ? t(via.lang === "fin" ? "viaFin" : "viaSme", via.words.slice(0, 2).join(", ")) : ""; }
 const smnTranslation = (row, to) => minorTranslation("smn", row, to);
 
 // Kuvan sanan korjaukset muistiin kuvien ja suuntien yli (sama sana toistuu; suunnan vaihto ja automaattinen suunta
@@ -3552,9 +3603,9 @@ function ocrGloss(word, original = "") {
     const lang = settings.ocrFrom, to = ocrTo(), rows = minorRows(lang, word);
     const row = rows.find((r) => minorTranslation(lang, r, to)) || rows[0];
     if (!row) return { trans: "", say: "" };
-    const sme = splitList(row.sme)[0], fin = splitList(row.fin)[0];
+    const sme = splitList(row.sme)[0], fin = splitList(row.fin)[0], info = minorTransInfo(lang, row, to);
     // Napautus avaa pohjoissaamen sanan sanakirjasta, tai haun suomennoksella, jos vastinetta ei ole
-    return { lemma: row.lemma.toLowerCase() !== word ? row.lemma : "", form: "", trans: minorTranslation(lang, row, to), say: "",
+    return { lemma: row.lemma.toLowerCase() !== word ? row.lemma : "", form: "", trans: info.text, via: info.via, say: "",
       query: sme || (fin || "").replace(/\s*\(.*$/, "") || word };
   }
   if (settings.ocrFrom === "ui") {
@@ -3936,6 +3987,25 @@ const OPEN_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
   stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>`;
 const SPEAK_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
   stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>`;
+// Kuplan viimeinen rivi: virheilmoitus (kaikki voi olla väärin: luettu sana, perusmuoto, käännös)
+const OCR_REPORT_ROW = () => `<span class="b-row b-report" data-report="1"><span class="b-tr">⚑ ${esc(t("reportError"))}</span></span>`;
+function ocrReport() {
+  const w = ocr?.words?.[ocr.picked];
+  if (!w) return;
+  const g = w.unknown ? null : w.gloss || {};
+  const parts = w.unknown && w.cands?.length ? w.cands.map((c) => `${c.word}${c.trans ? " = " + c.trans : ""}`).join("; ") : "";
+  const via = g?.via || w.cands?.find((c) => c.via)?.via;
+  openCtxReport({ place: "photo", word: w.word, lines: [
+    ["lang", `${ocrLangName(settings.ocrFrom)} → ${ocrLangName(ocrTo())}`],
+    ["base", g?.lemma || ""],
+    ["shown", g ? [g.form, g.trans, g.alt?.text].filter(Boolean).join(" · ") : parts || t("ocrUnknown")],
+    ["via", via ? viaText(via) : ""],
+    ["sentence", (() => { try {
+      const i = ocr.r.words.findIndex((r) => r.cx === w.cx && r.cy === w.cy);
+      return i < 0 ? "" : ocrSentenceAround(i).map((r) => r.t ?? r.text ?? r.word ?? "").join(" ");
+    } catch (e) { return ""; } })()],
+  ] });
+}
 function pickOcrWord(i) {
   const photo = $("ocr-photo"), bubble = $("ocr-bubble");
   if (ocr?.pickMode && i != null) {
@@ -3964,7 +4034,9 @@ function pickOcrWord(i) {
   // Toinen yleinen merkitys omalle himmeälle rivilleen (maid = myös · tai: minkä (mii))
   const altRow = g.alt ? `<span class="b-row b-alt"><span class="b-sme">${esc(t("ocrAlso"))}</span><span class="b-tr">${esc(g.alt.text)}` +
     (g.alt.lemma ? ` <span class="b-more">(${esc(g.alt.lemma)})</span>` : "") + `</span></span>` : "";
-  const rows = (g.lemma ? row(w.word, g.form, "b-form") + row(g.lemma, g.trans, "b-base") : row(w.word, g.trans, "b-form")) + altRow;
+  // Välikielen kautta käännetty (inari -> pohjoissaame -> suomi): välikielen sana näkyviin
+  const viaRow = g.via ? `<span class="b-row b-via"><span class="b-tr">${esc(viaText(g.via))}</span></span>` : "";
+  const rows = (g.lemma ? row(w.word, g.form, "b-form") + row(g.lemma, g.trans, "b-base") : row(w.word, g.trans, "b-form")) + altRow + viaRow + OCR_REPORT_ROW();
   bubble.innerHTML = `<span class="b-text">${rows}</span><span class="b-actions"><span class="b-speak" role="button"
     aria-label="${esc(t("listen"))}" ${w.gloss.say ? "" : "hidden"}>${SPEAK_ICON}</span><span class="b-open">${OPEN_ICON}</span></span>`;
   bubble.setAttribute("aria-label", w.word);
@@ -3991,7 +4063,8 @@ function pickUnknownOcrWord(w) {
     w.cands = (parts || []).map((p) => {
       const row = mall(lang, `SELECT * FROM ${lang}_words WHERE id = ?`, [p.id])[0] || {};
       const open = splitList(row.sme)[0] || (splitList(row.fin)[0] || "").replace(/\s*\(.*$/, "") || p.stem;
-      return { word: p.stem, open, trans: minorTranslation(lang, row, to), lemma: row.lemma && row.lemma.toLowerCase() !== p.stem ? row.lemma : "", part: true };
+      const info = minorTransInfo(lang, row, to);
+      return { word: p.stem, open, trans: info.text, via: info.via, lemma: row.lemma && row.lemma.toLowerCase() !== p.stem ? row.lemma : "", part: true };
     });
   }
   if (!w.cands) {
@@ -4020,11 +4093,14 @@ function pickUnknownOcrWord(w) {
   }
   const cands = w.cands.map((c) => `<span class="b-row b-cand${c.part ? " b-part" : ""}" data-cand="${esc(c.open || c.word)}"><span class="b-sme">${c.part && c !== w.cands.find((x) => x.part) ? "+ " : ""}${esc(c.word)}</span>` +
     `<span class="b-tr">${esc(c.trans)}${c.lemma ? ` <span class="b-more">(${esc(c.lemma)})</span>` : ""}</span></span>`).join("");
+  // Osien välikielen sanat yhdelle riville (pohjoissaamen kautta: uđas, vuorká)
+  const viaWords = [...new Set(w.cands.flatMap((c) => c.via?.words?.slice(0, 1) || []))];
+  const viaRow = viaWords.length ? `<span class="b-row b-via"><span class="b-tr">${esc(viaText({ lang: w.cands.find((c) => c.via).via.lang, words: viaWords }))}</span></span>` : "";
   // Jaa osiin: lauseen näkymään sanan jakoon (sanan kirjainten väliin napauttamalla)
   const split = sentCanSplit() && [...w.word].length >= 6
     ? `<span class="b-row b-cand b-split" data-split="1"><span class="b-sme">✂ ${esc(t("sentSplit"))}</span><span class="b-tr">${esc(t("sentSplitShort"))}</span></span>` : "";
   bubble.innerHTML = `<span class="b-text"><span class="b-row b-form b-unknown"><span class="b-sme">${esc(w.word)}</span>` +
-    `<span class="b-tr">${esc(t(label))}</span></span>${whole}${cands}${split}</span>` +
+    `<span class="b-tr">${esc(t(label))}</span></span>${whole}${cands}${split}${viaRow}${OCR_REPORT_ROW()}</span>` +
     `<span class="b-actions"><span class="b-open b-edit" role="button" aria-label="${esc(t("ocrEdit"))}">${EDIT_ICON}</span></span>`;
   bubble.setAttribute("aria-label", w.word);
   bubble.hidden = false;
@@ -4892,7 +4968,7 @@ function renderSentView() {
   $("sent-body").innerHTML = `<p class="sent-lab">${esc(t("sentWords"))}</p><div class="sent-chips">${sent.toks.map(chip).join("")}</div>` +
     `<div class="sent-tr"><div class="sent-tr-head"><span>${esc(from)} → ${esc(to)}</span>` +
     `<button class="link-btn" id="sent-copy">${esc(t("sentCopy"))}</button></div><p id="sent-text">${esc(sentTranslation())}</p>` +
-    `<small>${esc(t("sentGist"))}</small></div>`;
+    `<small>${esc(t("sentGist"))}</small></div>` + reportLinkHtml("sent-report");
   const sheet = $("sent-sheet");
   if (sent.sheet == null) { sheet.hidden = true; return; }
   const tok = sent.toks[sent.sheet];
@@ -4989,6 +5065,19 @@ function bindSentView() {
   $("sent-back").onclick = () => { if (sent) { sent.sheet = null; } closeSentView(); };
   $("sent-body").onclick = (e) => {
     if (e.target.closest("#sent-copy")) { copyText($("sent-text").textContent); toast(t("sentCopied"), 1500); return; }
+    if (e.target.closest("[data-report]")) {
+      e.preventDefault();
+      // Valittu sana Mikä sana? -kenttään; tiedoissa koko lause, sanojen käännökset ja lauseen käännös
+      const tok = sent.sheet != null ? sent.toks[sent.sheet] : null;
+      const words = sent.toks.map((x) => `${x.fixed ? x.fixed.word : x.clean || x.t}${x.num ? "" : " = " + (x.fixed ? x.fixed.trans || "" : x.unknown ? "?" : sentWordText(x))}`);
+      openCtxReport({ place: "sent", word: tok ? (tok.fixed ? tok.fixed.word : tok.clean || tok.t) : "", lines: [
+        ["lang", `${ocrLangName(settings.ocrFrom)} → ${ocrLangName(ocrTo())}`],
+        ["sentence", sent.toks.map((x) => x.t).join(" ")],
+        ["shown", $("sent-text")?.textContent || ""],
+        ["words", words.join("; ")],
+      ] });
+      return;
+    }
     const c = e.target.closest("[data-i]");
     if (!c) return;
     const i = +c.dataset.i, tok = sent.toks[i];
@@ -5178,7 +5267,8 @@ function bindOcrGestures() {
     const speaker = target?.closest(".b-speak");
     if (speaker) {
       if (!speaker.classList.contains("loading")) speak(ocr.words[ocr.picked].gloss.say, speaker);
-    } else if (target?.closest("#ocr-bubble [data-split]")) openOcrFix(true);
+    } else if (target?.closest("#ocr-bubble [data-report]")) ocrReport();
+    else if (target?.closest("#ocr-bubble [data-split]")) openOcrFix(true);
     else if (ocr.words[ocr.picked]?.unknown && sentCanSplit() && target?.closest("#ocr-bubble .b-edit")) openOcrFix(false);
     else if (target?.closest("#ocr-bubble")) openOcrWord(target.closest("[data-cand]")?.dataset.cand || null);
     else if (word) {

@@ -223,7 +223,8 @@ function harjRenderRun() {
       `<button type="button" data-act="next" aria-label="${esc(t("harjNext"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5.5v13l9-6.5z" fill="currentColor"/><rect x="16" y="5.5" width="2.6" height="13" rx="1" fill="currentColor"/></svg></button>` +
       `</div>${harjAwakeSupported() ? `<button type="button" class="hj-awake" data-act="awake" aria-pressed="${harjAwakePref()}">` +
         `<span class="hj-sw" aria-hidden="true"></span><span>${esc(t("harjAwake"))}</span></button>` : ""}` +
-      `${harjNative() ? `<p class="hj-note">${HJ_MOON}<span>${esc(t("harjScreenOff"))}</span></p>` : ""}</div>`;
+      `${harjNative() ? `<p class="hj-note">${HJ_MOON}<span>${esc(t("harjScreenOff"))}</span></p>` : ""}` +
+      `<button type="button" class="hj-report report-link" data-act="report"><span aria-hidden="true">⚑</span> ${esc(t("reportError"))}</button></div>`;
     card = el.querySelector(".hj-card");
     harjSetAwake(harjAwakePref());
   }
@@ -329,6 +330,17 @@ function harjHalt() {
   if (r.audio) { r.audio.onended = r.audio.onerror = null; r.audio.pause(); r.audio.removeAttribute("src"); r.audio.load(); }
 }
 
+// Virheilmoitus näkyvästä sanasta: harjoitus tauolle, tiedoissa lista, molemmat puolet ja ääni
+function harjReport() {
+  const r = harjRun;
+  if (!r) return;
+  harjPause(true);
+  const it = r.deck[r.pos % r.deck.length], [q, a] = harjSides(it, r.opts.dir);
+  const sme = q.lang === "se" ? q : a, fi = q.lang === "se" ? a : q;
+  openCtxReport({ place: "harj", word: sme.text, audio: true, lines: [
+    ["list", `${harjTitle(it.list)} (${it.list})`], ["shown", fi.text], ["voice", settings.voice || ""],
+  ] });
+}
 function harjPause(on) {
   const r = harjRun;
   if (!r || r.paused === on) return;
@@ -415,6 +427,7 @@ function bindHarj() {
     if (b.dataset.act === "stop") closeHarj();
     else if (b.dataset.act === "pause") harjPause(!harjRun.paused);
     else if (b.dataset.act === "next") harjNext();
+    else if (b.dataset.act === "report") harjReport();
     else if (b.dataset.act === "awake") {
       const on = b.getAttribute("aria-pressed") !== "true";
       b.setAttribute("aria-pressed", String(on));

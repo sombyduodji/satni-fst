@@ -92,7 +92,10 @@ const UI_TEXTS = {
     minipeli: "Minipeli", gameButton: "Minipeli yläpalkissa", gameSmn: "Inarinsaame minipelissä ja sanastoissa", gameSmnNote: "", reportKindBad: "Sana on sopimaton",
     reportDetails: "Tiedot ilmoituksesta",
     reportLabels: { error: "Virhe", word: "Sana", shown: "Näytetty käännös", search: "Hakusana", ui: "Käyttöliittymä",
-      other: "muut kielet", version: "Versio", link: "Linkki" },
+      other: "muut kielet", version: "Versio", link: "Linkki", place: "Näkymä", lang: "Kieli", base: "Perusmuoto",
+      via: "Välikieli", sentence: "Lause", words: "Sanat", form: "Muoto lauseessa", list: "Lista", voice: "Ääni" },
+    reportPlaces: { photo: "Kuvahaku", sent: "Lausenäkymä", lause: "Lausekääntäjä", harj: "Kuunteluharjoitus" },
+    viaSme: (w) => `pohjoissaamen kautta: ${w}`, viaFin: (w) => `suomen kautta: ${w}`,
     smsUnchecked: "tarkistamaton", skoltDlgTitle: "Otetaanko koltansaame käyttöön?",
     skoltDlgBody: `<p>Koltansaamen sanat tulevat GiellaLT:n suomi–koltansaame- ja norja–koltansaame-sanakirjoista.
       Koltansaamen puhuja ei ole vielä tarkistanut niitä, joten ne voivat olla epätarkkoja. Sanat näkyvät, kun haet suomeksi.</p>`,
@@ -358,7 +361,10 @@ const UI_TEXTS = {
     gameSmnNote: "De enaresamiske ordene er kontrollert mot finsk. De norske oversettelsene går via nordsamisk og kan være mindre presise.", reportKindBad: "Ordet er upassende",
     reportDetails: "Opplysninger om meldingen",
     reportLabels: { error: "Feil", word: "Ord", shown: "Vist oversettelse", search: "Søkeord", ui: "Brukergrensesnitt",
-      other: "andre språk", version: "Versjon", link: "Lenke" },
+      other: "andre språk", version: "Versjon", link: "Lenke", place: "Visning", lang: "Språk", base: "Grunnform",
+      via: "Via", sentence: "Setning", words: "Ord", form: "Form i setningen", list: "Liste", voice: "Stemme" },
+    reportPlaces: { photo: "Bildesøk", sent: "Setningsvisning", lause: "Setningsoversetter", harj: "Lytteøving" },
+    viaSme: (w) => `via nordsamisk: ${w}`, viaFin: (w) => `via finsk: ${w}`,
     smsUnchecked: "ikke kontrollert", skoltDlgTitle: "Slå på skoltesamisk?",
     skoltDlgBody: `<p>De skoltesamiske ordene kommer fra GiellaLTs finsk–skoltesamisk- og norsk–skoltesamisk-ordbøker.
       De er ennå ikke kontrollert av noen som snakker skoltesamisk, så de kan være unøyaktige. Ordene vises når du søker på norsk.</p>`,

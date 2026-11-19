@@ -1070,7 +1070,11 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .ocr-bubble .b-base .b-sme { font-weight: 600; }
 .ocr-bubble .b-alt > * { color: var(--muted); font-weight: 400; font-size: 13px; font-style: italic; padding-top: 2px; }
 .ocr-bubble:has(.b-alt) .b-actions { flex-direction: column; gap: 6px; }
-.ocr-bubble .b-form:only-child > * { padding: 3px 0; }
+.ocr-bubble .b-form:only-child > *, .ocr-bubble .b-form:first-child:has(+ .b-report:last-child) > * { padding: 3px 0; }
+/* Välikieli (pohjoissaamen kautta: strategalaš) ja virheilmoitus kuplan lopussa, koko levyisinä ja himmeinä */
+.ocr-bubble .b-via > *, .ocr-bubble .b-report > * { grid-column: 1 / -1; }
+.ocr-bubble .b-via .b-tr { color: var(--muted); font-size: 13px; font-style: italic; padding: 1px 0; overflow-wrap: anywhere; }
+.ocr-bubble .b-report .b-tr { color: var(--muted); font-size: 12px; padding: 6px 0 0; margin-top: 4px; border-top: 1px solid var(--border); cursor: pointer; }
 .ocr-bubble .b-open, .ocr-bubble .b-speak, .ocr-bubble .b-copy {
   flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
   background: var(--accent); color: var(--accent-text);
@@ -2064,6 +2068,10 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
 .hj-ctl button:active { transform: scale(.94); }
 .hj-card .hj-note { margin-top: 14px; }
 /* Näyttö päällä -valinta harjoituskortin alareunassa: pieni kytkin ja teksti */
+/* Virheilmoitus kortin alareunassa (harjoitus.js: harjReport) */
+.hj-report { display: block; margin: 10px auto 0; background: none; border: 0; padding: 6px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+.lcard-report { margin: 8px 0 0; }
+.sent-report, .lause-report { margin: 12px 0 0; }
 .hj-awake { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 12px auto 0; padding: 6px 12px;
   background: none; border: 0; border-radius: 999px; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
 .hj-awake .hj-sw { position: relative; flex: none; width: 34px; height: 20px; border-radius: 999px; background: var(--border); transition: background .15s; }

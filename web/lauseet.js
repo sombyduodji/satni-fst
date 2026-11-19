@@ -675,10 +675,17 @@ function lauseShowCard(i, k) {
     `<div class="lcard-body">${body || `<p class="muted">${esc(t("lauseUnknown"))}</p>`}</div>` +
     `<div class="lcard-actions">${chosen ? "" : `<button type="button" class="chip-btn lcard-pick">${esc(t("lauseChoose"))}</button>`}` +
     `<button type="button" class="chip-btn lcard-open">${esc(t("lauseFullCard"))}</button>` +
-    `<button type="button" class="chip-btn lcard-close">${esc(t("close"))}</button></div></div>`;
+    `<button type="button" class="chip-btn lcard-close">${esc(t("close"))}</button></div>` + reportLinkHtml("lcard-report") + `</div>`;
   card.hidden = false;
   card.querySelector(".lcard-speak").onclick = (e) => speak(word.sme_lemma, e.currentTarget);
   card.querySelector(".lcard-close").onclick = () => { card.hidden = true; };
+  card.querySelector("[data-report]").onclick = (e) => {
+    e.preventDefault();
+    openCtxReport({ place: "lause", word: word.sme_lemma, lines: [
+      ["sentence", $("lause-input").value], ["shown", groups.map(([lang, ms]) => `${langName(lang) || lang}: ${ms.slice(0, 4).map((m) => [].concat(m.translations || []).join(", ")).filter(Boolean).join("; ")}`).join(" · ")],
+      ["form", s && s.form !== word.sme_lemma ? `${s.form}${s.tag ? " (" + s.tag + ")" : ""}` : ""],
+    ] });
+  };
   card.onclick = (e) => { if (e.target === card) card.hidden = true; };
   const pick = card.querySelector(".lcard-pick");
   if (pick) pick.onclick = () => { tok.choice = c; card.hidden = true; renderLause(); lauseSave(); lauseOpenChip(i); };
@@ -697,6 +704,15 @@ function bindLause() {
   if (!$("lause-view")) return;
   $("lause-btn").onclick = openLause;
   $("lause-close").onclick = () => { $("lause-view").hidden = true; overlayClosed(); };
+  // Virheilmoitus koko lauseesta: suomi, saame ja sanojen valinnat
+  $("lause-report").onclick = (e) => {
+    e.preventDefault();
+    const toks = lause.tokens.filter((tok) => !tok.punct);
+    openCtxReport({ place: "lause", word: "", lines: [
+      ["sentence", $("lause-input").value], ["shown", $("lause-sme").textContent],
+      ["words", toks.map((tok) => `${tok.raw} = ${tok.choice ? tok.choice.sme_lemma : tok.skip ? "–" : "?"}`).join("; ")],
+    ] });
+  };
   overlayLayerFns.push(() => ($("lause-view").hidden ? 0 : (!$("lause-pop").hidden) + (!$("lause-card").hidden)));  // sanan valikko ja kortti (app.js)
   const closeOcrBase = window.closeOcr;
   window.closeOcr = () => closeLause() || (closeOcrBase ? closeOcrBase() : false);

@@ -182,7 +182,7 @@ function sanastoReport() {
   sanastoStopAudio();
   closeFormPop();
   const dlg = $("report-dlg");
-  dlg.classList.remove("game-mode");
+  dlg.classList.remove("game-mode", "ctx-mode");
   dlg.classList.add("list-mode");
   $("report-about").textContent = `${t("reportList")}: ${l.title[sanastoLang()]}`;
   $("report-word").value = sanastoLastWord || "";

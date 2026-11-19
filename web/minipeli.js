@@ -645,6 +645,7 @@ function applyPeliButton() {
 function peliReport() {
   if (!peliLast) return;
   const dlg = $("report-dlg");
+  dlg.classList.remove("ctx-mode");
   dlg.classList.add("list-mode", "game-mode");
   $("report-about").textContent = `${pt().title}: ${pt().modes[peliLast.mode][0]}`;
   $("report-word").value = peliLast.q.sme;
