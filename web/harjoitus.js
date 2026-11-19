@@ -16,7 +16,14 @@ const HARJ_DEFAULT = { lists: ["kysymykset", "viikonpaivat"], dir: "fi", think: 
 const HARJ_GAP = 1500;         // vastauksen jälkeen ennen seuraavaa sanaa (ms)
 const HARJ_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
   '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4.5" height="6.5" rx="1.5"/><rect x="16.5" y="14" width="4.5" height="6.5" rx="1.5"/></svg>';
-const harjNative = () => !!(window.SatniApp && window.SatniApp.drillStart);
+// Natiivi soitin (näyttö voi sammua) Android 10+:lla; vanhemmilla ja selaimessa sivun oma soitin
+let harjNativeOk = null;
+const harjNative = () => {
+  if (harjNativeOk === null) {
+    try { harjNativeOk = !!(window.SatniApp && window.SatniApp.drillStart && (!window.SatniApp.drillSupported || window.SatniApp.drillSupported())); } catch (e) { harjNativeOk = false; }
+  }
+  return harjNativeOk;
+};
 
 // Käytettävissä: suomenkielinen käyttöliittymä, pohjoissaame, Opus-tuki (sama ehto kuin listojen äänitteillä)
 const harjAvailable = () => typeof canOpus !== "undefined" && canOpus && sanastoLang() === "fi" && sanastoSami() === "sme";

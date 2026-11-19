@@ -378,6 +378,13 @@ public class MainActivity extends Activity {
             DrillService.start(MainActivity.this, config);
         }
 
+        /** Natiivi soitin vain Android 10+:lla: MediaPlayer soittaa Ogg Opus -tiedostoja vasta siitä alkaen. Vanhemmilla
+         *  harjoitus soi sivun omalla soittimella (WebView soittaa Opusta kaikilla versioilla), ilman näytönsammutusta. */
+        @android.webkit.JavascriptInterface
+        public boolean drillSupported() {
+            return Build.VERSION.SDK_INT >= 29;
+        }
+
         /** pause, play, next, stop */
         @android.webkit.JavascriptInterface
         public void drillControl(String cmd) {
