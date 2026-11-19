@@ -1,27 +1,38 @@
 # Yhdyssanojen suomennokset sanoille, joilla sanakirjassa ei ole suomennosta (cmp_fin.py). Ryhmä A 2026-11-19:
 # varmistettu kahdesti (suomen korpus + Voikko, ja norjannoksen konekäännös antaa saman sanan), käsin otos 44/44 oikein.
 # Käyttäjä hyväksyi ryhmän sovellukseen 2026-11-19. Sarakkeet: saame, suomi, osat (+).
+# Ryhmä C 2026-11-19: 451 sanasta 354 käsin tarkistettu oikeaksi osien merkitysten ja norjannoksen perusteella
+# (97 hylätty: väärä merkitys, heikko tai taivutusmuoto); kaikki perusmuodossa Voikon jäsennyksen mukaan.
+ahkerádjá	ikäraja	ahki+rádjá
 ahkestruktuvra	ikärakenne	ahki+struktuvra
 alkoholageavaheapmi	alkoholinkäyttö	alkohola+geavaheapmi
 alkoholajuhkan	alkoholin juominen	alkohola+juhkan
+alkoholaláhka	alkoholilaki	alkohola+láhka
 alkoholaváttisvuohta	alkoholiongelma	alkohola+váttisvuohta
+almmigáica	taivaanvuohi	albmi+gáica
 almmáirolla	miehen rooli	almmái+rolla
 alárbmaguovddáš	hälytyskeskus	alárbma+guovddáš
 alárbmamearka	hälytysmerkki	alárbma+mearka
+alárbmasystema	hälytysjärjestelmä	alárbma+systema
 amasgiella	vieras kieli	amas+giella
 ambulánsabálvalus	ambulanssipalvelu	ambulánsa+bálvalus
+arvereaddju	sadetakki	arvi+readdju
+astoáiggeguolásteaddji	vapaa-ajan kalastaja	astoáigi+guolásteaddji
 astoáiggevisti	vapaa-ajan asunto	astoáigi+visti
 bagadallanbargu	ohjaustyö	bagadallan+bargu
 bagadallanovddasvástádus	ohjausvastuu	bagadallan+ovddasvástádus
 bajoščáhci	pintavesi	bajoš+čáhci
 bargijoavku	työryhmä	bargu+joavku
+bargodáhpi	työtapa	bargu+dáhpi
 bargojoavkolahttu	työryhmän jäsen	bargojoavku+lahttu
 bargojođiheaddji	työnjohtaja	bargu+jođiheaddji
 bargomašiidna	työkone	bargu+mašiidna
 bargoovttastupmi	työyhteisö	bargu+ovttastupmi
 bargoráfi	työrauha	bargu+ráfi
 bargovásihus	työkokemus	bargu+vásihus
+bartagilli	mökkikylä	barta+gilli
 bassibáiki	pyhä paikka	bassi+báiki
+beaivebálká	päiväpalkka	beaivi+bálká
 beaiveguovddáš	päiväkeskus	beaivi+guovddáš
 beaivvášenergiija	aurinkoenergia	beaivváš+energiija
 beaivvášluoitádeapmi	auringonlasku	beaivváš+luoitádeapmi
@@ -29,15 +40,20 @@ beaivvášsuonjardeapmi	auringon säteily	beaivváš+suonjardeapmi
 beallegierdu	puoliympyrä	bealli+gierdu
 bealuštuspolitihkka	puolustuspolitiikka	bealuštus+politihkka
 beanaeaiggát	koiranomistaja	beana+eaiggát
+beananálli	koirarotu	beana+nálli
 bearašmiellahttu	perheenjäsen	bearaš+miellahttu
+bearašmátki	perheen matka	bearaš+mátki
+bearašoaivadeaddji	perheneuvoja	bearaš+oaivadeaddji
 bearašpolitihkka	perhepolitiikka	bearaš+politihkka
 bearašpárka	perhepuisto	bearaš+párka
 bearašveahkaváldi	perheväkivalta	bearaš+veahkaváldi
 bearjadateahket	perjantai-ilta	bearjadat+eahket
+bearráigeahččandirektevra	valvontajohtaja	bearráigeahččan+direktevra
 bearráigeahččandárbu	valvonnan tarve	bearráigeahččan+dárbu
 bearráigeahččaneiseváldi	valvontaviranomainen	bearráigeahččan+eiseváldi
 bearráigeahččaneisseváldi	valvontaviranomainen	bearráigeahččan+eisseváldi
 bearráigeahččanorgána	valvontaelin	bearráigeahččan+orgána
+bearráigeahččanovddasvástádus	valvontavastuu	bearráigeahččan+ovddasvástádus
 bearráigeahččoeiseváldi	valvontaviranomainen	bearráigeahčču+eiseváldi
 bearráigeahččoeisseváldi	valvontaviranomainen	bearráigeahčču+eisseváldi
 bearráigeahččoorgána	valvontaelin	bearráigeahčču+orgána
@@ -45,10 +61,12 @@ bellodatlahttu	puolueen jäsen	bellodat+lahttu
 bellodatmiellahttu	puolueen jäsen	bellodat+miellahttu
 bellodatnamma	puolueen nimi	bellodat+namma
 biebmooadjebasvuohta	ruokaturvallisuus	biebmu+oadjebasvuohta
+biebmoráhkadeapmi	ruoanvalmistus	biebmu+ráhkadeapmi
 biebmosihkarvuohta	ruokaturvallisuus	biebmu+sihkarvuohta
 biebmosihkkarvuohta	ruokaturvallisuus	biebmu+sihkkarvuohta
 bieggafápmobuvttadeapmi	tuulivoimatuotanto	bieggafápmu+buvttadeapmi
 bieggapárka	tuulipuisto	biegga+párka
+biergobuvtta	lihatuote	biergu+buvtta
 biergobuvttadeapmi	lihantuotanto	biergu+buvttadeapmi
 biergobuvttadus	lihantuotanto	biergu+buvttadus
 biergohaddi	lihan hinta	biergu+haddi
@@ -56,10 +74,13 @@ biibbalteaksta	raamatun teksti	biibbal+teaksta
 biibbalvearsa	raamatun jae	biibbal+vearsa
 biikasráŋga	piikkilanka	biika+sráŋga
 biikastráŋga	piikkilanka	biika+stráŋga
+biilaeaiggáduššan	auton omistaminen	biila+eaiggáduššan
 biilalihkuhisvuohta	auto-onnettomuus	biila+lihkuhisvuohta
 biilamearka	automerkki	biila+mearka
+bileahttaautomáhta	lippuautomaatti	bileahtta+automáhta
 bileahttavuovdin	lipunmyynti	bileahtta+vuovdin
 birasdiđolašvuohta	ympäristötietoisuus	biras+diđolašvuohta
+birasdoaibma	ympäristötoimi	biras+doaibma
 birasdutkan	ympäristötutkimus	biras+dutkan
 biraseiseváldi	ympäristöviranomaiset	biras+eiseváldi
 biraseisseváldi	ympäristöviranomainen	biras+eisseváldi
@@ -70,19 +91,27 @@ biraspolitihkka	ympäristöpolitiikka	biras+politihkka
 birasprográmma	ympäristöohjelma	biras+prográmma
 birasváttisvuohta	ympäristöongelma	biras+váttisvuohta
 boahtteáiggedoaivva	tulevaisuuden toivo	boahtteáigi+doaivva
+boaresvierru	vanha tapa	boaris+vierru
 boastagántuvra	postitoimisto	boasta+kantuvra
+boastajuogadeaddji	postinjakaja	boasta+juogadeaddji
 boastakantuvra	postitoimisto	boasta+kantuvra
 boastakontuvra	postitoimisto	boasta+kantuvra
 boastačujuhus	postiosoite	boasta+čujuhus
 boasttudiehtu	väärä tieto	boasttu+diehtu
 boasttuválljen	väärä valinta	boasttu+válljen
 boađusraporta	tulosraportti	boađus+raporta
+borasdiagnosa	syöpädiagnoosi	boras+diagnosa
+borasdávdadikšun	syövän hoito	borasdávda+dikšun
 borjjasvanca	purjevene	borjjas+vanca
 borramušbuvda	ruokakauppa	borramuš+buvda
+borramušguolli	ruokakala	borramuš+guolli
 borramušgálvoindustriija	elintarviketeollisuus	borramušgálvu+industriija
 borramušrádju	ruokavarasto	borramuš+rádju
+borramušáiti	ruoka-aitta	borramuš+áiti
+bronsamedállja	pronssimitali	bronsa+medállja
 budjeahttaevttohus	budjettiehdotus	budjeahtta+evttohus
 budjeahttaproposišuvdna	budjettiehdotus	budjeahtta+proposišuvdna
+budjeahttačoahkkin	budjettikokous	budjeahtta+čoahkkin
 buhtadusovddasvástádus	korvausvastuu	buhtadus+ovddasvástádus
 buhtadusproseanta	korvausprosentti	buhtadus+proseanta
 buhttenovddasvástádus	korvausvastuu	buhtten+ovddasvástádus
@@ -90,18 +119,27 @@ buohccebiilabálvalus	ambulanssipalvelu	buohccebiila+bálvalus
 buohccesihkarvuohta	potilasturvallisuus	buohcci+sihkarvuohta
 buollinalárbma	palohälytys	buollin+alárbma
 buollinstašuvdna	paloasema	buollin+stašuvdna
+buresbirgenstáda	hyvinvointivaltio	buresbirgen+stáda
+buresbirgenstáhta	hyvinvointivaltio	buresbirgen+stáhta
 buvttadusdoarjja	tuotantotuki	buvttadus+doarjja
 buvttaduskapasiteahtta	tuotantokapasiteetti	buvttadus+kapasiteahtta
 buvttaduskapasitehta	tuotantokapasiteetti	buvttadus+kapasitehta
+buvttaovdánahttin	tuotekehitys	buvtta+ovdánahttin
 bušeahttaproposišuvdna	budjettiehdotus	bušeahtta+proposišuvdna
 bušeahttavuollebáza	budjetin alijäämä	bušeahtta+vuollebáza
 bušeahttavuolláibáza	budjetin alijäämä	bušeahtta+vuolláibáza
+bušeahttačoahkkin	budjettikokous	bušeahtta+čoahkkin
+báikkálašsearvi	paikallinen seura	báikkálaš+searvi
 bákteláhka	kallion laki	bákti+láhka
 báljesoaivi	kalju pää	báljis+oaivi
 bálvalusdássi	palvelutaso	bálvalus+dássi
+bálvalusfállu	palvelutarjonta	bálvalus+fállu
 bálvalusguovddáš	palvelukeskus	bálvalus+guovddáš
+bálvalusrusttet	palvelurakennus	bálvalus+rusttet
 bátnedikšun	hammashoito	bátni+dikšun
+bátnedivššohat	hammashoitola	bátni+divššohat
 báŋkokoarta	pankkikortti	báŋku+koarta
+dearvvasvuođabearráigeahčču	terveysvalvonta	dearvvasvuohta+bearráigeahčču
 dearvvasvuođabálvalus	terveyspalvelu	dearvvasvuohta+bálvalus
 dearvvasvuođadepartemeanta	terveysministeriö	dearvvasvuohta+departemeanta
 dearvvasvuođaeiseváldi	terveysviranomaiset	dearvvasvuohta+eiseváldi
@@ -109,20 +147,35 @@ dearvvasvuođaguovddáš	terveyskeskus	dearvvasvuohta+guovddáš
 dearvvasvuođaministtar	terveysministeri	dearvvasvuohta+ministtar
 dearvvasvuođaorganisašuvdna	terveysjärjestö	dearvvasvuohta+organisašuvdna
 dearvvasvuođastašuvdna	terveysasema	dearvvasvuohta+stašuvdna
+dearvvašvuođabearráigeahčču	terveysvalvonta	dearvvašvuohta+bearráigeahčču
 dearvvašvuođadepartemeanta	terveysministeriö	dearvvašvuohta+departemeanta
 dearvvašvuođadiehtu	terveystieto	dearvvašvuohta+diehtu
 dearvvašvuođaeiseváldi	terveysviranomaiset	dearvvašvuohta+eiseváldi
 dearvvašvuođaministtar	terveysministeri	dearvvašvuohta+ministtar
+dearvvašvuođaorganisašuvdna	terveysjärjestö	dearvvašvuohta+organisašuvdna
 dearvvašvuođastašuvdna	terveysasema	dearvvašvuohta+stašuvdna
+diehtoaddi	tiedonantaja	diehtu+addi
+diehtobuvttus	tietoteos	diehtu+buvttus
 diehtobálvalus	tietopalvelu	diehtu+bálvalus
+diehtogaskkusteapmi	tiedonvälitys	diehtu+gaskkusteapmi
 diehtoguovddáš	tietokeskus	diehtu+guovddáš
+diehtoháhkan	tiedonhankinta	diehtu+háhkan
+diehtojuohkinbláđđi	tiedotuslehti	diehtojuohkin+bláđđi
+diehtojuohkindirektevra	tiedotusjohtaja	diehtojuohkin+direktevra
+diehtojuohkinhoavda	tiedotusjohtaja	diehtojuohkin+hoavda
+diehtojuohkinjođiheaddji	tiedotusjohtaja	diehtojuohkin+jođiheaddji
+diehtosihkarvuohta	tietoturvallisuus	diehtu+sihkarvuohta
+dienasovdáneapmi	ansiokehitys	dienas+ovdáneapmi
+digaštallanprográmma	keskusteluohjelma	digaštallan+prográmma
 dihtorvuogádat	tietokonejärjestelmä	dihtor+vuogádat
 diibmohaddi	tuntihinta	diibmu+haddi
 dikšundássi	hoidon taso	dikšu+dássi
 dikšuninstitušuvdna	hoitolaitos	dikšu+institušuvdna
 dikšunplána	hoitosuunnitelma	dikšu+plána
+dikšunruoktu	hoitokoti	dikšu+ruoktu
 dikšunásahus	hoitolaitos	dikšu+ásahus
 divatvuogádat	maksujärjestelmä	divat+vuogádat
+divišuvdnastivra	liigahallitus	divišuvdna+stivra
 divššohassihkarvuohta	potilasturvallisuus	divššohas+sihkarvuohta
 divššohassihkkarvuohta	potilasturvallisuus	divššohas+sihkkarvuohta
 doalvunlohpi	vientilupa	doalvun+lohpi
@@ -130,12 +183,15 @@ doarjjadoaibma	tukitoimi	doarjja+doaibma
 doarjjadássi	tukitaso	doarjja+dássi
 doarjjaguovlu	tukialue	doarjja+guovlu
 doarjjakonsearta	tukikonsertti	doarjja+konsearta
+doarjjamearri	tuen määrä	doarjja+mearri
 doarjjamálle	tukimalli	doarjja+málle
 doarjjasturrodat	tuen suuruus	doarjja+sturrodat
+doarjjasubmi	tukisumma	doarjja+submi
 doarjjavuogádat	tukijärjestelmä	doarjja+vuogádat
 dokumentáraprográmma	dokumenttiohjelma	dokumentára+prográmma
 dološvierru	vanha tapa	dološ+vierru
 duhkoraddanlatnja	leikkihuone	duhkoraddan+latnja
+duogášivdni	taustaväri	duogáš+ivdni
 duollostašuvdna	tulliasema	duollu+stašuvdna
 dutkandirektevra	tutkimusjohtaja	dutkan+direktevra
 dutkangažaldat	tutkimuskysymys	dutkan+gažaldat
@@ -143,28 +199,44 @@ dutkaninstitušuvdna	tutkimuslaitos	dutkan+institušuvdna
 dutkanjođiheaddji	tutkimusjohtaja	dutkan+jođiheaddji
 dutkanovttadat	tutkimusyksikkö	dutkan+ovttadat
 dutkanovttasbargu	tutkimusyhteistyö	dutkan+ovttasbargu
+dutkanprojeakta	tutkimusprojekti	dutkan+projeakta
 dutkanraporta	tutkimusraportti	dutkan+raporta
 dutkanstašuvdna	tutkimusasema	dutkan+stašuvdna
 dutkanásahus	tutkimuslaitos	dutkan+ásahus
 dáiddahistorjá	taidehistoria	dáidda+historjá
 dáiddaprošeakta	taideprojekti	dáidda+prošeakta
+dáiddaásahus	taidelaitos	dáidda+ásahus
 dáiddárjoavku	taiteilijaryhmä	dáiddár+joavku
+dálkesuodji	sääsuoja	dálki+suodji
 dálkkasgeavaheapmi	lääkkeen käyttö	dálkkas+geavaheapmi
+dálkkádatbargu	ilmastotyö	dálkkádat+bargu
+dálkkádatdutki	ilmastotutkija	dálkkádat+dutki
+dálkkádatfoanda	ilmastorahasto	dálkkádat+foanda
+dálkkádatkonvenšuvdna	ilmastosopimus	dálkkádat+konvenšuvdna
 dálkkádatprográmma	ilmasto-ohjelma	dálkkádat+prográmma
 dálkkádatpáhkka	ilmastopaketti	dálkkádat+páhkka
 dálkkádatrievdadeapmi	ilmastonmuutos	dálkkádat+rievdadeapmi
 dállonamma	talon nimi	dállu+namma
+dárbomeroštallan	tarpeen arviointi	dárbu+meroštallan
+dárboárvvoštallan	tarpeen arviointi	dárbu+árvvoštallan
 dásseárvolávdegoddi	tasa-arvolautakunta	dásseárvu+lávdegoddi
 dásseárvoministtar	tasa-arvoministeri	dásseárvu+ministtar
+dávvirvuorkádoaibma	museotoimi	dávvirvuorká+doaibma
 dávvirvuorkávisti	museorakennus	dávvirvuorká+visti
 eaiggáduššanriekti	omistusoikeus	eaiggáduššan+riekti
+eaiggátgielda	omistajakunta	eaiggát+gielda
+eaiggátstivren	omistajaohjaus	eaiggát+stivren
+ealligovvateáhter	elokuvateatteri	ealligovva+teáhter
 eallindáhpi	elämäntapa	eallin+dáhpi
 eallinkvaliteahtta	elämänlaatu	eallin+kvaliteahtta
 eallinkvalitehta	elämänlaatu	eallin+kvalitehta
 eallinmuddu	elämänvaihe	eallin+muddu
 eallinvierru	elämäntapa	eallin+vierru
+ealáhusdoaibman	elinkeinotoiminta	ealáhus+doaibman
+ealáhushoavda	elinkeinojohtaja	ealáhus+hoavda
 ealáhusministtar	elinkeinoministeri	ealáhus+ministtar
 ealáhusstruktuvra	elinkeinorakenne	ealáhus+struktuvra
+eananareála	maapinta-ala	eanan+areála
 eanandieđa	maantiede	eanan+dieđa
 eanandoallobuvttadeapmi	maataloustuotanto	eanandoallu+buvttadeapmi
 eanandoallodepartemeanta	maatalousministeriö	eanandoallu+departemeanta
@@ -172,32 +244,57 @@ eanandoallofitnodat	maatalousyritys	eanandoallu+fitnodat
 eanandoalloministtar	maatalousministeri	eanandoallu+ministtar
 eanandoalloorganisašuvdna	maatalousjärjestö	eanandoallu+organisašuvdna
 eanandoallopolitihkka	maatalouspolitiikka	eanandoallu+politihkka
+eanandoallosektor	maataloussektori	eanandoallu+sektor
+eanandoallosuohkan	maatalouspitäjä	eanandoallu+suohkan
 eanandoarggástus	maanjäristys	eanan+doarggástus
+eanangeavaheapmi	maankäyttö	eanan+geavaheapmi
 eanangilvin	maanviljely	eanan+gilvin
+eananjorbadas	maapallo	eanan+jorbadas
 eananspábba	maapallo	eanan+spábba
+eananviidodat	maapinta-ala	eanan+viidodat
+eananvuođđu	maapohja	eanan+vuođđu
+eananšládja	maalaji	eanan+šládja
 eanetlogugiella	enemmistökieli	eanetlohku+giella
+eanetlohkoráđđehus	enemmistöhallitus	eanetlohku+ráđđehus
 eanetlohkostivra	enemmistöhallitus	eanetlohku+stivra
+eatnanareála	maapinta-ala	eana+areála
 eatnandoallobuvttadeapmi	maataloustuotanto	eatnandoallu+buvttadeapmi
 eatnandoallodepartemeanta	maatalousministeriö	eatnandoallu+departemeanta
 eatnandoallofitnodat	maatalousyritys	eatnandoallu+fitnodat
 eatnandoalloministtar	maatalousministeri	eatnandoallu+ministtar
 eatnandoalloorganisašuvdna	maatalousjärjestö	eatnandoallu+organisašuvdna
 eatnandoallopolitihkka	maatalouspolitiikka	eatnandoallu+politihkka
+eatnandoallosektor	maataloussektori	eatnandoallu+sektor
+eatnandoallosuohkan	maatalouspitäjä	eatnandoallu+suohkan
+eatnangeavaheapmi	maankäyttö	eana+geavaheapmi
+eatnanjorbadas	maapallo	eana+jorbadas
+eatnanviidodat	maapinta-ala	eana+viidodat
+eatnogáddi	jokiranta	eatnu+gáddi
+ekonomiijahálddašeapmi	taloushallinto	ekonomiija+hálddašeapmi
 ekonomiijastivren	talouden hallinta	ekonomiija+stivren
 ekspeartajoavku	asiantuntijaryhmä	ekspearta+joavku
+ekspeartaorgána	asiantuntijaelin	ekspearta+orgána
 ekspeartapanela	asiantuntijapaneeli	ekspearta+panela
 eksportabuvtta	vientituote	eksporta+buvtta
 elrávdnjerehket	sähkölasku	elrávdnji+rehket
 elrávdnječaskkástat	sähköisku	elrávdnji+časkkástat
 energiijabuvttadeapmi	energiantuotanto	energiija+buvttadeapmi
+energiijageavaheapmi	energiakäyttö	energiija+geavaheapmi
 energiijagáldu	energianlähde	energiija+gáldu
 energiijapolitihkka	energiapolitiikka	energiija+politihkka
+energiijaseastin	energiansäästö	energiija+seastin
+errenáigi	karanteeniaika	erren+áigi
+etáhtahoavda	laitoksen johtaja	etáhtta+hoavda
+etáhttahoavda	laitoksen johtaja	etáhtta+hoavda
 euroguovlu	euroalue	euro+guovlu
 evttohasválljen	ehdokkaan valinta	evttohas+válljen
+fabrihkkarusttet	tehdasrakennus	fabrihkka+rusttet
 falástallandáhpáhus	urheilutapahtuma	falástallan+dáhpáhus
+falástallankarrieara	urheilu-ura	falástallan+karrieara
 falástallanlihttu	urheiluliitto	falástallan+lihttu
 falástallanorganisašuvdna	urheilujärjestö	falástallan+organisašuvdna
 falástallansearvi	urheiluseura	falástallan+searvi
+faláštallankarrieara	urheilu-ura	faláštallan+karrieara
 faláštallanlihttu	urheiluliitto	faláštallan+lihttu
 faláštallansearvi	urheiluseura	faláštallan+searvi
 fanashámman	venesatama	fanas+hámman
@@ -207,26 +304,49 @@ filbmaprošeakta	elokuvaprojekti	filbma+prošeakta
 filbmaskuvla	elokuvakoulu	filbma+skuvla
 fiskesivdni	keltainen väri	fiskat+ivdni
 fitnodatdoarjja	yritystuki	fitnodat+doarjja
+fitnodatidea	yritysidea	fitnodat+idea
+fitnodatjurdda	yritysidea	fitnodat+jurdda
+fylkajuohku	läänijako	fylka+juohku
 fylkkaoaivegávpot	läänin pääkaupunki	fylka+oaivegávpot
 fálaldatgilvu	tarjouskilpailu	fálaldat+gilvu
+fápmogeavaheapmi	voimankäyttö	fápmu+geavaheapmi
 fápmolinjá	voimalinja	fápmu+linjá
 fápmolinnjá	voimalinja	fápmu+linnjá
+fárrenrávdnji	muuttovirta	fárren+rávdnji
+geaidnoearru	tienhaara	geaidnu+earru
+geaidnofierpmádat	tieverkosto	geaidnu+fierpmádat
+geaidnohuksen	tien rakentaminen	geaidnu+huksen
+geaidnoplána	tiesuunnitelma	geaidnu+plána
 geaidnoplánen	tiesuunnittelu	geaidnu+plánen
 geaidnovuođđu	tien pohja	geaidnu+vuođđu
 geardedivat	kertamaksu	geardi+divat
+geassebargi	kesätyöntekijä	geassi+bargi
+geassečoahkkin	kesäkokous	geassi+čoahkkin
 geavaheaddjejoavku	käyttäjäryhmä	geavaheaddji+joavku
 geavahusguovlu	käyttöalue	geavahus+guovlu
+geađgeeana	kivimaa	geađgi+eana
+geađgeeanan	kivimaa	geađgi+eanan
+geađgeeatnan	kivimaa	geađgi+eana
 giehtabargu	käsityö	giehta+bargu
+gielddaguovddáš	kuntakeskus	gielda+guovddáš
 gielddapolitihkkár	kuntapoliitikko	gielda+politihkkár
 gielddarehketdoalli	kunnan rahastonhoitaja	gielda+rehketdoalli
+gielddaruhtadilli	kunnan taloustilanne	gielda+ruhtadilli
+gielddaruhtadoalli	kunnan rahastonhoitaja	gielda+ruhtadoalli
 gielddarádjá	kuntaraja	gielda+rádjá
 gielddaviessu	kunnantalo	gielda+viessu
 gieldoguovlu	kunnan alue	gielda+guovlu
 giellagažaldat	kielikysymys	giella+gažaldat
 giellajoavku	kieliryhmä	giella+joavku
+giellaovdánahttin	kielen kehitys	giella+ovdánahttin
+giellarádji	kieliraja	giella+rádji
 gievkkanbeavdi	keittiön pöytä	gievkkan+beavdi
+gievkkanuvdna	keittiön hella	gievkkan+uvdna
+giittossárdni	kiitospuhe	giittos+sárdni
 girjeildu	kirjahylly	girji+ildu
 girjeprošeakta	kirjaprojekti	girji+prošeakta
+girjerádjoinstitušuvdna	kirjastolaitos	girjerádju+institušuvdna
+girječoakkáldat	kirjakokoelma	girji+čoakkáldat
 girjjálašvuođabálkkašupmi	kirjallisuuspalkinto	girjjálašvuohta+bálkkašupmi
 girjjálašvuođahistorjá	kirjallisuuden historia	girjjálašvuohta+historjá
 girkolahttu	kirkon jäsen	girku+lahttu
@@ -237,55 +357,87 @@ goalmmátoassi	kolmasosa	goalmmát+oassi
 govvabálvalus	kuvapalvelu	govva+bálvalus
 gudneguossi	kunniavieras	gudni+guossi
 gudnemiellahttu	kunniajäsen	gudni+miellahttu
+guhkesboddu	pitkä tauko	guhkki+boddu
 guohtuneatnan	laidunmaa	guohtun+eana
 guollemáddodat	kalakanta	guolli+máddodat
 guollenálli	kalakanta	guolli+nálli
+guollešládja	kalalaji	guolli+šládja
 guolástusgielda	kalastuskunta	guolástus+gielda
+guolástusláhka	kalastuslaki	guolástus+láhka
+guolástussearvi	kalastusseura	guolástus+searvi
 guovddášbáŋku	keskuspankki	guovddáš+báŋku
+guovddášdoaimmahat	keskustoimisto	guovddáš+doaimmahat
 guovddášhálddašeapmi	keskushallinto	guovddáš+hálddašeapmi
 guovddášskuvla	keskuskoulu	guovddáš+skuvla
 guovddášstivra	keskushallitus	guovddáš+stivra
+guovlojuohkin	aluejako	guovlu+juohkin
+guovlojuohku	aluejako	guovlu+juohku
 gurutgiehta	vasen käsi	gurut+giehta
 gurutravda	vasen reuna	gurut+ravda
 gusamielki	lehmänmaito	gussa+mielki
+gussanávet	lehmän navetta	gussa+návet
+gáddeguovlu	ranta-alue	gáddi+guovlu
 gáddelinjá	rantaviiva	gáddi+linjá
 gáfegohppu	kahvikuppi	gáffe+gohppu
 gáfevuoššan	kahvinkeitin	gáffe+vuoššan
+gáffebánno	kahvipannu	gáffe+bánno
 gálvogávpi	tavarakauppa	gálvu+gávpi
+gávpegáhta	kauppakatu	gávpi+gáhta
+gávpegáhtta	kauppakatu	gávpi+gáhtta
+gávpejurdda	liikeidea	gávpi+jurdda
 gávpeministtar	kauppaministeri	gávpi+ministtar
 gávpepolitihkka	kauppapolitiikka	gávpi+politihkka
 gávpesoahpamuš	kauppasopimus	gávpi+soahpamuš
 gávpečiegusvuohta	liikesalaisuus	gávpi+čiegusvuohta
 gávpešiehtadus	kauppasopimus	gávpi+šiehtadus
+gávpotgielda	kaupunkikunta	gávpot+gielda
+gávpotguovddáš	kaupunkikeskus	gávpot+guovddáš
 gávpotkultuvra	kaupunkikulttuuri	gávpot+kultuvra
+gávpotráđđi	kaupungin neuvosto	gávpot+ráđđi
+gávpotsuohkan	kaupunkikunta	gávpot+suohkan
 haddeerohus	hintaero	haddi+erohus
+haddegilvu	hintakilpailu	haddi+gilvu
+haddeovdáneapmi	hintakehitys	haddi+ovdáneapmi
 heahtenummar	hätänumero	heahti+nummar
 heahtenummir	hätänumero	heahti+nummir
+historjádutki	historiantutkija	historjá+dutki
 historjáprofessor	historian professori	historjá+professor
 hoavdavirgi	johtajan virka	hoavda+virgi
 hoteallalatnja	hotellihuone	hotealla+latnja
 huksehusbargu	rakennustyö	huksehus+bargu
+hupmangiella	puhekieli	hupman+giella
+hupmanvuohki	puhetapa	hupman+vuohki
 hupmanvuoigatvuohta	puheoikeus	hupman+vuoigatvuohta
 hupmanvuorru	puheenvuoro	hupman+vuorru
+háhkanárvu	hankinnan arvo	háhkan+árvu
 hálddahusguovlu	hallintoalue	hálddahus+guovlu
 hálddahusovttadat	hallintoyksikkö	hálddahus+ovttadat
+hálddahusriekti	hallinto-oikeus	hálddahus+riekti
 hálddahusráhkadus	hallintorakenne	hálddahus+ráhkadus
+hávdesadji	hautapaikka	hávdi+sadji
 industriijaguovlu	teollisuusalue	industriija+guovlu
 industriijalihttu	teollisuusliitto	industriija+lihttu
+industriijarusttet	teollisuusrakennus	industriija+rusttet
 institušuvdnahuksen	laitoksen rakentaminen	institušuvdna+huksen
 interneahttageavaheapmi	internetin käyttö	interneahtta+geavaheapmi
 investerenbáŋku	investointipankki	investeren+báŋku
 investerendárbu	investointitarve	investeren+dárbu
+iskkusáigi	koeaika	iskkus+áigi
 ivdneávnnas	väriaine	ivdni+ávnnas
 jahkebušeahtta	vuosibudjetti	jahki+bušeahtta
 jahkebálká	vuosipalkka	jahki+bálká
 jahkedivat	vuosimaksu	jahki+divat
 jahkekursa	vuosikurssi	jahki+kursa
 jahkelohku	vuosiluku	jahki+lohku
+jahkeraporta	vuosiraportti	jahki+raporta
 jahkereantu	vuosikorko	jahki+reantu
+jeaggegáddi	suoranta	jeaggi+gáddi
+jearahallaniskkadeapmi	haastattelututkimus	jearahallan+iskkadeapmi
 jiekŋaskierru	jääkiekko	jiekŋa+skierru
 jiekŋaáhpi	jäämeri	jiekŋa+áhpi
+jietnadássi	äänitaso	jietna+dássi
 jietnagirji	äänikirja	jietna+girji
+joatkkadikšu	jatkohoito	joatkka+dikšu
 johtalusdepartemeanta	liikenneministeriö	johtalus+departemeanta
 johtalusministtar	liikenneministeri	johtalus+ministtar
 johtolatdorvvolašvuohta	liikenneturvallisuus	johtolat+dorvvolašvuohta
@@ -297,60 +449,87 @@ johtolatlihkuhisvuohta	liikenneonnettomuus	johtolat+lihkuhisvuohta
 johtolatmearka	liikennemerkki	johtolat+mearka
 johtolatministtar	liikenneministeri	johtolat+ministtar
 johtolatrávdnji	liikennevirta	johtolat+rávdnji
+johtolatsadji	liikennepaikka	johtolat+sadji
 johtolatsihkarvuohta	liikenneturvallisuus	johtolat+sihkarvuohta
 johtolatsihkkarvuohta	liikenneturvallisuus	johtolat+sihkkarvuohta
 johtolatstašuvdna	liikenneasema	johtolat+stašuvdna
 jorribiegga	pyörivä tuuli	jorri+biegga
 journálanummar	lehden numero	journála+nummar
 journálanummir	lehden numero	journála+nummir
+jođiheaddjevirgi	johtajan virka	jođiheaddji+virgi
 jođiheaddjirolla	johtajan rooli	jođiheaddji+rolla
 juohkolinnjá	jakolinja	juohku+linnjá
 juolgespábba	jalkapallo	juolgi+spábba
+jurddamáilbmi	ajatusmaailma	jurdda+máilbmi
 juvlastuollu	pyörätuoli	juvla+stuollu
 jávrebodni	järvenpohja	jávri+bodni
 kaleandarjahki	kalenterivuosi	kaleandar+jahki
 karriearaovdáneapmi	urakehitys	karrieara+ovdáneapmi
 karriearaválljen	uravalinta	karrieara+válljen
 kilohaddi	kilohinta	kilo+haddi
+kloáhkkavuogádat	viemärijärjestelmä	kloáhkka+vuogádat
 konferánsaguovddáš	konferenssikeskus	konferánsa+guovddáš
+konseartaviessu	konserttitalo	konsearta+viessu
 kontonummar	tilinumero	kontu+nummar
 koronavirus	koronavirus	korona+virus
 kruvdnaprinsa	kruununprinssi	kruvdnu+prinsa
 kruvnnaprinsa	kruununprinssi	kruvdna+prinsa
 kránnjágielda	naapurikunta	kránnjá+gielda
+kránnjáriika	naapurivaltio	kránnjá+riika
 kursaguovddáš	kurssikeskus	kursa+guovddáš
 káffekohppa	kahvikuppi	káffe+kohppa
 lagasoktavuohta	läheinen yhteys	lagas+oktavuohta
 lagasolmmoš	läheinen ihminen	lagas+olmmoš
+lahttoorganisašuvdna	jäsenjärjestö	lahttu+organisašuvdna
 lahttuvuođaášši	jäsenyysasia	lahttuvuohta+ášši
+lassehuksehus	lisärakennus	lassi+huksehus
+lektorgealbu	opettajan kelpoisuus	lektor+gealbu
 lieggabiebmu	lämmin ruoka	liekkas+biebmu
 lihkkobeaivi	onnenpäivä	lihkku+beaivi
 linjabiila	linja-auto	linjá+biila
+linjaduopmár	linjatuomari	linjá+duopmár
 linjábiila	linja-auto	linjá+biila
+linjáduopmár	linjatuomari	linjá+duopmár
 linnjabiila	linja-auto	linnjá+biila
+linnjaduopmár	linjatuomari	linnjá+duopmár
+linnjáduopmár	linjatuomari	linnjá+duopmár
 loddeinflueansa	lintuinfluenssa	loddi+influeansa
 lohkanbadjedivat	lukukausimaksu	lohkanbadji+divat
+lonohallanprográmma	vaihto-ohjelma	lonohallan+prográmma
 luohkkáoahpaheaddji	luokanopettaja	luohkki+oahpaheaddji
 luonddugeađgi	luonnonkivi	luondu+geađgi
 luonddugovva	luontokuva	luondu+govva
+luondduguovlu	luontoalue	luondu+guovlu
 luondduhistorjjálaš	luonnonhistoriallinen	luondu+historjjálaš
 luonddumuosáhus	luontokokemus	luondu+muosáhus
 luonddusuodjalusláhka	luonnonsuojelulaki	luondu+suodjalus+láhka
 luondduvásihus	luontokokemus	luondu+vásihus
 luopmománnu	lomakuukausi	luopmu+mánnu
+lágalašvuođabearráigeahčču	laillisuusvalvonta	lágalašvuohta+bearráigeahčču
+láigohaddi	vuokrahinta	láigu+haddi
 láigošiehtadus	vuokrasopimus	láigu+šiehtadus
 lávdegoddemiellahttu	lautakunnan jäsen	lávdegoddi+miellahttu
+lávdehuksehus	näyttämörakennus	lávdi+huksehus
 lávvordateahket	lauantai-ilta	lávvordat+eahket
+lášmmohallansále	liikuntasali	lášmmohallan+sále
+lášmmohallansálla	liikuntasali	lášmmohallan+sálla
+majoriteahtagiella	enemmistökieli	majoriteahtta+giella
 matematihkkaoahpaheaddji	matematiikanopettaja	matematihkka+oahpaheaddji
+matematihkkaoahpahus	matematiikan opetus	matematihkka+oahpahus
 mearačáhcetemperatuvra	meriveden lämpötila	mearačáhci+temperatuvra
 mearkanamma	merkin nimi	mearka+namma
+mearreáigásašvirgi	määräaikainen virka	mearreáigásaš+virgi
+mediadigaštallan	median keskustelu	media+digaštallan
 mediageavaheapmi	median käyttö	media+geavaheapmi
+mediakonseardna	mediakonserni	media+konseardna
 mediaviessu	mediatalo	media+viessu
+merkenáigi	merkintäaika	merken+áigi
 mielkebiila	maitoauto	mielki+biila
 mielkebuvttadeaddji	maidontuottaja	mielki+buvttadeaddji
 mielkebuvttadeapmi	maidontuotanto	mielki+buvttadeapmi
 mielkebuvttadus	maidontuotanto	mielki+buvttadus
 miellahttobláđđi	jäsenlehti	miellahttu+bláđđi
+miellahttoorganisašuvdna	jäsenjärjestö	miellahttu+organisašuvdna
 miellahttoriika	jäsenvaltio	miellahttu+riika
 miellahttostáda	jäsenvaltio	miellahttu+stáda
 miellahttostáhta	jäsenvaltio	miellahttu+stáhta
@@ -358,12 +537,19 @@ ministerčoahkkin	ministerikokous	minister+čoahkkin
 ministtarčoahkkin	ministerikokous	ministtar+čoahkkin
 minoriteahtagiella	vähemmistökieli	minoriteahtta+giella
 minoritehtagiella	vähemmistökieli	minoritehta+giella
+mohtorbeaktu	moottoriteho	mohtor+beaktu
+muorjejahki	marjavuosi	muorji+jahki
 muorrabargu	puutyö	muorra+bargu
+muorraviessu	puutalo	muorra+viessu
 museaguovlu	museoalue	musea+guovlu
+museahuksen	museon rakentaminen	musea+huksen
 musealihttu	museoliitto	musea+lihttu
 musearusttet	museorakennus	musea+rusttet
 museavisti	museorakennus	musea+visti
 musihkkabálkkašupmi	musiikkipalkinto	musihkka+bálkkašupmi
+musihkkalatnja	musiikkihuone	musihkka+latnja
+musihkkaovdanbuktin	musiikkiesitys	musihkka+ovdanbuktin
+musihkkariemut	musiikkijuhlat	musihkka+riemut
 musihkkaskuvla	musiikkikoulu	musihkka+skuvla
 musihkkaterapevta	musiikkiterapeutti	musihkka+terapevta
 máilmmibáŋku	maailmanpankki	máilbmi+báŋku
@@ -373,9 +559,13 @@ máilmmimeasttir	maailmanmestari	máilbmi+measttir
 máilmmimeašttir	maailmanmestari	máilbmi+meašttir
 máilmmimeašttirvuođagilvu	maailmanmestaruuskilpailu	máilbmi+meašttirvuohta+gilvu
 máilmminjunuš	maailman kärki	máilbmi+njunuš
+máksinnákca	maksukyky	máksin+nákca
 máksinvuogádat	maksujärjestelmä	máksin+vuogádat
 mánáidsuodjaluseiseváldi	lastensuojeluviranomaiset	mánáidsuodjalus+eiseváldi
 mánáidsuodjalusláhka	lastensuojelulaki	mánáidsuodjalus+láhka
+márkanastinhoavda	markkinointijohtaja	márkanastin+hoavda
+márkanastinjođiheaddji	markkinointijohtaja	márkanastin+jođiheaddji
+márkanhoavda	markkinajohtaja	márkan+hoavda
 márkanárvu	markkina-arvo	márkan+árvu
 mátkedáhkádus	matkavakuutus	mátki+dáhkádus
 mátketelefovdna	matkapuhelin	mátki+telefovdna
@@ -386,6 +576,7 @@ nammarievdadus	nimenmuutos	namma+rievdadus
 nationálabibliotehka	kansalliskirjasto	nationála+bibliotehka
 nationálagalleriija	kansallisgalleria	nationála+galleriija
 nationálagirjerájus	kansalliskirjasto	nationála+girjerájus
+nationálasosialisma	kansallissosialismi	nationála+sosialisma
 nationálastáda	kansallisvaltio	nationála+stáda
 nationálastáhta	kansallisvaltio	nationála+stáhta
 nationálačoahkkin	kansalliskokous	nationála+čoahkkin
@@ -396,25 +587,38 @@ našuvnnalašteáhter	kansallisteatteri	našuvnnalaš+teáhter
 naššuvnnalašstáda	kansallisvaltio	naššuvnnalaš+stáda
 naššuvnnalašstáhta	kansallisvaltio	naššuvnnalaš+stáhta
 neahttaoktavuohta	nettiyhteys	neahtta+oktavuohta
+nissongovva	naiskuva	nisson+govva
 njealjátoassi	neljäsosa	njealját+oassi
+njiŋŋelasguovža	naaraskarhu	njiŋŋelas+guovža
+njoammunvárra	tartuntavaara	njoammun+várra
+njunuševttohas	kärkiehdokas	njunuš+evttohas
 njuolgadoarjja	suora tuki	njuolga+doarjja
 njuolggadusnuppástus	sääntömuutos	njuolggadus+nuppástus
+njuorjjonálli	hyljekanta	njuorjju+nálli
+njuorjobivdu	hylkeenpyynti	njuorju+bivdu
 nuppástuhttinproseassa	muutosprosessi	nuppástuhttin+proseassa
+nállelohku	kantaluku	nálli+lohku
+oadjoetáhtta	vakuutuslaitos	oadju+etáhtta
 oaffarsadji	uhripaikka	oaffar+sadji
 oahpaheaddjegealbu	opettajan kelpoisuus	oahpaheaddji+gealbu
 oahpaheaddjegelbbolašvuohta	opettajan kelpoisuus	oahpaheaddji+gelbbolašvuohta
 oahpahusdepartemeanta	opetusministeriö	oahpahus+departemeanta
 oahpahusdirektevra	opetusjohtaja	oahpahus+direktevra
 oahpahusdássi	opetuksen taso	oahpahus+dássi
+oahpahushoavda	opetusjohtaja	oahpahus+hoavda
 oahpahusjođiheaddji	opetusjohtaja	oahpahus+jođiheaddji
 oahpahuslávdegoddi	opetuslautakunta	oahpahus+lávdegoddi
+oahpahusplána	opetussuunnitelma	oahpahus+plána
 oaivefáddá	pääaihe	oaivi+fáddá
+oaiveoassi	pääosa	oaivi+oassi
 oaiveulbmil	päätavoite	oaivi+ulbmil
 oarjeriddu	länsirannikko	oarji+riddu
+oasseeaiggát	osaomistaja	oassi+eaiggát
 oassehuksen	osan rakentaminen	oassi+huksen
 oassestáda	osavaltio	oassi+stáda
 oassálastindivat	osallistumismaksu	oassálastin+divat
 oasuseaiggát	osakkeenomistaja	oasus+eaiggát
+oasuskapitála	osakepääoma	oasus+kapitála
 oasusmárkan	osakemarkkina	oasus+márkan
 ohcanmeannudeapmi	hakemuksen käsittely	ohcan+meannudeapmi
 oktasašprošeakta	yhteinen projekti	oktasaš+prošeakta
@@ -423,21 +627,32 @@ oktasašsárggus	yhteinen piirre	oktasaš+sárggus
 oktasašášši	yhteinen asia	oktasaš+ášši
 oktasaščoavddus	yhteinen ratkaisu	oktasaš+čoavddus
 oktasaššiehtadus	yhteinen sopimus	oktasaš+šiehtadus
+oktiigullevašvuođadovdu	yhteenkuuluvuuden tunne	oktiigullevašvuohta+dovdu
+olbmoheagga	ihmishenki	olmmoš+heagga
 olgešbealli	oikea puoli	olgeš+bealli
 olgešgiehta	oikea käsi	olgeš+giehta
 olgešravda	oikea reuna	olgeš+ravda
 oljohaddi	öljyn hinta	olju+haddi
 oljoindustriija	öljyteollisuus	olju+industriija
+ollesgovva	kokonaiskuva	ollis+govva
 olmmošjohtolat	henkilöliikenne	olmmoš+johtolat
 olmmošriektekonvenšuvdna	ihmisoikeussopimus	olmmoš+riekti+konvenšuvdna
 olmmošvuoigatvuođaduopmostuollu	ihmisoikeustuomioistuin	olmmošvuoigatvuohta+duopmostuollu
 olmmošvuoigatvuođakonvenšuvdna	ihmisoikeussopimus	olmmošvuoigatvuohta+konvenšuvdna
+operaviessu	oopperatalo	opera+viessu
 opmodatriekti	omistusoikeus	opmodat+riekti
 opmodatvuoigatvuohta	omistusoikeus	opmodat+vuoigatvuohta
 opposišuvdnajoavku	oppositioryhmä	opposišuvdna+joavku
 opposišuvdnajođiheaddji	oppositiojohtaja	opposišuvdna+jođiheaddji
+organisašuvdnabargu	järjestötyö	organisašuvdna+bargu
+oskkuoahpahus	uskonnonopetus	osku+oahpahus
+ovdamunnevuoigatvuohta	etuoikeus	ovdamunni+vuoigatvuohta
 ovddasvástádusguovlu	vastuualue	ovddasvástádus+guovlu
+ovddasvástádusjuohku	vastuunjako	ovddasvástádus+juohku
+ovdogohcci	edunvalvoja	ovdu+gohcci
+ovdogoziheaddji	edunvalvoja	ovdu+goziheaddji
 ovdánahttinfoanda	kehitysrahasto	ovdánahttin+foanda
+ovdánahttinguovddáš	kehityksen keskus	ovdánahttin+guovddáš
 ovdánahttinovttasbargu	kehitysyhteistyö	ovdánahttin+ovttasbargu
 ovdánahttinprográmma	kehitysohjelma	ovdánahttin+prográmma
 ovdánahttinproseassa	kehitysprosessi	ovdánahttin+proseassa
@@ -449,9 +664,11 @@ ovttasbargoorganisašuvdna	yhteistyöjärjestö	ovttasbargu+organisašuvdna
 ovttasbargoprojeakta	yhteistyöprojekti	ovttasbargu+projeakta
 ovttasbargosoahpamuš	yhteistyösopimus	ovttasbargu+soahpamuš
 ovttasdoaibmaorganisašuvdna	yhteistyöjärjestö	ovttasdoaibma+organisašuvdna
+ovttaskasolmmoš	yksittäinen ihminen	ovttaskas+olmmoš
 ođasmahttinbargu	uudistustyö	ođasmahttin+bargu
 ođastusbargu	uudistustyö	ođastus+bargu
 ođđahuksehus	uusi rakennus	ođas+huksehus
+ođđahutkkus	uusi keksintö	ođas+hutkkus
 ođđavisti	uusi rakennus	ođas+visti
 ođđaárvalus	uusi arvio	ođas+árvalus
 paneladigaštallan	paneelikeskustelu	panela+digaštallan
@@ -459,50 +676,84 @@ pasieantadorvvolašvuohta	potilasturvallisuus	pasieanta+dorvvolašvuohta
 pasieantajoavku	potilasryhmä	pasieanta+joavku
 pasieantasihkarvuohta	potilasturvallisuus	pasieanta+sihkarvuohta
 penšuvdnaahki	eläkeikä	penšuvdna+ahki
+penšuvdnadivat	eläkemaksu	penšuvdna+divat
 penšuvdnafoanda	eläkerahasto	penšuvdna+foanda
 penšuvdnamáksu	eläkemaksu	penšuvdna+máksu
+penšuvdnaoadju	eläkevakuutus	penšuvdna+oadju
 penšuvdnaođastus	eläkeuudistus	penšuvdna+ođastus
 penšuvdnavuogádat	eläkejärjestelmä	penšuvdna+vuogádat
 persovdnaduođaštus	henkilötodistus	persovdna+duođaštus
+plánenbargamuš	suunnittelutyö	plánen+bargamuš
+plánenbargu	suunnittelutyö	plánen+bargu
+plánengántuvra	suunnittelutoimisto	plánen+kantuvra
+plánenhoavda	suunnittelujohtaja	plánen+hoavda
+plánenkantuvra	suunnittelutoimisto	plánen+kantuvra
+plánenkontuvra	suunnittelutoimisto	plánen+kantuvra
 plánenmuddu	suunnitteluvaihe	plánen+muddu
 plánenproseassa	suunnitteluprosessi	plánen+proseassa
 poastaadreassa	postiosoite	poasta+adreassa
 poastagántuvra	postitoimisto	poasta+kantuvra
+poastajuogadeaddji	postinjakaja	poasta+juogadeaddji
 poastakoarta	postikortti	poasta+koarta
 poastakontuvra	postitoimisto	poasta+kantuvra
 poastanummar	postinumero	poasta+nummar
+politiijaalmmái	poliisimies	politiija+almmái
+politiijadirektevra	poliisijohtaja	politiija+direktevra
+politiijaetáhtta	poliisilaitos	politiija+etáhtta
+politiijameasttir	poliisimestari	politiija+measttir
+politiijameašttir	poliisimestari	politiija+meašttir
 preassafriddjavuohta	lehdistönvapaus	preassa+friddjavuohta
+priváhttaolmmoš	yksityinen ihminen	priváhtta+olmmoš
 prográmmadirektevra	ohjelmajohtaja	prográmma+direktevra
+prográmmajođiheaddji	ohjelmajohtaja	prográmma+jođiheaddji
+prográmmaláidesteaddji	ohjelman juontaja	prográmma+láidesteaddji
 prošeaktabargi	projektityöntekijä	prošeakta+bargi
 prošeaktanamma	projektin nimi	prošeakta+namma
 raddevuodjan	rintauinti	raddi+vuodjan
+ravdaeaktu	reunaehto	ravda+eaktu
 reaidaruhtamáksu	käteismaksu	reaidaruhta+máksu
+reantodássi	korkotaso	reantu+dássi
 referánsarámma	viitekehys	referánsa+rámma
+rehkenastinvuohki	laskentatapa	rehkenastin+vuohki
+rehketmašiidna	laskukone	rehket+mašiidna
 rekruterenproseassa	rekrytointiprosessi	rekruteren+proseassa
 rekrutterenproseassa	rekrytointiprosessi	rekrutteren+proseassa
 resursagažaldat	resurssikysymys	resursa+gažaldat
 riddogávpot	rannikkokaupunki	riddu+gávpot
 riektegeavat	oikeuskäytäntö	riekti+geavat
+riektegieđahallan	oikeuskäsittely	riekti+gieđahallan
+riektemeannudeapmi	oikeuskäsittely	riekti+meannudeapmi
+riekteproseassa	oikeusprosessi	riekti+proseassa
 riektestáda	oikeusvaltio	riekti+stáda
 riektestáhta	oikeusvaltio	riekti+stáhta
 riekteásahus	oikeuslaitos	riekti+ásahus
+rievdadusdárbu	muutoksen tarve	rievdadus+dárbu
 rievdadusevttohus	muutosehdotus	rievdadus+evttohus
 rievdadusprográmma	muutosohjelma	rievdadus+prográmma
 rievdadusproseassa	muutosprosessi	rievdadus+proseassa
 rievdanproseassa	muutosprosessi	rievdan+proseassa
+rihkusalmmuhus	rikosilmoitus	rihkus+almmuhus
 rihkusbáiki	rikospaikka	rihkus+báiki
+rihkusfilbma	rikoselokuva	rihkus+filbma
 rihkuspolitiija	rikospoliisi	rihkus+politiija
 rihkusromána	rikosromaani	rihkus+romána
+riidensearvi	ratsastusseura	riiden+searvi
+riikkamedia	valtionmedia	riika+media
 riikkaráđđi	valtioneuvosto	riika+ráđđi
+risensuohkat	riisipuuro	risen+suohkat
 ruhtapolitihkka	rahapolitiikka	ruhta+politihkka
+ruhtaseastin	rahan säästäminen	ruhta+seastin
 ruhtavuoitu	rahapalkinto	ruhta+vuoitu
 ruksesivdni	punainen väri	ruoksat+ivdni
 ruksesruonáráđđehus	punavihreä hallitus	ruksesruoná+ráđđehus
+rumašgiella	kehonkieli	rumaš+giella
 ruovttoluottamáksin	takaisinmaksu	ruovttoluotta+máksin
 ruovttubálvalus	kotipalvelu	ruoktu+bálvalus
+ruovttuealli	kotieläin	ruoktu+ealli
 ruovttueanan	kotimaa	ruoktu+eanan
 ruovttueatnan	kotimaa	ruoktu+eana
 ruovttusadji	kotipaikka	ruoktu+sadji
+ruskaseahkka	roskapussi	ruska+seahkka
 rusttetbargu	rakennustyö	rusttet+bargu
 ruvdnoprinsa	kruununprinssi	ruvdnu+prinsa
 ruvnnaprinsa	kruununprinssi	ruvdna+prinsa
@@ -511,6 +762,9 @@ rádiostašuvdna	radioasema	rádio+stašuvdna
 rádiosátta	radiolähetys	rádio+sátta
 rádjaguovlu	raja-alue	rádji+guovlu
 rádjasoahpamuš	rajasopimus	rádji+soahpamuš
+rádjeeatnu	rajajoki	rádji+eatnu
+rádjeregiovdna	raja-alue	rádji+regiovdna
+rádjestašuvdna	raja-asema	rádji+stašuvdna
 ráfibálkkašupmi	rauhanpalkinto	ráfi+bálkkašupmi
 ráfiproseassa	rauhanprosessi	ráfi+proseassa
 ránnjáeana	naapurimaa	ránnjá+eana
@@ -523,8 +777,11 @@ ráđđehusjođiheaddji	hallituksen johtaja	ráđđehus+jođiheaddji
 ráđđehuslahttu	hallituksen jäsen	ráđđehus+lahttu
 ráđđehusčoahkkin	hallituksen kokous	ráđđehus+čoahkkin
 ráđđečoahkkin	neuvoston kokous	ráđđi+čoahkkin
+sarvvaealli	hirvieläin	sarvva+ealli
 searvegoddelahttu	seurakunnan jäsen	searvegoddi+lahttu
 searvegodderáđđi	seurakuntaneuvosto	searvegoddi+ráđđi
+searvegoddeviessu	seurakuntatalo	searvegoddi+viessu
+seksuálaovttastallan	seksuaalinen kanssakäyminen	seksuála+ovttastallan
 servodathuksen	yhteiskunnan rakentaminen	servodat+huksen
 servodatovdánahttin	yhteiskunnan kehitys	servodat+ovdánahttin
 servodatrievdan	yhteiskunnan muutos	servodat+rievdan
@@ -534,30 +791,49 @@ servodatvuogádat	yhteiskuntajärjestelmä	servodat+vuogádat
 servodatváttisvuohta	yhteiskunnan ongelma	servodat+váttisvuohta
 servodatšiehtadus	yhteiskuntasopimus	servodat+šiehtadus
 sevdnjeslatnja	pimeä huone	seavdnjat+latnja
+siellodikšu	sielunhoito	siellu+dikšu
+signálabeaktu	signaalin teho	signála+beaktu
 sihkarvuođadássi	turvallisuustaso	sihkarvuohta+dássi
 sihkarvuođapolitihkka	turvallisuuspolitiikka	sihkarvuohta+politihkka
 sihkkarvuođadássi	turvallisuustaso	sihkkarvuohta+dássi
 sihkkarvuođaeiseváldi	turvallisuusviranomaiset	sihkkarvuohta+eiseváldi
 sihkkarvuođapolitihkka	turvallisuuspolitiikka	sihkkarvuohta+politihkka
+sihkkelastingilvu	pyöräilykilpailu	sihkkelastin+gilvu
+sisaboahtoovdáneapmi	ansiokehitys	sisaboahtu+ovdáneapmi
 sisdoallobuvttadeapmi	sisällöntuotanto	sisdoallu+buvttadeapmi
 sivalašvuođadovdu	syyllisyyden tunne	sivalašvuohta+dovdu
 skeaŋkakoarta	lahjakortti	skeaŋka+koarta
 skiipajohtolat	laivaliikenne	skiipa+johtolat
+skuvlaalmmái	koulumies	skuvla+almmái
+skuvlabargu	koulutyö	skuvla+bargu
 skuvlabiebmu	kouluruoka	skuvla+biebmu
 skuvlabiire	koulupiiri	skuvla+biire
+skuvlabáiki	koulupaikka	skuvla+báiki
 skuvlagievkkan	koulun keittiö	skuvla+gievkkan
 skuvlajođiheaddji	koulunjohtaja	skuvla+jođiheaddji
 skuvlameasttir	koulumestari	skuvla+measttir
 skuvlameašttir	koulumestari	skuvla+meašttir
+skuvlamáilbmi	koulumaailma	skuvla+máilbmi
+skuvlaoahppi	koulun oppilas	skuvla+oahppi
 skuvlaortnet	koulujärjestys	skuvla+ortnet
 skuvlarektor	koulun rehtori	skuvla+rektor
+skuvlarusttet	koulurakennus	skuvla+rusttet
 skuvlasystema	koulujärjestelmä	skuvla+systema
+skuvlaviessu	koulutalo	skuvla+viessu
+skuvlavisti	koulurakennus	skuvla+visti
 skuvlavuogádat	koulujärjestelmä	skuvla+vuogádat
 skuvlaálgin	koulun aloitus	skuvla+álgin
 skuvlaálgu	koulun alku	skuvla+álgu
+skuvlaásahus	koululaitos	skuvla+ásahus
+smávvagánddaš	pieni poikanen	smávis+gánddaš
 smávvaviessu	pieni talo	smávis+viessu
 soahtefápmu	sotavoima	soahti+fápmu
+soađegillilaš	sodankyläläinen	soahti+gillilaš
+sohkabeallejuohku	sukupuolijako	sohkabealli+juohku
+sohkahistorjá	suvun tarina	sohka+historjá
+sosiáladoarjja	sosiaalinen tuki	sosiála+doarjja
 spiidneinflueansa	sikainfluenssa	spiidni+influeansa
+sprintagilvu	sprinttikilpailu	sprinta+gilvu
 stivrenovddasvástádus	ohjausvastuu	stivren+ovddasvástádus
 stivrensystema	ohjausjärjestelmä	stivren+systema
 stivrenvuogádat	ohjausjärjestelmä	stivren+vuogádat
@@ -570,22 +846,35 @@ strategiijabargu	strategiatyö	strategiija+bargu
 studerenjahki	opiskeluvuosi	studeren+jahki
 stuorabearaš	iso perhe	stuoris+bearaš
 stuoraskuvla	iso koulu	stuoris+skuvla
+stádabudjeahtta	valtion budjetti	stáda+budjeahtta
 stádadieđa	valtiotiede	stáda+dieđa
 stádadoarjja	valtiontuki	stáda+doarjja
 stádaeiseváldi	valtion viranomaiset	stáda+eiseváldi
 stádaeisseváldi	valtion viranomainen	stáda+eisseváldi
+stádaetáhtta	valtion virasto	stáda+etáhtta
 stádagalledeapmi	valtiovierailu	stáda+galledeapmi
 stádahálddahus	valtionhallinto	stáda+hálddahus
 stádahálddašeapmi	valtionhallinto	stáda+hálddašeapmi
+stádakássa	valtion kassa	stáda+kássa
+stádaoaivámuš	valtionpäämies	stáda+oaivámuš
+stádaruhta	valtion raha	stáda+ruhta
 stádaráđđi	valtioneuvosto	stáda+ráđđi
 stádavealgi	valtionvelka	stáda+vealgi
+stádavuođđudus	valtion perustaminen	stáda+vuođđudus
+stáhtabudjeahtta	valtion budjetti	stáhta+budjeahtta
 stáhtaeiseváldi	valtion viranomaiset	stáhta+eiseváldi
 stáhtaeisseváldi	valtion viranomainen	stáhta+eisseváldi
+stáhtaetáhtta	valtion virasto	stáhta+etáhtta
 stáhtahálddahus	valtionhallinto	stáhta+hálddahus
 stáhtahálddašeapmi	valtionhallinto	stáhta+hálddašeapmi
+stáhtakássa	valtion kassa	stáhta+kássa
+stáhtaruhta	valtion raha	stáhta+ruhta
 stáhtavealgi	valtionvelka	stáhta+vealgi
+stáhtavuođđudus	valtion perustaminen	stáhta+vuođđudus
 suodjalusbargu	suojelutyö	suodjalus+bargu
 suohkandoavttir	kunnanlääkäri	suohkan+doavttir
+suohkanguovddáš	kuntakeskus	suohkan+guovddáš
+suohkanláhka	kuntalaki	suohkan+láhka
 suohkannamma	kunnan nimi	suohkan+namma
 suohkanrádji	kuntaraja	suohkan+rádji
 suohkanviessu	kunnantalo	suohkan+viessu
@@ -598,41 +887,64 @@ teknologiijaovdánahttin	teknologian kehitys	teknologiija+ovdánahttin
 telefovdnabálvalus	puhelinpalvelu	telefovdna+bálvalus
 telefovdnaguovddáš	puhelinkeskus	telefovdna+guovddáš
 telefovdnajearahallan	puhelinhaastattelu	telefovdna+jearahallan
+telefovdnalinjá	puhelinlinja	telefovdna+linjá
+teologiijastudeanta	teologian ylioppilas	teologiija+studeanta
+terminálarusttet	terminaalirakennus	terminála+rusttet
 terrordahku	terroriteko	terror+dahku
+teáhtersálla	teatterisali	teáhter+sálla
+teáhterviessu	teatteritalo	teáhter+viessu
 tiibmooahpaheaddji	tuntiopettaja	tiibmu+oahpaheaddji
 universiteahttagirjerájus	yliopiston kirjasto	universiteahtta+girjerájus
 universiteahttastivra	yliopiston hallitus	universiteahtta+stivra
 universitehtagirjerájus	yliopiston kirjasto	universitehta+girjerájus
 universitehtastivra	yliopiston hallitus	universitehta+stivra
+unnabustávva	pieni kirjain	unni+bustávva
 unnitlogugiella	vähemmistökieli	unnitlohku+giella
 unnitloguálbmot	vähemmistökansa	unnitlohku+álbmot
 unnitlohkoráđđehus	vähemmistöhallitus	unnitlohku+ráđđehus
+unnitlohkoálbmot	vähemmistökansa	unnitlohku+álbmot
 ustitvuođagielda	ystävyyskunta	ustitvuohta+gielda
 ustitvuođasuohkan	ystävyyskunta	ustitvuohta+suohkan
+uđasvárra	lumivyöryvaara	uđas+várra
 valuhtagursa	valuuttakurssi	valuhtta+gursa
 valuhtakursa	valuuttakurssi	valuhtta+kursa
 valuhttakursa	valuuttakurssi	valuhtta+kursa
 valáštallandáhpáhus	urheilutapahtuma	valáštallan+dáhpáhus
+valáštallankarrieara	urheilu-ura	valáštallan+karrieara
 valáštallanlihkadus	urheiluliike	valáštallan+lihkadus
+valáštallanviessu	urheilutalo	valáštallan+viessu
 valáštallibálkkašupmi	urheilijan palkinto	valáštalli+bálkkašupmi
 varrabunci	veritulppa	varra+bunci
 varradeatta	verenpaine	varra+deatta
 varraiskan	verikoe	varra+iskan
+varrasuotnadávda	verisuonitauti	varrasuotna+dávda
+veahkadatlassáneapmi	väestönlisäys	veahkadat+lassáneapmi
 veahkadatovdáneapmi	väestönkehitys	veahkadat+ovdáneapmi
 veahkkedárbbašeaddji	avun tarvitsija	veahkki+dárbbašeaddji
 veahkkegaskaoapmi	apuväline	veahkki+gaskaoapmi
 veahádatgiella	vähemmistökieli	veahádat+giella
 veaikeruvke	kuparikaivos	veaiki+ruvke
+vealgegráda	velka-aste	vealgi+gráda
+vealgegráđđa	velka-aste	vealgi+gráđđa
 vealgenoađđi	velkataakka	vealgi+noađđi
+vealgereantu	velan korko	vealgi+reantu
+vealgeráđđa	velka-aste	vealgi+ráđđa
 vearroeiseváldi	veroviranomaiset	vearru+eiseváldi
-vearroetáhta	verovirastoa	vearru+etáhtta
 vearroetáhtta	verovirasto	vearru+etáhtta
 vearrogeatnegasvuohta	verovelvollisuus	vearru+geatnegasvuohta
+vearrogántuvra	verotoimisto	vearru+kantuvra
+vearrokantuvra	verotoimisto	vearru+kantuvra
 vearrokoarta	verokortti	vearru+koarta
+vearrokontuvra	verotoimisto	vearru+kantuvra
 vearroođastus	verouudistus	vearru+ođastus
+vearroplánen	verosuunnittelu	vearru+plánen
 vearrovuogádat	verojärjestelmä	vearru+vuogádat
+videoinstallašuvdna	videoinstallaatio	video+installašuvdna
 vierisgiella	vieras kieli	vieris+giella
+viessohuksen	talon rakentaminen	viessu+huksen
 viessoseaidni	talon seinä	viessu+seaidni
+virgeásodat	virka-asunto	virgi+ásodat
+vistehuksen	asuntorakentaminen	visti+huksen
 viđátoassi	viidesosa	viđát+oassi
 vuodjingeahččaleapmi	ajokoe	vuodjin+geahččaleapmi
 vuodjingieldu	ajokielto	vuodjin+gieldu
@@ -641,12 +953,19 @@ vuodjináigi	ajoaika	vuodjin+áigi
 vuoigatvuođaproseassa	oikeusprosessi	vuoigatvuohta+proseassa
 vuoigatvuođavuođđu	oikeusperusta	vuoigatvuohta+vuođđu
 vuoiŋŋalašeallin	hengellinen elämä	vuoiŋŋalaš+eallin
+vuolggabáiki	lähtöpaikka	vuolgga+báiki
 vuollegisdeatta	matalapaine	vuollegaš+deatta
+vuollerádjadássi	minimitaso	vuollerádji+dássi
+vuollerádjedássi	minimitaso	vuollerádji+dássi
+vuollerádjádássi	minimitaso	vuollerádji+dássi
 vuosttašluohkká	ensimmäinen luokka	vuosttaš+luohkká
 vuostálastinnákca	vastustuskyky	vuostálastin+nákca
+vuovdedoalloministeriija	metsätalousministeriö	vuovdedoallu+ministeriija
+vuovdinlohpi	myyntilupa	vuovdin+lohpi
 vuođđoláhkaparagráfa	perustuslain pykälä	vuođđoláhka+paragráfa
 vurkensadji	säilytyspaikka	vurken+sadji
 váhnenbuolva	vanhempi sukupolvi	váhnen+buolva
+váibmoravkin	sydämen syke	váibmu+ravkin
 váibmoášši	sydämen asia	váibmu+ášši
 váiddagieđahallan	valituksen käsittely	váidda+gieđahallan
 váiddameannudeapmi	valituksen käsittely	váidda+meannudeapmi
@@ -654,36 +973,72 @@ váidinvuoigatvuohta	valitusoikeus	váidin+vuoigatvuohta
 válljenfriddjavuohta	valinnanvapaus	válljen+friddjavuohta
 válljenproseassa	valintaprosessi	válljen+proseassa
 vánhenbuolva	vanhempi sukupolvi	vánhen+buolva
+várrehusčuovga	varoitusvalo	várrehus+čuovga
+vázzingáhta	kävelykatu	vázzin+gáhta
+vázzingáhtta	kävelykatu	vázzin+gáhtta
+vázzinluodda	kävelypolku	vázzin+luodda
+vázzinmátki	kävelymatka	vázzin+mátki
 vázzinšaldi	kävelysilta	vázzin+šaldi
 áhpedutkaninstituhtta	merentutkimuslaitos	áhpi+dutkaninstituhtta
 áhpeguovlu	merialue	áhpi+guovlu
+áhpegáddi	merenranta	áhpi+gáddi
+áhperávdnji	merivirta	áhpi+rávdnji
 áhčibeaivi	isänpäivä	áhčči+beaivi
 áhččebealli	isäpuoli	áhčči+bealli
 áigeearru	aikaero	áigi+earru
+áigegollu	ajankulu	áigi+gollu
+áigegovva	ajankuva	áigi+govva
+áigerehket	ajanlasku	áigi+rehket
 álbmotdearvvašvuođainstituhtta	kansanterveyslaitos	álbmotdearvvašvuohta+instituhtta
 álbmotgirku	kansankirkko	álbmot+girku
 álbmotlihttu	kansanliitto	álbmot+lihttu
 álbmotvašálaš	kansan vihollinen	álbmot+vašálaš
+álggahusoassi	johdanto-osa	álggahus+oassi
+ámmátjoavku	ammattiryhmä	ámmát+joavku
+ámmátorganisašuvdna	ammattijärjestö	ámmát+organisašuvdna
+árvogahččan	arvon putoaminen	árvu+gahččan
 árvogažaldat	arvokysymys	árvu+gažaldat
 árvojearaldat	arvokysymys	árvu+jearaldat
+árvostuorrun	arvon kasvu	árvu+stuorrun
 ásahushuksen	laitoksen rakentaminen	ásahus+huksen
 ávnnasatnin	aineen käyttö	ávnnas+atnin
 ávnnasgeavaheapmi	aineen käyttö	ávnnas+geavaheapmi
+áššealmmái	asiamies	ášši+almmái
 áššedovdijoavku	asiantuntijaryhmä	áššedovdi+joavku
+áššedovdiorgána	asiantuntijaelin	áššedovdi+orgána
 áššegieđahallan	asian käsittely	ášši+gieđahallan
 áššelista	asialista	ášši+lista
 áššelistá	asialista	ášši+listá
+áššečielggadeapmi	asian selvittäminen	ášši+čielggadeapmi
+čalbmečiehka	silmäkulma	čalbmi+čiehka
 čiegusboles	salainen poliisi	čiegus+boles
+čoahkkináirras	kokousedustaja	čoahkkin+áirras
+čujuhusjoavku	viiteryhmä	čujuhus+joavku
 čuoigangilvvohallan	hiihtokilpailu	čuoigan+gilvvohallan
 čuoiganlihttu	hiihtoliitto	čuoigan+lihttu
+čuoiganláhttu	hiihtolatu	čuoigan+láhttu
+čuoiganmátki	hiihtomatka	čuoigan+mátki
 čuovgigovva	valokuva	čuovga+govva
+čuođivihttalogi	sataviisikymmentä	čuođi+vihttalogi
+čuvgehusbargu	sivistystyö	čuvgehus+bargu
+čuvgehusdoaibma	sivistystoimi	čuvgehus+doaibma
+čuvgehussearvi	sivistysseura	čuvgehus+searvi
 čáhcealmmái	vesimies	čáhci+almmái
 čáhcebohtal	vesipullo	čáhci+bohtal
+čáhceláse	vesilasi	čáhci+láse
 čáhcepumpa	vesipumppu	čáhci+pumpa
 čáhcevahát	vesivahinko	čáhci+vahát
 čáhcevuoššan	vedenkeitin	čáhci+vuoššan
+čáhcevátnivuohta	veden puute	čáhci+vátnivuohta
 čáhppesbihppor	mustapippuri	čáhppat+bihppor
+čálamáhttu	kirjoitustaito	čála+máhttu
 čálgobuorideapmi	hyvinvoinnin parantaminen	čálgu+buorideapmi
+čálgodirektevra	hyvinvointijohtaja	čálgu+direktevra
+čálgoservodat	hyvinvointiyhteiskunta	čálgu+servodat
+čálgostáda	hyvinvointivaltio	čálgu+stáda
+čálgostáhta	hyvinvointivaltio	čálgu+stáhta
+šaddogovččas	kasvipeite	šaddu+govččas
+šaddovistegilvin	kasvihuoneviljely	šaddovisti+gilvin
 šiehtadallanboađus	neuvottelutulos	šiehtadallan+boađus
 šiehtadallandelegašuvdna	neuvotteluvaltuuskunta	šiehtadallan+delegašuvdna
 šiehtadallanjoavku	neuvotteluryhmä	šiehtadallan+joavku

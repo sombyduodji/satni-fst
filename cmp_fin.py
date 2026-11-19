@@ -2,8 +2,8 @@
 
 Lähde: cmp_fin_hyvaksytyt.tsv (saame, suomi, osat). Suomennos on koottu osien suomennoksista samalla tavalla kuin
 sanakirjahaun yhdyssanoissa (app.js: compoundPartsInfo): yhdistelmä on suomen korpuksessa (Leipzig, CC BY) Voikon
-hyväksymänä sanana. Mukana vain ryhmä A: sanan norjannoksen konekäännös (smi-mt) antaa saman suomen sanan; käsin
-tarkistettu otos 44/44 oikein. Ks. docs/yhdyssanat-ehdotukset-2026-11-19.md. Uusia rivejä vain tarkistettuina.
+hyväksymänä sanana. Mukana ryhmä A (sanan norjannoksen konekäännös, smi-mt, antaa saman suomen sanan; käsin
+tarkistettu otos 44/44 oikein) ja ryhmästä C käsin tarkistetut 354 (osien merkitykset ja norjannos). Ks. docs/yhdyssanat-ehdotukset-2026-11-19.md. Uusia rivejä vain tarkistettuina.
 
 Taulu cmp_fin (word_id, fin, parts): sanakortissa ≈ suomennos (osista: osa + osa), suomenkielinen haku löytää sanan.
 """
