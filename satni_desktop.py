@@ -92,7 +92,11 @@ class WebFileHandler(QWebEngineUrlSchemeHandler):
             if path == "ttsclear":
                 tts.clear()
             elif path == "ttsprune":
-                tts.prune(int(parse_qs(job.requestUrl().query()).get("limit", [tts.DEFAULT_LIMIT_MB])[0]))
+                try:
+                    limit = int(parse_qs(job.requestUrl().query()).get("limit", [tts.DEFAULT_LIMIT_MB])[0])
+                except ValueError:
+                    limit = tts.DEFAULT_LIMIT_MB
+                tts.prune(limit)
             buffer = QBuffer(parent=job)
             buffer.setData(QByteArray(json.dumps(tts.stats()).encode()))
             buffer.open(QBuffer.OpenModeFlag.ReadOnly)
