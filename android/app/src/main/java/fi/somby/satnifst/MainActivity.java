@@ -172,7 +172,12 @@ public class MainActivity extends Activity {
     private void showVersion(WebView view) {
         String version;
         try {
-            version = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            android.content.pm.PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+            version = pi.versionName;
+            // DEV-versiossa myös koontinumero: versionName on sama kaikissa DEV-koonneissa, joten muuten ei näe,
+            // onko puhelimessa uusin APK (2026-11-19)
+            @SuppressWarnings("deprecation") int code = pi.versionCode;
+            if (version != null && version.contains("DEV")) version += " · " + code;
         } catch (android.content.pm.PackageManager.NameNotFoundException e) {
             return;
         }
