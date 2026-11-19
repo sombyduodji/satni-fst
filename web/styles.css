@@ -8,6 +8,7 @@
   /* Painikkeen tausta ja teksti lippuvärillä: keltainen ja vihreä tummempina, jotta kontrasti on vähintään 4,5:1.
      Samat (--tb) myös lippuvärisiin teksteihin: sanastolistan numerot, pelin kirjaimet A–D (yötesti 2026-11-14) */
   --btn-red: #e11d48; --btn-yellow: #a16207; --btn-blue: #2563eb; --btn-green: #15803d;
+  --on-green: #fff;
   --chip: #e8edf4; --chip-hover: #dbe3ee; --chip-text: #1e293b;
   --section: #eef2f8; --select: #dbeafe;
   --gd: #15803d; --gd-bg: #dcfce7; --hd: #c2410c; --hd-bg: #ffedd5;
@@ -25,6 +26,7 @@
     --flag-red: #fb7185; --flag-yellow: #facc15; --flag-blue: #60a5fa; --flag-green: #4ade80;
     --on-flag: #0f141b;
     --btn-red: #fb7185; --btn-yellow: #facc15; --btn-blue: #60a5fa; --btn-green: #4ade80;
+    --on-green: #052e16;
     --chip: #232c38; --chip-hover: #2d3846; --chip-text: #e2e8f0;
     --section: #1f2834; --select: #1e3a5f;
     --gd: #4ade80; --gd-bg: #123220; --hd: #fb923c; --hd-bg: #3a2210;
@@ -41,6 +43,7 @@
     --flag-red: #fb7185; --flag-yellow: #facc15; --flag-blue: #60a5fa; --flag-green: #4ade80;
     --on-flag: #0f141b;
     --btn-red: #fb7185; --btn-yellow: #facc15; --btn-blue: #60a5fa; --btn-green: #4ade80;
+    --on-green: #052e16;
   --chip: #232c38; --chip-hover: #2d3846; --chip-text: #e2e8f0;
   --section: #1f2834; --select: #1e3a5f;
   --gd: #4ade80; --gd-bg: #123220; --hd: #fb923c; --hd-bg: #3a2210;
@@ -1936,3 +1939,62 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
   border-radius: 10px; background: none; color: var(--text); font: inherit; font-size: 15px; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
 .sent-opt i { font-style: normal; color: var(--muted); font-size: 12.5px; font-weight: 400; }
 .sent-opt.sel { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 600; }
+
+/* --- Kuunteluharjoitus (harjoitus.js): avauspainike, asetukset alhaalta, harjoituskortti keskellä --- */
+.hj-open { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 44px; padding: 8px 14px;
+  border-radius: 999px; border: 1px solid color-mix(in srgb, var(--flag-green) 45%, var(--border));
+  background: color-mix(in srgb, var(--flag-green) 12%, var(--surface)); color: var(--text); font: inherit; font-weight: 600;
+  cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.hj-open svg { width: 20px; height: 20px; color: var(--btn-green); flex: none; }
+.hj-open:active { transform: scale(.985); }
+.hj-open:focus-visible { outline: 2px solid var(--btn-green); outline-offset: 2px; }
+.hj-tile { justify-content: flex-start; border-radius: 14px; padding: 10px 14px; text-align: left; margin-bottom: 4px; }
+.hj-tile svg { width: 26px; height: 26px; }
+.hj-tt { display: flex; flex-direction: column; min-width: 0; }
+.hj-tt small { font-weight: 400; font-size: 12.5px; color: var(--muted); }
+.harj { position: absolute; inset: 0; z-index: 5; background: rgba(15, 23, 42, .5); display: flex; align-items: flex-end; justify-content: center; }
+.harj[hidden] { display: none; }
+.harj[data-mode="run"] { align-items: center; padding: 16px; background: rgba(15, 23, 42, .62); }
+.hj-sheet { width: 100%; max-width: 560px; max-height: 92%; overflow-y: auto; background: var(--surface); color: var(--text);
+  border-radius: 20px 20px 0 0; padding: 14px 16px calc(16px + env(safe-area-inset-bottom)); animation: hj-up .2s ease-out; }
+@keyframes hj-up { from { transform: translateY(30%); opacity: .4; } }
+.hj-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.hj-top h3 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 17px; }
+.hj-top h3 svg { width: 22px; height: 22px; color: var(--btn-green); }
+.hj-help { margin: 6px 0 0; font-size: 13px; color: var(--muted); line-height: 1.45; }
+.hj-lbl { margin: 14px 0 6px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.hj-n { font-weight: 400; }
+.hj-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.hj-chip { padding: 7px 13px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-alt); color: var(--text);
+  font: inherit; font-size: 14px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.hj-chip[aria-pressed="true"] { background: color-mix(in srgb, var(--flag-green) 16%, var(--surface)); border-color: var(--btn-green); font-weight: 600; }
+.hj-chip:focus-visible { outline: 2px solid var(--btn-green); outline-offset: 1px; }
+.hj-err { margin: 10px 0 0; font-size: 13px; color: var(--flag-red); }
+.hj-start { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 48px; margin-top: 16px;
+  border: 0; border-radius: 999px; background: var(--btn-green); color: var(--on-green); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+.hj-start svg { width: 20px; height: 20px; }
+.hj-card { width: 100%; max-width: 420px; background: var(--surface); color: var(--text); border-radius: 22px; padding: 18px 16px 16px;
+  text-align: center; animation: hj-pop .18s ease-out; }
+@keyframes hj-pop { from { transform: scale(.94); opacity: .5; } }
+.hj-meta { font-size: 12.5px; color: var(--muted); }
+.hj-q { margin-top: 18px; font-size: clamp(26px, 8vw, 34px); font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
+.hj-digit { display: block; font-size: 15px; font-weight: 600; color: var(--muted); }
+.hj-ask { min-height: 20px; margin-top: 4px; font-size: 14px; color: var(--muted); }
+.hj-ring { position: relative; width: 104px; height: 104px; margin: 14px auto 6px; }
+.hj-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.hj-ring circle { fill: none; stroke-width: 7; stroke: var(--border); }
+.hj-ring .hj-arc { stroke: var(--btn-green); stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 100; }
+.hj-ring.run .hj-arc { animation: hj-fill var(--think) linear forwards; }
+.hj-ring.done .hj-arc { stroke-dashoffset: 0; }
+@keyframes hj-fill { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+.hj-count { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 38px; font-weight: 700; }
+.hj-ring.done .hj-count { color: var(--btn-green); }
+.hj-a { min-height: 46px; font-size: clamp(26px, 8vw, 34px); font-weight: 700; line-height: 1.15; color: var(--btn-green); overflow-wrap: anywhere; }
+.hj-ctl { display: flex; justify-content: center; gap: 18px; margin-top: 16px; }
+.hj-ctl button { width: 50px; height: 50px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface-alt); color: var(--text);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.hj-ctl button svg { width: 22px; height: 22px; }
+.hj-ctl .hj-main { width: 62px; height: 62px; margin-top: -6px; background: var(--btn-green); border-color: var(--btn-green); color: var(--on-green); }
+.hj-ctl button:active { transform: scale(.94); }
+.hj-off { margin-top: 12px; font-size: 12px; }
+@media (prefers-reduced-motion: reduce) { .hj-sheet, .hj-card { animation: none; } }

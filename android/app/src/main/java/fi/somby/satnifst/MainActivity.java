@@ -91,6 +91,9 @@ public class MainActivity extends Activity {
         ocr = new Ocr(this, web);
         web.addJavascriptInterface(ocr, "SatniOcr");
         web.addJavascriptInterface(new AppBridge(), "SatniApp");
+        // Kuunteluharjoituksen tila sivulle (DrillService soittaa myös näytön ollessa pois päältä)
+        DrillService.listener = json -> web.post(() ->
+                web.evaluateJavascript("window.satniDrill && satniDrill.event(" + json + ")", null));
         // Android 13+: takaisin-ele tulee tätä kautta (onBackPressed ei aina tule kutsutuksi)
         if (Build.VERSION.SDK_INT >= 33) {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
@@ -208,6 +211,12 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        DrillService.resend();  // näyttö takaisin päälle: harjoituskortti vastaamaan soittoa
+    }
+
+    @Override
     protected void onPause() {
         super.onPause();
         pausedSinceFocusLost = true;
@@ -287,6 +296,9 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        DrillService.listener = null;
+        // Sovellus suljettiin (takaisin viimeisestä näkymästä): harjoitus loppuu
+        if (isFinishing()) DrillService.control(this, DrillService.ACTION_STOP);
         ocr.close();
         web.destroy();
         super.onDestroy();
@@ -360,6 +372,18 @@ public class MainActivity extends Activity {
     /** Sivulle näkyvä silta (window.SatniApp): vain tekstin koko. Tallennetaan, jotta se on käytössä heti seuraavalla
      *  käynnistyksellä ennen sivun latautumista. */
     private class AppBridge {
+        /** Kuunteluharjoitus (web/harjoitus.js): soittolista, miettimisaika ja ilmoituksen tekstit JSONina. */
+        @android.webkit.JavascriptInterface
+        public void drillStart(String config) {
+            DrillService.start(MainActivity.this, config);
+        }
+
+        /** pause, play, next, stop */
+        @android.webkit.JavascriptInterface
+        public void drillControl(String cmd) {
+            DrillService.control(MainActivity.this, cmd);
+        }
+
         @android.webkit.JavascriptInterface
         public void setTextZoom(int percent) {
             int value = percent < 0 ? -1 : Math.max(50, Math.min(300, percent));

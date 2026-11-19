@@ -4,6 +4,11 @@
 
     <!-- Ääntäminen haetaan Divvunin puhepalvelusta -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Sanastojen kuunteluharjoitus jatkuu näytön sammuttua (DrillService): etualan mediapalvelu ja
+         herätyslukko miettimistaukojen ajaksi. Mediaistunnon ilmoitus ei tarvitse POST_NOTIFICATIONS-lupaa. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:allowBackup="true"
@@ -30,6 +35,10 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
+        <service
+            android:name=".DrillService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
         <!-- Tekstintunnistus: kamerasovellus kirjoittaa kuvan tähän (MainActivity.Ocr). CAMERA-lupaa ei
              pyydetä: kuvan ottaa järjestelmän kamerasovellus, ja ilmoitettu mutta myöntämätön lupa estäisi sen. -->
         <provider

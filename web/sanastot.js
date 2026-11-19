@@ -133,6 +133,7 @@ function renderSanastoGrid() {
   // Määrä otsikkorivillä; inarinsaamessa lisäksi selite (perusmuodot, ei ääntä)
   $("sanasto-pos").textContent = t("sanastoCount", all.length, words);
   $("sanasto-body").innerHTML = sanastoSamiSwitch() + (sanastoSami() === "smn" ? `<p class="sanasto-intro">${esc(t("sanastoIntroSmn", all.length, words))}</p>` : "") +
+    (typeof harjGridTile === "function" ? harjGridTile() : "") +
     groups.filter((g) => g.lists.length).map((g) => `<section class="sanasto-group" style="--tc: var(--flag-${g.color}); --tb: var(--btn-${g.color})">` +
       `<h3>${esc(t("sanastoGroup_" + g.id))}</h3><div class="sanasto-grid">${g.lists.map((id) => tile(byId[id], g.color)).join("")}</div></section>`).join("");
   $("sanasto-body").scrollTop = 0;
@@ -249,7 +250,8 @@ function renderSanasto(listId) {
   };
   // Ohjelaatikko: valmiin äänilistan painike (suomi + saame) ja esimerkit samassa laatikossa
   const band = l.audio && canOpus ? `<div class="list-band">${playBtn(l.audio, t("sanastoListenAll"))}<span>${esc(t("sanastoListenHint"))}</span></div>` : "";
-  let html = l.hint || band ? `<div class="sanasto-hint">${band}${l.hint ? l.hint[lang].split(" · ").map(hintLine).join("") : ""}</div>` : "";
+  // Kuunteluharjoitus (harjoitus.js): painike ohjelaatikon yläpuolelle
+  let html = (typeof harjListButton === "function" ? harjListButton(listId) : "") + (l.hint || band ? `<div class="sanasto-hint">${band}${l.hint ? l.hint[lang].split(" · ").map(hintLine).join("") : ""}</div>` : "");
   if (l.kind === "numbers") {
     // Taulukko: numero | perusluku | järjestysluku; solussa sana ja sen alla kaiutin ja sanakortti, joten jokainen rivi on
     // samanmuotoinen. Suomen järjestyslukua ei toisteta riveillä: esimerkki on sarakeotsikossa (järjestysluku (ensimmäinen))
