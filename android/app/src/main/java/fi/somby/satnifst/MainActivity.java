@@ -390,6 +390,15 @@ public class MainActivity extends Activity {
             return Build.VERSION.SDK_INT >= 29;
         }
 
+        /** Näyttö päällä kuunteluharjoituksen ajan (käyttäjän valinta); pois, kun harjoitus suljetaan. */
+        @android.webkit.JavascriptInterface
+        public void keepScreenOn(boolean on) {
+            runOnUiThread(() -> {
+                if (on) getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                else getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            });
+        }
+
         /** pause, play, next, stop */
         @android.webkit.JavascriptInterface
         public void drillControl(String cmd) {

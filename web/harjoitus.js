@@ -221,8 +221,11 @@ function harjRenderRun() {
       `<button type="button" data-act="stop" aria-label="${esc(t("stop"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2" fill="currentColor"/></svg></button>` +
       `<button type="button" data-act="pause" class="hj-main"></button>` +
       `<button type="button" data-act="next" aria-label="${esc(t("harjNext"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5.5v13l9-6.5z" fill="currentColor"/><rect x="16" y="5.5" width="2.6" height="13" rx="1" fill="currentColor"/></svg></button>` +
-      `</div>${harjNative() ? `<p class="hj-note">${HJ_MOON}<span>${esc(t("harjScreenOff"))}</span></p>` : ""}</div>`;
+      `</div>${harjAwakeSupported() ? `<button type="button" class="hj-awake" data-act="awake" aria-pressed="${harjAwakePref()}">` +
+        `<span class="hj-sw" aria-hidden="true"></span><span>${esc(t("harjAwake"))}</span></button>` : ""}` +
+      `${harjNative() ? `<p class="hj-note">${HJ_MOON}<span>${esc(t("harjScreenOff"))}</span></p>` : ""}</div>`;
     card = el.querySelector(".hj-card");
+    harjSetAwake(harjAwakePref());
   }
   const set = (sel, text) => { const n = card.querySelector(sel); if (n.textContent !== text) n.textContent = text; return n; };
   const n = r.deck.length, i = r.pos % n;
@@ -346,9 +349,27 @@ function harjNext() {
 }
 
 // Kiinni: pysäyttää harjoituksen ja sulkee ikkunan
+// Näyttö päällä harjoituksen ajan (valinta muistiin): Androidissa ikkunan FLAG_KEEP_SCREEN_ON, selaimessa Wake Lock
+// -rajapinta (vapautuu itsestään, kun sivu menee taustalle, joten pyydetään uudelleen palatessa)
+let harjWake = null;
+const harjAwakePref = () => { try { return localStorage.getItem("satni-harj-awake") === "1"; } catch (e) { return false; } };
+function harjSetAwake(on) {
+  try {
+    if (window.SatniApp?.keepScreenOn) { window.SatniApp.keepScreenOn(!!on); return; }
+  } catch (e) { /* vanha sovellusversio */ }
+  if (!on) { harjWake?.release().catch(() => {}); harjWake = null; return; }
+  if (!harjWake && navigator.wakeLock && !document.hidden) {
+    navigator.wakeLock.request("screen").then((w) => {
+      if (!harjRun || !harjAwakePref()) { w.release().catch(() => {}); return; }
+      harjWake = w; w.addEventListener("release", () => { if (harjWake === w) harjWake = null; });
+    }).catch(() => {});
+  }
+}
+const harjAwakeSupported = () => !!(window.SatniApp?.keepScreenOn || navigator.wakeLock);
 function closeHarj() {
   const el = $("harj");
   if (!el || el.hidden) return false;
+  harjSetAwake(false);
   if (harjRun) {
     harjHalt();
     if (harjNative()) window.SatniApp.drillControl("stop");
@@ -394,7 +415,15 @@ function bindHarj() {
     if (b.dataset.act === "stop") closeHarj();
     else if (b.dataset.act === "pause") harjPause(!harjRun.paused);
     else if (b.dataset.act === "next") harjNext();
+    else if (b.dataset.act === "awake") {
+      const on = b.getAttribute("aria-pressed") !== "true";
+      b.setAttribute("aria-pressed", String(on));
+      try { localStorage.setItem("satni-harj-awake", on ? "1" : "0"); } catch (err) { /* ei tallennusta */ }
+      harjSetAwake(on);
+    }
   });
+  // Selaimen Wake Lock vapautuu taustalla: uudelleen, kun harjoitus on taas näkyvissä
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && harjRun && !el.hidden && harjAwakePref()) harjSetAwake(true); });
   // Sanastojen napautukset: listan painike ja yleisnäkymän laatta
   $("sanasto-body").addEventListener("click", (e) => {
     const b = e.target.closest("[data-harj]");
