@@ -51,8 +51,8 @@ const UI_TEXTS = {
     expOcr: "Valokuvahaku", expOcrDesc: "Tunnistaa valokuvan tekstistä sanakirjan sanat. Käynnistys yläpalkin kamerapainikkeesta.",
     expOcrInfo: `<p>Yläpalkkiin tulee <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg> kamerapainike. Ota kuva tekstistä tai valitse kuva, ja sanakirjan sanat merkitään
       kuvaan. Napauta sanaa, niin näet käännöksen.</p>
-      <p>Teksti tunnistetaan puhelimessa Googlen ML Kitillä, eikä kuva lähde laitteelta. ML Kit voi lähettää Googlelle
-      nimettömiä käyttötilastoja, kun toimintoa käytetään.</p>`,
+      <p>Teksti tunnistetaan puhelimessa Googlen ML Kitillä, eikä kuva lähde laitteelta. ML Kitin käyttötilastojen
+      lähetys Googlelle on poistettu käytöstä.</p>`,
     expTableTr: "Taivutusmuotojen käännökset", expTableTrDesc: "Konekäännös jokaisen muodon alla taivutustaulukossa.",
     positionOn: "päällä", positionUnder: "alla",
     expTableTrInfo: `<p>Taivutustaulukon muotojen alle tulee konekäännös pienellä: <i>mun lean – minä olen</i>. Duaali merkitään
@@ -262,8 +262,10 @@ const UI_TEXTS = {
          taivutus GiellaLT lang-sme (GPL-3.0), käännösten taivutus GiellaLT lang-fin (GPL-3.0) ja Norsk ordbank
          (Språkbanken / Nasjonalbiblioteket, CC BY 4.0), koltansaame (kokeellinen) GiellaLT dict-sms-mul, dict-fin-sms ja
          dict-nob-sms (CC BY 4.0 / 3.0), norjan käännökset (kokeellinen) Apertium apertium-sme-nob (GPL-2.0-or-later), suomennosehdotukset (kokeellinen) GiellaLT dict-smn-sme, dict-smn-fin ja dict-fin-smn (CC BY 4.0), espanjan käännökset GiellaLT dict-sme-spa ja dict-spa-sme (Ángel, CC BY 4.0), osa englannin käännöksistä Wiktionary (CC BY-SA 4.0, kaikki.org), sql.js (MIT). Android-sovelluksen kokeellinen
-         tekstintunnistus: Google ML Kit (Googlen käyttöehdot). Kuva käsitellään puhelimessa eikä lähde laitteelta;
-         ML Kit voi lähettää Googlelle nimettömiä käyttötilastoja, kun tekstintunnistusta käytetään. Sátni FST on vapaa ohjelma (GPL-3.0).
+         tekstintunnistus: Google ML Kit (Googlen käyttöehdot). Kuva käsitellään puhelimessa eikä lähde laitteelta,
+         ja ML Kitin käyttötilastojen lähetys Googlelle on poistettu käytöstä. Kuvan inarin- ja koltansaamen
+         taivutusmuodot: GiellaLT lang-smn ja lang-sms (GPL-3.0). Kuvan lausenäkymän suomen ja norjan sanaparit:
+         Leipzig Corpora Collection (Wortschatz Leipzig, CC BY; vain sanaparien määrät, ei lauseita). Sátni FST on vapaa ohjelma (GPL-3.0).
          Astevaihtelun ryhmät: Oahpa (Giellatekno). Kaikki lähteet, lisenssit ja tehdyt muutokset: Lisenssit-painike alla.
          Lähdekoodi: <a href="https://github.com/sombyduodji/satni-fst" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst</a>.</p>
       </details>`,
@@ -310,8 +312,8 @@ const UI_TEXTS = {
     expOcr: "Bildesøk", expOcrDesc: "Finner ordene fra ordboka i teksten på et bilde. Starter med kameraknappen i topplinjen.",
     expOcrInfo: `<p>I topplinjen kommer en <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg> kameraknapp. Ta et bilde av tekst eller velg et bilde, så blir ordene fra ordboka
       merket i bildet. Trykk på et ord for å se oversettelsen.</p>
-      <p>Teksten gjenkjennes på telefonen med Googles ML Kit, og bildet forlater ikke enheten. ML Kit kan sende anonym
-      bruksstatistikk til Google når funksjonen brukes.</p>`,
+      <p>Teksten gjenkjennes på telefonen med Googles ML Kit, og bildet forlater ikke enheten. ML Kits sending av
+      bruksstatistikk til Google er slått av.</p>`,
     expTableTr: "Oversettelse av bøyingsformer", expTableTrDesc: "Maskinoversettelse under hver form i bøyingstabellen.",
     positionOn: "på", positionUnder: "under",
     expTableTrInfo: `<p>Under formene i bøyingstabellen vises maskinoversettelsen med liten skrift: <i>mun lean – jeg er</i>. Dualis merkes
@@ -517,8 +519,10 @@ const UI_TEXTS = {
          bøying GiellaLT lang-sme (GPL-3.0), bøying av oversettelsene GiellaLT lang-fin (GPL-3.0) og Norsk ordbank
          (Språkbanken / Nasjonalbiblioteket, CC BY 4.0), skoltesamisk (eksperimentelt) GiellaLT dict-sms-mul, dict-fin-sms og
          dict-nob-sms (CC BY 4.0 / 3.0), norske oversettelser (eksperimentelt) Apertium apertium-sme-nob (GPL-2.0-or-later), finske forslag (eksperimentelt) GiellaLT dict-smn-sme, dict-smn-fin og dict-fin-smn (CC BY 4.0), spanske oversettelser GiellaLT dict-sme-spa og dict-spa-sme (Ángel, CC BY 4.0), en del av de engelske oversettelsene Wiktionary (CC BY-SA 4.0, kaikki.org), sql.js (MIT). Eksperimentell tekstgjenkjenning i
-         Android-appen: Google ML Kit (Googles vilkår). Bildet behandles på telefonen og forlater ikke enheten;
-         ML Kit kan sende anonym bruksstatistikk til Google når tekstgjenkjenningen brukes. Sátni FST er fri programvare (GPL-3.0).
+         Android-appen: Google ML Kit (Googles vilkår). Bildet behandles på telefonen og forlater ikke enheten,
+         og ML Kits sending av bruksstatistikk til Google er slått av. Bøyingsformer for enaresamisk og
+         skoltesamisk i bilder: GiellaLT lang-smn og lang-sms (GPL-3.0). Finske og norske ordpar i setningsvisningen
+         for bilder: Leipzig Corpora Collection (Wortschatz Leipzig, CC BY; bare antall ordpar, ingen setninger). Sátni FST er fri programvare (GPL-3.0).
          Stadievekslingsgrupper: Oahpa (Giellatekno). Alle kilder, lisenser og endringer: Lisenser-knappen nedenfor.
          Kildekode: <a href="https://github.com/sombyduodji/satni-fst" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst</a>.</p>
       </details>`,
