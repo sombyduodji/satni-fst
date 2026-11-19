@@ -1208,7 +1208,9 @@ function renderSearchParts(query) {
   const draw = (inf) => {
     const rows = inf.parts.map((p, k) => `<div class="sp-row"><a class="sp-sme" href="#/sana/${encodeURIComponent(p.base || p.word)}">${k ? "+ " : ""}${esc(p.word)}</a>` +
       `<span class="sp-fi">${esc(p.trans || "–")}${p.base && p.base !== p.word ? ` <span class="muted">(${esc(p.base)})</span>` : ""}</span></div>`).join("");
-    const whole = inf.prefix != null && inf.trans ? `<div class="sp-whole">≈ ${esc(inf.trans)}</div>` : "";
+    // Koko sanan suomennos vain korpuksesta varmistettuna (98 % oikea sija ja luku, ei keksittyjä sanoja); arvattu
+    // yhdistelmä (aktiivinentukea) jää pois, osat käännöksineen näkyvät aina
+    const whole = inf.prefix != null && inf.trans && !inf.guessed ? `<div class="sp-whole">≈ ${esc(inf.trans)}</div>` : "";
     box.innerHTML = `<div class="sp-head">${esc(t("ocrParts"))}</div>${whole}${rows}`;
     box.hidden = false;
   };
@@ -4686,7 +4688,7 @@ function compoundPartsInfo(parts) {
       const key = fFirst && Object.keys(fFirst).find((k) => !k.startsWith("__") && fFirst[k] === lastForm);
       lastText = (key && fPick?.[key]) || (pick.last === firstLemma ? lastForm : pick.last);
     }
-    return { parts: out, word: out.map((x) => x.word).join(""), trans: pick.prefix + lastText, prefix: pick.prefix, lastLemma: pick.last };
+    return { parts: out, word: out.map((x) => x.word).join(""), trans: pick.prefix + lastText, prefix: pick.prefix, lastLemma: pick.last, guessed: !!pick.guessed };
   }
   const trans = out.every((x) => x.trans) ? out.map((x) => x.trans).join("") : out.map((x) => x.trans || `[${x.word}]`).join(" + ");
   return { parts: out, word: out.map((x) => x.word).join(""), trans };
