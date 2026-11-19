@@ -367,7 +367,7 @@ function peliStart(mode) {
 }
 const peliSave = () => peliStore.set("satni-peli-run", peliRun);
 
-// Viikonpäivät, vuodenajat ja kuukaudet sekä kysymyssanat: Biret sanoo saameksi oikean vastauksen ("Riekta, dat lei …" / "Boasttu. Rievttes
+// Viikonpäivät, vuodenajat ja kuukaudet sekä kysymyssanat: Biret sanoo saameksi oikean vastauksen ("Riekta, dat lei …" / "Boastut. Rievttes
 // vástádus lea …"). Valmiit äänitteet (välimuistissa kuten sanastojen äänilistat), muissa peleissä ei ääntä.
 // Ääniaiheet ja tiedostojen etuliite: aika = kokonaiset lauseet, kysymyssanat = Biretin lause + sanan oma äänite yhdistettynä
 const PELI_VOICE = { time: "aika", questions: "kysy" };
