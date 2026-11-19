@@ -5,6 +5,8 @@
 # (97 hylätty: väärä merkitys, heikko tai taivutusmuoto); kaikki perusmuodossa Voikon jäsennyksen mukaan.
 # Ryhmä B 2026-11-19: 277 sanasta 233 käsin tarkistettu oikeaksi osien merkitysten ja norjannoksen perusteella
 # (hylätty mm. nuortasámegiella ei pohjoissaame vaan itäsaame, ođasdirektevra ei uusi johtaja vaan uutisjohtaja).
+# Ryhmä A käsin luettu kokonaan 2026-11-19 (Voikko, giella-fin, käänteinen sanakirja, smi-mt, korpus): 24 poistettu,
+# esim. bákteláhka ei kallion laki vaan kaivoslaki, gieldoguovlu ei kunnan alue vaan kieltoalue, álbmotlihttu = Kansainliitto.
 adveantakaleanddar	adventtikalenteri	adveanta+kaleanddar
 ahkerádjá	ikäraja	ahki+rádjá
 ahkestruktuvra	ikärakenne	ahki+struktuvra
@@ -163,7 +165,6 @@ bušeahttačoahkkin	budjettikokous	bušeahtta+čoahkkin
 báikkálašsearvi	paikallinen seura	báikkálaš+searvi
 báikkálašválga	paikallisvaalit	báikkálaš+válga
 báikkálašáviisa	paikallislehti	báikkálaš+áviisa
-bákteláhka	kallion laki	bákti+láhka
 báljesoaivi	kalju pää	báljis+oaivi
 bálvalusbuvttadeapmi	palvelutuotanto	bálvalus+buvttadeapmi
 bálvalusdárbu	palvelutarve	bálvalus+dárbu
@@ -394,7 +395,6 @@ geaidnofierpmádat	tieverkosto	geaidnu+fierpmádat
 geaidnohuksen	tien rakentaminen	geaidnu+huksen
 geaidnoplána	tiesuunnitelma	geaidnu+plána
 geaidnoplánen	tiesuunnittelu	geaidnu+plánen
-geaidnovuođđu	tien pohja	geaidnu+vuođđu
 geardedivat	kertamaksu	geardi+divat
 geassebargi	kesätyöntekijä	geassi+bargi
 geassečoahkkin	kesäkokous	geassi+čoahkkin
@@ -418,7 +418,6 @@ gielddaruhtadilli	kunnan taloustilanne	gielda+ruhtadilli
 gielddaruhtadoalli	kunnan rahastonhoitaja	gielda+ruhtadoalli
 gielddarádjá	kuntaraja	gielda+rádjá
 gielddaviessu	kunnantalo	gielda+viessu
-gieldoguovlu	kunnan alue	gielda+guovlu
 gielladáidu	kielitaito	giella+dáidu
 giellagažaldat	kielikysymys	giella+gažaldat
 giellajoavku	kieliryhmä	giella+joavku
@@ -476,7 +475,6 @@ gussanávet	lehmän navetta	gussa+návet
 gáddeguovlu	ranta-alue	gáddi+guovlu
 gáddelinjá	rantaviiva	gáddi+linjá
 gáfegohppu	kahvikuppi	gáffe+gohppu
-gáfevuoššan	kahvinkeitin	gáffe+vuoššan
 gáffebánno	kahvipannu	gáffe+bánno
 gálvogávpi	tavarakauppa	gálvu+gávpi
 gárrenávnnassorjjasvuohta	päihderiippuvuus	gárrenávnnas+sorjjasvuohta
@@ -566,9 +564,6 @@ johtolatsadji	liikennepaikka	johtolat+sadji
 johtolatsihkarvuohta	liikenneturvallisuus	johtolat+sihkarvuohta
 johtolatsihkkarvuohta	liikenneturvallisuus	johtolat+sihkkarvuohta
 johtolatstašuvdna	liikenneasema	johtolat+stašuvdna
-jorribiegga	pyörivä tuuli	jorri+biegga
-journálanummar	lehden numero	journála+nummar
-journálanummir	lehden numero	journála+nummir
 jođiheaddjevirgi	johtajan virka	jođiheaddji+virgi
 jođiheaddjirolla	johtajan rooli	jođiheaddji+rolla
 juohkolinnjá	jakolinja	juohku+linnjá
@@ -643,7 +638,6 @@ majoriteahtagiella	enemmistökieli	majoriteahtta+giella
 matematihkkaoahpaheaddji	matematiikanopettaja	matematihkka+oahpaheaddji
 matematihkkaoahpahus	matematiikan opetus	matematihkka+oahpahus
 mearačáhcetemperatuvra	meriveden lämpötila	mearačáhci+temperatuvra
-mearkanamma	merkin nimi	mearka+namma
 mearreáigásašvirgi	määräaikainen virka	mearreáigásaš+virgi
 mediabálvalus	median palvelu	media+bálvalus
 mediadigaštallan	median keskustelu	media+digaštallan
@@ -773,7 +767,6 @@ oktasašstivra	yhteinen hallitus	oktasaš+stivra
 oktasašsárggus	yhteinen piirre	oktasaš+sárggus
 oktasašášši	yhteinen asia	oktasaš+ášši
 oktasaščoavddus	yhteinen ratkaisu	oktasaš+čoavddus
-oktasaššiehtadus	yhteinen sopimus	oktasaš+šiehtadus
 oktiigullevašvuođadovdu	yhteenkuuluvuuden tunne	oktiigullevašvuohta+dovdu
 olbmoheagga	ihmishenki	olmmoš+heagga
 olbmonamma	henkilönnimi	olmmoš+namma
@@ -824,7 +817,6 @@ ođastusbargu	uudistustyö	ođastus+bargu
 ođđahuksehus	uusi rakennus	ođas+huksehus
 ođđahutkkus	uusi keksintö	ođas+hutkkus
 ođđavisti	uusi rakennus	ođas+visti
-ođđaárvalus	uusi arvio	ođas+árvalus
 paneladigaštallan	paneelikeskustelu	panela+digaštallan
 pasieantadikšu	potilaan hoito	pasieanta+dikšu
 pasieantadikšun	potilaan hoito	pasieanta+dikšun
@@ -903,7 +895,6 @@ rihkuspolitiija	rikospoliisi	rihkus+politiija
 rihkusromána	rikosromaani	rihkus+romána
 riidensearvi	ratsastusseura	riiden+searvi
 riikkamedia	valtionmedia	riika+media
-riikkaráđđi	valtioneuvosto	riika+ráđđi
 risensuohkat	riisipuuro	risen+suohkat
 rohkosgirji	rukouskirja	rohkos+girji
 ruhtapolitihkka	rahapolitiikka	ruhta+politihkka
@@ -940,9 +931,6 @@ rádjestašuvdna	raja-asema	rádji+stašuvdna
 ráfibargu	rauhantyö	ráfi+bargu
 ráfibálkkašupmi	rauhanpalkinto	ráfi+bálkkašupmi
 ráfiproseassa	rauhanprosessi	ráfi+proseassa
-ránnjáeana	naapurimaa	ránnjá+eana
-ránnjáeanan	naapurimaa	ránnjá+eanan
-ránnjáeatnan	naapurimaa	ránnjá+eana
 ránnjágielda	naapurikunta	ránnjá+gielda
 ránnjágánda	naapurin poika	ránnjá+gánda
 ránnjásuohkan	naapurikunta	ránnjá+suohkan
@@ -972,7 +960,6 @@ servodatsystema	yhteiskuntajärjestelmä	servodat+systema
 servodatvuogádat	yhteiskuntajärjestelmä	servodat+vuogádat
 servodatváttisvuohta	yhteiskunnan ongelma	servodat+váttisvuohta
 servodatšiehtadus	yhteiskuntasopimus	servodat+šiehtadus
-sevdnjeslatnja	pimeä huone	seavdnjat+latnja
 siellodikšu	sielunhoito	siellu+dikšu
 signálabeaktu	signaalin teho	signála+beaktu
 sihkarvuođabálvalus	turvallisuuspalvelu	sihkarvuohta+bálvalus
@@ -1005,7 +992,6 @@ skuvlameasttir	koulumestari	skuvla+measttir
 skuvlameašttir	koulumestari	skuvla+meašttir
 skuvlamáilbmi	koulumaailma	skuvla+máilbmi
 skuvlaoahppi	koulun oppilas	skuvla+oahppi
-skuvlaortnet	koulujärjestys	skuvla+ortnet
 skuvlarektor	koulun rehtori	skuvla+rektor
 skuvlarusttet	koulurakennus	skuvla+rusttet
 skuvlasystema	koulujärjestelmä	skuvla+systema
@@ -1018,7 +1004,6 @@ skuvlaásahus	koululaitos	skuvla+ásahus
 smávvafanas	pieni vene	smávis+fanas
 smávvagánddaš	pieni poikanen	smávis+gánddaš
 smávvamánná	pieni lapsi	smávis+mánná
-smávvaviessu	pieni talo	smávis+viessu
 soahtefápmu	sotavoima	soahti+fápmu
 soahtehistorjjálaš	sotahistoriallinen	soahti+historjjálaš
 soađegillilaš	sodankyläläinen	soahti+gillilaš
@@ -1038,8 +1023,6 @@ stivrraovddasteaddji	hallituksen edustaja	stivra+ovddasteaddji
 stivrraáirras	hallituksen edustaja	stivra+áirras
 strategiijabargu	strategiatyö	strategiija+bargu
 studerenjahki	opiskeluvuosi	studeren+jahki
-stuorabearaš	iso perhe	stuoris+bearaš
-stuoraskuvla	iso koulu	stuoris+skuvla
 stádabudjeahtta	valtion budjetti	stáda+budjeahtta
 stádadieđa	valtiotiede	stáda+dieđa
 stádadoarjja	valtiontuki	stáda+doarjja
@@ -1208,7 +1191,6 @@ vázzinšaldi	kävelysilta	vázzin+šaldi
 áhčibeaivi	isänpäivä	áhčči+beaivi
 áhččebealli	isäpuoli	áhčči+bealli
 áibmojohtolatsekšuvdna	ilmailuosasto	áibmojohtolat+sekšuvdna
-áigeearru	aikaero	áigi+earru
 áigegollu	ajankulu	áigi+gollu
 áigegovva	ajankuva	áigi+govva
 áigerehket	ajanlasku	áigi+rehket
@@ -1218,7 +1200,6 @@ vázzinšaldi	kävelysilta	vázzin+šaldi
 álbmotgirjerádju	kansankirjasto	álbmot+girjerádju
 álbmotgirjerájus	kansankirjasto	álbmot+girjerájus
 álbmotgirku	kansankirkko	álbmot+girku
-álbmotlihttu	kansanliitto	álbmot+lihttu
 álbmotvašálaš	kansan vihollinen	álbmot+vašálaš
 álggahusoassi	johdanto-osa	álggahus+oassi
 álgogiella	alkukieli	álgu+giella
@@ -1233,8 +1214,6 @@ vázzinšaldi	kävelysilta	vázzin+šaldi
 árvvoštallannákca	arviointikyky	árvvoštallan+nákca
 ásahushuksen	laitoksen rakentaminen	ásahus+huksen
 ássanovttadat	asumisyksikkö	ássan+ovttadat
-ávnnasatnin	aineen käyttö	ávnnas+atnin
-ávnnasgeavaheapmi	aineen käyttö	ávnnas+geavaheapmi
 áššealmmái	asiamies	ášši+almmái
 áššedovdijoavku	asiantuntijaryhmä	áššedovdi+joavku
 áššedovdiorgána	asiantuntijaelin	áššedovdi+orgána
@@ -1251,7 +1230,6 @@ vázzinšaldi	kävelysilta	vázzin+šaldi
 čuoiganlihttu	hiihtoliitto	čuoigan+lihttu
 čuoiganláhttu	hiihtolatu	čuoigan+láhttu
 čuoiganmátki	hiihtomatka	čuoigan+mátki
-čuovgigovva	valokuva	čuovga+govva
 čuođivihttalogi	sataviisikymmentä	čuođi+vihttalogi
 čuvgehusbargu	sivistystyö	čuvgehus+bargu
 čuvgehusdoaibma	sivistystoimi	čuvgehus+doaibma
