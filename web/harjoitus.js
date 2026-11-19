@@ -137,7 +137,9 @@ function harjRenderRun() {
   const shown = r.phase === "show";
   const askText = r.opts.dir === "sme" ? t("harjAskFi") : t("harjAskSme");
   const num = it.n && r.opts.dir === "fi" ? `<span class="hj-digit">${it.n}</span>` : "";
-  $("harj").innerHTML = `<div class="hj-card" role="dialog" aria-modal="true" aria-label="${esc(t("harjTitle"))}">` +
+  // Ponnahdusanimaatio vain ensimmäisellä piirrolla, ei joka vaiheessa (välähti puhelimella läpikuultavana)
+  const fresh = !$("harj").querySelector(".hj-card");
+  $("harj").innerHTML = `<div class="hj-card${fresh ? " hj-new" : ""}" role="dialog" aria-modal="true" aria-label="${esc(t("harjTitle"))}">` +
     `<div class="hj-meta">${esc(harjTitle(it.list))} · ${(r.pos % r.deck.length) + 1} / ${r.deck.length}${r.round > 1 ? ` · ${esc(t("harjRound", r.round))}` : ""}</div>` +
     `<div class="hj-q" lang="${q.lang}">${num}${esc(q.text)}</div>` +
     `<div class="hj-ask">${esc(shown ? "" : askText)}</div>` +
