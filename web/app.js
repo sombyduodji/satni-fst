@@ -66,6 +66,9 @@ const DEFAULT_SETTINGS = {
   textSize: "system",
   // Astevaihtelun merkintä: värit (GRADE_COLORS) ja alleviivaus (vahva yhtenäinen, heikko katkoviiva)
   gradeGd: "green", gradeHd: "orange", gradeUnderline: false,
+  // Tallennettujen ääntämisten enimmäiskoko megatavuina (Asetukset → Sanakortti); täyttyessä pisimpään kuuntelematta
+  // olleet poistetaan
+  ttsLimitMb: 1024,
 };
 // Ensimmäinen käynnistys: asetuksia ei ole vielä tallennettu, joten kysytään käyttöliittymän kieli
 const FIRST_RUN = (() => { try { return localStorage.getItem("satni-settings") === null; } catch (e) { return false; } })();
@@ -2186,23 +2189,117 @@ async function playTtsBlob(blob) {
 
 // Puhutun tekstin ääni (WAV): muistista, selaimen välimuistista tai Divvunin puhepalvelusta. Palauttaa null, jos haku
 // peruttiin; verkkovirheessä heittää virheen, jonka viesti näytetään käyttäjälle.
+// --- Tallennetut ääntämiset: kokoraja ja tyhjennys (2026-11-19) ---
+// Cache Storage ei kerro, milloin sanaa viimeksi kuunneltiin, joten sen rinnalla on hakemisto localStoragessa:
+// avain -> [viimeksi kuunneltu, koko tavuina]. Uuden sanan tallennuksen jälkeen, jos yhteiskoko ylittää rajan
+// (settings.ttsLimitMb), pisimpään kuuntelematta olleet poistetaan. Työpöytäsovelluksessa sama tehdään Pythonissa (tts.py).
+const TTS_INDEX = "satni-tts-index";
+const TTS_LIMITS = [100, 250, 500, 1024, 2048];
+const MEMORY_TTS_MAX = 60;  // istunnon muistissa pidettävät äänet (ennen rajaton)
+let ttsIndex = null, ttsIndexTimer = null, ttsScanned = null, ttsPruning = null;
+function ttsIdx() {
+  if (!ttsIndex) { try { ttsIndex = JSON.parse(localStorage.getItem(TTS_INDEX) || "{}") || {}; } catch (e) { ttsIndex = {}; } }
+  return ttsIndex;
+}
+function ttsIdxSave() {
+  clearTimeout(ttsIndexTimer);
+  ttsIndexTimer = setTimeout(() => { try { localStorage.setItem(TTS_INDEX, JSON.stringify(ttsIdx())); } catch (e) { /* yksityinen tila */ } }, 400);
+}
+function ttsTouch(key, size) {
+  const i = ttsIdx();
+  i[key] = [Date.now(), size != null ? size : (i[key] ? i[key][1] : 0)];
+  ttsIdxSave();
+}
+const ttsKeyOf = (req) => { const k = req.url.indexOf("tts-cache/"); return k < 0 ? null : req.url.slice(k); };
+// Hakemisto vastaamaan välimuistia: ennen tätä versiota tallennetut sanat lisätään (koko luetaan kerran), poistetut pois
+function ttsScan(cache, force) {
+  if (ttsScanned && !force) return ttsScanned;
+  ttsScanned = (async () => {
+    const i = ttsIdx(), now = Date.now(), seen = new Set();
+    for (const req of await cache.keys()) {
+      const key = ttsKeyOf(req);
+      if (!key) continue;
+      seen.add(key);
+      if (!i[key] || !i[key][1]) {
+        const hit = await cache.match(req);
+        i[key] = [i[key] ? i[key][0] : now, hit ? (await hit.blob()).size : 0];
+      }
+    }
+    for (const key of Object.keys(i)) if (!seen.has(key)) delete i[key];
+    ttsIdxSave();
+  })().catch(() => {});
+  return ttsScanned;
+}
+function ttsPrune(cache) {
+  if (ttsPruning) return ttsPruning;
+  ttsPruning = (async () => {
+    await ttsScan(cache);
+    const i = ttsIdx(), limit = (settings.ttsLimitMb || 1024) * 1048576;
+    let total = Object.values(i).reduce((n, v) => n + (v[1] || 0), 0);
+    if (total <= limit) return;
+    for (const [key, v] of Object.entries(i).sort((a, b) => a[1][0] - b[1][0])) {
+      if (total <= limit) break;
+      await cache.delete(key);
+      memoryCache.delete(key);
+      delete i[key];
+      total -= v[1] || 0;
+    }
+    ttsIdxSave();
+  })().catch(() => {}).finally(() => { ttsPruning = null; });
+  return ttsPruning;
+}
+function memoryTtsSet(key, blob) {
+  memoryCache.delete(key);
+  memoryCache.set(key, blob);  // uusin viimeiseksi; vanhin pois, kun raja täyttyy
+  while (memoryCache.size > MEMORY_TTS_MAX) memoryCache.delete(memoryCache.keys().next().value);
+}
+// Määrä ja koko asetuksiin: { n, bytes } tai null (ei välimuistia)
+async function ttsStoreStats() {
+  if (IS_DESKTOP) {
+    try { return await (await fetch("ttsinfo")).json(); } catch (e) { return null; }
+  }
+  if (!("caches" in window)) return null;
+  await ttsScan(await caches.open("satni-tts"), true);
+  const v = Object.values(ttsIdx());
+  return { n: v.length, bytes: v.reduce((n, x) => n + (x[1] || 0), 0) };
+}
+async function ttsStoreClear() {
+  memoryCache.clear();
+  if (IS_DESKTOP) { try { await fetch("ttsclear"); } catch (e) { /* ei mitään poistettavaa */ } return; }
+  if ("caches" in window) await caches.delete("satni-tts");
+  ttsIndex = {};
+  ttsScanned = null;
+  try { localStorage.removeItem(TTS_INDEX); } catch (e) { /* yksityinen tila */ }
+}
+// Raja pienennettiin: ylitys pois heti
+async function ttsStoreApplyLimit() {
+  if (IS_DESKTOP) { try { await fetch(`ttsprune?limit=${settings.ttsLimitMb}`); } catch (e) { /* ei mitään */ } return; }
+  if ("caches" in window) await ttsPrune(await caches.open("satni-tts"));
+}
+const fmtBytes = (b) => {
+  const nb = settings.uiLang === "nb", loc = nb ? "nb-NO" : "fi-FI";
+  const [v, u] = b >= 1073741824 ? [b / 1073741824, nb ? "GB" : "Gt"] : b >= 1048576 ? [b / 1048576, nb ? "MB" : "Mt"] : [b / 1024, nb ? "kB" : "kt"];
+  return `${v.toLocaleString(loc, { maximumFractionDigits: v < 10 ? 1 : 0 })} ${u}`;
+};
+
 async function ttsBlob(text, signal, voiceName = settings.voice) {
   const voice = VOICES[voiceName] || "biret";
   const key = `tts-cache/${voice}/${encodeURIComponent(text)}`;
   let blob = memoryCache.get(key);
+  if (blob) { memoryTtsSet(key, blob); if (!IS_DESKTOP) ttsTouch(key); }
   // Selaimen välimuisti vain verkkosivulla: Cache Storage hyväksyy vain http(s)-osoitteet.
   // Työpöytäsovelluksessa Python tallentaa äänet levylle (~/.cache/satni-fst/tts).
   const cache = !IS_DESKTOP && "caches" in window ? await caches.open("satni-tts") : null;
   if (!blob && cache) {
     const hit = await cache.match(key);
-    if (hit) blob = await hit.blob();
+    if (hit) { blob = await hit.blob(); ttsTouch(key, blob.size); }
   }
   if (signal.aborted) return null;
   if (!blob) {
     let res;
     try {
       res = IS_DESKTOP
-        ? await fetch(`tts/${voice}?text=${encodeURIComponent(text)}`, { signal })
+        ? await fetch(`tts/${voice}?text=${encodeURIComponent(text)}&limit=${settings.ttsLimitMb || 1024}`, { signal })
         : await fetch(TTS_URL + voice, {
             method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }), signal,
           });
@@ -2212,9 +2309,13 @@ async function ttsBlob(text, signal, voiceName = settings.voice) {
     }
     if (!res.ok) throw new Error(IS_DESKTOP ? t("ttsOffline") : t("ttsStatus", res.status));
     blob = await res.blob();
-    if (cache) cache.put(key, new Response(blob, { headers: { "Content-Type": "audio/wav" } })).catch(() => {});
+    if (cache) {
+      const size = blob.size;
+      cache.put(key, new Response(blob, { headers: { "Content-Type": "audio/wav" } }))
+        .then(() => { ttsTouch(key, size); return ttsPrune(cache); }).catch(() => {});
+    }
   }
-  memoryCache.set(key, blob);
+  memoryTtsSet(key, blob);
   return signal.aborted ? null : blob;
 }
 
@@ -2502,6 +2603,7 @@ const EXP_KEYS = ["ocr", "lause", "tableTr", "apertium", "pivotFin"];
 let settingsPage = "main";
 function showSettingsPage(page) {
   settingsPage = page;
+  if (page === "card") renderTtsStore();
   for (const el of document.querySelectorAll("#settings-view .set-page")) el.hidden = el.dataset.page !== page;
   $("settings-title").textContent = t(page === "main" ? "settings" : SETTINGS_PAGES[page]);
   $("settings-back").setAttribute("aria-label", t("back"));
@@ -2527,6 +2629,44 @@ function closeSettings() {
   if (settingsPage !== "main") showSettingsPage("main"); else hideSettings();
   return true;
 }
+// Asetukset → Sanakortti: tallennettujen ääntämisten määrä, enimmäiskoko ja tyhjennys
+function renderTtsStore() {
+  const seg = $("tts-limit-seg");
+  if (!seg) return;
+  if (!seg.children.length) {
+    seg.innerHTML = TTS_LIMITS.map((mb) => `<button type="button" role="radio" data-mb="${mb}"></button>`).join("");
+  }
+  for (const b of seg.children) {
+    b.textContent = fmtBytes(Number(b.dataset.mb) * 1048576);
+    b.setAttribute("aria-checked", String(Number(b.dataset.mb) === (settings.ttsLimitMb || 1024)));
+  }
+  const info = $("tts-store-info");
+  ttsStoreStats().then((st) => {
+    info.textContent = !st ? t("ttsNone") : st.n ? t("ttsStoreInfo", st.n, fmtBytes(st.bytes), fmtBytes((settings.ttsLimitMb || 1024) * 1048576)) : t("ttsNone");
+    $("tts-clear").disabled = !st || !st.n;
+  });
+}
+function bindTtsStore() {
+  if (!$("tts-limit-seg")) return;
+  $("tts-limit-seg").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-mb]");
+    if (!b || Number(b.dataset.mb) === settings.ttsLimitMb) return;
+    settings.ttsLimitMb = Number(b.dataset.mb);
+    saveSettings();
+    renderTtsStore();
+    ttsStoreApplyLimit().then(renderTtsStore);
+  });
+  $("tts-clear").onclick = () => $("tts-clear-dlg").showModal();
+  $("tts-clear-cancel").onclick = () => $("tts-clear-dlg").close();
+  $("tts-clear-ok").onclick = async () => {
+    $("tts-clear-dlg").close();
+    await ttsStoreClear();
+    toast(t("ttsCleared"));
+    renderTtsStore();
+  };
+}
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bindTtsStore); else bindTtsStore();
+
 function renderSettingsSummary() {
   if (!$("settings-view") || $("settings-view").hidden) return;
   const set = (id, text) => { if ($(id)) $(id).textContent = text; };

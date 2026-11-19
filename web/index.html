@@ -234,6 +234,15 @@
   </dialog>
 
   <!-- Kokeellisen ominaisuuden käyttöönotto: mitä se tekee (app.js: bindExperimental) -->
+  <!-- Tallennettujen ääntämisten tyhjennys vain vahvistuksen jälkeen -->
+  <dialog id="tts-clear-dlg" class="exp-dlg">
+    <h2 data-i18n="ttsClearTitle">Tyhjennetäänkö tallennetut ääntämiset?</h2>
+    <p data-i18n="ttsClearBody"></p>
+    <div class="dialog-actions">
+      <button type="button" class="chip-btn" id="tts-clear-cancel" data-i18n="cancel">Peruuta</button>
+      <button type="button" class="chip-btn primary" id="tts-clear-ok" data-i18n="clearHistoryOk">Tyhjennä</button>
+    </div>
+  </dialog>
   <!-- Historian tyhjennys vain vahvistuksen jälkeen -->
   <dialog id="clear-history-dlg" class="exp-dlg">
     <h2 data-i18n="clearHistoryTitle">Tyhjennetäänkö historia?</h2>
@@ -392,6 +401,15 @@
         <h3 class="set-h" data-i18n="voiceHead">Ääntämisen ääni</h3>
         <div class="set-card set-pad">
           <div id="voice-list" class="voice-list" role="radiogroup" data-i18n-aria="voice"></div>
+        </div>
+        <!-- Tallennetut ääntämiset: kokoraja ja tyhjennys (app.js: renderTtsStore) -->
+        <h3 class="set-h" data-i18n="ttsStoreHead">Tallennetut ääntämiset</h3>
+        <div class="set-card set-pad tts-store">
+          <p class="tts-store-info" id="tts-store-info"></p>
+          <div class="tts-sub" id="tts-limit-label" data-i18n="ttsLimit">Enimmäiskoko</div>
+          <div id="tts-limit-seg" class="seg-ctl" role="radiogroup" aria-labelledby="tts-limit-label"></div>
+          <p class="set-note" data-i18n="ttsStoreNote"></p>
+          <button type="button" class="chip-btn tts-clear" id="tts-clear" data-i18n="ttsClear">Tyhjennä tallennetut ääntämiset</button>
         </div>
       </div>
       <div class="set-page" data-page="langs" hidden>

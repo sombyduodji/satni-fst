@@ -2058,3 +2058,11 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
 .hj-card .hj-note { margin-top: 14px; }
 @media (max-height: 640px) { .hj-say { margin-top: 10px; } .hj-ring { width: 72px; height: 72px; margin: 10px auto 6px; } .hj-count { font-size: 26px; } .hj-ctl { margin-top: 12px; } }
 @media (prefers-reduced-motion: reduce) { .hj-sheet, .hj-card.hj-new, .hj-a.rise .hj-at, .hj-say.on .w1, .hj-say.on .w2 { animation: none; } }
+
+/* Tallennetut ääntämiset (Asetukset → Sanakortti) */
+.set-card.tts-store > * + * { border-top: 0; }
+.tts-store-info { margin: 0 0 10px; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tts-sub { margin: 0 0 6px; font-size: 13px; color: var(--muted); }
+.tts-store .set-note { margin-top: 8px; }
+.tts-clear { margin-top: 10px; }
+.tts-clear:disabled { opacity: .5; cursor: default; }
