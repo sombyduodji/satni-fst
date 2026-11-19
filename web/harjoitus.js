@@ -2,7 +2,7 @@
    ja näytölle. Jatkuu, kunnes painetaan Pysäytä, takaisin-elettä tai suljetaan sovellus. Avataan sanastolistan
    yläreunan painikkeesta tai yleisnäkymän laatasta; valinnat ponnahdusikkunassa (listat, suunta, miettimisaika,
    järjestys) muistetaan laitteella.
-   Äänet: web/audio/w/<lista>-<n>-fi.ogg ja -sme.ogg, hakemisto web/audio/w/harjoitus.json (koonti
+   Äänet: web/audio/w/<lista>-<n>-fi.ogg ja -sme.ogg (Biret; Máhtte ja Sunná rivin v-kentästä), hakemisto web/audio/w/harjoitus.json (koonti
    ~/.cache/satni-fst-build/drill-audio/build.py samoista otoksista kuin listojen äänitteet).
    Android: soitto natiivisti (DrillService, mediailmoitus), jolloin harjoitus jatkuu näytön sammuttua; sivu vain näyttää
    tilan. Selaimessa ja työpöydällä soitto tässä tiedostossa; sovelluksen siirtyessä taustalle harjoitus pysähtyy.
@@ -175,7 +175,10 @@ function harjDeck(o) {
 // Kysymys- ja vastauspuoli valitun suunnan mukaan
 const harjSides = (it, dir) => {
   const fi = { text: it.fi, src: `audio/w/${it.list}-${it.k}-fi.ogg`, dur: it.d[0], lang: "fi" };
-  const sme = { text: it.sme, src: `audio/w/${it.list}-${it.k}-sme.ogg`, dur: it.d[1], lang: "se" };
+  // Saamenpuoli valitulla äänellä (asetukset: Biret, Máhtte, Sunná); Biret harjoituksen omista äänistä, muut
+  // sanastojen sanojen valmiista äänistä (it.v, drill-audio/voices.py)
+  const v = it.v?.[VOICES[settings.voice]];
+  const sme = v ? { text: it.sme, src: v[0], dur: v[1], lang: "se" } : { text: it.sme, src: `audio/w/${it.list}-${it.k}-sme.ogg`, dur: it.d[1], lang: "se" };
   return dir === "sme" ? [sme, fi] : [fi, sme];
 };
 

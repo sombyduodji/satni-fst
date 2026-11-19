@@ -1,6 +1,6 @@
 /* Service worker: sovellus ja sanakirja toimivat ilman verkkoyhteyttä ensimmäisen käynnin jälkeen.
    Kun tiedostoja päivitetään, kasvata VERSION, jolloin selaimet hakevat uudet tiedostot. */
-const VERSION = "satni-v236";
+const VERSION = "satni-v237";
 // Sanastojen äänet: tervehdysten keskustelu saameksi; sanat ja lauseet kolmella äänellä hakemistosta (audio/s/index.json)
 const AUDIO = ["audio/tervehdykset-sme.ogg"];
 // Minipelin palauteäänet (Biret): viikonpäivät, vuodenajat ja kuukaudet, oikein ja väärin
@@ -31,7 +31,8 @@ self.addEventListener("install", (event) => {
       ...AUDIO.map((f) => cache.add(f)),
       // Kuunteluharjoituksen sanat (harjoitus.js): tiedostot hakemistosta, suomi ja saame kustakin sanasta
       cache.match("audio/w/harjoitus.json").then((r) => r.json()).then((d) => Promise.allSettled(
-        d.lists.flatMap((l) => l.rows.flatMap((_, k) => [`audio/w/${l.id}-${k}-fi.ogg`, `audio/w/${l.id}-${k}-sme.ogg`])).map((f) => cache.add(f)))),
+        d.lists.flatMap((l) => l.rows.flatMap((r, k) => [`audio/w/${l.id}-${k}-fi.ogg`, `audio/w/${l.id}-${k}-sme.ogg`,
+          ...Object.values(r.v || {}).map((x) => x[0]).filter((f) => f.startsWith("audio/w/"))])).map((f) => cache.add(f)))),
       cache.match("audio/s/index.json").then((r) => r.json()).then((d) => Promise.allSettled(
         Object.entries(d).flatMap(([v, idx]) => Object.values(idx).map((n) => `audio/s/${v}/${n}.ogg`)).map((f) => cache.add(f)))),
     ]))));
