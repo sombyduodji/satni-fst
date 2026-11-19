@@ -1525,6 +1525,11 @@ function derFinOf(id) {
   if (!hasTable("der_fin")) return null;
   return all("SELECT fin, base, suffix FROM der_fin WHERE word_id = ?", [id])[0] || null;
 }
+// Yhdyssanan tarkistettu suomennos (cmp_fin.py): verojärjestelmä, osat vearru + vuogádat
+function cmpFinOf(id) {
+  if (!hasTable("cmp_fin")) return null;
+  return all("SELECT fin, parts FROM cmp_fin WHERE word_id = ?", [id])[0] || null;
+}
 function derBasesOf(lemma) {
   if (!hasTable("der_base")) return [];
   const r = all("SELECT b.bases FROM der_base b JOIN dictionary d ON d.id = b.word_id WHERE d.sme_lemma = ? LIMIT 1", [lemma])[0];
@@ -1537,8 +1542,15 @@ function renderDerFin(w, trans) {
   line.hidden = true;
   if (trans || settings.lang !== "fin") return;
   const d = derFinOf(w.id);
-  if (!d) return;
-  line.innerHTML = `≈ ${esc(d.fin)} <span class="muted small">(${esc(t("derFinNote"))}: <a href="#/sana/${encodeURIComponent(d.base)}">${esc(d.base)}</a> + -${esc(d.suffix)})</span>`;
+  if (d) {
+    line.innerHTML = `≈ ${esc(d.fin)} <span class="muted small">(${esc(t("derFinNote"))}: <a href="#/sana/${encodeURIComponent(d.base)}">${esc(d.base)}</a> + -${esc(d.suffix)})</span>`;
+    line.hidden = false;
+    return;
+  }
+  const c = cmpFinOf(w.id);
+  if (!c) return;
+  const links = c.parts.split("+").map((p) => `<a href="#/sana/${encodeURIComponent(p)}">${esc(p)}</a>`).join(" + ");
+  line.innerHTML = `≈ ${esc(c.fin)} <span class="muted small">(${esc(t("cmpFinNote"))}: ${links})</span>`;
   line.hidden = false;
 }
 
@@ -3580,7 +3592,7 @@ function ocrGloss(word, original = "") {
   const gloss = { lemma, form: lemma && tl === settings.lang ? ocrFormTranslation(row, word) : "", trans: translationOf(row, 2, tl), say: word, query, id: row.id,
     prop: row.subtype === "Prop" };
   // Ei suomennosta: johdettu (der_fin.py, váralašvuohta ≈ vaarallisuus), merkitty ≈:llä
-  if (!gloss.trans && tl === "fin" && !window.NO_DER_BASES) { const d = derFinOf(row.id); if (d) gloss.trans = "≈ " + d.fin; }
+  if (!gloss.trans && tl === "fin" && !window.NO_DER_BASES) { const d = derFinOf(row.id) || cmpFinOf(row.id); if (d) gloss.trans = "≈ " + d.fin; }
   // Toinen yleinen merkitys pienemmällä rivillä (maid = myös · tai: minkä (mii); mii = me · tai: mikä): eri suomennos
   // ja vähintään 10 % yhtä yleinen (sama sana eri merkityksessä, kuten mii Pers / Rel, aina)
   // Ei harvinaisia muotoja (imperatiivi, potentiaali, duaali, kieltomuoto, 1. ja 2. persoona: bargu ≠ työskennelkäämme,

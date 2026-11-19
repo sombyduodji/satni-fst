@@ -74,7 +74,7 @@ const UI_TEXTS = {
       jos sitä ei ole, suomennoksesta, joka muilla sanoilla on samalle norjan sanalle.</p>
       <p>Pistokokeissa noin yhdeksän kymmenestä inarin kautta tulleesta ja neljä viidestä norjan kautta tulleesta
       ehdotuksesta oli oikein. Ehdotuksia ei ole tarkistettu, eivätkä ne vaikuta hakuun.</p>`,
-    pivotFinNote: { smn: "inarinsaamen kautta, tarkistamaton", nob: "norjan kautta, tarkistamaton" }, derFinNote: "johdettu", cmpPartsMeaning: "osien merkitykset",
+    pivotFinNote: { smn: "inarinsaamen kautta, tarkistamaton", nob: "norjan kautta, tarkistamaton" }, derFinNote: "johdettu", cmpFinNote: "osista", cmpPartsMeaning: "osien merkitykset",
     wiktEngNote: "Wiktionary suomen ja norjan kautta, tarkistamaton",
     register: { vulgar: "alatyylinen", derogatory: "halventava", offensive: "loukkaava" },
     registerNote: "Wiktionaryn mukaan sanaa pidetään alatyylisenä, halventavana tai loukkaavana",
@@ -342,7 +342,7 @@ const UI_TEXTS = {
       hvis den mangler, fra den finske oversettelsen andre ord har for det samme norske ordet.</p>
       <p>I stikkprøver var omtrent ni av ti forslag via enaresamisk og fire av fem via norsk riktige. Forslagene er
       ikke kontrollert og påvirker ikke søket.</p>`,
-    pivotFinNote: { smn: "via enaresamisk, ikke kontrollert", nob: "via norsk, ikke kontrollert" }, derFinNote: "avledet", cmpPartsMeaning: "delenes betydning",
+    pivotFinNote: { smn: "via enaresamisk, ikke kontrollert", nob: "via norsk, ikke kontrollert" }, derFinNote: "avledet", cmpFinNote: "av delene", cmpPartsMeaning: "delenes betydning",
     wiktEngNote: "Wiktionary via finsk og norsk, ikke kontrollert",
     register: { vulgar: "vulgært", derogatory: "nedsettende", offensive: "støtende" },
     registerNote: "Ifølge Wiktionary regnes ordet som vulgært, nedsettende eller støtende",
