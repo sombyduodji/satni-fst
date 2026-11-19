@@ -143,6 +143,19 @@ def export_fin_ngram(src, lang="fin"):
     m.execute("CREATE TABLE fin_unigram (id INTEGER PRIMARY KEY, n INTEGER)")
     unis = src.execute(f"SELECT id, n FROM {lang}_unigram WHERE n >= ?", (NGRAM_MIN,)).fetchall() if src.execute(
         f"SELECT 1 FROM sqlite_master WHERE name = '{lang}_unigram'").fetchone() else []
+    # Suomen sanojen yleisyys vain Voikon hyväksymille sanoille (2026-11-19): yhdyssanan suomennos näytetään
+    # kokonaisena vain, jos yhdistelmä on tässä taulussa, joten sukunimet (uusitalo), kirjoitusvirheet ja tuntemattomat
+    # sanat eivät voi vahvistaa sitä. Ilman Voikkoa taulu jää ennalleen.
+    if lang == "fin" and unis:
+        try:
+            import libvoikko
+            voikko = libvoikko.Voikko("fi")
+            words = dict(src.execute(f"SELECT id, w FROM {lang}_vocab"))
+            before = len(unis)
+            unis = [(i, n) for i, n in unis if voikko.spell(words.get(i, ""))]
+            print(f"fin_unigram: {len(unis)} / {before} sanaa Voikon hyväksymiä")
+        except Exception as e:  # noqa: BLE001
+            print(f"fin_unigram: Voikko puuttuu ({e}), kaikki sanat mukaan")
     m.executemany("INSERT INTO fin_unigram VALUES (?,?)", unis)
     used = {x for a, b, _ in pairs for x in (a, b)} | {i for i, _ in unis}
     m.executemany("INSERT INTO fin_vocab VALUES (?,?)", ((i, w) for i, w in src.execute(f"SELECT id, w FROM {lang}_vocab") if i in used))

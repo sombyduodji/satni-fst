@@ -1189,12 +1189,12 @@ function showSearch(query, results, index = 0, pushHistory = true) {
 
 // Haku ei löytänyt sanaa: yhdyssanan osat kuten kuvahaussa (váralašvuođadieđáhusaid = váralašvuođa + dieđáhusaid),
 // osien käännökset ja koko sanan suomennos korpuksen mukaan (≈ vaaratiedotteiden). Sanaparit ladataan tarvittaessa.
-function searchCompoundInfo(word) {
+function searchCompoundInfo(word, named = false) {
   const keep = { from: settings.ocrFrom, to: settings.ocrTo };
   settings.ocrFrom = "sme"; settings.ocrTo = ["fin", "nob"].includes(settings.lang) ? settings.lang : keep.to;
   try {
     const parts = splitCompound(word);
-    return parts ? compoundPartsInfo(parts) : null;
+    return parts ? compoundPartsInfo(parts, { named }) : null;
   } finally { settings.ocrFrom = keep.from; settings.ocrTo = keep.to; }
 }
 function renderSearchParts(query) {
@@ -1203,14 +1203,17 @@ function renderSearchParts(query) {
   box.innerHTML = "";
   const word = query.trim().toLowerCase();
   if (word.length < 8 || /[\s*?]/.test(word)) return;
-  const info = searchCompoundInfo(word);
+  const named = /^\p{Lu}/u.test(query.trim());
+  const info = searchCompoundInfo(word, named);
   if (!info || !info.parts?.length) return;
   const draw = (inf) => {
     const rows = inf.parts.map((p, k) => `<div class="sp-row"><a class="sp-sme" href="#/sana/${encodeURIComponent(p.base || p.word)}">${k ? "+ " : ""}${esc(p.word)}</a>` +
       `<span class="sp-fi">${esc(p.trans || "–")}${p.base && p.base !== p.word ? ` <span class="muted">(${esc(p.base)})</span>` : ""}</span></div>`).join("");
     // Koko sanan suomennos vain korpuksesta varmistettuna (98 % oikea sija ja luku, ei keksittyjä sanoja); arvattu
     // yhdistelmä (aktiivinentukea) jää pois, osat käännöksineen näkyvät aina
-    const whole = inf.prefix != null && inf.trans && !inf.guessed ? `<div class="sp-whole">≈ ${esc(inf.trans)}</div>` : "";
+    const whole = !inf.trans ? "" : inf.guessed
+      ? `<div class="sp-whole sp-guess">${esc(inf.trans)} <span class="muted small">(${esc(t("cmpPartsMeaning"))})</span></div>`
+      : `<div class="sp-whole">≈ ${esc(inf.trans)}</div>`;
     box.innerHTML = `<div class="sp-head">${esc(t("ocrParts"))}</div>${whole}${rows}`;
     box.hidden = false;
   };
@@ -1220,7 +1223,7 @@ function renderSearchParts(query) {
     ngramForSearch = true;
     loadNgram().then(() => {
       if (state.query !== query || state.results.length) return;
-      const again = searchCompoundInfo(word);
+      const again = searchCompoundInfo(word, named);
       if (again) draw(again);
     }).finally(ngramForSearchDone);
   } else if (ngramForSearch) ngramForSearchDone();
@@ -3006,10 +3009,12 @@ function chooseCompoundFin(cands) {
     finCmpByWord = new Map();
     for (const r of all("SELECT stem, word FROM fin_cmp")) (finCmpByWord.get(r.word) || finCmpByWord.set(r.word, []).get(r.word)).push(r.stem);
   }
+  // Kolmas kenttä: kelpaako sana kaksiosaisen ilmauksen alkuun (genetiivi tai adjektiivi: perheen talo, sateinen sää).
+  // Pelkkä substantiivin perusmuoto ei kelpaa: korpuksen "putki voi" (putki + voi-verbi) ei ole poronvoi.
   const forms = (w, r) => {
-    const out = [[w, r]], g = gen(w);
-    if (g && g !== w) out.push([g, r + 0.3]);
-    for (const st of finCmpByWord?.get(w) || []) if (!out.some(([x]) => x === st)) out.push([st, r + 0.2]);
+    const out = [[w, r, !!translationForms("fin", w, "A")]], g = gen(w);
+    if (g && g !== w) out.push([g, r + 0.3, true]);
+    for (const st of finCmpByWord?.get(w) || []) if (!out.some(([x]) => x === st)) out.push([st, r + 0.2, /n$/.test(st)]);
     return out;
   };
   const heads = cands.slice(0, -1).map((list) => list.slice(0, 3).flatMap((w, r) => forms(w, r)));
@@ -3024,7 +3029,7 @@ function chooseCompoundFin(cands) {
     const glue = words.reduce((acc, w) => acc + (acc && /[aeiouyäö]$/.test(acc) && acc.slice(-1) === w[0] ? "-" : "") + w, "");
     const nj = q.uni(glue);
     if (nj > 0) { const sc = Math.log(nj) + 1.5 - 0.4 * rank; if (!best || sc > best.sc) best = { sc, heads: hs.map((h) => h[0]), last, spaced: false, glue }; }
-    if (words.length === 2) {
+    if (words.length === 2 && hs[0][2]) {
       const nb = q.bi(words[0], words[1]);
       if (nb > 0) { const sc = Math.log(nb) - 0.4 * rank; if (!best || sc > best.sc) best = { sc, heads: hs.map((h) => h[0]), last, spaced: true }; }
     }
@@ -4220,14 +4225,14 @@ function sentTokens(raw) {
       const lang = settings.ocrFrom, lw = w?.fuzzyParts ? w.word : (r.clean || "").toLowerCase();
       const parts = w?.fuzzyParts || (lw.length >= 6 ? (isMinor(lang) ? splitMinorCompound(lang, lw)?.map((x) => x.stem) : splitCompound(lw)) : null);
       if (parts) {
-        const info = compoundPartsInfo(parts);
+        const info = compoundPartsInfo(parts, { named: /^\p{Lu}/u.test(r.clean || "") });
         tok.unknown = false; tok.opts = [info.trans]; tok.lemma = parts.join(" + ");
         // Yhdyssana taipuu viimeisen osansa mukaan: alkuosat + viimeisen osan muoto lauseyhteydestä (uuden kokouspalvelun)
         if (lang === "sme" && settings.lang === "fin" && ocrTo() === "fin" && info.parts.every((x) => x.trans)) {
           const lastPart = info.parts[info.parts.length - 1].word, lg = ocrGloss(lastPart);
           if (lg.id) {
             tok.ctx = sentWordCtx(lg, lastPart);
-            tok.ctx.prefix = info.prefix ?? info.parts.slice(0, -1).map((x) => x.trans).join("");
+            tok.ctx.prefix = info.prefix ?? info.parts.slice(0, -1).map((x) => x.trans).join(" + ") + " + ";
             if (info.lastLemma) tok.ctx.f = translationForms("fin", info.lastLemma, "N") || tok.ctx.f;
           }
         }
@@ -4635,7 +4640,33 @@ function minorPartInfo(lang, raw, fz) {
   const all3 = row ? splitList(minorTranslation(lang, row, ocrTo())).map((x) => x.replace(/^≈\s*/, "").replace(/\s*\([^)]*\)/g, "").trim()).filter(Boolean) : [];
   return { word: p, trans: all3[0] || "", cands: all3.slice(0, 3), base: row && row.lemma.toLowerCase() !== p ? row.lemma : "" };
 }
-function compoundPartsInfo(parts) {
+// Yhdyssanan viimeinen osa on substantiivi: verbin muoto ei kelpaa, jos samalla asulla on substantiivin tai adjektiivin
+// tulkinta (giellaoahpa = kielioppi + Gen, ei oahppat "oppia" -> kieliopi; julkaisutesti 2026-11-19)
+// Alkuosa: pronomini tai verbi ei aloita yhdyssanaa, jos osalla on substantiivin tai adjektiivin tulkinta
+// (dáiddabargu = taide + työ, ei dát "tämä" -> tämä työ; bivdinlohpi ei pyytää lupa; smi-mt-vertailu 2026-11-19)
+function lastNoun(g, word, last) {
+  if (!g.id) return g;
+  // Viimeinen osa, joka on itse substantiivin perusmuoto (dikšun = hoito), ennen toisen sanan taivutusmuotoa
+  // (dikšu + essiivi = hoitona -> potilaan hoitona)
+  if (last && g.lemma) {
+    const col = LANGUAGES.fin.col;
+    const base = all(`SELECT * FROM dictionary WHERE lemma_fold = ? AND pos = 'N' AND ${col} != '' AND subtype != 'Prop' ORDER BY freq DESC LIMIT 1`, [fold(word)])[0];
+    if (base) return { lemma: "", form: "", trans: translationOf(base, 2, "fin"), say: word, query: word, id: base.id };
+  }
+  const own = all("SELECT pos FROM dictionary WHERE id = ?", [g.id])[0];
+  if (!own || own.pos === "N") return g;
+  if (!last && !["Pron", "V"].includes(own.pos)) return g;
+  // Viimeinen osa: verbi tai adjektiivi (myös vertailuaste: ahkidat = ikävämpi / ikävät): substantiivi ensin, jos on
+  const want = !last ? ["N", "A"] : own.pos === "V" ? ["N", "A"] : ["N"];
+  const col = LANGUAGES.fin.col;
+  const row = queryDatabase(word).find((r) => SAMI_RANKS.includes(r.rank) && want.includes(r.pos) && r[col] && r.subtype !== "Prop");
+  if (!row) return g;
+  const lemma = fold(row.sme_lemma) !== fold(word) ? row.sme_lemma : "";
+  return { lemma, form: lemma ? ocrFormTranslation(row, word) : "", trans: translationOf(row, 2, "fin"), say: word, query: word, id: row.id };
+}
+const hasCompTag = (surface) => all(`SELECT 1 FROM paradigms p JOIN tags t ON t.id = p.tag_id WHERE p.surface = ? AND (t.tag LIKE '%Comp%' OR t.tag LIKE '%Superl%') LIMIT 1`, [surface]).length > 0
+  && !all(`SELECT 1 FROM paradigms p JOIN tags t ON t.id = p.tag_id JOIN dictionary d ON d.id = p.word_id WHERE p.surface = ? AND d.pos = 'N' LIMIT 1`, [surface]).length;
+function compoundPartsInfo(parts, opts = {}) {
   const lang = settings.ocrFrom;
   if (isMinor(lang)) {
     let mf = null;
@@ -4643,20 +4674,19 @@ function compoundPartsInfo(parts) {
     const out = parts.map((x) => minorPartInfo(lang, x, fz));
     mf?.free();
     const pick = ocrTo() === "fin" && out.every((x) => x.cands?.length) ? chooseCompoundFin(out.map((x) => x.cands)) : null;
-    if (pick) return { parts: out, word: out.map((x) => x.word).join(""), trans: pick.prefix + pick.last, prefix: pick.prefix, lastLemma: pick.last };
-    const trans = out.every((x) => x.trans) ? out.map((x) => x.trans).join("") : out.map((x) => x.trans || `[${x.word}]`).join(" + ");
-    return { parts: out, word: out.map((x) => x.word).join(""), trans };
+    if (pick && !pick.guessed) return { parts: out, word: out.map((x) => x.word).join(""), trans: pick.prefix + pick.last, prefix: pick.prefix, lastLemma: pick.last };
+    return { parts: out, word: out.map((x) => x.word).join(""), trans: out.map((x) => x.trans || `[${x.word}]`).join(" + "), guessed: true };
   }
   let fz = null;
   const cmpOf = (p) => cmpLemma.get(p) || (hasTable("sme_cmp") ? all("SELECT lemma FROM sme_cmp WHERE stem = ?", [p])[0]?.lemma : null);
   const out = parts.map((raw, k) => {
     // Viimeinen osa on taivutettu kokonainen sana (guovllu = seudun), ei yhdysmuodon alkuosa (guovlla = kieleke)
     const last = k === parts.length - 1;
-    let p = raw.toLowerCase(), base = last ? null : cmpOf(p), g = ocrGloss(base || p);
+    let p = raw.toLowerCase(), base = last ? null : cmpOf(p), g = lastNoun(ocrGloss(base || p), base || p, last);
     if (!g.trans && p.length >= 3) {
       fz ||= ocrFuzzySearch();
       const f = fz.search(p, 3, 3);
-      if (f && !f.parts) { p = f.word; base = last ? null : cmpOf(p); g = ocrGloss(base || p); }
+      if (f && !f.parts) { p = f.word; base = last ? null : cmpOf(p); g = lastNoun(ocrGloss(base || p), base || p, last); }
     }
     const trans = ((last && g.form ? g.form.split(" / ").pop() : g.trans) || "").split(", ")[0].replace(/\s*\([^)]*\)/g, "").replace(/^≈\s*/, "").trim();
     let cands = splitList(g.trans || "").map((x) => x.replace(/\s*\([^)]*\)/g, "").replace(/^≈\s*/, "").trim()).filter(Boolean).slice(0, 3);
@@ -4674,11 +4704,19 @@ function compoundPartsInfo(parts) {
       }
       cands = cands.slice(0, 3);
     }
-    return { word: p, trans, cands, base: base || g.lemma || "", tag: g.lemma ? null : null };
+    // Vertailu- tai yläaste viimeisenä osana (ahkidat = ikävämpi) ei ole yhdyssanan pääsana: ei koota
+    const comp = last && hasCompTag(p);
+    return { word: p, trans, cands, base: base || g.lemma || "", comp };
   });
   fz?.free();
   // Suomeksi: osien merkitys ja liitos sen mukaan, mikä on suomea; viimeinen osa saman muodon mukaan kuin ennen
-  const pick = ocrTo() === "fin" && settings.lang === "fin" && out.every((x) => x.cands.length) ? chooseCompoundFin(out.map((x) => x.cands)) : null;
+  // Suomeksi yhdistetään vain, jos yhdistelmä on suomen korpuksessa (98 % oikea sija ja luku, ei keksittyjä sanoja).
+  // Muuten osien merkitykset plussalla (julkituominen + järjestystä), ei arvattua yhdyssanaa (julkaisemiskuntoa):
+  // tarkistus 10 807 taivutetulla yhdyssanalla, arvatuista 18 % ei ollut suomea (2026-11-19)
+  // Isolla alkava (paikannimi Roavvenjárga, Rovaniemi) ei ole suomeksi kokoonpantava yhdyssana: vain osat
+  const named = !!opts.named;
+  const pick0 = !named && ocrTo() === "fin" && settings.lang === "fin" && out.every((x) => x.cands.length) ? chooseCompoundFin(out.map((x) => x.cands)) : null;
+  const pick = pick0 && !pick0.guessed ? pick0 : null;
   if (pick) {
     const lastForm = out[out.length - 1].trans, firstLemma = out[out.length - 1].cands[0];
     let lastText = pick.last;
@@ -4688,10 +4726,22 @@ function compoundPartsInfo(parts) {
       const key = fFirst && Object.keys(fFirst).find((k) => !k.startsWith("__") && fFirst[k] === lastForm);
       lastText = (key && fPick?.[key]) || (pick.last === firstLemma ? lastForm : pick.last);
     }
-    return { parts: out, word: out.map((x) => x.word).join(""), trans: pick.prefix + lastText, prefix: pick.prefix, lastLemma: pick.last, guessed: !!pick.guessed };
+    // Taivutettu viimeinen osa vahvistettava sekin (Voikon hyväksymä sana korpuksessa): veli -> "veliä" ei ole suomea
+    // (oikein veljiä), joten silloin osat erikseen eikä virheellistä yhdyssanaa (isoveliä)
+    const qq = ngramQ();
+    const lastOk = lastText === pick.last || !qq || qq.uni(lastText.toLowerCase()) > 0 || qq.uni((pick.prefix + lastText).toLowerCase()) > 0;
+    if (lastOk && !out[out.length - 1].comp)
+      return { parts: out, word: out.map((x) => x.word).join(""), trans: pick.prefix + (/\s$/.test(pick.prefix) ? lastText : lastText.toLowerCase()), prefix: pick.prefix, lastLemma: pick.last, guessed: !!pick.guessed };
   }
-  const trans = out.every((x) => x.trans) ? out.map((x) => x.trans).join("") : out.map((x) => x.trans || `[${x.word}]`).join(" + ");
-  return { parts: out, word: out.map((x) => x.word).join(""), trans };
+  // Osien merkitykset: alkuosista suomen tekstissä yleisin vaihtoehto (giella = "ansa, kieli" -> kieli), viimeinen
+  // osa muodossaan (järjestystä)
+  const q = ngramLang === "fin" ? ngramQ() : null;
+  const common = (x) => (q && x.cands.length > 1 ? x.cands.slice(0, 3).map((c) => [c, q.uni(c.toLowerCase())]).sort((a, b) => b[1] - a[1])[0][0] : x.trans);
+  // Viimeisen osan taivutusmuoto vain vahvistettuna (Voikon hyväksymä sana korpuksessa), muuten perusmuoto:
+  // veli -> "veliä" on taulussa väärin (veljiä), joten suuri + veli
+  const lastShown = (x) => (q && x.trans && x.cands[0] && x.trans !== x.cands[0] && !q.uni(x.trans.toLowerCase()) ? x.cands[0] : x.trans);
+  const shown = out.map((x, k) => (k < out.length - 1 ? common(x) : lastShown(x)) || `[${x.word}]`);
+  return { parts: out, word: out.map((x) => x.word).join(""), trans: shown.join(" + "), guessed: true };
 }
 // Osiin jako ja korjauspaneeli: pohjoissaame sekä inari ja koltta, kun niiden sanasto on ladattu
 const sentCanSplit = () => settings.ocrFrom === "sme" || (isMinor(settings.ocrFrom) && hasMinor(settings.ocrFrom));
