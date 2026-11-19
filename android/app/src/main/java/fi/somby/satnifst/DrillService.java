@@ -40,6 +40,7 @@ public final class DrillService extends Service {
     static final String ACTION_START = "start", ACTION_PAUSE = "pause", ACTION_PLAY = "play", ACTION_NEXT = "next",
             ACTION_STOP = "stop";
     private static final String CHANNEL = "harjoitus";
+    private static final String TAG = "SatniHarjoitus";
     private static final int NOTIFICATION = 7;
 
     static volatile Listener listener;
@@ -242,11 +243,17 @@ public final class DrillService extends Service {
                     .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build());
             mp.setDataSource(fd.getFileDescriptor(), fd.getStartOffset(), fd.getLength());
             mp.setOnCompletionListener(m -> finish.run());
-            mp.setOnErrorListener((m, w, e) -> { handler.postDelayed(finish, 800); return true; });
+            mp.setOnErrorListener((m, w, e) -> {
+                android.util.Log.w(TAG, "soitto epäonnistui " + path + " (" + w + "/" + e + ")");
+                handler.postDelayed(finish, 800);
+                return true;
+            });
             mp.prepare();
             mp.start();
             player = mp;
+            android.util.Log.d(TAG, "soi " + path + " " + mp.getDuration() + " ms");  // testit: jokainen ääni kuuluu
         } catch (Exception e) {
+            android.util.Log.w(TAG, "ääntä ei voitu avata " + path, e);
             handler.postDelayed(finish, 800);
         }
     }
