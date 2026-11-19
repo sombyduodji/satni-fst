@@ -5471,6 +5471,8 @@ const COPY_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const CHECK_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"
   stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
 let formPopTarget = null;
+// Kuplan virheilmoituspainike (sanakortin taivutusmuoto ja sanastojen sana)
+const FORM_POP_REPORT = () => `<button class="b-report" aria-label="${esc(t("reportError"))}" title="${esc(t("reportError"))}">⚑</button>`;
 
 function openFormPop(form) {
   closeFormPop();
@@ -5479,7 +5481,7 @@ function openFormPop(form) {
   form.classList.add("picked");
   pop.innerHTML = `<span class="b-word">${esc(form.textContent)}</span>`
     + `<button class="b-speak" aria-label="${esc(t("listenTo", form.dataset.speak))}">${SPEAK_ICON}</button>`
-    + `<button class="b-copy" aria-label="${esc(t("copy"))}">${COPY_ICON}</button>`;
+    + `<button class="b-copy" aria-label="${esc(t("copy"))}">${COPY_ICON}</button>` + FORM_POP_REPORT();
   pop.hidden = false;
   placeFormPop();
 }
@@ -5547,6 +5549,17 @@ function bindFormPop() {
   pop.addEventListener("click", async (e) => {
     const form = formPopTarget;
     if (!form) return;
+    if (e.target.closest(".b-report")) {
+      const text = form.textContent, inList = form.closest("#sanasto-body");
+      closeFormPop();
+      if (inList) { sanastoLastWord = form.dataset.say || text; sanastoReport(); return; }
+      // Sanakortin taivutusmuoto: Taivutusmuoto on väärin valmiiksi ja muoto tekstikenttään
+      openReport();
+      $("report-dlg").querySelector('input[value="form"]').checked = true;
+      const cell = form.closest("tr")?.querySelector("th")?.textContent.trim();
+      $("report-text").value = text + (cell ? ` (${cell})` : "") + ": ";
+      return;
+    }
     const speaker = e.target.closest(".b-speak"), copy = e.target.closest(".b-copy");
     if (speaker && !speaker.classList.contains("loading")) speak(form.dataset.speak, speaker);
     if (copy) {

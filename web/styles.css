@@ -1093,6 +1093,8 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 }
 .form-pop.below::before { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--border); }
 .form-pop .b-word { font-size: 16px; }
+/* Virheilmoitus kuplan lopussa: pieni ja himmeä, ei kilpaile kuuntelun ja kopioinnin kanssa */
+.form-pop .b-report { flex: none; width: 30px; height: 34px; background: none; color: var(--muted); font-size: 15px; }
 
 /* Ei Androidin omaa napautuskorostusta (se korosti koko kuplan); painettu painike korostetaan itse */
 .ocr-stage, .ocr-stage *, .form-pop, .form-pop * { -webkit-tap-highlight-color: transparent; }

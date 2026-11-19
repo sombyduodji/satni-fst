@@ -773,7 +773,7 @@ function sanastoOpenPop(w) {
   pop.innerHTML = `<span class="b-word">${esc(w.dataset.say)}</span>`
     + (sanastoSami() === "smn" ? "" : `<button class="b-speak" aria-label="${esc(t("listenTo", w.dataset.say))}">${SPEAK_ICON}</button>`)
     + `<button class="b-copy" aria-label="${esc(t("copy"))}">${COPY_ICON}</button>`
-    + (w.dataset.id ? `<button class="b-open" aria-label="${esc(t("sanastoCard"))}">${OPEN_ICON}</button>` : "");
+    + (w.dataset.id ? `<button class="b-open" aria-label="${esc(t("sanastoCard"))}">${OPEN_ICON}</button>` : "") + FORM_POP_REPORT();
   pop.hidden = false;
   placeFormPop();
 }
