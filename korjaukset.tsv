@@ -874,7 +874,7 @@ subjektiiva	A	subjektiivinen
 # bálkásit: oli "heittyä" (norja: gå til spille)
 bálkásit	V	mennä hukkaan, heittyä
 # čoarveduodji: oli "luukäsityö" (norja: hornsløyd)
-čoarveduodji	N	sarvi- ja luutyö, sarvikäsityö
+čoarveduodji	N	sarvikäsityö, sarvityö
 # mánnomolsun: oli "kuunvaihde" (norja: månedsskifte)
 mánnomolsun	N	kuukaudenvaihde, kuunvaihde
 # mugga: oli "kannu" (norja: mugge)
@@ -882,4 +882,4 @@ mugga	N	muki, kannu
 # sisriikkalaš: oli "sisämainen" (norja: innenlandsk, nasjonal)
 sisriikkalaš	A	kotimainen, valtakunnallinen
 # giđđageassi: oli "suvi" (norja: forsommer)
-giđđageassi	N	alkukesä, kevätkesä
+giđđageassi	N	alkukesä
