@@ -5206,7 +5206,8 @@ function renderSentSplit() {
 const sentKey = (tok) => `${tok.cx},${tok.cy}`;
 function sentWordText(tok) {
   if (tok.fixed) return tok.fixed.trans || (tok.fixed.keep ? tok.fixed.word : `[${tok.fixed.word}]`);
-  if (tok.name) return tok.clean || tok.t;
+  // Luku (9.11.) sellaisenaan, mutta lopun välimerkki tulee tok.punctista: muuten "9.11.."
+  if (tok.name) return tok.clean || (tok.punct ? tok.t.slice(0, -tok.punct.length) : tok.t);
   if (tok.unknown) return tok.capKeep ? tok.clean || tok.t : `[${tok.clean || tok.t}]`;
   const o = tok.opts?.[tok.choice || 0];
   return o === "" ? "" : o || tok.clean;  // tyhjä = sana sulautui naapuriin (norjan postpositio, apuverbi)
