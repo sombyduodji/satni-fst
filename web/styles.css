@@ -880,35 +880,121 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
   #search-btn { padding-left: 12px; padding-right: 12px; }
   .searchbar .search-box { flex: 1 1 calc(100% - 68px); min-width: 0; }
 }
-.ocr-view {
-  position: fixed; inset: 0; z-index: 45; background: var(--bg); padding: 12px;
-  display: flex; flex-direction: column;
-}
+/* Kuvahaku (uusi ilme 2026-11-20): kuva koko näytöllä, säätimet sen päällä kuin kamerasovelluksessa. Säätimet ovat
+   aina tummia (kuvan päällä), paneelit (sana, ⋯) teeman värisiä. */
+.ocr-view { position: fixed; inset: 0; z-index: 45; background: #0b0d10; color: #e5e9f0; --ov: rgba(23, 30, 39, .82); }
 .ocr-view[hidden] { display: none; }
-.ocr-head { display: flex; flex-wrap: wrap; gap: 8px; }
-.ocr-head #ocr-close { margin-left: auto; }
-.ocr-rotate { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface);
-  color: var(--text); font-size: 20px; line-height: 1; cursor: pointer; flex: none; }
-#ocr-status { margin: 8px 2px; }
 .ocr-stage {
-  position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none;
-  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
-  border-radius: 8px; background: #111;
+  position: absolute; inset: 0; overflow: hidden; touch-action: none;
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; background: #0b0d10;
 }
-/* Puhelin vaakatasossa (matala näyttö): painikkeet vasempaan sarakkeeseen, kuva koko korkeudelle oikealle. Ennen kuva
-   jäi painikerivien alle noin 215 px:n korkuiseksi ja sanan kupla leikkautui (yötesti 2026-11-18). */
+.ocr-top { position: absolute; left: 0; right: 0; top: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: max(12px, env(safe-area-inset-top)) 12px 22px; background: linear-gradient(rgba(11, 13, 16, .85), rgba(11, 13, 16, 0)); pointer-events: none; }
+.ocr-top > * { pointer-events: auto; }
+.ocr-top-row { align-self: stretch; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ocr-round { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--ov); color: #e5e9f0;
+  display: grid; place-items: center; cursor: pointer; padding: 0; }
+.ocr-round svg { width: 20px; height: 20px; }
+.ocr-pill { min-width: 0; height: 44px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px 0 16px; border: 0; border-radius: 22px;
+  background: var(--ov); color: #e5e9f0; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+.ocr-pill span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ocr-pill svg { flex: none; width: 16px; height: 16px; color: #94a3b8; }
+.ocr-status { margin: 0; max-width: 100%; padding: 6px 12px; border-radius: 15px; background: var(--ov); font-size: 13px; line-height: 1.35; color: #cbd5e1; text-align: center; }
+.ocr-status:empty { display: none; }
+.ocr-view .ocr-offer { max-width: 560px; margin: 0; background: var(--ov); color: #e5e9f0; }
+.ocr-view .ocr-offer button:not(.primary) { background: transparent; color: #e5e9f0; }
+.ocr-bottom { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center;
+  padding: 30px 18px max(14px, env(safe-area-inset-bottom)); background: linear-gradient(rgba(11, 13, 16, 0), rgba(11, 13, 16, .9) 50%); }
+.ocr-tool { display: flex; flex-direction: column; align-items: center; gap: 5px; border: 0; background: none; color: #e5e9f0; font: inherit;
+  font-size: 13px; font-weight: 500; cursor: pointer; padding: 0; min-width: 0; }
+.ocr-tool:first-child { justify-self: start; }
+.ocr-tool:last-child { justify-self: end; }
+.ocr-tool > span { width: 48px; height: 48px; border-radius: 12px; background: var(--ov); display: grid; place-items: center; }
+.ocr-tool svg { width: 22px; height: 22px; }
+.ocr-tool b { font-weight: 500; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ocr-shutter { justify-self: center; width: 70px; height: 70px; border-radius: 50%; border: 4px solid #e5e9f0; background: none; padding: 4px; cursor: pointer; }
+.ocr-shutter span { display: block; width: 100%; height: 100%; border-radius: 50%; background: var(--accent, #3b82f6); }
+.ocr-shutter:active span { transform: scale(.9); }
+.ocr-view.empty .ocr-pick { visibility: hidden; }
+/* Alkunäkymä (ei kuvaa): kamera-kuvake ja lyhyt ohje keskellä */
+.ocr-empty { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 0 36px 80px;
+  text-align: center; color: #94a3b8; }
+.ocr-view.empty .ocr-empty { display: flex; }
+.ocr-empty svg { width: 64px; height: 64px; color: #64748b; }
+.ocr-empty p { margin: 0; max-width: 340px; font-size: 15px; line-height: 1.5; }
+/* Paneeli alhaalla: napautettu sana (#ocr-bubble) ja ⋯ (#ocr-settings); alapalkki piiloon paneelin ajaksi */
+.ocr-sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; margin: 0 auto; max-width: 560px; max-height: 62%;
+  display: flex; flex-direction: column; gap: 12px; padding: 8px 18px max(14px, env(safe-area-inset-bottom));
+  background: var(--surface); color: var(--text); border-radius: 22px 22px 0 0; box-shadow: 0 -12px 30px rgba(0, 0, 0, .4);
+  text-align: left; cursor: default; user-select: text; -webkit-user-select: text; }
+.ocr-sheet[hidden] { display: none; }
+.ocr-view:has(.ocr-sheet:not([hidden])) .ocr-bottom { display: none; }
+.sh-handle { flex: none; align-self: center; width: 40px; height: 4px; border-radius: 2px; background: var(--border); }
+.sh-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 8px; }
+.sh-head { display: flex; align-items: flex-start; gap: 12px; }
+.sh-title { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; cursor: pointer; }
+.sh-word { font-size: 26px; font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
+.sh-base { font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.sh-base b { color: var(--text); font-weight: 600; }
+.sh-lab { font-size: 13px; color: var(--muted); }
+.sh-speak { flex: none; width: 48px; height: 48px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer;
+  background: var(--speak-bg); color: var(--speak); position: relative; padding: 0; }
+.sh-speak svg { width: 22px; height: 22px; }
+.sh-speak[hidden] { display: none; }
+.sh-tr { font-size: 20px; line-height: 1.35; overflow-wrap: anywhere; cursor: pointer; }
+.sh-tr .b-more, .ocr-sheet .b-more { color: var(--muted); }
+.sh-note { font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.sh-actions { flex: none; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; padding-top: 6px; border-top: 1px solid var(--border); }
+.sh-actions button { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 2px 2px; border: 0; border-radius: 10px;
+  background: none; color: var(--text); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; min-width: 0; }
+.sh-actions button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sh-actions svg { width: 22px; height: 22px; color: var(--accent); }
+.sh-actions [data-report] svg { color: var(--muted); }
+.sh-read { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.sh-read img { display: block; height: 40px; max-width: calc(100% - 70px); object-fit: contain; object-position: left; border-radius: 6px; border: 1px solid var(--border); }
+.sh-raw { padding: 3px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); font-size: 18px; overflow-wrap: anywhere; }
+.sh-q { font-size: 16px; font-weight: 600; margin-top: 2px; }
+.sh-card { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: 10px 14px; border-radius: 14px;
+  border: 1px solid var(--border); background: var(--surface-alt); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.sh-card b { font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
+.sh-card > span, .sh-part span { font-size: 14px; color: var(--accent); overflow-wrap: anywhere; }
+.sh-parts { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 6px; cursor: default; }
+.sh-part { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 2px 4px; border: 0; border-radius: 8px; background: none;
+  color: var(--text); font: inherit; text-align: left; cursor: pointer; min-width: 0; }
+.sh-plus { color: var(--muted); font-weight: 600; }
+.sh-chips { flex: none; display: flex; flex-wrap: wrap; gap: 8px; }
+.sh-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 20px; border: 1px solid var(--border);
+  background: none; color: var(--text); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+.sh-chip svg { width: 16px; height: 16px; flex: none; }
+.ocr-sheet .pressed { filter: brightness(.85); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+/* ⋯-paneeli */
+.os-sec { display: flex; flex-direction: column; gap: 8px; }
+.os-head { display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 600; min-height: 32px; }
+.os-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.os-chip { display: inline-flex; flex-direction: column; justify-content: center; min-height: 38px; padding: 4px 14px; border-radius: 19px;
+  border: 1px solid var(--border); background: var(--surface-alt); color: var(--text); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; text-align: left; }
+.os-chip small { font-size: 11.5px; font-weight: 400; color: var(--muted); }
+.os-chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-text, #fff); font-weight: 600; }
+.os-chip.on small { color: inherit; opacity: .85; }
+.os-swap { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; border: 0; border-radius: 16px; background: none;
+  color: var(--accent); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.os-swap svg { width: 16px; height: 16px; }
+.os-sep { height: 1px; background: var(--border); flex: none; }
+.os-rot { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.os-rot button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 8px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--surface-alt); color: var(--text); font: inherit; font-size: 14px; cursor: pointer; }
+.os-rot button:disabled { opacity: .45; cursor: default; }
+.os-rot svg { width: 18px; height: 18px; flex: none; }
+.os-mark { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.os-seg { display: flex; padding: 3px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); }
+.os-seg button { min-height: 36px; padding: 0 14px; border: 0; border-radius: 9px; background: none; color: var(--muted); font: inherit; font-size: 14px; cursor: pointer; }
+.os-seg button.active { background: var(--surface-alt); color: var(--text); font-weight: 600; box-shadow: 0 0 0 1px var(--border); }
+.os-done { flex: none; min-height: 50px; border-radius: 14px; border: 0; background: var(--accent); color: var(--accent-text, #fff); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
+/* Matala näyttö (puhelin vaakatasossa): paneeli korkeammaksi, alapalkki matalammaksi */
 @media (orientation: landscape) and (max-height: 520px) {
-  .ocr-view {
-    display: grid; grid-template-columns: minmax(0, 230px) minmax(0, 1fr); grid-template-rows: auto auto 1fr;
-    column-gap: 12px; align-content: start; padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
-  }
-  .ocr-head, .ocr-bar, #ocr-status { grid-column: 1; }
-  .ocr-stage { grid-column: 2; grid-row: 1 / -1; height: calc(100dvh - 16px); }
-  .ocr-head #ocr-close { margin-left: 0; }
-  .ocr-bar { flex-wrap: wrap; }
-  .ocr-style-btn { margin-left: 0; }
-  .ocr-style { left: 0; right: auto; }
-  .ocr-lang { flex-wrap: wrap; }
+  .ocr-sheet { max-height: 88%; }
+  .ocr-bottom { padding-top: 16px; }
+  .ocr-empty { padding-bottom: 40px; }
 }
 .ocr-photo { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 .ocr-photo img { display: block; width: 100%; height: 100%; pointer-events: none; user-select: none; }
@@ -962,50 +1048,6 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .ocr-bubble .b-cand .b-tr { flex: 1 1 8em; min-width: 0; overflow-wrap: break-word; }
 /* Matala kuva-alue (puhelin vaakatasossa): kupla mahtuu alueeseen ja sen rivit vierivät (app.js: placeOcrBubble) */
 .ocr-bubble.tight .b-text { max-height: var(--bmax); overflow-y: auto; overscroll-behavior: contain; }
-/* Suunta ja merkintätapa: pilleri ja paletti kuvan yläpuolella */
-.ocr-bar { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
-.ocr-dir, .ocr-style-btn {
-  display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border); background: var(--surface);
-  color: var(--text); border-radius: 99px; padding: 6px 14px; font: inherit; font-weight: 600; cursor: pointer;
-}
-.ocr-dir svg { width: 18px; height: 18px; color: var(--accent); }
-.ocr-style-btn { padding: 6px; width: 36px; height: 36px; justify-content: center; margin-left: auto; }
-.ocr-style-btn span { width: 18px; height: 18px; border-radius: 50%; background: var(--mark-preview, #2563eb); }
-.ocr-style {
-  position: absolute; right: 0; top: calc(100% + 6px); z-index: 5; display: flex; flex-direction: column; gap: 12px;
-  padding: 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
-}
-.ocr-style[hidden] { display: none; }
-/* Kielet: kuvan kieli ▾ ⇄ käännös ▾ (kuten käännössovelluksissa) ja lista sirun alla */
-.ocr-lang { display: flex; align-items: center; gap: 6px; min-width: 0; }
-/* Puhelimessa kielet omalla rivillään, kääntö ja merkintätapa alla */
-@media (max-width: 600px) { .ocr-lang { flex: 1 1 100%; } }
-.ocr-chip {
-  display: inline-flex; align-items: center; gap: 4px; min-width: 0; padding: 7px 10px 7px 14px; border-radius: 99px;
-  border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-weight: 600; cursor: pointer;
-}
-.ocr-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ocr-chip svg { width: 16px; height: 16px; flex: none; color: var(--muted); }
-.ocr-swap {
-  flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface);
-  color: var(--accent); display: grid; place-items: center; cursor: pointer; padding: 0;
-}
-.ocr-swap svg { width: 18px; height: 18px; }
-.ocr-swap:active { transform: rotate(180deg); transition: transform .2s; }
-.ocr-langs {
-  position: absolute; top: calc(100% + 6px); z-index: 5; display: flex; flex-direction: column; min-width: 180px; padding: 4px;
-  border-radius: 12px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
-}
-.ocr-langs[hidden] { display: none; }
-.ocr-mi {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 0; border-radius: 8px;
-  background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer;
-}
-.ocr-mi small { display: block; font-size: 12px; color: var(--muted); font-weight: 400; }
-.ocr-mi.active { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 600; }
-.ocr-mi svg { width: 18px; height: 18px; flex: none; }
-/* Tarjous: kuvassa on inarinsaamea, jota ei ole otettu käyttöön */
 .ocr-offer {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; padding: 10px 12px;
   border-radius: 10px; border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
@@ -1024,8 +1066,6 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .ocr-opt input { accent-color: var(--accent); width: 18px; height: 18px; }
 .ocr-opts p { margin: 6px 0 0; }
 .ocr-offer button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
-.ocr-seg { float: none; }
-.ocr-seg button { padding: 5px 12px; font-size: 14px; }
 .ocr-swatches { display: flex; gap: 10px; justify-content: center; }
 .ocr-swatches button {
   width: 28px; height: 28px; border-radius: 50%; border: 0; cursor: pointer; background: var(--c);
@@ -1899,13 +1939,19 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
 }
 
 /* Lause kuvasta (Poimi lause): sanat siruina, käännös alla, sanan korjaus alapaneelissa */
-.ocr-pick { font-size: 13px; padding: 6px 12px; }
 .sent-view { position: fixed; inset: 0 0 var(--nav-h, 0px) 0; z-index: 46; background: var(--bg); display: flex; flex-direction: column; }
 .sent-view[hidden] { display: none; }
 /* Kuvan sanan korjaus ilman lausenäkymää: pelkkä paneeli kuvan päällä alhaalla */
 .sent-view.solo { background: transparent; pointer-events: none; }
 .sent-view.solo .sent-head, .sent-view.solo .sent-body { display: none; }
-.sent-view.solo .sent-sheet { pointer-events: auto; margin-top: auto; max-height: 60%; }
+.sent-view.solo .sent-sheet { pointer-events: auto; margin-top: auto; max-height: 70%; max-width: 560px; width: 100%; margin-inline: auto; box-sizing: border-box;
+  border-top: 0; border-radius: 22px 22px 0 0; padding: 6px 16px max(14px, env(safe-area-inset-bottom)); box-shadow: 0 -12px 30px rgba(0, 0, 0, .4); }
+.sent-type[hidden] { display: none; }
+.sent-q { margin: 6px 0 0; font-size: 16px; font-weight: 600; }
+.sent-cards { flex-direction: column; flex-wrap: nowrap; }
+.sent-cards .sent-opt { width: 100%; padding: 10px 14px; border-radius: 14px; font-size: 16px; }
+.sent-cards .sent-opt i { font-size: 14px; }
+.sent-acts { margin-top: 12px; }
 .sent-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px 6px; }
 .sent-head h2 { margin: 0; font-size: 18px; }
 .sent-body { flex: 1 1 auto; overflow-y: auto; padding: 4px 14px 16px; }
@@ -2137,3 +2183,5 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
 .sp-fi { color: var(--text); }
 /* Alaosa piiloon, jos siinä ei ole linkkejä (virheilmoitus siirtyi otsikkoriville 2026-11-19) */
 .word-foot:not(:has(> .word-links:not([hidden]))) { display: none; }
+/* Kuvan sanan korjauspaneeli (sent-view.solo) kuvan päällä: kuvahaun alapalkki piiloon sen ajaksi */
+body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
