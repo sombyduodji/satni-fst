@@ -3552,6 +3552,7 @@ async function openOcr() {
   } else ensurePhotoData();
   applyOcrLook();
   $("ocr-view").classList.toggle("empty", !ocr);
+  fitOcrPill();
   if (ocr) {
     layoutOcr(false);
     // Kuvan kieliä muutettu asetuksista (esim. vihjeen kautta): sanat uudelleen, kielen tunnistus mukaan lukien
@@ -4044,6 +4045,13 @@ function renderOcrSettings() {
   const rot = !!(ocr && window.SatniOcr?.rotate);
   $("ocr-rotate-left").disabled = $("ocr-rotate-right").disabled = !rot;
 }
+// Kielipainike: jos nimet eivät mahdu (kapea näyttö, iso fontti), tiiviimpi tyyli
+function fitOcrPill() {
+  const pill = $("ocr-dir");
+  pill.classList.remove("tight");
+  if ($("ocr-view").hidden) return;
+  if ([...pill.querySelectorAll("span")].some((x) => x.scrollWidth > x.clientWidth + 1)) pill.classList.add("tight");
+}
 function openOcrSettingsSheet() {
   if (ocr?.picked != null) pickOcrWord(null);
   renderOcrSettings();
@@ -4115,6 +4123,7 @@ function applyOcrLook() {
   const arrow = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`;
   const chev = `<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
   $("ocr-dir").innerHTML = `<span>${esc(ocrLangName(settings.ocrFrom))}</span>${arrow}<span>${esc(ocrLangName(ocrTo()))}</span>${chev}`;
+  fitOcrPill();
   $("ocr-dir").setAttribute("aria-label", `${t("ocrFromLabel")}: ${ocrLangName(settings.ocrFrom)}, ${t("ocrToLabel")}: ${ocrLangName(ocrTo())}`);
   if (!$("ocr-settings").hidden) renderOcrSettings();
   const photo = $("ocr-photo");
@@ -4178,7 +4187,13 @@ function pickOcrWord(i) {
     return parts.slice(0, 3).map(esc).join(" /<wbr> ") + (parts.length > 3 ? ` <span class="b-more">…</span>` : "");
   };
   const g = w.gloss;
-  const big = g.lemma ? g.form || g.trans : g.trans;
+  let big = g.lemma ? g.form || g.trans : g.trans;
+  // Sanakirjan sana ilman käännöstä (giellavuoigatvuođaid): käännös osista kuten lausenäkymässä (≈ kieli + oikeuksien)
+  if (!big && sentCanSplit() && [...w.word].length >= 6) {
+    const lang = settings.ocrFrom, parts = isMinor(lang) ? splitMinorCompound(lang, w.word)?.map((x) => x.stem) : splitCompound(w.word);
+    const info = parts ? compoundPartsInfo(parts) : null;
+    if (info?.trans) big = `≈ ${info.trans}`;
+  }
   const base = g.lemma ? `<div class="sh-base"><span class="sh-lab">${esc(t("ocrBaseForm"))}</span> <b>${esc(g.lemma)}</b>${g.form ? ` · ${short(g.trans)}` : ""}</div>` : "";
   const alt = g.alt ? `<div class="sh-note">${esc(t("ocrAlso"))}: ${esc(g.alt.text)}${g.alt.lemma ? ` (${esc(g.alt.lemma)})` : ""}</div>` : "";
   const via = g.via ? `<div class="sh-note">${esc(viaText(g.via))}</div>` : "";
@@ -5663,6 +5678,7 @@ function bindOcr() {
     const b = e.target.closest("[data-color]");
     if (b) { settings.ocrColor = b.dataset.color; relook(); }
   };
+  window.addEventListener("resize", fitOcrPill);
   applyOcrLook();
   bindOcrGestures();
 }

@@ -895,9 +895,12 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .ocr-round { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--ov); color: #e5e9f0;
   display: grid; place-items: center; cursor: pointer; padding: 0; }
 .ocr-round svg { width: 20px; height: 20px; }
-.ocr-pill { min-width: 0; height: 44px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px 0 16px; border: 0; border-radius: 22px;
+.ocr-pill { flex: 0 1 auto; min-width: 0; height: 44px; display: inline-flex; align-items: center; gap: 5px; padding: 0 10px 0 14px; border: 0; border-radius: 22px;
   background: var(--ov); color: #e5e9f0; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
 .ocr-pill span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* Kapea näyttö tai iso fontti: pienempi teksti, nuoli kapeammaksi ja ▾ pois, jotta kielten nimet mahtuvat */
+.ocr-pill.tight { font-size: 13.5px; gap: 3px; padding: 0 12px; }
+.ocr-pill.tight .chev { display: none; }
 .ocr-pill svg { flex: none; width: 16px; height: 16px; color: #94a3b8; }
 .ocr-status { margin: 0; max-width: 100%; padding: 6px 12px; border-radius: 15px; background: var(--ov); font-size: 13px; line-height: 1.35; color: #cbd5e1; text-align: center; }
 .ocr-status:empty { display: none; }
@@ -928,6 +931,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
   background: var(--surface); color: var(--text); border-radius: 22px 22px 0 0; box-shadow: 0 -12px 30px rgba(0, 0, 0, .4);
   text-align: left; cursor: default; user-select: text; -webkit-user-select: text; }
 .ocr-sheet[hidden] { display: none; }
+.ocr-settings { max-height: 86%; }
 .ocr-view:has(.ocr-sheet:not([hidden])) .ocr-bottom { display: none; }
 .sh-handle { flex: none; align-self: center; width: 40px; height: 4px; border-radius: 2px; background: var(--border); }
 .sh-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 8px; }
