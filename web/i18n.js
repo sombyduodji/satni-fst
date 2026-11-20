@@ -33,7 +33,7 @@ const UI_TEXTS = {
     ocrMore: "Kuva-asetukset", ocrGalleryShort: "Valitse kuva", ocrShoot: "Ota kuva", ocrPhotoSect: "Kuva", ocrMarkSect: "Sanojen merkintä",
     ocrRotL: "Käännä vasemmalle", ocrRotR: "Käännä oikealle", ocrBaseForm: "perusmuoto", ocrMeant: "Tarkoititko?",
     ocrNoMatch: "Ei löytynyt sanakirjasta sellaisenaan.", ocrTypeSelf: "Kirjoita sana itse", ocrSplitSelf: "Jaa osiin itse",
-    ocrFix: "Korjaa", ocrReportShort: "Ilmoita", ocrBackToSugs: "Takaisin ehdotuksiin", ocrTargetAdded: (n) => `${n} lisätty käännöskieliin`, ocrSourceAdded: (n) => `${n} lisätty kuvan kieliin`, ocrNoSugs: "Ei ehdotuksia.",
+    ocrFix: "Korjaa", ocrReportShort: "Ilmoita", ocrBackToSugs: "Takaisin ehdotuksiin", sentSelect: "Valitse sanat itse", selHint: "Maalaa sanat sormella tai piirrä ympyrä niiden ympäri · kaksi sormea siirtää", selCount: (n) => `${n} sanaa valittu`, ocrTargetAdded: (n) => `${n} lisätty käännöskieliin`, ocrSourceAdded: (n) => `${n} lisätty kuvan kieliin`, ocrNoSugs: "Ei ehdotuksia.",
     experimental: "Kokeelliset käännökset", experimentalOn: "Käytössä", experimentalOff: "Pois käytöstä",
     experimentalHint: "Konekäännöksiä ja ehdotuksia sanoille, joilla ei ole käännöstä sanakirjoissa. Ne ovat vielä kehitteillä, ja niissä voi olla virheitä. Palaute auttaa!",
     // Lausekääntäjä (test-lauseet, lauseet.js)
@@ -309,7 +309,7 @@ const UI_TEXTS = {
     ocrMore: "Bildeinnstillinger", ocrGalleryShort: "Velg bilde", ocrShoot: "Ta bilde", ocrPhotoSect: "Bilde", ocrMarkSect: "Merking av ord",
     ocrRotL: "Roter mot venstre", ocrRotR: "Roter mot høyre", ocrBaseForm: "grunnform", ocrMeant: "Mente du?",
     ocrNoMatch: "Ikke funnet i ordboka slik det står.", ocrTypeSelf: "Skriv ordet selv", ocrSplitSelf: "Del opp selv",
-    ocrFix: "Rett", ocrReportShort: "Meld feil", ocrBackToSugs: "Tilbake til forslag", ocrTargetAdded: (n) => `${n} lagt til som oversettelsesspråk`, ocrSourceAdded: (n) => `${n} lagt til som bildespråk`, ocrNoSugs: "Ingen forslag.",
+    ocrFix: "Rett", ocrReportShort: "Meld feil", ocrBackToSugs: "Tilbake til forslag", sentSelect: "Velg ordene selv", selHint: "Mal over ordene med fingeren eller tegn en ring rundt dem · to fingre flytter", selCount: (n) => `${n} ord valgt`, ocrTargetAdded: (n) => `${n} lagt til som oversettelsesspråk`, ocrSourceAdded: (n) => `${n} lagt til som bildespråk`, ocrNoSugs: "Ingen forslag.",
     experimental: "Eksperimentelle oversettelser", experimentalOn: "På", experimentalOff: "Av",
     experimentalHint: "Maskinoversettelser og forslag for ord som ikke har oversettelse i ordbøkene. De er fortsatt under utvikling og kan inneholde feil. Tilbakemeldinger hjelper!",
     lauseTitle: "Setningsoversetter", lauseBadge: "prøve", lauseShort: "Setning", ocrShort: "Bilde", expLauseDesc: "Kort finsk setning til samisk. Åpnes med snakkeboble-knappen i topplinjen.",

@@ -3587,7 +3587,8 @@ async function openOcr() {
 function closeOcr() {
   if (closeSentView()) return true;
   if ($("ocr-view").hidden) return false;
-  if (!$("ocr-settings").hidden) $("ocr-settings").hidden = true;
+  if (ocr?.select) endWordSelect(false);
+  else if (!$("ocr-settings").hidden) $("ocr-settings").hidden = true;
   else if (ocr && ocr.picked != null) pickOcrWord(null);
   else $("ocr-view").hidden = true;
   return true;
@@ -4493,10 +4494,35 @@ function ocrSentenceAround(rIndex) {
     const perp = Math.abs(((y.cy || 0) - (x.cy || 0)) * Math.cos(rad) - ((y.cx || 0) - (x.cx || 0)) * Math.sin(rad));
     return perp > Math.max(x.h || 10, y.h || 10, 1) * 1.65;
   };
-  let a = rIndex, b = rIndex;
-  while (a > 0 && !end(ws[a - 1].t) && !brk(ws[a - 1], ws[a]) && rIndex - a < 40) a--;
-  while (b < ws.length - 1 && !end(ws[b].t) && !brk(ws[b], ws[b + 1]) && b - rIndex < 40) b++;
-  return ws.slice(a, b + 1);
+  // Toisen lohkon sana tekstivirran keskellä (päivämäärä otsikkorivin oikeassa reunassa: ML Kit antaa sen ensimmäisen
+  // leipätekstirivin jälkeen; käyttäjän kuva 2026-11-20 "Dát lea váralašvuođadieđáhusaid 12.06" ilman jatkoa): sana on
+  // edellisen sanan riviä ylempänä (eteenpäin) tai alempana (taaksepäin). Se ohitetaan, eikä lause katkea siihen.
+  const signed = (x, y) => {
+    const ref = (x.w || 0) >= (y.w || 0) ? x : y;
+    const deg = (ref.w || 0) > 2 * (ref.h || 1) ? ref.a || 0 : medA, rad = (deg * Math.PI) / 180;
+    return ((y.cy || 0) - (x.cy || 0)) * Math.cos(rad) - ((y.cx || 0) - (x.cx || 0)) * Math.sin(rad);
+  };
+  const up = (x, y) => signed(x, y) < -0.6 * Math.max(x.h || 10, y.h || 10, 1);
+  const out = [ws[rIndex]];
+  // Myös yksittäinen irrallinen sana, jonka jälkeen teksti jatkuu (seuraava sana ei katkaise), ohitetaan
+  const stray = (cur, j, step) => {
+    const k = j + step;
+    return k >= 0 && k < ws.length && !end(ws[j].t) && (step > 0 ? up(cur, ws[j]) || (brk(cur, ws[j]) && !brk(cur, ws[k]))
+      : up(ws[j], cur) || (brk(ws[j], cur) && !brk(ws[k], cur)));
+  };
+  for (let i = rIndex, n = 0; i > 0 && n < 40; n++) {
+    let j = i - 1, skipped = 0;
+    while (j > 0 && skipped < 2 && stray(ws[i], j, -1)) { j--; skipped++; }
+    if (end(ws[j].t) || brk(ws[j], ws[i])) break;
+    out.unshift(ws[j]); i = j;
+  }
+  for (let i = rIndex, n = 0; i < ws.length - 1 && !end(ws[i].t) && n < 40; n++) {
+    let j = i + 1, skipped = 0;
+    while (j < ws.length - 1 && skipped < 2 && stray(ws[i], j, 1)) { j++; skipped++; }
+    if (brk(ws[i], ws[j])) break;
+    out.push(ws[j]); i = j;
+  }
+  return out;
 }
 function sentTokens(raw) {
   // Kahdesta palasta yhdistetty sana (tavuviiva, väli) vain kerran: molemmilla paloilla on sama yhdistetty clean
@@ -5201,6 +5227,8 @@ function sentTranslation() {
     }
   });
   let text = words.filter(([w, p]) => w || p).map(([w, p]) => w + p).join(" ").replace(/\s+([.,!?:;])/g, "$1").replace(/\s{2,}/g, " ").trim();
+  // Itse valituissa sanoissa voi olla useampi virke: iso alkukirjain myös pisteen jälkeen
+  text = text.replace(/([.!?]\s+)(\p{Ll})/gu, (m, a, b) => a + b.toUpperCase());
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 // Tuntemattoman sanan kuva: leikataan kuvasta sanan laatikon kohdalta (canvas)
@@ -5214,11 +5242,48 @@ function sentCutout(tok, scale = 1) {
   c.height = hh; c.width = Math.max(1, Math.round(sw * hh / sh));
   try { c.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height); return c.toDataURL("image/png"); } catch (e) { return ""; }
 }
-function openSentView(rIndex) {
+function openSentView(rIndex, words = null) {
   ocr.sentChoice ||= {};
-  sent = { toks: sentTokens(ocrSentenceAround(rIndex)), sheet: null, rIndex };
+  sent = { toks: sentTokens(words || ocrSentenceAround(rIndex)), sheet: null, rIndex };
   renderSentView();
   $("sent-view").hidden = false;
+}
+// --- Valitse sanat itse (käyttäjä 2026-11-20): automaattinen lauseen raja voi osua väärin (otsikko, palstat, päivämäärä).
+// Sormella: avoin veto maalaa sanat, joiden yli sormi kulkee (alkaa valitusta sanasta -> pyyhkii); suljettu veto
+// (ympyrä) valitsee kaikki sanat sen sisältä; napautus lisää tai poistaa yhden sanan; kaksi sormea siirtää ja zoomaa.
+// Valmis: lause valituista sanoista lukujärjestyksessä (ML Kitin järjestys).
+function startWordSelect(preKeys = []) {
+  if (!ocr?.words?.length) return;
+  pickOcrWord(null);
+  ocr.pickMode = false;
+  ocr.select = { sel: new Set(), stroke: null };
+  const keys = new Set(preKeys);
+  ocr.words.forEach((w, i) => { if (keys.has(`${w.cx},${w.cy}`)) ocr.select.sel.add(i); });
+  $("ocr-view").classList.add("selecting");
+  $("ocr-selbar").hidden = false;
+  $("ocr-status").textContent = t("selHint");
+  renderWordSelect();
+}
+function renderWordSelect() {
+  if (!ocr?.select) return;
+  for (const el of $("ocr-photo").querySelectorAll(".ocr-word")) el.classList.toggle("chosen", ocr.select.sel.has(+el.dataset.i));
+  $("ocr-sel-count").textContent = t("selCount", ocr.select.sel.size);
+  $("ocr-sel-done").disabled = !ocr.select.sel.size;
+}
+function endWordSelect(apply) {
+  if (!ocr?.select) return;
+  const sel = ocr.select.sel;
+  ocr.select = null;
+  $("ocr-view").classList.remove("selecting");
+  $("ocr-selbar").hidden = true;
+  $("ocr-stroke").firstElementChild.setAttribute("points", "");
+  for (const el of $("ocr-photo").querySelectorAll(".ocr-word.chosen")) el.classList.remove("chosen");
+  $("ocr-status").textContent = ocr.status;
+  if (!apply || !sel.size) return;
+  const keys = new Set([...sel].map((i) => `${ocr.words[i].cx},${ocr.words[i].cy}`));
+  const idx = ocr.r.words.map((w, k) => (keys.has(`${w.cx},${w.cy}`) ? k : -1)).filter((k) => k >= 0);
+  if (!idx.length) return;
+  openSentView(idx[0], idx.map((k) => ocr.r.words[k]));
 }
 function closeSentView() {
   if (!sent || $("sent-view").hidden) return false;
@@ -5542,11 +5607,55 @@ function bindOcrGestures() {
     v.s = s;
   };
   $("ocr-bubble").addEventListener("click", (e) => { if (e.detail === 0 && ocr?.picked != null) ocrSheetTap(e.target); });
+  // Valintatila: sana sormen alla ja veto (avoin = maalaus, suljettu = ympyrä)
+  const wordAt = (cx, cy) => document.elementFromPoint(cx, cy)?.closest?.(".ocr-word");
+  const strokeLine = () => $("ocr-stroke").firstElementChild;
+  const paint = (cx, cy) => {
+    const st = ocr.select?.stroke, el = wordAt(cx, cy);
+    if (!st || !el) return;
+    const i = +el.dataset.i;
+    if (st.mode === null) st.mode = ocr.select.sel.has(i) ? "remove" : "add";
+    if (st.mode === "add") ocr.select.sel.add(i); else ocr.select.sel.delete(i);
+    renderWordSelect();
+  };
+  const finishStroke = () => {
+    const st = ocr.select?.stroke;
+    if (!st) return;
+    ocr.select.stroke = null;
+    strokeLine().setAttribute("points", "");
+    const pts = st.pts, first = pts[0], last = pts[pts.length - 1];
+    const xs = pts.map((q) => q.cx), ys = pts.map((q) => q.cy);
+    const w = Math.max(...xs) - Math.min(...xs), h = Math.max(...ys) - Math.min(...ys);
+    const closed = pts.length >= 8 && w > 30 && h > 30 && Math.hypot(last.cx - first.cx, last.cy - first.cy) < Math.max(40, 0.3 * Math.min(w, h));
+    if (!closed) return;
+    // Ympyrä: vedon aikana maalatut tai pyyhityt sanat palautetaan (reuna kulki naapuririvin yli), sitten lisätään
+    // sanat, joiden keskikohta on vedon sisällä (säteen ristikkäistesti)
+    ocr.select.sel = new Set(st.before);
+    const inside = (x, y) => {
+      let c = false;
+      for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+        const a = pts[i], b = pts[j];
+        if ((a.cy > y) !== (b.cy > y) && x < ((b.cx - a.cx) * (y - a.cy)) / (b.cy - a.cy) + a.cx) c = !c;
+      }
+      return c;
+    };
+    for (const el of $("ocr-photo").querySelectorAll(".ocr-word")) {
+      const r = el.getBoundingClientRect();
+      if (inside(r.left + r.width / 2, r.top + r.height / 2)) ocr.select.sel.add(+el.dataset.i);
+    }
+    renderWordSelect();
+  };
   stage.addEventListener("pointerdown", (e) => {
     $("ocr-settings").hidden = true;
     if (!ocr) return;
     stage.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, local(e));
+    if (ocr.select) {
+      if (pointers.size === 1) {
+        const lp = local(e);
+        ocr.select.stroke = { pts: [{ cx: e.clientX, cy: e.clientY, x: lp.x, y: lp.y }], mode: null, before: new Set(ocr.select.sel) };
+      } else if (ocr.select.stroke) { ocr.select.stroke = null; strokeLine().setAttribute("points", ""); }
+    }
     tap = pointers.size === 1 ? { ...local(e), cx: e.clientX, cy: e.clientY, time: Date.now() } : null;
     prev = pointers.size === 2 ? pinch() : null;
     // Paneelin sisältä aloitettu veto ei siirrä kuvaa; pitkä paneeli vierii
@@ -5559,6 +5668,21 @@ function bindOcrGestures() {
     if (!ocr || !pointers.has(e.pointerId)) return;
     const p = local(e), old = pointers.get(e.pointerId);
     pointers.set(e.pointerId, p);
+    if (ocr.select?.stroke && pointers.size === 1) {
+      const st = ocr.select.stroke;
+      st.pts.push({ cx: e.clientX, cy: e.clientY, x: p.x, y: p.y });
+      if (!st.started && Math.hypot(p.x - st.pts[0].x, p.y - st.pts[0].y) > 10) {
+        st.started = true; tap = null;
+        paint(st.pts[0].cx, st.pts[0].cy);  // aloituskohdan sana ratkaisee: lisää vai pyyhi
+      }
+      strokeLine().setAttribute("points", st.pts.map((q) => `${q.x},${q.y}`).join(" "));
+      // Maalaus: välipisteet, ettei nopea veto hyppää sanojen yli
+      if (st.started) {
+        const a = st.pts[st.pts.length - 2];
+        for (let k = 1; k <= 4; k++) paint(a.cx + ((e.clientX - a.cx) * k) / 4, a.cy + ((e.clientY - a.cy) * k) / 4);
+      }
+      return;
+    }
     if (tap && Math.hypot(p.x - tap.x, p.y - tap.y) > 10) { tap = null; press(null); }
     if (pointers.size === 1 && scrollBox) {
       scrollBox.scrollTop -= p.y - old.y;  // paneelin rivit vierivät, kuva pysyy paikallaan
@@ -5584,6 +5708,19 @@ function bindOcrGestures() {
     if (!pointers.size) { scrollBox = null; inSheet = false; }
     prev = pointers.size === 2 ? pinch() : null;
     press(null);
+    if (ocr?.select) {
+      const st = ocr.select.stroke;
+      if (st && !st.started && e.type === "pointerup") {
+        // Napautus: yksi sana lisää tai pois
+        const el = wordAt(e.clientX, e.clientY);
+        if (el) { const i = +el.dataset.i; if (ocr.select.sel.has(i)) ocr.select.sel.delete(i); else ocr.select.sel.add(i); }
+        ocr.select.stroke = null; strokeLine().setAttribute("points", ""); renderWordSelect();
+      } else if (st && e.type === "pointerup") finishStroke();
+      else if (st) { ocr.select.stroke = null; strokeLine().setAttribute("points", ""); }
+      suppressClickUntil = Date.now() + 1500; suppressClickAt = [e.clientX, e.clientY];
+      tap = null;
+      return;
+    }
     if (!tap || e.type !== "pointerup" || Date.now() - tap.time > 500) { tap = null; return; }
     const target = document.elementFromPoint(tap.cx, tap.cy);
     const word = target?.closest(".ocr-word");
@@ -5749,6 +5886,17 @@ function bindOcr() {
   }
   $("ocr-close").onclick = () => { if (ocr) pickOcrWord(null); $("ocr-settings").hidden = true; $("ocr-view").hidden = true; };
   $("ocr-pick").onclick = (e) => { e.stopPropagation(); pickSentence(); };
+  $("ocr-sel-cancel").onclick = () => endWordSelect(false);
+  $("ocr-sel-done").onclick = () => endWordSelect(true);
+  // Lausenäkymästä takaisin kuvaan valitsemaan: nykyisen lauseen sanat valmiiksi valittuina
+  $("sent-select").onclick = () => {
+    if (!sent || !ocr?.r) return;
+    const keys = sent.toks.map((x) => `${x.cx},${x.cy}`);
+    sent = null;
+    $("sent-view").hidden = true;
+    $("sent-view").classList.remove("solo");
+    startWordSelect(keys);
+  };
   bindSentView();
   $("ocr-swatches").innerHTML = OCR_COLORS.map((c) =>
     `<button data-color="${c}" role="radio" style="--c:${c}" aria-label="${c}"></button>`).join("");
