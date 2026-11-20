@@ -585,3 +585,6 @@ Jiellevárri	N	Jällivaara
 # Päivätesti 2026-11-14: sotkeutunut hakusana "(pl,)", sama sana ja suomennos ovat jo omina hakusanoinaan
 # (oappážat: sisarukset, siskokset; oappážagat: sisarukset, siskokset)
 oappážat (pl,), oappážagat	N	-
+# li = "opinto-ohjaaja" (interj_smefin.xml): huudahdukselle substantiivikäännös, ei norjaa eikä englantia, ei korpuksessa;
+# kuvahaussa ML Kitin väärin lukema ii (käyttäjän kuva 2026-11-20)
+li	Interj	-

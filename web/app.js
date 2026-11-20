@@ -3194,7 +3194,7 @@ function minorMatcher(lang) {
       }
     }
     // Sumea haku: useampi kaksoiskirjain ja väärin luettu yhdyssana (osat erikseen ocrMatches -> compound)
-    if (chars.length >= 5 && !(/^\p{Lu}/u.test(word) && chars.length < 10)) {
+    if (chars.length >= 5 && !(capWord(word) && chars.length < 10)) {
       fuzzy ||= minorFuzzySearch(lang);
       const r = fuzzy.search(w);
       if (r && !r.parts) return r.word;
@@ -3374,6 +3374,11 @@ const smnTranslation = (row, to) => minorTranslation("smn", row, to);
 // Kuvan sanan korjaukset muistiin kuvien ja suuntien yli (sama sana toistuu; suunnan vaihto ja automaattinen suunta
 // ajavat haun uudelleen): sana -> { word, cmp }
 const ocrCorrectCache = new Map();
+// Isolla alkukirjaimella alkava sana (nimi?), mutta ei VERSAALIA otsikkoa (SÁMEDIGGI RAHPÁ): versaali tunnistetaan kuten
+// pienaakkosin kirjoitettu (käyttäjä 2026-11-20: kirjainkoko ei saa vaikuttaa tunnistukseen)
+// Kuvan alkuperäinen kirjoitusasu sanan haussa; jos alun iso I oli väärin luettu l (Iea = lea, ei nimi Lea), pienellä
+const ocrOrig = (w) => (/^I/.test(w.clean || "") && (w.word || "")[0] === "l" ? (w.clean || "").toLowerCase() : w.clean);
+const capWord = (s) => /^\p{Lu}/u.test(s) && !(/\p{L}{2}/u.test(s) && !/\p{Ll}/u.test(s));
 function ocrCorrector() {
   // Olemassaolo erissä: kaikki sanan muunnelmat yhdellä kyselyllä (ennen jopa 525 kyselyä tuntematonta sanaa kohden,
   // noin 230 ms kuvaa kohden; profiili 2026-11-18)
@@ -3418,6 +3423,17 @@ function ocrCorrector() {
         for (let i = 0; i < vc.length; i++) if (OCR_DIACRITICS[vc[i]]) cands.push([...vc.slice(0, i), OCR_DIACRITICS[vc[i]], ...vc.slice(i + 1)].join(""));
       }
     }
+    // I, l ja i näyttävät monessa fontissa samalta (ii -> "li", lea -> "Iea", leat -> "Ieat"; käyttäjän kuva 2026-11-20):
+    // viimeisinä ehdokkaina yksi tai kaksi vaihtoa i <-> l. Kokeillaan vain, jos mikään edellinen ei ole sana.
+    // Suunta kuvan merkin mukaan: iso I -> l (Iea = lea); l -> i vain vähintään 4 kirjaimen sanassa, ei nimessä
+    // (testipenkki: ia -> la, oll -> oli, dil -> dii, boaitto -> boaltto, Rauhal -> rauhai olivat vääriä)
+    {
+      const orig = [...word], chars = [...w];
+      const spots = orig.length !== chars.length ? [] : chars.map((c, i) => (orig[i] === "I" || (c === "l" && chars.length >= 4 && !capWord(word)) ? i : -1)).filter((i) => i >= 0).slice(0, 8);
+      const flip = (arr, i) => { const a = [...arr]; a[i] = a[i] === "i" ? "l" : "i"; return a; };
+      for (const i of spots) cands.push(flip(chars, i).join(""));
+      if (w.length >= 4) for (let a = 0; a < spots.length; a++) for (let b = a + 1; b < spots.length; b++) cands.push(flip(flip(chars, spots[a]), spots[b]).join(""));
+    }
     const has = batchExists([...cands, ...cands.flatMap(stems)]);
     // Liitepartikkelin kanssa (válddátgo = válddát + -go, songe = son + -ge): haku tuntee nämä (queryDatabase)
     const hit = cands.find((c) => has(c) || stems(c).some(has));
@@ -3425,7 +3441,7 @@ function ocrCorrector() {
     // Viimeisenä sumea haku (useampi tarke ja tuplaus yhdessä: vattisvuodat -> váttisvuođat); yhdyssanat erikseen
     // (ocrMatches -> compound), koska niitä ei ole sanakirjassa sellaisinaan.
     // Lyhyt isolla alkava sana on yleensä nimi: ei sumeaa hakua (OnePlus 2026-11-18: kuvan haku 1,9 s)
-    if (w.length >= 5 && !(/^\p{Lu}/u.test(word) && w.length < 10)) {
+    if (w.length >= 5 && !(capWord(word) && w.length < 10)) {
       fuzzy ||= ocrFuzzySearch();
       const r = fuzzy.search(w);
       if (r && !r.parts) return { word: r.word };
@@ -3713,7 +3729,7 @@ function ocrResult(r) {
   // käyttäjän kuva 2026-11-20). Saamessa li, Il, lI ja II ovat lähes aina ii; lauseen alussa Ii. Ei norjankielisessä kuvassa (li = rinne).
   if (!(settings.ocrFrom === "ui" && settings.lang === "nob")) r.words.forEach((w, i) => {
     if (!/^(li|lI|Il|II)$/.test(w.clean)) return;
-    const fixed = i === 0 || /[.!?:]["”»)]*$/.test(r.words[i - 1].t || "") ? "Ii" : "ii";
+    const fixed = w.clean[0] === "I" ? "Ii" : "ii";  // kirjainkoko kuten kuvassa: li -> ii, Il -> Ii
     w.t = w.t.replace(w.clean, fixed); w.clean = fixed;
   });
   joinHyphenated(r.words);
@@ -4205,7 +4221,7 @@ function pickOcrWord(i) {
   if (!w) { ocr.picked = null; bubble.hidden = true; return; }
   photo.querySelector(`[data-i="${i}"]`)?.classList.add("picked");
   if (w.unknown) { pickUnknownOcrWord(w); return; }
-  if (!w.gloss) w.gloss = ocrGloss(w.word, w.clean);
+  if (!w.gloss) w.gloss = ocrGloss(w.word, ocrOrig(w));
   // Rivi = saamen sana ja sen käännös: ensin kuvan muoto (beavddis  pöydässä / pöydästä), alla himmeämpänä perusmuoto
   // (beavdi  pöytä). Perusmuotoinen sana yhdellä rivillä; jos muotoa ei voi kääntää, ylärivillä on vain saamen sana.
   // Enintään kaksi muotoa (mus = minulla / minulta …): loput näkyvät sanakortilla
@@ -4287,7 +4303,7 @@ function pickUnknownOcrWord(w) {
     });
   }
   if (!w.cands) {
-    w.cands = settings.ocrFrom === "sme" ? ocrRepairs(w.word, /^\p{Lu}/u.test(w.clean)) : [];
+    w.cands = settings.ocrFrom === "sme" ? ocrRepairs(w.word, capWord(w.clean)) : [];
     // Yhdyssana, jota ei ole sanakirjassa: osat omille riveilleen (almmustahttin + ortnega)
     w.parts = settings.ocrFrom === "sme" ? w.fuzzyParts || splitCompound(w.word) : null;
     if (w.parts) w.cands = [...w.cands.slice(0, 1), ...w.parts.map((part) => {
@@ -4302,7 +4318,7 @@ function pickUnknownOcrWord(w) {
   // sanaparit voivat latautua vasta kuvan jälkeen.
   let whole = "";
   if (w.parts && !w.finParts && settings.ocrFrom === "sme" && ocrTo() === "fin" && settings.lang === "fin") {
-    const info = compoundPartsInfo(w.parts, { named: /^\p{Lu}/u.test(w.clean || "") });
+    const info = compoundPartsInfo(w.parts, { named: capWord(w.clean || "") });
     if (info?.trans && !info.guessed) whole = `<div class="sh-tr">≈ ${esc(info.trans)}</div>`;
     else if (!(ngramDb && ngramLang === "fin") && ngramLoading) {
       const idx = ocr.picked;
@@ -4496,7 +4512,9 @@ function sentTokens(raw) {
     const prevLemma = SME_MODAL.has(lem(pw2)) && !SME_MODAL.has(lem(pw)) ? lem(pw2) : pw?.gloss?.lemma || pw?.word || prev;
     const punct = (r.t.match(/[.,!?:;)"”»]+$/) || [""])[0];
     const tok = { t: r.t, clean: r.clean, cx: r.cx, cy: r.cy, w: r.w, h: r.h, a: r.a, punct, word: w ? w.word : (r.clean || r.t).toLowerCase() };
-    const cap = /^\p{Lu}/u.test(r.clean || "");
+    // Versaali (SÁMEDIGGI) tunnistetaan kuin pienaakkosin; tuntematon versaali (TV, CD, NRK) jää sellaisenaan kuten nimi
+    const allCaps = /^\p{Lu}/u.test(r.clean || "") && !capWord(r.clean || "");
+    const cap = capWord(r.clean || "") && !(w && /^I/.test(r.clean || "") && (w.word || "")[0] === "l");  // Iea = lea
     // Yhdysmerkillä nimeen liitetty saamen sana (Microsoft-bálválusain): nimi sellaisenaan, loppuosa käännettynä
     const hy = (r.clean || "").match(/^(.+)-([\p{L}]+)$/u);
     const hyGloss = hy && settings.ocrFrom !== "ui" ? ocrGloss(hy[2].toLowerCase(), hy[2]) : null;
@@ -4518,16 +4536,16 @@ function sentTokens(raw) {
       // Iso alkukirjain ei tee sanasta nimeä: tuntematon, korjattavissa; käännöksessä sellaisenaan (Microsoft, Toppari)
       tok.name = !!tok.num;
       tok.unknown = !tok.name;
-      tok.capKeep = cap && !hy;
-    } else if (w.unknown) { tok.unknown = true; tok.capKeep = cap; }
+      tok.capKeep = (cap || allCaps) && !hy;
+    } else if (w.unknown) { tok.unknown = true; tok.capKeep = cap || allCaps; }
     else {
       // Persoonapronomini lauseen alussa (Don leat = Sinä olet, ei nimi Don)
       const g = n === 0 && SME_PRON[(w.word || "").toLowerCase()] && settings.ocrFrom === "sme" ? ocrGloss(w.word.toLowerCase())
-        : w.gloss || (w.gloss = ocrGloss(w.word, w.clean));
+        : w.gloss || (w.gloss = ocrGloss(w.word, ocrOrig(w)));
       // Henkilön nimi sellaisenaan (Máhte = "miehen nimi"); paikannimi käännetään (Ohcejoga = Utsjoen, Romssa = Tromssan)
       const personName = g.prop && (!g.trans || /\b(nimi|navn|name)\b/i.test(g.trans));
       if (personName) tok.name = true;
-      else if (!g.trans) { tok.unknown = true; tok.capKeep = cap; }
+      else if (!g.trans) { tok.unknown = true; tok.capKeep = cap || allCaps; }
       const strip = (x) => x.replace(/\s*\([^)]*\)/g, "").trim();
       const opts = [...(g.form ? g.form.split(" / ") : []), ...splitList(g.trans).map(strip), ...(g.alt ? [g.alt.text] : [])]
         .map((x) => x.trim()).filter(Boolean);
@@ -4546,7 +4564,7 @@ function sentTokens(raw) {
       const lang = settings.ocrFrom, lw = w?.fuzzyParts || (w && !w.unknown) ? w.word : (r.clean || "").toLowerCase();
       const parts = w?.fuzzyParts || (lw.length >= 6 ? (isMinor(lang) ? splitMinorCompound(lang, lw)?.map((x) => x.stem) : splitCompound(lw)) : null);
       if (parts) {
-        const info = compoundPartsInfo(parts, { named: /^\p{Lu}/u.test(r.clean || "") });
+        const info = compoundPartsInfo(parts, { named: capWord(r.clean || "") });
         tok.unknown = false; tok.opts = [info.trans]; tok.lemma = parts.join(" + ");
         // Yhdyssana taipuu viimeisen osansa mukaan: alkuosat + viimeisen osan muoto lauseyhteydestä (uuden kokouspalvelun)
         if (info.separate) tok.lemma = parts.join(" ");
