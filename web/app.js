@@ -4077,8 +4077,24 @@ function setOcrLangs(from, to) {
   if (ocr.picked != null) pickOcrWord(ocr.picked);
 }
 // ⇄: pohjoissaame -> suomi/norja vaihtuu suomi/norja -> pohjoissaame ja päinvastoin; pohjoissaame <-> inari
-function swapOcrLangs() {
+// Inari <-> pohjoissaame vaihtuu aina samaksi pariksi toisin päin (käyttäjä 2026-11-20): tarvittava kieli otetaan käyttöön
+// (käännöskieleksi tai kuvan kieleksi, ilmoituksella), eikä vaihto putoa suomeen. Asetuksista sen voi taas poistaa.
+async function swapOcrLangs() {
   const from = settings.ocrFrom, to = ocrTo();
+  if (from === "smn" && to === "sme") {
+    if (!targetOn("smn")) { settings.ocrTargets = [...new Set([...settings.ocrTargets, "smn"])]; renderOcrOpts(); toast(t("ocrTargetAdded", ocrLangName("smn"))); }
+    return setOcrLangs("sme", "smn");
+  }
+  if (from === "sme" && to === "smn") {
+    if (!minorOn("smn")) {
+      settings.ocrLangs = [...new Set([...settings.ocrLangs, "smn"])];
+      saveSettings(); renderOcrOpts();
+      await syncMinorDbs();
+      if (!minorOn("smn")) return;  // sanaston lataus epäonnistui: suunta ennallaan
+      toast(t("ocrSourceAdded", ocrLangName("smn")));
+    }
+    return setOcrLangs("smn", "sme");
+  }
   if (from === "sme") return to === "smn" ? setOcrLangs("smn", "sme") : setOcrLangs("ui", "sme");
   if (from === "ui") return setOcrLangs("sme", settings.lang);
   return to === "sme" ? setOcrLangs("sme", from === "smn" ? "smn" : settings.lang) : setOcrLangs("ui", "sme");
