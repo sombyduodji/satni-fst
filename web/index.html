@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fi">
+<html lang="fi" translate="no">
 <head>
   <meta charset="utf-8">
   <!-- Sisällön suojauskäytäntö (yötesti 2026-11-14): vain omat skriptit (ei sivun sisäisiä eikä inline-tapahtumia), sql.js:n
@@ -7,6 +7,9 @@
        (appassets.androidplatform.net) ja työpöytäsovelluksessa (satni://app). Tyylit inline-sallittuina: näkymät
        asettavat värit style-attribuutteina (--tc, --tb). -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https://api-giellalt.uit.no; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <!-- Ei selaimen konekäännöstä (käyttäjä 2026-11-20): Chrome ja Firefox tarjosivat sivun kääntämistä, mikä muuttaisi
+       myös saamen sanat ja taivutusmuodot. Käyttöliittymä on jo omalla kielellään (fi/nb). -->
+  <meta name="google" content="notranslate">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Sátni FST</title>
   <meta name="description" content="Pohjoissaamen–suomen sanakirja ja taivutusgeneraattori">
