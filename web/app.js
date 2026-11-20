@@ -1142,7 +1142,12 @@ function loadWord(id) {
   try {
     alsoFin = all(`SELECT items FROM fin_also WHERE word_id = ?`, [id])[0]?.items || "";
   } catch (e) { /* vanha aineisto ilman lisäsuomennoksia */ }
-  return { word, paradigm, grades, meanings, definitions, alsoFin };
+  // test-lahteet: sukulaissanat muissa saamen kielissä (algu_related.py, Álgu / Kotus, CC BY 4.0)
+  let related = [];
+  try {
+    related = all(`SELECT lang, word FROM related_sami WHERE word_id = ? ORDER BY rowid`, [id]);
+  } catch (e) { /* vanha aineisto ilman taulua */ }
+  return { word, paradigm, grades, meanings, definitions, alsoFin, related };
 }
 
 // --- Näkymät ---
@@ -1195,6 +1200,7 @@ function showSearch(query, results, index = 0, pushHistory = true) {
   state.query = query;
   state.results = results;
   renderDidYouMean(query, state.results);
+  renderPlaceNames(query);
   state.showPrefix = false;
   state.index = index;
 
@@ -1361,6 +1367,27 @@ function extraDidYouMean(query, results) {
   }
   return out.sort((a, b) => b.freq - a.freq).slice(0, 2);
 }
+// test-lahteet: Norjan saamenkieliset paikannimet (kartverket_names.py, Kartverket CC BY 4.0): haku saamen- tai
+// norjankielisellä nimellä näyttää vastineen (Guovdageaidnu – Kautokeino, taajama)
+function renderPlaceNames(query) {
+  const box = $("place-hits");
+  if (!box) return;
+  let rows = [];
+  const q = (query || "").trim();
+  if (q.length >= 3) {
+    try {
+      rows = all(`SELECT sme, nob, smj, sma, type, municipality FROM placenames WHERE sme = ? COLLATE NOCASE OR nob = ? COLLATE NOCASE LIMIT 4`, [q, q]);
+    } catch (e) { /* vanha aineisto ilman taulua */ }
+  }
+  box.hidden = !rows.length;
+  box.innerHTML = rows.length ? `<span>${esc(t("placeName"))}</span>` + rows.map((r) => {
+    const typ = t("placeTypes")[r.type] || "";
+    const other = [r.smj && `${t("langName").smj} ${r.smj}`, r.sma && `${t("langName").sma} ${r.sma}`].filter(Boolean).join(", ");
+    return `<div class="place-hit"><b lang="se">${esc(r.sme)}</b> – <span lang="no">${esc(r.nob)}</span>` +
+      ` <span class="muted small">${esc([typ, r.municipality].filter(Boolean).join(", "))}${other ? " · " + esc(other) : ""}</span></div>`;
+  }).join("") + `<div class="muted small">${esc(t("placeSource"))}</div>` : "";
+}
+
 function renderDidYouMean(query, results) {
   const box = $("did-you-mean");
   const list = [...didYouMean(query, results), ...extraDidYouMean(query, results)].slice(0, 3);
@@ -1468,6 +1495,7 @@ function selectResult(i, pushHistory = true) {
   // Ensimmäinen saamenkielinen määritelmä kortissa, kaikki Merkitykset-välilehdellä
   state.definitions = data.definitions || [];
   state.alsoFin = data.alsoFin || "";
+  state.related = data.related || [];
   const def = state.definitions[0];
   $("sme-def").hidden = !def;
   $("sme-def").innerHTML = def ? `<b>${esc(t("smeDef"))}</b>${esc(def.definition)}` : "";
@@ -2250,7 +2278,17 @@ function renderMeanings(meanings) {
       (d.examples || "").split("\n").filter((x) => x && !shownEx.has(x)).map((x) => `<div class="example"><span class="sme">${esc(x)}</span></div>`).join("") +
       `</div>`).join("") + `</div>`;
   }
-  if (!meanings.length && !defs.length) html += `<p class="muted">${esc(t("noMeanings"))}</p>`;
+  // Sukulaissanat (Álgu): kielittäin, inari ja koltta ensin. Ei käännös: sama alkuperä, merkitys voi poiketa.
+  const rel = state.related || [];
+  if (rel.length) {
+    const by = new Map();
+    for (const r of rel) by.set(r.lang, [...(by.get(r.lang) || []), r.word]);
+    html += `<h3 class="lang-head">${esc(t("relatedSami"))}</h3><div class="meaning related-sami">` +
+      ["smn", "sms", "smj", "sma"].filter((l) => by.has(l)).map((l) =>
+        `<div><span class="muted">${esc(t("langName")[l])}:</span> <span lang="${l}">${esc(by.get(l).join(", "))}</span></div>`).join("") +
+      `<div class="muted small">${esc(t("relatedNote"))}</div></div>`;
+  }
+  if (!meanings.length && !defs.length && !rel.length) html += `<p class="muted">${esc(t("noMeanings"))}</p>`;
   $("panel-meanings").innerHTML = html;
   const examples = meanings.reduce((n, m) => n + m.examples.length, 0);
   $("meanings-tab").textContent = t("tabMeanings", meanings.length, examples);

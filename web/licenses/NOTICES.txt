@@ -138,6 +138,30 @@ English translations from Wiktionary (where GiellaLT has no English)
   same English in Wiktionary, it is shown as an unchecked suggestion.
   Notes in brackets and "synonym of"-type explanations are left out.
 
+Corpus frequencies (test-lahteet): SIKOR North Saami lemma frequency
+list 2015-10-10
+  © UiT The Arctic University of Norway, Giellatekno and Divvun
+  Licence: Creative Commons Attribution 3.0 Unported (CC-BY-3.0.txt)
+  Source: http://hdl.handle.net/11509/106 (CLARINO Bergen)
+  Changes: used only for words without a frequency; letters and
+  abbreviations are left out.
+
+Related words in other Sámi languages (test-lahteet): Álgu, the
+Etymological Database of the Saami Languages, XML version 16.3.2023
+  © Kotimaisten kielten keskus (Institute for the Languages of Finland),
+  https://kaino.kotus.fi/algu
+  Licence: Creative Commons Attribution 4.0 (CC-BY-4.0.txt)
+  Changes: only the links between related words are used, and a related
+  word is shown only when it is in the current Inari, Skolt, Lule or
+  South Sámi dictionary. Álgu's Finnish and German meanings are not used.
+
+Sámi place names in Norway (test-lahteet): Stedsnavn
+  © Kartverket, https://kartkatalog.geonorge.no/metadata/30caed2f-454e-44be-b5cc-26bb5c0110ca
+  Licence: Creative Commons Attribution 4.0 (CC-BY-4.0.txt)
+  Changes: only places with both a North Sámi and a Norwegian name
+  (main and side names, not historical) are kept, with Lule and South
+  Sámi names where they exist.
+
 Norwegian inflection: Norsk ordbank – bokmål 2005 (dump of 2022-02-01)
   © Språkbanken / Nasjonalbiblioteket
   Licence: CC BY 4.0 (CC-BY-4.0.txt)

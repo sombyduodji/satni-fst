@@ -2189,3 +2189,9 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
 .word-foot:not(:has(> .word-links:not([hidden]))) { display: none; }
 /* Kuvan sanan korjauspaneeli (sent-view.solo) kuvan päällä: kuvahaun alapalkki piiloon sen ajaksi */
 body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
+/* test-lahteet: paikannimet haussa ja sukulaissanat Merkitykset-välilehdellä */
+.place-hits { margin: 6px 0 8px; padding: 8px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); font-size: 14px; }
+.place-hits[hidden] { display: none; }
+.place-hits > span { font-size: 12px; color: var(--muted); display: block; margin-bottom: 2px; }
+.place-hit { padding: 2px 0; overflow-wrap: anywhere; }
+.related-sami > div { padding: 1px 0; }
