@@ -3759,6 +3759,10 @@ function ocrMatches(r, from) {
   if (isMinor(from) && !hasMinor(from)) return [];
   const corrector = from === "sme" ? ocrCorrector() : isMinor(from) ? minorMatcher(from) : null;
   const cache = new Map();
+  // Tämän suunnan yhdistämät palat (buresveadj + inguovllu). Ei muuteta kuvan sanoja (r.words): automaattinen suunnan
+  // valinta kokeilee useaa kieltä, ja pohjoissaamen yhdistämä ain + tuájáreh jäi muuten inarin sanoiksi (oikea kuva
+  // 2026-11-20). Tulos jää r.joinsBy[suunta]:an analyzeOcr:lle ja toiselle luvulle.
+  const joins = new Map(), cl = (w) => joins.get(w) ?? w.clean;
   const match = (clean) => {
     if (clean.length < 2) return null;
     if (corrector) return corrector.correct(clean);
@@ -3773,19 +3777,20 @@ function ocrMatches(r, from) {
       // Vain pienellä alkavat palat: isolla alkava on yleensä nimi, ja jokainen kokeilu ajaa sumean haun (hidas)
       // Jo yhdistettyä palaa ei yhdistetä uudelleen: sanat haetaan samasta kuvasta uudestaan (suunnan vaihto, toinen
       // luku), ja muuten buresveadj + inguovllu + guovlostivra kasvoi yhdeksi sanaksi (testipenkki 2026-11-20)
-      if (a.joined || b.joined || !a.clean || !b.clean || a.clean === b.clean || !/^\p{Ll}\p{L}*$/u.test(a.clean) || !/^\p{Ll}\p{L}*$/u.test(b.clean)) continue;
+      if (a.joined || b.joined || joins.has(a) || joins.has(b) || !a.clean || !b.clean || a.clean === b.clean || !/^\p{Ll}\p{L}*$/u.test(a.clean) || !/^\p{Ll}\p{L}*$/u.test(b.clean)) continue;
       // Seuraavalla rivillä vasemmalla, tai samalla rivillä kapealla välillä (otsikon iso fontti: buresveadj inguovllu)
       const nextLine = b.cy > a.cy + (a.h || 10) * 0.6 && b.cx < a.cx;
       const sameLine = Math.abs(b.cy - a.cy) < (a.h || 10) * 0.4 && a.w && b.w && b.cx > a.cx && (b.cx - b.w / 2) - (a.cx + a.w / 2) < (a.h || 10) * 0.6;
       if (!(nextLine || sameLine) || a.clean.length < 3 || b.clean.length < 3) continue;
       if (match(a.clean) || match(b.clean)) continue;
       const joined = a.clean + b.clean;
-      if (match(joined) || corrector.compound?.(joined)) { a.clean = b.clean = joined; a.joined = b.joined = true; i++; }
+      if (match(joined) || corrector.compound?.(joined)) { joins.set(a, joined); joins.set(b, joined); i++; }
     }
   }
-  const words = r.words.map((w) => ({ ...w, word: match(w.clean) })).filter((w) => w.word);
+  (r.joinsBy ||= {})[from] = joins;
+  const words = r.words.map((w) => ({ ...w, clean: cl(w), word: match(cl(w)) })).filter((w) => w.word);
   // Väärin luettu yhdyssana (coahkkinbalvalusa = čoahkkin + bálvalusa): korjattu asu ja osat tuntemattomalle sanalle
-  if (corrector?.compound) ocrFixedCompoundsBy[from] = new Map(r.words.map((w) => [w, corrector.compound(w.clean)]).filter(([, c]) => c));
+  if (corrector?.compound) ocrFixedCompoundsBy[from] = new Map(r.words.map((w) => [w, corrector.compound(cl(w))]).filter(([, c]) => c));
   corrector?.free();
   return words;
 }
@@ -3811,9 +3816,15 @@ function analyzeOcr() {
     const candidates = ocrSources();
     // Saamen kirjaimia (á č đ ŋ š ŧ ž) selvästi: suomeksi lukemista ei kokeilla (OnePlus: 1,7 s turhaan)
     const samiShare = letterWords.filter((w) => /[áčđŋšŧžÁČĐŊŠŦŽ]/u.test(w.t)).length / Math.max(1, letterWords.length);
+    // Inarin â: kuvassa vähintään 5 % sanoista, ja inari löytää vähintään 0,8 kertaa niin monta sanaa kuin pohjoissaame ->
+    // inari. Kamerakuvasta inarin sivu jäi pohjoissaameksi (1,34-kertainen ero, â 5,8 %: ML Kit lukee â:n usein å:ksi;
+    // oikea kuva 2026-11-20). Testipenkki: 254 / 254 oikein (ennen 253), pohjoissaamen sivuilla â enintään 6,4 % ja
+    // inari enintään 0,46-kertainen.
+    const aShare = letterWords.filter((w) => /â/iu.test(w.t)).length / Math.max(1, letterWords.length);
     for (const other of candidates.filter((l) => l !== settings.ocrFrom && !(l === "ui" && settings.ocrFrom !== "ui" && samiShare >= 0.08))) {
       const alt = ocrMatches(r, other), sami = other !== "ui" && settings.ocrFrom !== "ui";
-      if (count(alt) >= 3 && count(alt) >= (sami ? 1.5 : 3) * count(words) && (!best || count(alt) > count(best.words))) best = { lang: other, words: alt };
+      const inari = other === "smn" && settings.ocrFrom === "sme" && aShare >= 0.05 && count(alt) >= 0.8 * count(words);
+      if (count(alt) >= 3 && (count(alt) >= (sami ? 1.5 : 3) * count(words) || inari) && (!best || count(alt) > count(best.words))) best = { lang: other, words: alt };
     }
     if (best) {
       settings.ocrFrom = best.lang;
@@ -3851,11 +3862,12 @@ function analyzeOcr() {
   r.words.forEach((w, i) => { if (i === 0 || /[.!?:–—]$/.test(r.words[i - 1].t || "")) sentenceStart.add(w); });
   // Iso alkukirjain ei jätä sanaa pois (käyttäjä 2026-11-18): myös nimeltä näyttävä tuntematon sana merkitään, jotta sen
   // voi korjata tai jakaa osiin; nimeltä näyttävä (iso alkukirjain keskellä virkettä) himmeämmin (.cap)
-  const nameLike = (w) => /^\p{Lu}/u.test(w.clean) && !sentenceStart.has(w) && !ocrFixedCompound(w);
-  const unknown = settings.ocrFrom === "ui" ? finCompounds : r.words.filter((w) => !at.has(`${w.cx},${w.cy}`) && /^[\p{L}ʹ'-]+$/u.test(w.clean) && /\p{L}{3}/u.test(w.clean))
+  const joins = r.joinsBy?.[settings.ocrFrom], cl = (w) => joins?.get(w) ?? w.clean;
+  const nameLike = (w) => /^\p{Lu}/u.test(cl(w)) && !sentenceStart.has(w) && !ocrFixedCompound(w);
+  const unknown = settings.ocrFrom === "ui" ? finCompounds : r.words.filter((w) => !at.has(`${w.cx},${w.cy}`) && /^[\p{L}ʹ'-]+$/u.test(cl(w)) && /\p{L}{3}/u.test(cl(w)))
     .map((w) => {
       const fixed = ocrFixedCompound(w);
-      return { ...w, word: fixed ? fixed.word : w.clean.toLowerCase(), unknown: true, cap: nameLike(w), ...(fixed ? { fuzzyParts: fixed.parts, fuzzyIds: fixed.ids } : {}) };
+      return { ...w, clean: cl(w), word: fixed ? fixed.word : cl(w).toLowerCase(), unknown: true, cap: nameLike(w), ...(fixed ? { fuzzyParts: fixed.parts, fuzzyIds: fixed.ids } : {}) };
     });
   ocr.words = [...words, ...unknown];
   ocr.picked = null;
@@ -3893,7 +3905,7 @@ function ocrSecondPass() {
   const known = new Set(ocr.words.filter((w) => !w.unknown || w.fuzzyParts || w.finParts).map((w) => `${w.cx},${w.cy}`));
   // Tuntemattomat kirjainsanat (vähintään 3 kirjainta); tavutettuna yhdistetty sana jää pois (rajaus olisi vain puolikas)
   const list = r.words.map((w, i) => ({ w, i })).filter(({ w }) => !known.has(`${w.cx},${w.cy}`) && w.w && w.h
-    && !w.joined && /^[\p{L}ʹ'-]+$/u.test(w.clean) && /\p{L}{3}/u.test(w.clean) && w.t.includes(w.clean)).slice(0, 80);
+    && !w.joined && !r.joinsBy?.[lang]?.has(w) && /^[\p{L}ʹ'-]+$/u.test(w.clean) && /\p{L}{3}/u.test(w.clean) && w.t.includes(w.clean)).slice(0, 80);
   if (!list.length) { r.second[lang] = "done"; return; }
   r.second[lang] = "running";
   ocr.secondNote = ` · ${t("ocrSecond")}`;
@@ -3941,6 +3953,12 @@ function ocrSecondResult(res) {
         const old = secondFold(w.clean), now = secondFold(toks.join(""));
         if (toks.join("").toLowerCase() === w.clean.toLowerCase() && toks.length === 1) continue;
         if (editDistance(old, now) > Math.max(1, Math.floor([...old].length / 4))) continue;
+        // Lyhyt sana (alle 7 kirjainta): vain tarkkeet tai tavallinen lukuvirhe (l/1 = i, w = vv, rn = m, kaksoiskirjain
+        // yhtenä: Mãhte -> Máhtte). Epätarkoissa
+        // kuvissa Tesseract pudottaa tai vaihtaa kirjaimen, ja lyhyestä sanasta tulee helposti toinen sana (gáibit ->
+        // gáibi, Admin -> Adnin, suomen maiden -> meiden; oikeat kuvat 2026-11-20)
+        const confuse = (x) => x.replace(/[l1|]/g, "i").replace(/w/g, "vv").replace(/rn/g, "m").replace(/(.)\1+/gu, "$1");
+        if (toks.length === 1 && [...old].length < 7 && old !== now && confuse(old) !== confuse(now)) continue;
         if (/^\p{Lu}/u.test(w.clean) && old[0] !== now[0]) continue;
         // Jaossa lyhyet palat vain tavallisina pikkusanoina (Maijala ei ole Maija + la)
         if (toks.length > 1 && toks.some((x) => [...x].length < 3 && !SECOND_SHORT[lang].includes(x.toLowerCase()))) continue;

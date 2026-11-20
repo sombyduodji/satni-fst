@@ -71,21 +71,34 @@ final class Ocr {
     private final Activity activity;
     private final WebView web;
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
-    /** Tesseract omassa säikeessään: ML Kitin uusi tunnistus ei odota toista lukua. */
+    /** Tesseract omissa säikeissään: ML Kitin uusi tunnistus ei odota toista lukua. tessWorker jakaa sanat kahdelle
+     *  lukijalle (lanes), joilla kummallakin oma TessBaseAPI (ei säieturvallinen); vähintään 4 ytimen puhelimessa kaksi
+     *  rinnakkain (OnePlus N10: 80 sanaa 6,6 -> noin 3,5 s). */
     private final ExecutorService tessWorker = Executors.newSingleThreadExecutor();
+    private static final int LANES = Runtime.getRuntime().availableProcessors() >= 4 ? 2 : 1;
+    private final ExecutorService[] lanes = new ExecutorService[LANES];
+    private final TessBaseAPI[] apis = new TessBaseAPI[LANES];
     private TextRecognizer recognizer;
     /** Viimeisin tunnistettu kuva kääntöpainikkeita ja toista lukua varten. */
     private volatile Bitmap last;
     /** Kuvan järjestysnumero: toisen luvun pyyntö ja tulos koskevat aina tiettyä kuvaa (vanha tulos hylätään). */
     private volatile int serial;
-    private TessBaseAPI tess;
-    private boolean tessFailed;
+    private volatile boolean tessFailed;
+    /** Lukijat vapautetaan, kun toista lukua ei ole tarvittu 30 sekuntiin (kaksi lukijaa vie natiivimuistia noin
+     *  20-40 Mt; uudelleenlataus vie alle sekunnin, malli on jo kopioitu). */
+    private static final long IDLE_MS = 30_000;
+    private volatile long lastUse;
+    private final android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable idleRelease = this::releaseIfIdle;
     /** Enintään näin monta sanaa kuvaa kohden (noin 0,1–0,3 s sanaa kohden puhelimessa). */
     private static final int SECOND_MAX = 80;
 
     Ocr(Activity activity, WebView web) {
         this.activity = activity;
         this.web = web;
+        for (int i = 0; i < LANES; i++) {
+            lanes[i] = Executors.newSingleThreadExecutor();
+        }
     }
 
     @JavascriptInterface
@@ -325,40 +338,60 @@ final class Ocr {
         } catch (JSONException e) {
             return;
         }
+        if (tessWorker.isShutdown()) {
+            return;  // sovellus suljettu
+        }
         tessWorker.execute(() -> {
             int id = req.optInt("serial", -1);
             Bitmap image = last;
-            if (id != serial || image == null) {
+            JSONArray words = req.optJSONArray("words");
+            if (id != serial || image == null || words == null || tessFailed || !modelReady()) {
                 return;
             }
-            JSONArray out = new JSONArray();
-            TessBaseAPI api = tess();
-            JSONArray words = req.optJSONArray("words");
-            if (api != null && words != null) {
-                for (int k = 0; k < Math.min(words.length(), SECOND_MAX) && id == serial; k++) {
-                    JSONObject w = words.optJSONObject(k);
-                    if (w == null) {
-                        continue;
-                    }
-                    Bitmap crop = crop(image, w.optDouble("cx"), w.optDouble("cy"), w.optDouble("w"), w.optDouble("h"), w.optDouble("a", 0));
-                    if (crop == null) {
-                        continue;
-                    }
-                    api.setImage(crop);
-                    String text = api.getUTF8Text();
-                    api.clear();
-                    crop.recycle();
+            int n = Math.min(words.length(), SECOND_MAX);
+            String[] texts = new String[n];
+            java.util.concurrent.CountDownLatch done = new java.util.concurrent.CountDownLatch(LANES);
+            for (int lane = 0; lane < LANES; lane++) {
+                final int ln = lane;
+                lanes[ln].execute(() -> {
                     try {
-                        out.put(new JSONObject().put("i", w.optInt("i")).put("t", text == null ? "" : text.trim()));
-                    } catch (JSONException e) {
-                        // ohitetaan sana
+                        TessBaseAPI api = api(ln);
+                        for (int k = ln; api != null && k < n && id == serial; k += LANES) {
+                            JSONObject w = words.optJSONObject(k);
+                            Bitmap crop = w == null ? null : crop(image, w.optDouble("cx"), w.optDouble("cy"), w.optDouble("w"), w.optDouble("h"), w.optDouble("a", 0));
+                            if (crop == null) {
+                                continue;
+                            }
+                            api.setImage(crop);
+                            String text = api.getUTF8Text();
+                            api.clear();
+                            crop.recycle();
+                            texts[k] = text == null ? "" : text.trim();
+                        }
+                    } finally {
+                        done.countDown();
                     }
-                }
+                });
+            }
+            try {
+                done.await();
+            } catch (InterruptedException e) {
+                return;
+            } finally {
+                lastUse = System.currentTimeMillis();
+                main.removeCallbacks(idleRelease);
+                main.postDelayed(idleRelease, IDLE_MS);
             }
             if (id != serial) {
                 return;
             }
+            JSONArray out = new JSONArray();
             try {
+                for (int k = 0; k < n; k++) {
+                    if (texts[k] != null) {
+                        out.put(new JSONObject().put("i", words.optJSONObject(k).optInt("i")).put("t", texts[k]));
+                    }
+                }
                 send(new JSONObject().put("serial", id).put("lang", req.optString("lang")).put("words", out).toString(),
                         "ocrSecondResult");
             } catch (JSONException e) {
@@ -367,12 +400,9 @@ final class Ocr {
         });
     }
 
-    /** Tesseract ja malli: malli kopioidaan APK:sta sovelluksen kansioon ensimmäisellä kerralla (Tesseract lukee
-     *  tiedostosta). Epäonnistuminen muistetaan, eikä toista lukua sen jälkeen yritetä. */
-    private TessBaseAPI tess() {
-        if (tess != null || tessFailed) {
-            return tess;
-        }
+    /** Malli kopioidaan APK:sta sovelluksen kansioon ensimmäisellä kerralla (Tesseract lukee tiedostosta); vain
+     *  tessWorker-säikeessä. Epäonnistuminen muistetaan, eikä toista lukua sen jälkeen yritetä. */
+    private boolean modelReady() {
         try {
             File dir = new File(activity.getFilesDir(), "tesseract/tessdata");
             File model = new File(dir, "smi.traineddata");
@@ -396,6 +426,40 @@ final class Ocr {
                     throw new IOException("rename");
                 }
             }
+            return true;
+        } catch (IOException | RuntimeException e) {
+            tessFailed = true;
+            return false;
+        }
+    }
+
+    /** Pääsäikeestä: vapautus jonotetaan tessWorkerin kautta, joten se ei koskaan osu kesken lukua (lukijan jono). */
+    private void releaseIfIdle() {
+        if (tessWorker.isShutdown()) {
+            return;
+        }
+        tessWorker.execute(() -> {
+            if (System.currentTimeMillis() - lastUse < IDLE_MS - 500) {
+                return;
+            }
+            for (int i = 0; i < LANES; i++) {
+                final int ln = i;
+                lanes[ln].execute(() -> {
+                    if (apis[ln] != null) {
+                        apis[ln].recycle();
+                        apis[ln] = null;
+                    }
+                });
+            }
+        });
+    }
+
+    /** Lukijan oma Tesseract (luodaan ensimmäisellä käytöllä, vain lukijan omassa säikeessä). */
+    private TessBaseAPI api(int lane) {
+        if (apis[lane] != null || tessFailed) {
+            return apis[lane];
+        }
+        try {
             TessBaseAPI api = new TessBaseAPI();
             if (!api.init(new File(activity.getFilesDir(), "tesseract").getAbsolutePath(), "smi", TessBaseAPI.OEM_LSTM_ONLY)) {
                 api.recycle();
@@ -403,11 +467,11 @@ final class Ocr {
                 return null;
             }
             api.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
-            tess = api;
-        } catch (IOException | RuntimeException e) {
+            apis[lane] = api;
+        } catch (RuntimeException e) {
             tessFailed = true;
         }
-        return tess;
+        return apis[lane];
     }
 
     /** Sana kuvasta Tesseractille: kierretty vaakasuoraan sanan keskipisteen ympäri, marginaalit (0,35 × korkeus
@@ -491,12 +555,17 @@ final class Ocr {
         }
         worker.shutdown();
         serial++;  // keskeneräinen toinen luku lopettaa
-        tessWorker.execute(() -> {
-            if (tess != null) {
-                tess.recycle();
-                tess = null;
-            }
-        });
+        main.removeCallbacks(idleRelease);
         tessWorker.shutdown();
+        for (int i = 0; i < LANES; i++) {
+            final int ln = i;
+            lanes[ln].execute(() -> {
+                if (apis[ln] != null) {
+                    apis[ln].recycle();
+                    apis[ln] = null;
+                }
+            });
+            lanes[ln].shutdown();
+        }
     }
 }
