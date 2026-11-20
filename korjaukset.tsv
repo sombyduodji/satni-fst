@@ -65,7 +65,7 @@ geahčči	N		viewer, spectator, watcher
 mielddus	N		attachment, enclosure
 neavvut	V		to advise, to guide
 biru	N		devil
-oinnolaš	A		visible, apparent
+oinnolaš	A	näkyvä, ilmeinen	visible, apparent
 láđđi	N		cloth, fabric
 suođđat	V		to seep, to leak
 guovda	N		wet meadow, marsh
@@ -666,3 +666,220 @@ meahcceguovlu	N	erämaa-alue, metsäalue
 hábmet	V	muotoilla, hahmotella
 # miila: oli "10 km" (norja: mil)
 miila	N	peninkulma
+
+# Suomennosten tarkistus, kierros 2 (2026-11-20): 108 sanaa (oinnolaš yllä). Viitteet vain osoittivat epäilyttävät;
+# korjaukset omaa sanavalintaa sovelluksen norjannoksen perusteella, testattu Poimi lauseella ja lausekääntäjällä.
+# nagodit: oli "selvitä" (norja: klare)
+nagodit	V	selvitä, jaksaa, kyetä
+# čálus: oli "kirjelmä" (norja: notat, skriv, tekst)
+čálus	N	kirjoitus, kirjelmä, teksti
+# gullevašvuohta: oli "kuuluvuus" (norja: tilhørighet)
+gullevašvuohta	N	yhteenkuuluvuus, kuuluminen
+# nuortalaš: oli "koltansaamelainen" (norja: skoltesame, østsame)
+nuortalaš	N	kolttasaamelainen, itäsaamelainen
+# luondduriggodat: oli "luonnonresurssi" (norja: naturressurs)
+luondduriggodat	N	luonnonvara, luonnonresurssi
+# gaskamearálaš: oli "keskivertainen" (norja: gjennomsnittlig)
+gaskamearálaš	A	keskimääräinen, keskiverto
+# stuibmi: oli "melu" (norja: bråk, opprør)
+stuibmi	N	levottomuus, kapina, meteli
+# biebmat: oli "ruokia" (norja: fø, gi mat)
+biebmat	V	ruokkia
+# ekologalaš: oli "ekolooginen" (norja: økologisk)
+ekologalaš	A	ekologinen
+# geažus: oli "koko" (norja: endelse)
+geažus	N	pääte, loppu
+# bargodilli: oli "työolosuhde" (norja: arbeidsforhold)
+bargodilli	N	työolot, työolosuhteet, työsuhde
+# gihpa: oli "kansio" (norja: hefte)
+gihpa	N	vihko, kirjanen
+# risttalašvuohta: oli "ristinusko" (norja: kristendom)
+risttalašvuohta	N	kristinusko, kristillisyys
+# vuohččan: oli "ensimmäinen" (norja: først, i begynnelsen)
+vuohččan	Adv	ensin, aluksi, alussa
+# ráđđet: oli "neuvoa" (norja: råde, herske, regjere)
+ráđđet	V	hallita, vallita, määrätä
+# duođas: oli "todellinen" (norja: virkelig)
+duođas	Adv	todella, tosissaan, vakavasti
+# áddjái: oli "myöhäinen" (norja: sein, tidkrevende)
+áddjái	A	hidas, aikaa vievä
+# sierralohpi: oli "erikoislupa" (norja: dispensasjon)
+sierralohpi	N	erivapaus, poikkeuslupa, erikoislupa
+# oapmi: oli "omistus" (norja: eiendel, ting, kreatur)
+oapmi	N	omaisuus, esine, karja
+# molssaevttolaš: oli "vapaaehtoinen" (norja: alternativ)
+molssaevttolaš	A	vaihtoehtoinen
+# šibitdoallu: oli "eläinpito" (norja: storfehold, husdyrhold)
+šibitdoallu	N	karjanhoito, karjatalous, kotieläintalous
+# láhttenvuohki: oli "käytäntö" (norja: oppførsel)
+láhttenvuohki	N	käytös, käyttäytyminen
+# badjelmearálaš: oli "liioiteltu" (norja: overdrevet, overflødig)
+badjelmearálaš	A	liiallinen, liioiteltu, tarpeeton
+# sáttu: oli "hietikko" (norja: sand)
+sáttu	N	hiekka, hieta
+# geaidnoguorra: oli "tienpenger" (norja: vegkant)
+geaidnoguorra	N	tienvarsi, tienreuna
+# diibmobealli: oli "puolitunti" (norja: halvtime)
+diibmobealli	N	puoli tuntia
+# poastaboksa: oli "postilaatikko" (norja: postboks)
+poastaboksa	N	postilokero
+# fiervá: oli "fieru" (norja: fjære, lavvann)
+fiervá	N	vuorovesiranta, laskuvesi
+# gorži: oli "koski" (norja: foss)
+gorži	N	vesiputous, koski
+# šattolaš: oli "seuraaja" (norja: fruktbar, frodig)
+šattolaš	A	hedelmällinen, rehevä
+# ruhtabursa: oli "lompakko" (norja: pengepung)
+ruhtabursa	N	kukkaro, rahakukkaro, lompakko
+# deattastit: oli "alleviivata" (norja: understreke, framheve)
+deattastit	V	korostaa, painottaa, alleviivata
+# váili: oli "vaille" (norja: mangel, underskudd)
+váili	N	puute, vajaus
+# eaŋgalsgiella: oli "englanninkieli" (norja: engelsk)
+eaŋgalsgiella	N	englannin kieli, englanti
+# moivvas: oli "epäselkä" (norja: uklar, grumset)
+moivvas	A	sekava, epäselvä, samea
+# roahttu: oli "rutto" (norja: rotte)
+roahttu	N	rotta
+# sahtedohko: oli "satunnainen" (norja: tilfeldig, uforsiktig)
+sahtedohko	Adv	umpimähkään, sattumanvaraisesti
+# skávžá: oli "viiksi" (norja: helskjegg, hakeskjegg)
+skávžá	N	parta, leukaparta
+# allaáiggálaš: oli "allerginen" (norja: høytidelig)
+allaáiggálaš	A	juhlallinen
+# guoirras: oli "langanlaiha" (norja: skinnmager)
+guoirras	A	langanlaiha, kuivakka
+# sugadit: oli "soutaa" (norja: gynge)
+sugadit	V	keinuttaa, keinua
+# anihahtti: oli "kelvollinen" (norja: brukbar)
+anihahtti	A	käyttökelpoinen, kelvollinen
+# finánsaministtar: oli "talousministeri" (norja: finansminister)
+finánsaministtar	N	valtiovarainministeri
+# spánnja: oli "pytty" (norja: spann)
+spánnja	N	sanko, ämpäri
+# guovssat: oli "nieriä" (norja: lavskrike)
+guovssat	N	kuukkeli
+# eahpevissis: oli "epäviisas" (norja: uviss, usikker)
+eahpevissis	A	epävarma
+# luohttevaš: oli "luotettava" (norja: tillitsfull)
+luohttevaš	A	luottavainen
+# loahkka: oli "lukko" (norja: brosme)
+loahkka	N	keila (kala)
+# helloduorastat: oli "helluntaipäivä" (norja: kristi himmelfartsdag)
+helloduorastat	N	helatorstai
+# vuordemeahttun: oli "odotuksematon" (norja: uventet)
+vuordemeahttun	A	odottamaton
+# kopiija: oli "moniste" (norja: kopi)
+kopiija	N	kopio, moniste
+# nuoskkideapmi: oli "saaste" (norja: forurensing)
+nuoskkideapmi	N	saastuminen, saastuttaminen
+# gulahallan: oli "kuulustelu" (norja: kommunikasjon)
+gulahallan	N	kanssakäyminen, yhteydenpito, viestintä
+# sorjavaš: oli "riippumaton" (norja: avhengig)
+sorjavaš	A	riippuvainen
+# suddjen: oli "suojelus" (norja: beskyttelse)
+suddjen	N	suojelu, suojaaminen
+# vuorasvuohta: oli "iäkkyys" (norja: alderdom)
+vuorasvuohta	N	vanhuus, iäkkyys
+# áŋgirit: oli "ankarasti" (norja: ivrig, flittig)
+áŋgirit	Adv	innokkaasti, ahkerasti
+# čoaggin: oli "kokous" (norja: innsamling)
+čoaggin	N	keräys, kerääminen
+# šlávva: oli "kosteus" (norja: slave)
+šlávva	N	orja
+# sierranas: oli "erikseen" (norja: atskilt)
+sierranas	A	erillinen, erityinen
+# birgejupmi: oli "selviäminen" (norja: livsfornødenhet)
+birgejupmi	N	toimeentulo, elanto, selviäminen
+# čuvget: oli "ilmoittaa" (norja: opplyse, belyse)
+čuvget	V	valaista, valistaa
+# dálkkodeapmi: oli "käsittely" (norja: medisinsk behandling)
+dálkkodeapmi	N	hoito, lääkitys
+# álggaheaddji: oli "tulokas" (norja: initiativtaker, oppstarter)
+álggaheaddji	N	aloitteentekijä, alullepanija
+# guovttelágan: oli "erilainen" (norja: forskjellige)
+guovttelágan	A	kahdenlainen, erilainen
+# álbmotjoavku: oli "kansakunta" (norja: folkegruppe)
+álbmotjoavku	N	kansanryhmä
+# bargosuorgi: oli "työllistämiskerroin" (norja: arbeidsfelt, arbeidsområde)
+bargosuorgi	N	työala, toimiala
+# liekkus: oli "mieto" (norja: hyggelig, koselig)
+liekkus	A	lämmin, kodikas, leuto
+# molsun: oli "vaihdanta" (norja: overgang)
+molsun	N	vaihto, siirtymä, vaihdos
+# heŋget: oli "riippua" (norja: henge opp)
+heŋget	V	ripustaa
+# dollagáddi: oli "tulisija" (norja: ved bålet)
+dollagáddi	N	nuotion ääri, nuotiopaikka
+# olggoš: oli "kansio" (norja: omslag, trekk, overflate)
+olggoš	N	päällys, kuori, pinta
+# psykologalaš: oli "psykolooginen" (norja: psykologisk)
+psykologalaš	A	psykologinen
+# ceahkis: oli "ilmoittaminen" (norja: hakk)
+ceahkis	N	lovi, pykälä
+# gođđat: oli "kutoa" (norja: gyte)
+gođđat	V	kutea
+# máhttodepartemeanta: oli "tietoministeriö" (norja: kunnskapsdepartement)
+máhttodepartemeanta	N	opetusministeriö
+# militeara: oli "sotilas" (norja: militær)
+militeara	N	sotaväki, armeija
+# váldogiella: oli "valtakieli" (norja: hovedspråk)
+váldogiella	N	pääkieli, valtakieli
+# speallat: oli "soittaa" (norja: spille, spille kort)
+speallat	V	soittaa, pelata
+# bušeahttaárvalus: oli "talousarvio" (norja: budsjettforslag)
+bušeahttaárvalus	N	talousarvioehdotus
+# dearvvašnuvvat: oli "tervehtiä" (norja: bli frisk)
+dearvvašnuvvat	V	tervehtyä, parantua
+# válmmaš: oli "selkeä" (norja: ferdig)
+válmmaš	A	valmis
+# snihkket: oli "kirvesmies" (norja: snekre)
+snihkket	V	nikkaroida, veistää
+# gihcci: oli "eläin" (norja: geitekilling)
+gihcci	N	kili
+# borramušgávpi: oli "vaatekauppa" (norja: matbutikk)
+borramušgávpi	N	ruokakauppa
+# iešdáhtolaš: oli "itsetahtoinen" (norja: forsettlig, frivillig)
+iešdáhtolaš	A	tahallinen, vapaaehtoinen
+# jugástat: oli "juotava" (norja: dram)
+jugástat	N	ryyppy, paukku, juoma
+# čeaskat: oli "kirkas" (norja: helt hvit)
+čeaskat	A	valkoinen, lumivalkoinen
+# bárbmu: oli "etelä" (norja: varmt strøk, syden)
+bárbmu	N	lämpimät maat, etelä
+# duopma: oli "pohjantuomi" (norja: hegg)
+duopma	N	tuomi
+# runiidit: oli "vihrentyä" (norja: bli grønn)
+runiidit	V	vihertyä
+# molssolaš: oli "vaihtoehtoinen" (norja: variert)
+molssolaš	A	vaihtoehtoinen, vaihteleva, monipuolinen
+# fielbmá: oli "puro" (norja: stille sted i ei lita elv)
+fielbmá	N	suvanto
+# ferdnet: oli "jauhoa" (norja: male, kverne)
+ferdnet	V	jauhaa
+# bassinmuorra: oli "makkaratikku" (norja: steikespidd)
+bassinmuorra	N	paistovarras, makkaratikku
+# háskil: oli "merikihu" (norja: fjelljo)
+háskil	N	tunturikihu
+# šnjivvat: oli "kärytä" (norja: hvine)
+šnjivvat	V	kihistä, suhista, vinkua
+# hánis: oli "niuho" (norja: gjerrig)
+hánis	A	saita, kitsas
+# guovllastit: oli "katsella" (norja: kikke som snarest)
+guovllastit	V	kurkistaa, vilkaista
+# čakčadálvi: oli "myöhäissyksy" (norja: forvinter)
+čakčadálvi	N	alkutalvi, myöhäissyksy
+# subjektiiva: oli "subjektiivinen" (norja: subjektiv)
+subjektiiva	A	subjektiivinen
+# bálkásit: oli "heittyä" (norja: gå til spille)
+bálkásit	V	mennä hukkaan, heittyä
+# čoarveduodji: oli "luukäsityö" (norja: hornsløyd)
+čoarveduodji	N	sarvikäsityö, sarvityö
+# mánnomolsun: oli "kuunvaihde" (norja: månedsskifte)
+mánnomolsun	N	kuukaudenvaihde, kuunvaihde
+# mugga: oli "kannu" (norja: mugge)
+mugga	N	muki, kannu
+# sisriikkalaš: oli "sisämainen" (norja: innenlandsk, nasjonal)
+sisriikkalaš	A	kotimainen, valtakunnallinen
+# giđđageassi: oli "suvi" (norja: forsommer)
+giđđageassi	N	alkukesä
