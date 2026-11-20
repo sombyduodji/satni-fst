@@ -588,3 +588,81 @@ oappážat (pl,), oappážagat	N	-
 # li = "opinto-ohjaaja" (interj_smefin.xml): huudahdukselle substantiivikäännös, ei norjaa eikä englantia, ei korpuksessa;
 # kuvahaussa ML Kitin väärin lukema ii (käyttäjän kuva 2026-11-20)
 li	Interj	-
+
+# Suomennosten tarkistus 2026-11-20 (docs/suomennosten-tarkistus-2026-11-20.md): viitesanakirjat osoittivat
+# epäilyttävät sanat, korjaus omaa sanavalintaa ja tarkistettu norjannosta (GiellaLT dict-sme-nob) vasten.
+# Käyttötesti: Poimi lause chrF 56,66 -> 56,74, lausekääntäjä 51,27 -> 51,31.
+# ektui: oli "ehdolla" (norja: i forhold til, sammenlignet med)
+ektui	Po	suhteen, verrattuna, nähden
+# dilálašvuohta: oli "tilaus" (norja: anledning, forhold, tilstand)
+dilálašvuohta	N	tilaisuus, tilanne, olosuhde
+# gáhttet: oli "katua" (norja: vokte, ta vare på, bevare)
+gáhttet	V	suojella, varjella, säilyttää
+# gustot: oli "pitää" (norja: gjelde)
+gustot	V	koskea, olla voimassa
+# jáhkku: oli "esitys" (norja: forestilling (= käsitys; norjan monimerkityksinen sana))
+jáhkku	N	usko, käsitys
+# ágga: oli "anteeksianto" (norja: unnskyldning, argument)
+ágga	N	syy, peruste, tekosyy
+# hárjeheaddji: oli "harjoittelija" (norja: trener)
+hárjeheaddji	N	valmentaja
+# jearahallat: oli "kysellä" (norja: intervjue)
+jearahallat	V	kysellä, haastatella
+# diekkár: oli "tällainen" (norja: slik en, slikt)
+diekkár	Pron	tuollainen, sellainen
+# die: oli "tuolla" (norja: der, den der)
+die	Adv	tuossa, siinä, siellä
+# áinnas: oli "ehdottomasti" (norja: gjerne)
+áinnas	Adv	mielellään
+# álbmotriekti: oli "kansanoikeus" (norja: folkerett)
+álbmotriekti	N	kansainvälinen oikeus
+# áigemearri: oli "aikamäärä" (norja: tidsfrist)
+áigemearri	N	määräaika
+# almmuheapmi: oli "julistaminen" (norja: offentliggjøring)
+almmuheapmi	N	julkistaminen, ilmoittaminen
+# čadnot: oli "linkittää" (norja: knyttes til)
+čadnot	V	sitoutua, kytkeytyä
+# árvalus: oli "arvio" (norja: tanke, forslag, innstilling)
+árvalus	N	ehdotus, ajatus
+# oalát: oli "täydellinen" (norja: fullstendig)
+oalát	Adv	täysin, kokonaan
+# guoskevaš: oli "koskien" (norja: vedkommende, som angår)
+guoskevaš	A	koskeva, asianomainen
+# persovnnalaš: oli "henkilöllinen" (norja: personlig)
+persovnnalaš	A	henkilökohtainen
+# vealaheapmi: oli "sorto" (norja: diskriminering)
+vealaheapmi	N	syrjintä
+# buorri: oli "hyve" (norja: gode)
+buorri	N	hyvä, hyöty
+# skohter: oli "lumikelkka" (norja: scooter, snøscooter)
+skohter	N	moottorikelkka
+# čájálmas: oli "näyttely" (norja: forestilling)
+čájálmas	N	näytelmä, esitys
+# eaktudit: oli "olettaa; ennakoida" (norja: forutsette)
+eaktudit	V	edellyttää, olettaa
+# riikkasearvi: oli "maanjärjestö" (norja: landsforening, riksforbund)
+riikkasearvi	N	valtakunnallinen järjestö, keskusjärjestö
+# stáhtačálli: oli "valtionsihteeri" (norja: statssekretær)
+stáhtačálli	N	valtiosihteeri
+# dálkkádatrievdan: oli "ilmastomuutos" (norja: klimaendring)
+dálkkádatrievdan	N	ilmastonmuutos
+# hápmi: oli "ulkonäkö" (norja: form, skikkelse, utseende)
+hápmi	N	muoto, ulkonäkö
+# áigumuš: oli "aikominen; tahto" (norja: vilje, hensikt, intensjon)
+áigumuš	N	aikomus, tarkoitus, tahto
+# jahkásaš: oli "yksivuotinen" (norja: årsgammel, ett års lang, årlig)
+jahkásaš	A	yksivuotinen, vuotuinen, vuosittainen
+# ceahkki: oli "askel" (norja: trinn, grad)
+ceahkki	N	aste, askel, porras
+# sisaboahtu: oli "ansio" (norja: inntekt)
+sisaboahtu	N	tulot, ansio
+# ođasmahttit: oli "päivittää" (norja: oppdatere, fornye)
+ođasmahttit	V	uudistaa, päivittää
+# rusttet: oli "rakennus" (norja: anordning, installasjon, anlegg)
+rusttet	N	laitteisto, rakennelma, laitos
+# meahcceguovlu: oli "metsäalue" (norja: utmarksområde)
+meahcceguovlu	N	erämaa-alue, metsäalue
+# hábmet: oli "hahmota" (norja: utforme)
+hábmet	V	muotoilla, hahmotella
+# miila: oli "10 km" (norja: mil)
+miila	N	peninkulma
