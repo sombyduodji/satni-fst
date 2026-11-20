@@ -262,6 +262,15 @@ public class MainActivity extends Activity {
         return height > 0 && height - visible.bottom > height * 0.15;
     }
 
+    /** Puhelimen fonttikoon muutos ei käynnistä näkymää uudelleen (manifestin configChanges: fontScale), joten sivu ja
+     *  sen tila (kuva, valitut sanat, kuunteluharjoitus, peli) säilyvät; tekstin koko päivitetään tässä. Ennen sivu latautui
+     *  uudelleen ja esim. kuvahaun kuva katosi (yötesti 2026-11-21, Samsung). */
+    @Override
+    public void onConfigurationChanged(android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        applyTextZoom(getPreferences(MODE_PRIVATE).getInt(PREF_TEXT_ZOOM, -1));
+    }
+
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
