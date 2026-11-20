@@ -1950,7 +1950,8 @@ function translationOfForm(w, tags, finClitics = null, transWords = state.transW
   const lang2tra = settings.lang === "fin" && /.giella$/.test(w.sme_lemma || "");
   const out = [];
   for (const word of transWords || []) {
-    const tg = lang2tra && !/kieli$/.test(word.trim()) ? tags.map((tag) => tag.replace(/\bIll\b/, "Tra")) : tags;
+    // Vain yksikkö (monikko "tanskoiksi" olisi outo; säilyy ennallaan)
+    const tg = lang2tra && !/kieli$/.test(word.trim()) ? tags.map((tag) => (/\bSg\b/.test(tag) ? tag.replace(/\bIll\b/, "Tra") : tag)) : tags;
     const forms = translationForms(settings.lang, word.replace(/\(.*?\)/g, "").trim(), pos);
     if (!forms) continue;
     let phrases = [...new Set(tg.map((tag) => FORM_PHRASES[settings.lang](tag, pos, forms, w.human)).filter(Boolean))];
@@ -5399,7 +5400,12 @@ function pickSentence() {
 // click-tapahtuman samaan kohtaan, joka on nyt sanakortilla (esim. sátni.org-linkki): se ohitetaan.
 let suppressClickUntil = 0, suppressClickAt = null;  // suppressClickAt: vain tämän kohdan lähellä (kuvan napautus)
 document.addEventListener("click", (e) => {
-  if (Date.now() < suppressClickUntil && (!suppressClickAt || Math.hypot(e.clientX - suppressClickAt[0], e.clientY - suppressClickAt[1]) < 40)) { e.preventDefault(); e.stopPropagation(); }
+  // Hidas puhelin (OnePlus) voi lähettää clickin vasta raskaan näkymän piirron jälkeen: ikkuna 1,5 s, mutta kuvan
+  // napautuksen jälkeen vain yksi click samassa kohdassa ohitetaan
+  if (Date.now() < suppressClickUntil && (!suppressClickAt || Math.hypot(e.clientX - suppressClickAt[0], e.clientY - suppressClickAt[1]) < 40)) {
+    e.preventDefault(); e.stopPropagation();
+    if (suppressClickAt) suppressClickUntil = 0;
+  }
 }, true);
 function openOcrWord(cand = null) {
   const w = ocr.words[ocr.picked];
@@ -5517,7 +5523,7 @@ function bindOcrGestures() {
     const word = target?.closest(".ocr-word");
     // Kosketuksen perään tuleva click osuisi samaan kohtaan avautuvaan näkymään: korjauspaneelin painike, lausenäkymän
     // sanasiru (Poimi lause -tilassa napautettu sana; OnePlus 2026-11-20) tai sanakortti. Kuva-alue ei käytä clickiä.
-    suppressClickUntil = Date.now() + 600; suppressClickAt = [tap.cx, tap.cy];
+    suppressClickUntil = Date.now() + 1500; suppressClickAt = [tap.cx, tap.cy];
     const speaker = target?.closest(".b-speak");
     if (speaker) {
       if (!speaker.classList.contains("loading")) speak(ocr.words[ocr.picked].gloss.say, speaker);
