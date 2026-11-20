@@ -4441,7 +4441,11 @@ function sentTokens(raw) {
     // Yhdysmerkillä nimeen liitetty saamen sana (Microsoft-bálválusain): nimi sellaisenaan, loppuosa käännettynä
     const hy = (r.clean || "").match(/^(.+)-([\p{L}]+)$/u);
     const hyGloss = hy && settings.ocrFrom !== "ui" ? ocrGloss(hy[2].toLowerCase(), hy[2]) : null;
-    if (hyGloss?.trans) {
+    // Kaksiosainen nimi (Anne-Kirste, Biret-Iŋgá): isolla alkava loppuosa on nimen osa, ei käännettävä sana
+    // (ennen "Anne-naisen nimi"; oikea kuva 2026-11-20)
+    if (hy && cap && /^\p{Lu}/u.test(hy[2])) {
+      tok.name = true;
+    } else if (hyGloss?.trans) {
       tok.opts = [...new Set([...(hyGloss.form ? hyGloss.form.split(" / ") : []), ...splitList(hyGloss.trans).map((x) => x.replace(/\s*\([^)]*\)/g, "").trim())])]
         .filter(Boolean).map((x) => `${hy[1]}-${x}`);
       tok.lemma = hyGloss.lemma || "";
@@ -4476,7 +4480,9 @@ function sentTokens(raw) {
     }
     // Tuntematon yhdyssana (prográmma + fitnodat): osien käännökset ehdotukseksi
     if (tok.unknown && sentCanSplit() && !hy) {
-      const lang = settings.ocrFrom, lw = w?.fuzzyParts ? w.word : (r.clean || "").toLowerCase();
+      // Sanakirjan korjattu muoto, jos sana löytyi (giellavuoigatvuodaid -> giellavuoigatvuođaid: sanakirjassa, mutta
+      // ilman suomennosta; osat giella + vuoigatvuođaid), muuten kuvan sana
+      const lang = settings.ocrFrom, lw = w?.fuzzyParts || (w && !w.unknown) ? w.word : (r.clean || "").toLowerCase();
       const parts = w?.fuzzyParts || (lw.length >= 6 ? (isMinor(lang) ? splitMinorCompound(lang, lw)?.map((x) => x.stem) : splitCompound(lw)) : null);
       if (parts) {
         const info = compoundPartsInfo(parts, { named: /^\p{Lu}/u.test(r.clean || "") });
@@ -4486,13 +4492,20 @@ function sentTokens(raw) {
           const lastPart = info.parts[info.parts.length - 1].word, lg = ocrGloss(lastPart);
           if (lg.id) {
             tok.ctx = sentWordCtx(lg, lastPart);
-            tok.ctx.prefix = info.prefix ?? info.parts.slice(0, -1).map((x) => x.trans).join(" + ") + " + ";
+            // Alkuosat samoina kuin osien käännöksessä (giella = kieli, ei luettelon ensimmäinen "ansa"; oikea kuva 2026-11-20)
+            tok.ctx.prefix = info.prefix ?? info.trans.split(" + ").slice(0, -1).join(" + ") + " + ";
             if (info.lastLemma) tok.ctx.f = translationForms("fin", info.lastLemma, "N") || tok.ctx.f;
           }
         }
       }
     }
     return tok;
+  });
+  // Isolla alkava tuntematon sana nimen perässä on sukunimi (Anne-Kirste Aikio, Biret Sara): nimenä sellaisenaan
+  toks.forEach((tok, i) => {
+    if (i > 0 && tok.unknown && tok.capKeep && toks[i - 1].name && !toks[i - 1].num && !/[.!?:]$/.test(toks[i - 1].t || "")) {
+      tok.unknown = false; tok.name = true;
+    }
   });
   sentContext(toks);
   sentRerank(toks);
@@ -5018,6 +5031,7 @@ function sentDefaultCuts(text) {
   if (parts && parts.join("").length === [...w].length) {
     let pos = 0;
     for (const p of parts.slice(0, -1)) { pos += [...p].length; cuts.add(pos); }
+    cuts.parts = parts;  // sanakirjan kirjoitusasu (čoahkkin + bálvalusa kuvan coahkkinbalvalusa-sanasta)
   }
   return cuts;
 }
@@ -5032,7 +5046,11 @@ function renderSentSplit() {
   const box = $("sent-split");
   if (!box || !sent?.split) return;
   const letters = [...sent.split.text];
-  const parts = sentSplitParts(), info = parts.length > 1 ? compoundPartsInfo(parts) : null;
+  // Sama jako kuin ehdotettu: osat sanakirjan kirjoitusasussa (coahkkin -> čoahkkin = kokous, ei kuvan kirjaimin
+  // "tikitys"; oikea kuva 2026-11-20)
+  const def = sentDefaultCuts(sent.split.text);
+  const same = def.parts && def.size === sent.split.cuts.size && [...def].every((c) => sent.split.cuts.has(c));
+  const parts = sentSplitParts(), info = parts.length > 1 ? compoundPartsInfo(same ? def.parts : parts) : null;
   sent.split.info = info;
   box.innerHTML = `<p class="sent-lab">${esc(t("sentSplitHint"))}</p><div class="sent-split-w">` +
     letters.map((c, i) => `<span class="sl">${esc(c)}</span>` + (i < letters.length - 1
@@ -5118,9 +5136,10 @@ function renderSentView() {
   if (tok.unknown || tok.name || tok.fixed?.edited) {
     const src = sentCutout(tok, 1.8), guess = sent.split?.text || tok.fixed?.word || (tok.name ? tok.clean || tok.t : (tok.clean || tok.t).toLowerCase());
     const canSplit = sentCanSplit();
-    sheet.innerHTML = `<div class="sent-sh-head">${src ? `<img class="sent-cut" src="${src}" alt="${esc(t("sentInPhoto"))}">` : "<span></span>"}` +
+    // Kuvan leike ja kirjoituskenttä erikseen nimettyinä: leike näytti ennen tekstikentältä (käyttäjä 2026-11-20)
+    sheet.innerHTML = `<div class="sent-sh-head">${src ? `<div class="sent-cut-box"><span class="sent-cut-lab">${esc(t("sentInPhoto"))}</span><img class="sent-cut" src="${src}" alt=""></div>` : "<span></span>"}` +
       `<button class="chip-btn" data-act="cancel">${esc(t("cancel"))}</button><button class="chip-btn primary" data-act="done">${esc(t("sentDone"))}</button></div>` +
-      `<div class="sent-in-row"><input id="sent-input" type="text" autocapitalize="none" spellcheck="false" aria-label="${esc(t("sentWhat"))}" placeholder="${esc(t("sentWhat"))}" value="${esc(guess)}">` +
+      `<label class="sent-lab sent-what" for="sent-input">${esc(t("sentWhat"))}</label><div class="sent-in-row"><input id="sent-input" type="text" autocapitalize="none" spellcheck="false" aria-label="${esc(t("sentWhat"))}" placeholder="${esc(t("sentWhat"))}" value="${esc(guess)}">` +
       (canSplit ? `<button type="button" class="chip-btn sent-split-btn${sent.split ? " on" : ""}" data-act="split" aria-pressed="${!!sent.split}">${esc(t("sentSplit"))}</button>` : "") + `</div>` +
       (sent.split ? `<div id="sent-split" class="sent-split"></div>` : `<div id="sent-sugs" class="sent-opts"></div>`);
     if (sent.split) renderSentSplit();
@@ -5172,30 +5191,33 @@ function renderSentSugs(text) {
     const g = lang === "ui" ? null : ocrGloss(w);
     if (g?.trans) out.push({ word: w, trans: (g.lemma ? g.form || g.trans : g.trans).split(" / ")[0].split(", ")[0] });
     if (lang === "sme") {
-      for (const c of ocrRepairs(w, false)) if (!out.some((o) => o.word === c.word)) out.push({ word: c.word, trans: c.trans.split(" / ")[0] });
-      const parts = splitCompound(w);
-      if (parts) out.push({ word: w, trans: parts.map((x) => (ocrGloss(cmpLemma.get(x) || x).trans || x).split(", ")[0]).join(" + "), parts: parts.join(" + ") });
-      // Sumea haku (sleađgapoasttat -> šleađgapoasttat, coahkkinbalvalusa -> čoahkkin + bálvalusa)
+      // Järjestys: sanakirjan sana, sumea haku (sleađgapoasttat -> šleađgapoasttat, coahkkinbalvalusa -> čoahkkin +
+      // bálvalusa), lähimmät sanat, viimeisenä kuvan kirjaimin jaettu (coahkkin + balva + lusa oli ennen ensimmäisenä
+      // ja valittuna; oikea kuva 2026-11-20)
       const fz = ocrFuzzySearch(), f = fz.search(w);
       fz.free();
       if (f && !out.some((o) => o.word === f.word)) {
         const fg = f.parts ? null : ocrGloss(f.word);
-        out.splice(out.length ? 1 : 0, 0, f.parts
+        out.push(f.parts
           ? { word: f.word, parts: f.parts.join(" + "), trans: f.parts.map((x) => (ocrGloss(cmpLemma.get(x) || x).trans || x).split(", ")[0]).join(" + ") }
           : { word: f.word, trans: ((fg.lemma ? fg.form || fg.trans : fg.trans) || "").split(" / ")[0].split(", ")[0] });
       }
+      for (const c of ocrRepairs(w, false)) if (!out.some((o) => o.word === c.word)) out.push({ word: c.word, trans: c.trans.split(" / ")[0] });
+      const parts = splitCompound(w);
+      if (parts && !(f?.parts && f.parts.join("+") === parts.join("+")))
+        out.push({ word: w, trans: parts.map((x) => (ocrGloss(cmpLemma.get(x) || x).trans || x).split(", ")[0]).join(" + "), parts: parts.join(" + ") });
     } else if (isMinor(lang) && hasMinor(lang)) {
-      const parts = splitMinorCompound(lang, w);
-      if (parts) out.push({ word: w, parts: parts.map((p) => p.stem).join(" + "),
-        trans: parts.map((p) => splitList(minorTranslation(lang, mall(lang, `SELECT * FROM ${lang}_words WHERE id = ?`, [p.id])[0] || {}, ocrTo()))[0] || p.stem).join(" + ") });
-      // Sumea haku (kaksoiskirjain, väärin luettu yhdyssana)
+      // Sumea haku ensin (kaksoiskirjain, väärin luettu yhdyssana), sitten kuvan kirjaimin jaettu
       const fz = minorFuzzySearch(lang), f = fz.search(w);
       fz.free();
       if (f && !out.some((o) => o.word === f.word)) {
         const info = f.parts ? compoundPartsInfo(f.parts.map((x) => x.stem)) : null, row = f.parts ? null : minorRows(lang, f.word)[0];
-        out.splice(out.length ? 1 : 0, 0, f.parts ? { word: f.word, parts: f.parts.map((x) => x.stem).join(" + "), trans: info.trans }
+        out.push(f.parts ? { word: f.word, parts: f.parts.map((x) => x.stem).join(" + "), trans: info.trans }
           : { word: f.word, trans: row ? splitList(minorTranslation(lang, row, ocrTo()))[0] || "" : "" });
       }
+      const parts = splitMinorCompound(lang, w);
+      if (parts && !out.some((o) => o.parts === parts.map((p) => p.stem).join(" + "))) out.push({ word: w, parts: parts.map((p) => p.stem).join(" + "),
+        trans: parts.map((p) => splitList(minorTranslation(lang, mall(lang, `SELECT * FROM ${lang}_words WHERE id = ?`, [p.id])[0] || {}, ocrTo()))[0] || p.stem).join(" + ") });
     }
   }
   if (pre) for (const o of out) { o.word = pre + o.word; if (o.trans) o.trans = pre + o.trans; if (o.parts) o.parts = pre + o.parts; }
