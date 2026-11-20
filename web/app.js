@@ -3709,6 +3709,13 @@ function ocrResult(r) {
   if (r.error) { $("ocr-status").textContent = t(r.error === "noApp" ? "ocrNoApp" : "ocrError"); return; }
   // Pisteetön ı (Prográmmafıtnodat): ei saamessa, suomessa eikä norjassa, aina i
   for (const w of r.words) { w.t = w.t.replace(/ı/g, "i"); w.clean = w.t.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, ""); }
+  // Iso I ja pieni l näyttävät samalta: kieltoverbi Ii luettiin "li" (sanakirjassa li = huudahdus, käännös "opinto-ohjaaja";
+  // käyttäjän kuva 2026-11-20). Saamessa li, Il, lI ja II ovat lähes aina ii; lauseen alussa Ii. Ei norjankielisessä kuvassa (li = rinne).
+  if (!(settings.ocrFrom === "ui" && settings.lang === "nob")) r.words.forEach((w, i) => {
+    if (!/^(li|lI|Il|II)$/.test(w.clean)) return;
+    const fixed = i === 0 || /[.!?:]["”»)]*$/.test(r.words[i - 1].t || "") ? "Ii" : "ii";
+    w.t = w.t.replace(w.clean, fixed); w.clean = fixed;
+  });
   joinHyphenated(r.words);
   ocr = { r, view: null, words: [], status: t("ocrFinding"), autoDir: true };
   ocrReturnHash = null;
@@ -4514,7 +4521,9 @@ function sentTokens(raw) {
       tok.capKeep = cap && !hy;
     } else if (w.unknown) { tok.unknown = true; tok.capKeep = cap; }
     else {
-      const g = w.gloss || (w.gloss = ocrGloss(w.word, w.clean));
+      // Persoonapronomini lauseen alussa (Don leat = Sinä olet, ei nimi Don)
+      const g = n === 0 && SME_PRON[(w.word || "").toLowerCase()] && settings.ocrFrom === "sme" ? ocrGloss(w.word.toLowerCase())
+        : w.gloss || (w.gloss = ocrGloss(w.word, w.clean));
       // Henkilön nimi sellaisenaan (Máhte = "miehen nimi"); paikannimi käännetään (Ohcejoga = Utsjoen, Romssa = Tromssan)
       const personName = g.prop && (!g.trans || /\b(nimi|navn|name)\b/i.test(g.trans));
       if (personName) tok.name = true;
@@ -4562,6 +4571,7 @@ function sentTokens(raw) {
   });
   sentContext(toks);
   sentRerank(toks);
+  sentPluralParticiples(toks);
   for (const tok of toks) { const key = `${tok.cx},${tok.cy}`; if (ocr.sentChoice?.[key]) Object.assign(tok, ocr.sentChoice[key]); }
   return toks;
 }
@@ -4901,6 +4911,21 @@ const SENT_COMPARATIVES = new Set(["eanet", "eambbo", "unnit", "uhcit", "buoret"
 // Suomen sanaparien mukainen järjestys: vaihtoehto, joka sopii naapurisanojen kanssa (ennen joulua), nousee ensin.
 // Sääntöjen ja sanakirjan järjestys painaa (−2 sijaa kohden), joten pari kumoaa sen vain selvällä erolla.
 // Esimerkkilausekoe 2026-11-18: ensimmäinen vaihtoehto 85,1 % -> 86,1 %.
+// Monikon apuverbi (ovat, olemme, olette, olivat, eivät ole …): partisiippi monikossa (leat mannan = ovat menneet, ei
+// "ovat mennyt"; käyttäjän kuva 2026-11-20). Viimeisenä, kun apuverbin muoto on lopullinen.
+function sentPluralParticiples(toks) {
+  if (settings.lang !== "fin" || ocrTo() !== "fin") return;
+  const isLeat = (t) => t?.ctx?.pos === "V" && SME_LEAT.has(t.ctx.lemma);
+  toks.forEach((tok, i) => {
+    const o = tok.opts?.[tok.choice || 0];
+    if (!o || tok.fixed || isLeat(tok) || tok.ctx?.tagOf?.get(o) !== "PrfPrc" || !/(nut|nyt|lut|lyt|rut|ryt|sut|syt|tut|tyt)$/.test(o)) return;
+    const aux = toks.slice(Math.max(0, i - 3), i).filter(isLeat).pop(), ao = aux?.opts?.[aux.choice || 0] || "";
+    if (!/^(olemme|olette|ovat|olimme|olitte|olivat)$/.test(ao) && !(/^(ole|olleet)$/.test(ao) && /^(eivät|emme|ette)$/.test(toks[toks.indexOf(aux) - 1]?.opts?.[0] || ""))) return;
+    const pl = o.replace(/[uy]t$/, "eet");
+    tok.ctx.tagOf.set(pl, "PrfPrc");
+    tok.opts = [pl, ...tok.opts.filter((x) => x !== pl)]; tok.choice = 0;
+  });
+}
 function sentRerank(toks) {
   if (!ngramDb || ngramLang !== settings.lang || ocrTo() !== settings.lang) return;
   const idSt = ngramDb.prepare("SELECT id FROM fin_vocab WHERE w = ?"), biSt = ngramDb.prepare("SELECT n FROM fin_bigram WHERE a = ? AND b = ?");
@@ -4931,7 +4956,14 @@ function sentRerank(toks) {
       // Tyhjä ensimmäinen vaihtoehto = sääntö sulautti sanan naapuriin (norjan postpositio: etter møtet, apuverbi):
       // ei järjestetä uudelleen, muuten sana palaisi (etter møtet etter; yötesti 2026-11-19)
       if (t.opts[0] === "") return;
+      // Lauseyhteyden valitsema muoto (sija finKey, verbin muoto tagOf) ei väisty perusmuodolle: sanapari "Suomen kansa"
+      // tai "mennä kotiin" kumosi muodot kansaan (Suoma álbmogii) ja mennyt (leat mannan) (käyttäjän kuva 2026-11-20).
+      // Vaihtoehdoista valitaan silloin vain muotoja (kansaan / kansalle).
+      const c = t.ctx, nom = c?.f && [c.f["Sg+Nom"], c.f["Pl+Nom"]];
+      const locked = c?.tagOf?.has(t.opts[0]) ? "verb" : t.finKey && !/Nom$/.test(t.finKey) && nom && !nom.includes(t.opts[0]) ? "noun" : "";
+      const allowed = (o) => !locked || (locked === "verb" ? c.tagOf.has(o) : !nom.includes(o) && !splitList(c.trans || "").includes(o));
       const score = (k) => {
+        if (!allowed(t.opts[k])) return -Infinity;
         const ws = words(t.opts[k]);
         if (!ws.length) return -Infinity;
         let s = -2 * k;
