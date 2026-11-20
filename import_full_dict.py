@@ -868,8 +868,13 @@ def apply_corrections(words, details):
             trans = {**trans, "fin": corrections[key]}
             # Korjattu suomennos korvaa XML:n suomenkieliset merkitykset (muut kielet säilyvät)
             info = details.setdefault((lemma, pos, subtype), {"freq": None, "notes": [], "meanings": [], "reverse": []})
-            info["meanings"] = [new_meaning("fin", [corrections[key]])] + [
-                m for m in info["meanings"] if m["lang"] != "fin"]
+            # Vanhojen merkitysten esimerkkilauseet siirtyvät korjattuun merkitykseen (ennen ne katosivat: 35
+            # esimerkkiä, esim. oalát, váili; 2026-11-20)
+            fixed = new_meaning("fin", [corrections[key]])
+            for m in info["meanings"]:
+                if m["lang"] == "fin":
+                    fixed["examples"] += [e for e in m["examples"] if e not in fixed["examples"]]
+            info["meanings"] = [fixed] + [m for m in info["meanings"] if m["lang"] != "fin"]
             info["new_from"] = "fin"
         result.append((lemma, pos, subtype, sem_type, trans))
 
