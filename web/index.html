@@ -543,6 +543,8 @@
     <div class="sent-head">
       <button type="button" class="chip-btn" id="sent-back" data-i18n-aria="back">←</button>
       <h2 data-i18n="sentTitle">Lause kuvasta</h2>
+      <!-- Sanat itse kuvasta, jos automaattinen lauseen raja osui väärin (app.js: startWordSelect) -->
+      <button type="button" class="chip-btn sent-select" id="sent-select" data-i18n="sentSelect">Valitse sanat itse</button>
     </div>
     <div id="sent-body" class="sent-body"></div>
     <div id="sent-sheet" class="sent-sheet" hidden></div>
@@ -559,6 +561,8 @@
       </div>
       <!-- Tekstin tunnistus ja sanojen haku käynnissä: pyörivä kehä kuvan keskellä (app.js: setOcrBusy) -->
       <div id="ocr-busy" class="ocr-busy" hidden><span class="ocr-spinner"></span></div>
+      <!-- Sanojen valinta sormella: maalaus (avoin veto) tai ympyrä (suljettu veto); piirto näkyy tässä -->
+      <svg id="ocr-stroke" class="ocr-stroke" aria-hidden="true"><polyline points=""/></svg>
       <!-- Napautetun sanan alapaneeli (app.js: pickOcrWord, pickUnknownOcrWord) -->
       <section id="ocr-bubble" class="ocr-sheet" role="dialog" hidden></section>
     </div>
@@ -571,6 +575,12 @@
       <p id="ocr-status" class="ocr-status" role="status"></p>
       <!-- Kuvassa on kieli, jota ei ole otettu käyttöön (inarinsaame): vihje asetuksiin (app.js: showOcrHint) -->
       <div id="ocr-offer" class="ocr-offer" role="status" hidden></div>
+    </div>
+    <!-- Sanojen valinnan palkki: Peruuta · n sanaa · Valmis (app.js: startWordSelect) -->
+    <div class="ocr-selbar" id="ocr-selbar" hidden>
+      <button type="button" class="chip-btn" id="ocr-sel-cancel" data-i18n="cancel">Peruuta</button>
+      <span id="ocr-sel-count"></span>
+      <button type="button" class="chip-btn primary" id="ocr-sel-done" data-i18n="sentDone">Valmis</button>
     </div>
     <div class="ocr-bottom">
       <button class="ocr-tool" id="ocr-gallery"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg></span><b data-i18n="ocrGalleryShort">Valitse kuva</b></button>
