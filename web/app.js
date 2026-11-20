@@ -5340,7 +5340,7 @@ function bindSentView() {
 // Kuvan tuntemattoman sanan korjaus suoraan kuvanäkymässä (ilman lausenäkymää): sama korjauspaneeli kuin Poimi lause
 // -näkymässä (kenttä, ehdotukset, jokerit, + -jako, Jaa osiin), kuvan päällä alhaalla. Valmis merkitsee sanan kuvaan
 // korjattuna ja käännettynä; korjaus näkyy myös lausenäkymässä (ocr.sentChoice).
-function openOcrFix(split = false) {
+function openOcrFix(split = false, type = false) {
   const idx = ocr?.picked, w = ocr?.words?.[idx];
   if (!w) return;
   ocr.sentChoice ||= {};
@@ -5348,7 +5348,8 @@ function openOcrFix(split = false) {
   const tok = sentTokens([raw])[0];
   const text = (w.word || tok.clean || tok.t).toLowerCase();
   if (!tok.unknown && !tok.fixed?.edited) tok.fixed = { word: text, trans: sentWordText(tok), edited: true };
-  sent = { toks: [tok], sheet: 0, solo: idx, split: split ? { text, cuts: sentDefaultCuts(text) } : null };
+  // Kirjoita sana itse / Korjaa: kenttä heti auki (typing = paneelin sanan indeksi)
+  sent = { toks: [tok], sheet: 0, solo: idx, split: split ? { text, cuts: sentDefaultCuts(text) } : null, typing: type && !split ? 0 : null };
   $("ocr-bubble").hidden = true;
   $("sent-view").classList.add("solo");
   $("sent-view").hidden = false;
@@ -5411,12 +5412,15 @@ function applyOcrView() {
 // Paneelin painikkeet; muu kohta paneelissa ei tee mitään (ennen kuplan napautus avasi sanakirjan). Kosketus tulee
 // kuvan eleiden kautta (bindOcrGestures), näppäimistö ja TalkBack click-tapahtumana (detail 0).
 function ocrSheetTap(target) {
+  // Kosketuksen perään tuleva click osuisi samaan kohtaan avautuvaan paneeliin (korjauspaneelin painikkeet; puhelintesti
+  // 2026-11-20): ohitetaan hetken ajan
+  suppressClickUntil = Date.now() + 600;
   const act = target.closest("[data-act]")?.dataset.act;
   const speaker = target.closest(".b-speak");
   if (speaker) { if (!speaker.classList.contains("loading")) speak(ocr.words[ocr.picked].gloss.say, speaker); }
   else if (target.closest("[data-report]")) ocrReport();
   else if (target.closest("[data-split]")) openOcrFix(true);
-  else if (act === "fix") openOcrFix(false);
+  else if (act === "fix") openOcrFix(false, true);
   else if (act === "pick") pickSentence();
   else if (act === "search") openOcrWord(null);
   else if (target.closest("[data-cand]")) openOcrWord(target.closest("[data-cand]").dataset.cand);
