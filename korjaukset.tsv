@@ -774,7 +774,7 @@ kopiija	N	kopio, moniste
 # nuoskkideapmi: oli "saaste" (norja: forurensing)
 nuoskkideapmi	N	saastuminen, saastuttaminen
 # gulahallan: oli "kuulustelu" (norja: kommunikasjon)
-gulahallan	N	viestintä, yhteydenpito
+gulahallan	N	kanssakäyminen, yhteydenpito, viestintä
 # sorjavaš: oli "riippumaton" (norja: avhengig)
 sorjavaš	A	riippuvainen
 # suddjen: oli "suojelus" (norja: beskyttelse)
@@ -822,7 +822,7 @@ gođđat	V	kutea
 # máhttodepartemeanta: oli "tietoministeriö" (norja: kunnskapsdepartement)
 máhttodepartemeanta	N	opetusministeriö
 # militeara: oli "sotilas" (norja: militær)
-militeara	N	armeija, sotilas
+militeara	N	sotaväki, armeija
 # váldogiella: oli "valtakieli" (norja: hovedspråk)
 váldogiella	N	pääkieli, valtakieli
 # speallat: oli "soittaa" (norja: spille, spille kort)
@@ -862,7 +862,7 @@ bassinmuorra	N	paistovarras, makkaratikku
 # háskil: oli "merikihu" (norja: fjelljo)
 háskil	N	tunturikihu
 # šnjivvat: oli "kärytä" (norja: hvine)
-šnjivvat	V	vinkua, suhista
+šnjivvat	V	kihistä, suhista, vinkua
 # hánis: oli "niuho" (norja: gjerrig)
 hánis	A	saita, kitsas
 # guovllastit: oli "katsella" (norja: kikke som snarest)
@@ -874,7 +874,7 @@ subjektiiva	A	subjektiivinen
 # bálkásit: oli "heittyä" (norja: gå til spille)
 bálkásit	V	mennä hukkaan, heittyä
 # čoarveduodji: oli "luukäsityö" (norja: hornsløyd)
-čoarveduodji	N	sarvikäsityö
+čoarveduodji	N	sarvi- ja luutyö, sarvikäsityö
 # mánnomolsun: oli "kuunvaihde" (norja: månedsskifte)
 mánnomolsun	N	kuukaudenvaihde, kuunvaihde
 # mugga: oli "kannu" (norja: mugge)
@@ -882,4 +882,4 @@ mugga	N	muki, kannu
 # sisriikkalaš: oli "sisämainen" (norja: innenlandsk, nasjonal)
 sisriikkalaš	A	kotimainen, valtakunnallinen
 # giđđageassi: oli "suvi" (norja: forsommer)
-giđđageassi	N	alkukesä
+giđđageassi	N	alkukesä, kevätkesä
