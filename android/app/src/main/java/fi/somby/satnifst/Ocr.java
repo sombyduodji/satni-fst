@@ -7,7 +7,10 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.media.ExifInterface;
@@ -25,6 +28,7 @@ import com.google.mlkit.vision.text.Text;
 import com.google.mlkit.vision.text.TextRecognition;
 import com.google.mlkit.vision.text.TextRecognizer;
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
+import com.googlecode.tesseract.android.TessBaseAPI;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -32,8 +36,10 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -47,6 +53,12 @@ import java.util.concurrent.Executors;
  * kuva käännetään automaattisesti oikein päin: jos useimmat sanat ovat noin 90 tai 180 asteen kulmassa, kuva käännetään
  * ja tunnistetaan uudelleen (kuva kirjasta sivuttain ilman EXIF-tietoa).
  *
+ * Toinen luku (2026-11-20): sanat, joita web-näkymä ei löytänyt sanakirjasta (pohjois- ja inarinsaame), luetaan
+ * uudelleen Tesseractilla (SatniOcr.second): sana rajataan kuvasta, käännetään vaakasuoraan ja muutetaan mustavalkoiseksi,
+ * ja tulos palaa funktiolle ocrSecondResult. Malli: Norjan kansalliskirjaston saamen Tesseract-malli synth_base
+ * (CC BY 4.0, Enstad ym. 2025) kokonaislukumuotoon pakattuna (assets/tessdata/smi.traineddata, 1,7 Mt). Testipenkki:
+ * oikein luettuja sanoja 95,0 -> 98,6 % (pohjoissaame) ja 89,7 -> 95,9 % (inari), 972 korjattua, 7 huononnettua sanaa.
+ *
  * Lupia ei tarvita: kuvan ottaa järjestelmän kamerasovellus (tallentaa sen FileProviderin kautta
  * välimuistiin), ja kuvan valinta tehdään järjestelmän kuvanvalitsimella (Android 13+) tai tiedostovalitsimella.
  */
@@ -59,9 +71,17 @@ final class Ocr {
     private final Activity activity;
     private final WebView web;
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
+    /** Tesseract omassa säikeessään: ML Kitin uusi tunnistus ei odota toista lukua. */
+    private final ExecutorService tessWorker = Executors.newSingleThreadExecutor();
     private TextRecognizer recognizer;
-    /** Viimeisin tunnistettu kuva kääntöpainikkeita varten. */
-    private Bitmap last;
+    /** Viimeisin tunnistettu kuva kääntöpainikkeita ja toista lukua varten. */
+    private volatile Bitmap last;
+    /** Kuvan järjestysnumero: toisen luvun pyyntö ja tulos koskevat aina tiettyä kuvaa (vanha tulos hylätään). */
+    private volatile int serial;
+    private TessBaseAPI tess;
+    private boolean tessFailed;
+    /** Enintään näin monta sanaa kuvaa kohden (noin 0,1–0,3 s sanaa kohden puhelimessa). */
+    private static final int SECOND_MAX = 80;
 
     Ocr(Activity activity, WebView web) {
         this.activity = activity;
@@ -169,7 +189,7 @@ final class Ocr {
                         return;
                     }
                     last = bitmap;
-                    send(toJson(bitmap, text));
+                    send(toJson(bitmap, text, ++serial));
                 })
                 .addOnFailureListener(worker, e -> sendError("ocr"));
     }
@@ -259,7 +279,7 @@ final class Ocr {
     /** Sanat lukujärjestyksessä (tekstilohko, rivi, sana) sijainteineen kuvan pikseleinä. Vino teksti: kulmapisteistä
      *  (vasen ylä, oikea ylä, oikea ala, vasen ala) sanan oma leveys, korkeus ja kulma, jotta sanan päälle piirretty
      *  teksti kääntyy samaan asentoon. */
-    private static String toJson(Bitmap bitmap, Text text) {
+    private static String toJson(Bitmap bitmap, Text text, int serial) {
         try {
             JSONArray words = new JSONArray();
             for (Text.TextBlock block : text.getTextBlocks()) {
@@ -287,7 +307,7 @@ final class Ocr {
             ByteArrayOutputStream jpeg = new ByteArrayOutputStream();
             bitmap.compress(Bitmap.CompressFormat.JPEG, 80, jpeg);
             return new JSONObject()
-                    .put("width", bitmap.getWidth()).put("height", bitmap.getHeight())
+                    .put("width", bitmap.getWidth()).put("height", bitmap.getHeight()).put("serial", serial)
                     .put("image", "data:image/jpeg;base64," + Base64.encodeToString(jpeg.toByteArray(), Base64.NO_WRAP))
                     .put("words", words).toString();
         } catch (JSONException e) {
@@ -295,12 +315,174 @@ final class Ocr {
         }
     }
 
+    /** Toinen luku: {serial, lang, words: [{i, cx, cy, w, h, a}]} (kuvan pikseleinä kuten ocrResultissa). Tulos
+     *  ocrSecondResult({serial, lang, words: [{i, t}]}); jos kuva on jo vaihtunut, mitään ei lähetetä. */
+    @JavascriptInterface
+    public void second(String json) {
+        final JSONObject req;
+        try {
+            req = new JSONObject(json);
+        } catch (JSONException e) {
+            return;
+        }
+        tessWorker.execute(() -> {
+            int id = req.optInt("serial", -1);
+            Bitmap image = last;
+            if (id != serial || image == null) {
+                return;
+            }
+            JSONArray out = new JSONArray();
+            TessBaseAPI api = tess();
+            JSONArray words = req.optJSONArray("words");
+            if (api != null && words != null) {
+                for (int k = 0; k < Math.min(words.length(), SECOND_MAX) && id == serial; k++) {
+                    JSONObject w = words.optJSONObject(k);
+                    if (w == null) {
+                        continue;
+                    }
+                    Bitmap crop = crop(image, w.optDouble("cx"), w.optDouble("cy"), w.optDouble("w"), w.optDouble("h"), w.optDouble("a", 0));
+                    if (crop == null) {
+                        continue;
+                    }
+                    api.setImage(crop);
+                    String text = api.getUTF8Text();
+                    api.clear();
+                    crop.recycle();
+                    try {
+                        out.put(new JSONObject().put("i", w.optInt("i")).put("t", text == null ? "" : text.trim()));
+                    } catch (JSONException e) {
+                        // ohitetaan sana
+                    }
+                }
+            }
+            if (id != serial) {
+                return;
+            }
+            try {
+                send(new JSONObject().put("serial", id).put("lang", req.optString("lang")).put("words", out).toString(),
+                        "ocrSecondResult");
+            } catch (JSONException e) {
+                // ei tulosta
+            }
+        });
+    }
+
+    /** Tesseract ja malli: malli kopioidaan APK:sta sovelluksen kansioon ensimmäisellä kerralla (Tesseract lukee
+     *  tiedostosta). Epäonnistuminen muistetaan, eikä toista lukua sen jälkeen yritetä. */
+    private TessBaseAPI tess() {
+        if (tess != null || tessFailed) {
+            return tess;
+        }
+        try {
+            File dir = new File(activity.getFilesDir(), "tesseract/tessdata");
+            File model = new File(dir, "smi.traineddata");
+            long size;
+            try (android.content.res.AssetFileDescriptor fd = activity.getAssets().openFd("tessdata/smi.traineddata")) {
+                size = fd.getLength();
+            } catch (IOException e) {
+                size = -1;
+            }
+            if (!model.exists() || (size > 0 && model.length() != size)) {
+                dir.mkdirs();
+                File tmp = new File(dir, "smi.traineddata.tmp");
+                try (InputStream in = activity.getAssets().open("tessdata/smi.traineddata");
+                     OutputStream o = new FileOutputStream(tmp)) {
+                    byte[] buf = new byte[65536];
+                    for (int n; (n = in.read(buf)) > 0; ) {
+                        o.write(buf, 0, n);
+                    }
+                }
+                if (!tmp.renameTo(model)) {
+                    throw new IOException("rename");
+                }
+            }
+            TessBaseAPI api = new TessBaseAPI();
+            if (!api.init(new File(activity.getFilesDir(), "tesseract").getAbsolutePath(), "smi", TessBaseAPI.OEM_LSTM_ONLY)) {
+                api.recycle();
+                tessFailed = true;
+                return null;
+            }
+            api.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
+            tess = api;
+        } catch (IOException | RuntimeException e) {
+            tessFailed = true;
+        }
+        return tess;
+    }
+
+    /** Sana kuvasta Tesseractille: kierretty vaakasuoraan sanan keskipisteen ympäri, marginaalit (0,35 × korkeus
+     *  sivuille, 0,3 ylös ja alas), korkeus 64 px, harmaa -> mustavalkoinen (kynnys 2. ja 98. prosenttipisteen
+     *  puolivälissä; tumma tausta käännetään), 12 px valkoinen reuna. Sama käsittely kuin testipenkissä. */
+    static Bitmap crop(Bitmap src, double cx, double cy, double w, double h, double angle) {
+        if (!(w > 1 && h > 1) || Double.isNaN(cx) || Double.isNaN(cy)) {
+            return null;
+        }
+        double cw = w + h * 0.7, ch = h * 1.6, k = 64 / ch;
+        int ow = (int) Math.max(8, Math.min(2000, Math.round(cw * k))), oh = 64;
+        Bitmap c = Bitmap.createBitmap(ow, oh, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(c);
+        canvas.drawColor(Color.WHITE);
+        Matrix m = new Matrix();
+        m.postTranslate((float) -cx, (float) -cy);
+        m.postRotate((float) -angle);
+        m.postScale((float) k, (float) k);
+        m.postTranslate(ow / 2f, oh / 2f);
+        canvas.drawBitmap(src, m, new Paint(Paint.FILTER_BITMAP_FLAG));
+        int[] px = new int[ow * oh];
+        c.getPixels(px, 0, ow, 0, 0, ow, oh);
+        int[] hist = new int[256];
+        long sum = 0;
+        for (int i = 0; i < px.length; i++) {
+            int p = px[i];
+            int g = (299 * ((p >> 16) & 255) + 587 * ((p >> 8) & 255) + 114 * (p & 255)) / 1000;
+            px[i] = g;
+            hist[g]++;
+            sum += g;
+        }
+        boolean invert = sum / px.length < 110;
+        int lo = percentile(hist, px.length, invert ? 0.98 : 0.02), hi = percentile(hist, px.length, invert ? 0.02 : 0.98);
+        if (invert) {
+            lo = 255 - lo;
+            hi = 255 - hi;
+        }
+        double t = (lo + hi) / 2.0;
+        int bw = ow + 24, bh = oh + 24;
+        int[] out = new int[bw * bh];
+        java.util.Arrays.fill(out, Color.WHITE);
+        for (int y = 0; y < oh; y++) {
+            for (int x = 0; x < ow; x++) {
+                int g = px[y * ow + x];
+                if (invert) {
+                    g = 255 - g;
+                }
+                out[(y + 12) * bw + x + 12] = g > t ? Color.WHITE : Color.BLACK;
+            }
+        }
+        c.recycle();
+        return Bitmap.createBitmap(out, bw, bh, Bitmap.Config.ARGB_8888);
+    }
+
+    private static int percentile(int[] hist, int n, double q) {
+        long target = Math.round(q * (n - 1)), seen = 0;
+        for (int g = 0; g < 256; g++) {
+            seen += hist[g];
+            if (seen > target) {
+                return g;
+            }
+        }
+        return 255;
+    }
+
     private void sendError(String code) {
         send("{\"error\":" + JSONObject.quote(code) + "}");
     }
 
     private void send(String json) {
-        web.post(() -> web.evaluateJavascript("window.ocrResult && ocrResult(" + json + ")", null));
+        send(json, "ocrResult");
+    }
+
+    private void send(String json, String fn) {
+        web.post(() -> web.evaluateJavascript("window." + fn + " && " + fn + "(" + json + ")", null));
     }
 
     void close() {
@@ -308,5 +490,13 @@ final class Ocr {
             recognizer.close();
         }
         worker.shutdown();
+        serial++;  // keskeneräinen toinen luku lopettaa
+        tessWorker.execute(() -> {
+            if (tess != null) {
+                tess.recycle();
+                tess = null;
+            }
+        });
+        tessWorker.shutdown();
     }
 }

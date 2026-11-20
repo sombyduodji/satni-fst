@@ -3426,17 +3426,22 @@ function ocrCorrector() {
     }
     return { word: null };
   };
+  // Tulokset myös tämän kuvan omaan muistiin: yhteinen välimuisti tyhjenee 20 000 sanan jälkeen, ja jos se tyhjeni kesken
+  // kuvan, jo haettujen yhdyssanojen osat katosivat (compound palautti null; testipenkki 2026-11-20, guovlostivra)
+  const local = new Map();
   const correctCached = (word) => {
     if (!ocrCorrectCache.has(word)) {
       if (ocrCorrectCache.size > 20000) ocrCorrectCache.clear();
       ocrCorrectCache.set(word, correct(word));
     }
-    return ocrCorrectCache.get(word);
+    const res = ocrCorrectCache.get(word);
+    local.set(word, res);
+    return res;
   };
   let fuzzy = null;
   return {
     correct: (word) => correctCached(word).word || null,
-    compound: (word) => { const c = ocrCorrectCache.get(word)?.cmp; return c ? c : null; },
+    compound: (word) => { const c = (local.get(word) || ocrCorrectCache.get(word))?.cmp; return c ? c : null; },
     free: () => { fuzzy?.free(); },
   };
 }
@@ -3699,6 +3704,7 @@ function ocrResult(r) {
   ocrReturnHash = null;
   // Kuva näkyviin heti; merkinnät tulevat sanojen haun jälkeen
   $("ocr-photo").innerHTML = `<img src="${r.image}" alt="">`;
+  $("ocr-photo").dataset.serial = r.serial ?? "";
   layoutOcr(true);
   findOcrWords();
 }
@@ -3715,6 +3721,7 @@ function joinHyphenated(words) {
         && (b.cx - b.w / 2) - (a.cx + a.w / 2) < (a.h || 10) * 0.6 && b.cx > a.cx) {
       a.t = b.t = a.t + b.t;
       a.clean = b.clean = a.t.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, "");
+      a.joined = b.joined = true;
       i++;
       continue;
     }
@@ -3722,6 +3729,7 @@ function joinHyphenated(words) {
     if (!(b.cy > a.cy + (a.h || 10) * 0.6 && b.cx < a.cx)) continue;  // jatko seuraavalla rivillä, vasemmalla
     const joined = /^\p{Ll}/u.test(b.clean) ? a.clean + b.clean : `${a.clean}-${b.clean}`;
     a.clean = b.clean = joined;
+    a.joined = b.joined = true;
     i++;
   }
 }
@@ -3763,14 +3771,16 @@ function ocrMatches(r, from) {
     for (let i = 0; i + 1 < r.words.length; i++) {
       const a = r.words[i], b = r.words[i + 1];
       // Vain pienellä alkavat palat: isolla alkava on yleensä nimi, ja jokainen kokeilu ajaa sumean haun (hidas)
-      if (!a.clean || !b.clean || a.clean === b.clean || !/^\p{Ll}\p{L}*$/u.test(a.clean) || !/^\p{Ll}\p{L}*$/u.test(b.clean)) continue;
+      // Jo yhdistettyä palaa ei yhdistetä uudelleen: sanat haetaan samasta kuvasta uudestaan (suunnan vaihto, toinen
+      // luku), ja muuten buresveadj + inguovllu + guovlostivra kasvoi yhdeksi sanaksi (testipenkki 2026-11-20)
+      if (a.joined || b.joined || !a.clean || !b.clean || a.clean === b.clean || !/^\p{Ll}\p{L}*$/u.test(a.clean) || !/^\p{Ll}\p{L}*$/u.test(b.clean)) continue;
       // Seuraavalla rivillä vasemmalla, tai samalla rivillä kapealla välillä (otsikon iso fontti: buresveadj inguovllu)
       const nextLine = b.cy > a.cy + (a.h || 10) * 0.6 && b.cx < a.cx;
       const sameLine = Math.abs(b.cy - a.cy) < (a.h || 10) * 0.4 && a.w && b.w && b.cx > a.cx && (b.cx - b.w / 2) - (a.cx + a.w / 2) < (a.h || 10) * 0.6;
       if (!(nextLine || sameLine) || a.clean.length < 3 || b.clean.length < 3) continue;
       if (match(a.clean) || match(b.clean)) continue;
       const joined = a.clean + b.clean;
-      if (match(joined) || corrector.compound?.(joined)) { a.clean = b.clean = joined; i++; }
+      if (match(joined) || corrector.compound?.(joined)) { a.clean = b.clean = joined; a.joined = b.joined = true; i++; }
     }
   }
   const words = r.words.map((w) => ({ ...w, word: match(w.clean) })).filter((w) => w.word);
@@ -3852,9 +3862,120 @@ function analyzeOcr() {
   ocr.status = (!r.words.length ? t("ocrNoText") : found ? t("ocrFound", found) : t("ocrNoWords")) +
     (switched ? ` · ${t("ocrDirSwitched")}` : "");
   $("ocr-bubble").hidden = true;
-  $("ocr-photo").innerHTML = `<img src="${r.image}" alt="">`
-    + ocr.words.map((w, i) => `<div class="ocr-word${w.unknown ? " unknown" : ""}${w.cap ? " cap" : ""}" data-i="${i}"></div>`).join("");
+  // Sama kuva jo näkyvissä (ocrResult, suunnan vaihto, toinen luku): vain merkinnät vaihtuvat. Kuvan luominen
+  // uudelleen dekoodasi sen joka kerta (puhelimen grafiikkamuisti +45 Mt, Samsung 2026-11-20) ja välähti.
+  const photo = $("ocr-photo"), img = photo.querySelector("img");
+  const marks = ocr.words.map((w, i) => `<div class="ocr-word${w.unknown ? " unknown" : ""}${w.cap ? " cap" : ""}" data-i="${i}"></div>`).join("");
+  if (img && r.serial != null && photo.dataset.serial === String(r.serial)) {
+    photo.querySelectorAll(".ocr-word").forEach((el) => el.remove());
+    img.insertAdjacentHTML("afterend", marks);
+  } else {
+    photo.innerHTML = `<img src="${r.image}" alt="">` + marks;
+    photo.dataset.serial = r.serial ?? "";
+  }
   layoutOcr(!ocr.view);
+  ocrSecondPass();
+}
+
+// Toinen luku (2026-11-20): pohjois- ja inarinsaamen sanat, joita ei löytynyt sanakirjasta, luetaan uudelleen
+// Tesseractilla (Ocr.java: SatniOcr.second; Norjan kansalliskirjaston saamen malli). Uusi lukutapa otetaan vain, jos se
+// on sellaisenaan sanakirjan sana tai muoto (ei korjauksia eikä sumeaa hakua), joten nimet ja oikein luetut tuntemattomat
+// sanat pysyvät ennallaan. Testipenkki: oikein luettuja 95,0 -> 98,6 % (pohjoissaame), 89,7 -> 95,9 % (inari).
+// Koltta ja suomi jäävät ML Kitille (Tesseract-malli lukee niitä huonommin).
+const SECOND_LANGS = ["sme", "smn"];
+const SECOND_SHORT = { sme: ["ja", "jo", "ii", "de", "go", "ge", "mu", "du", "su", "ná", "dá", "ma"], smn: ["ja", "jo", "ij", "le", "ko", "mo"] };
+function ocrSecondPass() {
+  const api = window.SatniOcr, r = ocr?.r, lang = settings.ocrFrom;
+  if (!api?.second || !r || r.serial == null || !SECOND_LANGS.includes(lang) || (lang !== "sme" && !hasMinor(lang))) return;
+  r.second ||= {};
+  if (r.second[lang]) return;
+  // Löydetyt sanat ja yhdyssanaksi selitetyt (válmmaštallanmuttu: osat näkyvät jo kuplassa) jäävät ennalleen
+  const known = new Set(ocr.words.filter((w) => !w.unknown || w.fuzzyParts || w.finParts).map((w) => `${w.cx},${w.cy}`));
+  // Tuntemattomat kirjainsanat (vähintään 3 kirjainta); tavutettuna yhdistetty sana jää pois (rajaus olisi vain puolikas)
+  const list = r.words.map((w, i) => ({ w, i })).filter(({ w }) => !known.has(`${w.cx},${w.cy}`) && w.w && w.h
+    && !w.joined && /^[\p{L}ʹ'-]+$/u.test(w.clean) && /\p{L}{3}/u.test(w.clean) && w.t.includes(w.clean)).slice(0, 80);
+  if (!list.length) { r.second[lang] = "done"; return; }
+  r.second[lang] = "running";
+  ocr.secondNote = ` · ${t("ocrSecond")}`;
+  ocr.status += ocr.secondNote;
+  $("ocr-status").textContent = ocr.status;
+  api.second(JSON.stringify({ serial: r.serial, lang, words: list.map(({ w, i }) => ({ i, cx: w.cx, cy: w.cy, w: w.w, h: w.h, a: w.a || 0 })) }));
+}
+// Tesseractin tulos: {serial, lang, words: [{i, t}]}. Kuva tai suunta on voinut vaihtua odottaessa.
+// Hyväksytään vain lukutapa, jonka kirjaimet ovat lähellä ML Kitin lukua (enintään yksi muutos neljää kirjainta
+// kohden, tarkkeet ja kirjainkoko pois laskuista) ja jonka jokainen sana on sellaisenaan sanakirjassa. Isolla alkavan
+// sanan (usein nimi) ensimmäinen kirjain ei vaihdu (Piibe ei muutu Iibeksi). Kaksi sanaa yhdeksi lukenut ML Kit
+// (leatjo = leat jo, nammaja = namma ja; Yle-kuvat 2026-11-20) jaetaan kahdeksi sanaksi.
+const secondFold = (s) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/đ/g, "d").replace(/ŋ/g, "n").replace(/ŧ/g, "t").replace(/[^\p{L}]/gu, "");
+function editDistance(a, b) {
+  const x = [...a], y = [...b];
+  let prev = Array.from({ length: y.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= x.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= y.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (x[i - 1] === y[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[y.length];
+}
+function ocrSecondResult(res) {
+  if (!ocr?.r || !res || res.serial !== ocr.r.serial) return;
+  const r = ocr.r, lang = res.lang;
+  if (!r.second || r.second[lang] !== "running") return;
+  r.second[lang] = "done";
+  const note = ocr.secondNote || "";
+  ocr.secondNote = "";
+  if (note) ocr.status = ocr.status.replace(note, "");
+  let changed = 0;
+  if ((lang === "sme" || hasMinor(lang)) && Array.isArray(res.words)) {
+    const corrector = lang === "sme" ? ocrCorrector() : minorMatcher(lang);
+    const looks = lang === "sme" ? OCR_LOOKALIKES : MINOR_LOOKALIKES[lang];
+    const exactKnown = (c) => corrector.correct(c) === [...c.toLowerCase()].map((ch) => looks[ch] || ch).join("");
+    try {
+      // Suurimmasta indeksistä alkaen, jotta sanan jakaminen kahdeksi ei siirrä vielä käsittelemättömiä
+      for (const { i, t: read } of [...res.words].sort((a, b) => b.i - a.i)) {
+        const w = r.words[i];
+        if (!w || typeof read !== "string") continue;
+        const toks = read.normalize("NFC").replace(/ı/g, "i").split(/\s+/)
+          .map((x) => x.replace(/^[^\p{L}]+|[^\p{L}ʹ]+$/gu, "")).filter((x) => /\p{L}/u.test(x));
+        if (!toks.length || toks.length > 3 || toks.some((x) => !/^[\p{L}ʹ'-]+$/u.test(x))) continue;
+        const old = secondFold(w.clean), now = secondFold(toks.join(""));
+        if (toks.join("").toLowerCase() === w.clean.toLowerCase() && toks.length === 1) continue;
+        if (editDistance(old, now) > Math.max(1, Math.floor([...old].length / 4))) continue;
+        if (/^\p{Lu}/u.test(w.clean) && old[0] !== now[0]) continue;
+        // Jaossa lyhyet palat vain tavallisina pikkusanoina (Maijala ei ole Maija + la)
+        if (toks.length > 1 && toks.some((x) => [...x].length < 3 && !SECOND_SHORT[lang].includes(x.toLowerCase()))) continue;
+        if (toks.some((x) => [...x].length < 2) || !toks.every(exactKnown)) continue;
+        // Kirjainkoko ML Kitin mukaan (Tesseract lukee joskus ison alkukirjaimen pieneksi ja päinvastoin)
+        const first = /^\p{Lu}/u.test(w.clean) ? toks[0][0].toUpperCase() : /^\p{Ll}/u.test(w.clean) ? toks[0][0].toLowerCase() : toks[0][0];
+        toks[0] = first + toks[0].slice(1);
+        const at = w.t.indexOf(w.clean), pre = w.t.slice(0, at), post = w.t.slice(at + w.clean.length);
+        if (toks.length === 1) {
+          Object.assign(w, { mlkit: w.clean, t: pre + toks[0] + post, clean: toks[0] });
+        } else {
+          // Laatikko jaetaan sanojen pituuksien suhteessa tekstin suuntaan (väli = puoli kirjainta)
+          const lens = toks.map((x) => [...x].length), total = lens.reduce((a, b) => a + b, 0) + 0.5 * (toks.length - 1);
+          const rad = (w.a || 0) * Math.PI / 180, dx = Math.cos(rad), dy = Math.sin(rad);
+          let pos = -w.w / 2;
+          const parts = toks.map((x, k) => {
+            const pw = w.w * lens[k] / total, mid = pos + pw / 2;
+            pos += pw + w.w * 0.5 / total;
+            return { ...w, mlkit: w.clean, t: (k === 0 ? pre : "") + x + (k === toks.length - 1 ? post : ""), clean: x,
+              cx: w.cx + dx * mid, cy: w.cy + dy * mid, w: pw };
+          });
+          r.words.splice(i, 1, ...parts);
+        }
+        changed++;
+      }
+    } finally { corrector.free?.(); }
+  }
+  if (!changed || $("ocr-view").hidden) { $("ocr-status").textContent = ocr.status; return; }
+  // Uudet merkinnät; auki ollut kupla avataan uudelleen samalle sanalle
+  const picked = ocr.picked != null ? ocr.words[ocr.picked] : null;
+  analyzeOcr();
+  if (picked) {
+    const i = ocr.words.findIndex((w) => w.cx === picked.cx && w.cy === picked.cy);
+    if (i >= 0) pickOcrWord(i);
+  }
 }
 
 // Kuva sovitetaan alueeseen kokonaan näkyviin, ja merkinnät asetetaan kuvan pikseleistä sovitettuun kokoon
@@ -4002,6 +4123,8 @@ function ocrReport() {
     ["base", g?.lemma || ""],
     ["shown", g ? [g.form, g.trans, g.alt?.text].filter(Boolean).join(" · ") : parts || t("ocrUnknown")],
     ["via", via ? viaText(via) : ""],
+    // Toinen luku vaihtoi sanan: ML Kitin alkuperäinen luku mukaan (sekin voi olla oikein)
+    ["read", w.mlkit ? `ML Kit: ${w.mlkit} → Tesseract: ${w.clean}` : ""],
     ["sentence", (() => { try {
       const i = ocr.r.words.findIndex((r) => r.cx === w.cx && r.cy === w.cy);
       return i < 0 ? "" : ocrSentenceAround(i).map((r) => r.t ?? r.text ?? r.word ?? "").join(" ");

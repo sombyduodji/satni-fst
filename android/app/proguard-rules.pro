@@ -11,3 +11,7 @@
 # Kaatumisraporttien rivinumerot (Play Console purkaa nimet mapping.txt:llä)
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+
+# Tesseract4Android: natiivikoodi kutsuu Java-luokkia ja -kenttiä nimellä (JNI)
+-keep class com.googlecode.tesseract.android.** { *; }
+-keep class com.googlecode.leptonica.android.** { *; }
