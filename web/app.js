@@ -1878,6 +1878,7 @@ function finPhrase(tag, pos, f, human = false) {
     case "Loc": return join(f[`${n}+Ine`], f[`${n}+Ela`], people && f[`${n}+Ade`], people && f[`${n}+Abl`]);
     case "Com": return f[`${n}+Gen`] && `${f[`${n}+Gen`]} kanssa`;
     case "Ess": return f["Sg+Ess"];
+    case "Tra": return f[`${n}+Tra`];  // vain kielen nimet (translationOfForm: sámegillii = saameksi)
   }
   return null;
 }
@@ -1943,11 +1944,16 @@ function translationOfForm(w, tags, finClitics = null, transWords = state.transW
   }
   const pos = FORM_POS[w.pos.toUpperCase()];
   if (!pos) return "";
+  // Kielen nimi illatiivissa on suomeksi translatiivi: sámegillii = saameksi, suomagillii = suomeksi (ei "saameen";
+  // käyttäjän kuva 2026-11-20)
+  // Vain kielen nimet (sámegiella, suomagiella), ei pelkkä giella eikä "-kieli"-käännös (opetuskieleen säilyy).
+  const lang2tra = settings.lang === "fin" && /.giella$/.test(w.sme_lemma || "");
   const out = [];
   for (const word of transWords || []) {
+    const tg = lang2tra && !/kieli$/.test(word.trim()) ? tags.map((tag) => tag.replace(/\bIll\b/, "Tra")) : tags;
     const forms = translationForms(settings.lang, word.replace(/\(.*?\)/g, "").trim(), pos);
     if (!forms) continue;
-    let phrases = [...new Set(tags.map((tag) => FORM_PHRASES[settings.lang](tag, pos, forms, w.human)).filter(Boolean))];
+    let phrases = [...new Set(tg.map((tag) => FORM_PHRASES[settings.lang](tag, pos, forms, w.human)).filter(Boolean))];
     if (finClitics) phrases = phrases.map((p) => finWithClitics(p, finClitics, forms.__back));
     if (phrases.length) out.push(phrases.join(" / "));
   }
@@ -4171,9 +4177,9 @@ function pickOcrWord(i) {
   }
   photo.querySelector(".picked")?.classList.remove("picked");
   ocr.picked = i;
-  if (i == null) { bubble.hidden = true; return; }
-  const w = ocr.words[i];
-  photo.querySelector(`[data-i="${i}"]`).classList.add("picked");
+  const w = i == null ? null : ocr.words[i];
+  if (!w) { ocr.picked = null; bubble.hidden = true; return; }
+  photo.querySelector(`[data-i="${i}"]`)?.classList.add("picked");
   if (w.unknown) { pickUnknownOcrWord(w); return; }
   if (!w.gloss) w.gloss = ocrGloss(w.word, w.clean);
   // Rivi = saamen sana ja sen käännös: ensin kuvan muoto (beavddis  pöydässä / pöydästä), alla himmeämpänä perusmuoto
@@ -4517,7 +4523,8 @@ function sentTokens(raw) {
         const info = compoundPartsInfo(parts, { named: /^\p{Lu}/u.test(r.clean || "") });
         tok.unknown = false; tok.opts = [info.trans]; tok.lemma = parts.join(" + ");
         // Yhdyssana taipuu viimeisen osansa mukaan: alkuosat + viimeisen osan muoto lauseyhteydestä (uuden kokouspalvelun)
-        if (lang === "sme" && settings.lang === "fin" && ocrTo() === "fin" && info.parts.every((x) => x.trans)) {
+        if (info.separate) tok.lemma = parts.join(" ");
+        else if (lang === "sme" && settings.lang === "fin" && ocrTo() === "fin" && info.parts.every((x) => x.trans)) {
           const lastPart = info.parts[info.parts.length - 1].word, lg = ocrGloss(lastPart);
           if (lg.id) {
             tok.ctx = sentWordCtx(lg, lastPart);
@@ -5005,6 +5012,22 @@ function compoundPartsInfo(parts, opts = {}) {
     return { word: p, trans, cands, base: base || g.lemma || "", comp };
   });
   fz?.free();
+  // Kaksi sanaa ilman väliä (ML Kit: golmmasámegillii = golmma sámegillii; käyttäjän kuva 2026-11-20): vain kaksi osaa,
+  // koko sana ei ole sanakirjassa, ja alkuosa on sellaisenaan lukusana tai pronomini (ei yhdyssanan alkuosa). Silloin
+  // sanat erikseen omissa muodoissaan (kolmen saameksi), ei yhdyssanaa (kolme + saame). Laajempi sääntö (myös adverbit,
+  // verbit) muutti 914 sanakirjan yhdyssanan käännöstä (Máhtevahkku, boradanbeavdi), joten vain nämä.
+  const sep = out.length === 2 && out[0].word.length >= 3 && !cmpLemma.get(out[0].word) && !ocrGloss(parts.join("").toLowerCase()).id && (() => {
+    const g0 = ocrGloss(out[0].word), lem = g0.lemma || out[0].word;
+    if (!g0.id) return false;
+    const ps = all("SELECT DISTINCT pos FROM dictionary WHERE sme_lemma = ?", [lem]).map((r) => r.pos);
+    // Sama kirjoitusasu substantiivina tai adjektiivina (dáidda = taide, myös pronominin muoto): yhdyssanan alkuosa
+    const own = all("SELECT DISTINCT pos FROM dictionary WHERE sme_lemma = ?", [out[0].word]).map((r) => r.pos);
+    return ps.length > 0 && ps.every((pp) => pp === "Num" || pp === "Pron") && !own.some((pp) => pp === "N" || pp === "A");
+  })();
+  if (sep) {
+    const words = out.map((x) => { const g = ocrGloss(x.word); return ((g.lemma ? g.form || g.trans : g.trans) || x.trans || `[${x.word}]`).split(" / ")[0].split(", ")[0].trim(); });
+    return { parts: out.map((x, k) => ({ ...x, trans: words[k] })), word: out.map((x) => x.word).join(" "), trans: words.join(" "), separate: true };
+  }
   // Suomeksi: osien merkitys ja liitos sen mukaan, mikä on suomea; viimeinen osa saman muodon mukaan kuin ennen
   // Suomeksi yhdistetään vain, jos yhdistelmä on suomen korpuksessa (98 % oikea sija ja luku, ei keksittyjä sanoja).
   // Muuten osien merkitykset plussalla (julkituominen + järjestystä), ei arvattua yhdyssanaa (julkaisemiskuntoa):
@@ -5084,7 +5107,7 @@ function renderSentSplit() {
   box.innerHTML = `<p class="sent-lab">${esc(t("sentSplitHint"))}</p><div class="sent-split-w">` +
     letters.map((c, i) => `<span class="sl">${esc(c)}</span>` + (i < letters.length - 1
       ? `<button type="button" class="sg${sent.split.cuts.has(i + 1) ? " cut" : ""}" data-cut="${i + 1}" aria-label="${esc(t("sentSplit"))} ${i + 1}"></button>` : "")).join("") +
-    `</div>` + (info ? `<div class="sent-split-res">${info.parts.map((x) => `<span><b>${esc(x.word)}</b> ${esc(x.trans || "?")}</span>`).join(" + ")}` +
+    `</div>` + (info ? `<div class="sent-split-res">${info.parts.map((x) => `<span><b>${esc(x.word)}</b> ${esc(x.trans || "?")}</span>`).join(info.separate ? " · " : " + ")}` +
       `<div class="sent-split-tr">→ ${esc(info.trans)}</div></div>` : "");
 }
 const sentKey = (tok) => `${tok.cx},${tok.cy}`;
@@ -5374,13 +5397,13 @@ function pickSentence() {
 
 // Kuplasta sanakirjaan; takaisin-ele palaa kuvaan (backToOcr). Napautuksen perään selain lähettää vielä
 // click-tapahtuman samaan kohtaan, joka on nyt sanakortilla (esim. sátni.org-linkki): se ohitetaan.
-let suppressClickUntil = 0;
+let suppressClickUntil = 0, suppressClickAt = null;  // suppressClickAt: vain tämän kohdan lähellä (kuvan napautus)
 document.addEventListener("click", (e) => {
-  if (Date.now() < suppressClickUntil) { e.preventDefault(); e.stopPropagation(); }
+  if (Date.now() < suppressClickUntil && (!suppressClickAt || Math.hypot(e.clientX - suppressClickAt[0], e.clientY - suppressClickAt[1]) < 40)) { e.preventDefault(); e.stopPropagation(); }
 }, true);
 function openOcrWord(cand = null) {
   const w = ocr.words[ocr.picked];
-  suppressClickUntil = Date.now() + 700;
+  suppressClickUntil = Date.now() + 700; suppressClickAt = null;
   $("ocr-view").hidden = true;
   // Tuntematon sana: valittu ehdokas, tai sana hakukenttään muokattavaksi (jokerihaku, ks. noHitsHint)
   if (w.unknown) {
@@ -5412,9 +5435,6 @@ function applyOcrView() {
 // Paneelin painikkeet; muu kohta paneelissa ei tee mitään (ennen kuplan napautus avasi sanakirjan). Kosketus tulee
 // kuvan eleiden kautta (bindOcrGestures), näppäimistö ja TalkBack click-tapahtumana (detail 0).
 function ocrSheetTap(target) {
-  // Kosketuksen perään tuleva click osuisi samaan kohtaan avautuvaan paneeliin (korjauspaneelin painikkeet; puhelintesti
-  // 2026-11-20): ohitetaan hetken ajan
-  suppressClickUntil = Date.now() + 600;
   const act = target.closest("[data-act]")?.dataset.act;
   const speaker = target.closest(".b-speak");
   if (speaker) { if (!speaker.classList.contains("loading")) speak(ocr.words[ocr.picked].gloss.say, speaker); }
@@ -5495,6 +5515,9 @@ function bindOcrGestures() {
     if (!tap || e.type !== "pointerup" || Date.now() - tap.time > 500) { tap = null; return; }
     const target = document.elementFromPoint(tap.cx, tap.cy);
     const word = target?.closest(".ocr-word");
+    // Kosketuksen perään tuleva click osuisi samaan kohtaan avautuvaan näkymään: korjauspaneelin painike, lausenäkymän
+    // sanasiru (Poimi lause -tilassa napautettu sana; OnePlus 2026-11-20) tai sanakortti. Kuva-alue ei käytä clickiä.
+    suppressClickUntil = Date.now() + 600; suppressClickAt = [tap.cx, tap.cy];
     const speaker = target?.closest(".b-speak");
     if (speaker) {
       if (!speaker.classList.contains("loading")) speak(ocr.words[ocr.picked].gloss.say, speaker);
