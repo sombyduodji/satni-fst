@@ -3,8 +3,30 @@
 Alle versjoner av Sátni FST. Nedlastinger: [GitHub-utgivelser](https://github.com/sombyduodji/satni-fst/releases).
 [English](CHANGELOG.md) · [Suomi](CHANGELOG.fi.md)
 
-## Neste versjon (ikke utgitt)
+## 1.0.0 — 2026-11-21
 
+Den første fullstendige versjonen. I tillegg til ordboka har appen nå ordlister med uttale, lytteøvelse, et ordspill og et mye bedre bildesøk.
+
+- **Nytt utseende på telefon.** En bunnlinje med Søk, Ordlister, Spill og Mer; verktøy du slår på (Bilde, Setning) får egne knapper der. Innstillingene er delt i sider: Utseende, Ordkort, Oversettelsesspråk, Historikk, Verktøy og Eksperimentelt.
+- **Ordlister.** Ordlister etter tema med uttale av Biret, Máhtte og Sunná: tall og ordenstall, ukedager, måneder og årstider, familie, farger, spørreord, rein, vær og mer. Trykk på et ord: lytt, kopier eller åpne ordkortet. Hilsenene kan høres som en samtale.
+- **Lytteøvelse** (finsk menyspråk). Harri sier et ord på finsk, du får litt tenketid, og det samiske svaret høres og vises. Velg emner, tallområder, retning, tenketid og stemme; øvelsen fortsetter med skjermen av og kan stoppes fra varselet.
+- **Ordspill.** Velg riktig oversettelse av fire, eller skriv ordet på samisk (hint koster et poeng, det samme gjør manglende spesialbokstaver). Nivåene nybegynner og viderekommen og korte emnespill (ordenstall, tid, farger, spørreord, dyr); i tids- og spørrespillene sier Biret det riktige svaret. Beste resultater på en pallplass. Dobbelttrykk kan ikke svare to ganger eller hoppe over resultatet.
+- **Bildesøk** (Android, slå på under *Verktøy*). Bildet på hele skjermen med ordene merket; trykk på et ord for å se oversettelsen i riktig form (*beavddis* = på bordet). *Hent setning* oversetter hele setningen ord for ord etter sammenhengen, og med *Velg ordene selv* kan du male eller ringe inn ordene med fingeren. Et bilde som ligger på siden, snus automatisk. Bildet kan også leses som norsk eller finsk tekst og oversettes til samisk.
+- **Bedre lesing av bilder.** Ord som telefonen leser feil, rettes oftere: manglende spesialbokstaver, dobbel bokstav lest som én, *I*/*l*-forvekslinger og ord som er delt på slutten av en linje. Ukjente samiske ord leses en gang til med Nasjonalbibliotekets samiske tekstgjenkjenningsmodell på telefonen. Sammensatte ord deles i deler når hele ordet ikke står i ordboka.
+- **Enaresamisk og skoltesamisk i bilder** (eksperimentelt, av som standard). Appen kjenner igjen språket selv og oversetter gjennom de enaresamiske eller skoltesamiske ordbøkene.
+- **Enaresamisk i spillet og ordlistene** (eksperimentelt, *Verktøy*).
+- **Setningsoversetter** (eksperimentelt, finsk menyspråk). En kort finsk setning blir en nordsamisk setning av ordbokas ord og former; trykk på et ord for å bytte tolkning eller form.
+- **Beslektede ord i andre samiske språk.** Ordkortet viser det samme ordet på enaresamisk, skoltesamisk, lulesamisk og sørsamisk der Álgu, den etymologiske databasen for de samiske språkene, kobler dem (*boazu*: puásui, puäʒʒ, boatsoj, bovtse). Omtrent 13 000 ord.
+- **Stedsnavn.** Samiske stedsnavn i Norge med norske navn (*Guovdageaidnu* – Kautokeino) fra Kartverket, og finske navn for omtrent 400 steder som Utsjoki og Ivalo.
+- **Bedre finsk.** Omtrent 145 gale eller misvisende finske oversettelser er rettet etter kontroll mot uavhengige kilder. Omtrent 1 300 sammensatte ord uten finsk har fått en kontrollert oversettelse.
+- **Jokersøk.** `?` er én bokstav og `*` hvilke som helst bokstaver: `á?bmogis`, `bo*`. Et søk som begynner med et jokertegn, trenger tre bokstaver.
+- **Raskere søk.** Søket er 20–40 ganger raskere, og ordboka er mindre å laste ned.
+- **Meld fra om feil overalt.** Ordkort, bøyningsformer, ordlister, spill, bildesøk og setningsvisninger: meldingen gjør klar en e-post.
+- **Lagret uttale.** Ord du har lyttet til, lagres på enheten for bruk uten nett; velg maksimal størrelse eller tøm dem under *Ordkort*.
+- **Farger for stadieveksling.** Velg farger for sterkt og svakt stadium eller understreking, også et ferdig valg for fargeblinde.
+- **Skoltesamiske oversettelser** (ikke kontrollert, av som standard) gjennom de finske oversettelsene, med en advarsel.
+- **Personvern.** Appen sender ingen bruksstatistikk; Google ML Kits statistikk er slått av. Bilder forlater aldri telefonen. Nettet brukes bare til Divvuns uttaletjeneste når du trykker på høyttaleren.
+- **Tilgjengelighet og rettelser.** Bedre kontrast, tastaturbruk og navn for skjermlesere; Tilbake og Esc lukker ett lag om gangen; en for gammel Android WebView gir en tydelig melding i stedet for evig lasting; endring av skriftstørrelsen på telefonen laster ikke lenger appen på nytt.
 - **Bøyningsklasse.** Ordkortet viser klassen til substantiv og verb (I likestavelses, II ulikestavelses, III kontrahert) når kilden og ordets former stemmer overens. Substantiv viser også stadiene. For andre ord blir klassen ikke gjettet.
 - **Øst og vest.** Ord og oversettelser som varierer etter område er merket (ø) og (v). To skrivemåter av samme ord, som *girku* og *kirku*, deler ett kort som begge finner. Ulike ord, som *gánda* og *lunta*, har lenke til hverandre.
 - **Søk.** Oversettelser med områdemerke, som *patja*, blir nå funnet.

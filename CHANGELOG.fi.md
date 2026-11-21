@@ -3,8 +3,30 @@
 Sátni FST:n kaikki versiot. Lataukset: [GitHub-julkaisut](https://github.com/sombyduodji/satni-fst/releases).
 [English](CHANGELOG.md) · [Norsk](CHANGELOG.nb.md)
 
-## Seuraava versio (ei julkaistu)
+## 1.0.0 — 2026-11-21
 
+Ensimmäinen täysi versio. Sanakirjan lisäksi sovelluksessa on nyt sanastot ääntämyksineen, kuunteluharjoitus, sanapeli ja paljon parempi valokuvahaku.
+
+- **Uusi ilme puhelimessa.** Alapalkissa Haku, Sanastot, Peli ja Lisää; käyttöön otetut työkalut (Kuva, Lause) saavat sinne omat painikkeensa. Asetukset on jaettu sivuiksi: Ulkoasu, Sanakortti, Käännöskielet, Historia, Työkalut ja Kokeelliset.
+- **Sanastot.** Aihekohtaiset sanalistat Biretin, Máhtten ja Sunnán ääntäminä: luvut ja järjestysluvut, viikonpäivät, kuukaudet ja vuodenajat, suku, värit, kysymyssanat, porot, sää ja muuta. Napauta sanaa: kuuntele, kopioi tai avaa sanakortti. Tervehdykset voi kuunnella keskusteluna.
+- **Kuunteluharjoitus.** Harri sanoo sanan suomeksi, saat hetken miettimisaikaa, ja saamenkielinen vastaus kuuluu ja näkyy. Valitse aiheet, lukualueet, suunta, miettimisaika ja ääni; harjoitus jatkuu näytön sammuttua, ja sen voi pysäyttää ilmoituksesta.
+- **Sanapeli.** Valitse oikea käännös neljästä tai kirjoita sana saameksi (vihje maksaa pisteen, samoin puuttuvat erikoiskirjaimet). Aloittelija- ja edistynyt-taso sekä lyhyitä aihepelejä (järjestysluvut, ajat, värit, kysymyssanat, eläimet); aika- ja kysymyspeleissä Biret sanoo oikean vastauksen. Parhaat tulokset palkintokorokkeella. Tuplanapautus ei vastaa kahdesti eikä ohita tulosta.
+- **Valokuvahaku** (Android, kytke päälle kohdasta *Työkalut*). Kuva koko näytöllä ja sanat merkittyinä; napauta sanaa, niin näet käännöksen oikeassa muodossa (*beavddis* = pöydässä). *Poimi lause* kääntää koko lauseen sana sanalta lauseyhteyden mukaan, ja *Valitse sanat itse* -toiminnolla voit maalata tai ympyröidä sanat sormella. Sivuttain oleva kuva käännetään itsestään. Kuvan voi lukea myös suomen- tai norjankielisenä tekstinä ja kääntää saameksi.
+- **Parempi kuvan luku.** Väärin luetut sanat korjautuvat useammin: puuttuvat erikoiskirjaimet, yhdeksi luettu kaksoiskirjain, *I*/*l*-sekaannukset ja rivin lopussa katkenneet sanat. Tuntemattomat saamen sanat luetaan toiseen kertaan Norjan kansalliskirjaston saamen tekstintunnistusmallilla puhelimessa. Yhdyssana jaetaan osiin, jos koko sanaa ei ole sanakirjassa.
+- **Inarin- ja koltansaame kuvissa** (kokeellinen, oletuksena pois). Sovellus tunnistaa kielen itse ja kääntää inarin tai koltan sanakirjojen kautta.
+- **Inarinsaame pelissä ja sanastoissa** (kokeellinen, *Työkalut*).
+- **Lausekääntäjä** (kokeellinen). Lyhyt suomenkielinen lause pohjoissaameksi sanakirjan sanoista ja muodoista; napauttamalla voi vaihtaa sanan tulkinnan tai muodon.
+- **Sukulaissanat muissa saamen kielissä.** Sanakortti näyttää saman sanan inarin-, koltan-, luulajan- ja eteläsaamessa, kun saamelaiskielten etymologinen tietokanta Álgu yhdistää ne (*boazu*: puásui, puäʒʒ, boatsoj, bovtse). Noin 13 000 sanaa.
+- **Paikannimet.** Norjan saamenkieliset paikannimet norjankielisine niminen (*Guovdageaidnu* – Kautokeino) Kartverketiltä ja suomenkieliset nimet noin 400 paikalle, kuten Utsjoki ja Ivalo.
+- **Parempi suomi.** Noin 145 väärää tai harhaanjohtavaa suomennosta korjattu riippumattomia lähteitä vasten tarkistettuina, esimerkiksi *ektui* (suhteen, verrattuna), *gáhttet* (suojella) ja *hárjeheaddji* (valmentaja). Noin 1 300 yhdyssanaa, joilta suomennos puuttui, sai tarkistetun suomennoksen, ja *-vuohta*-loppuiset sanat saavat *-uus/-yys*-ehdotuksen (*mánnávuohta* ≈ lapsuus).
+- **Jokerihaku.** `?` on yksi kirjain ja `*` mitä tahansa kirjaimia: `á?bmogis`, `bo*`. Jokerimerkillä alkava haku tarvitsee kolme kirjainta.
+- **Nopeampi haku.** Haku on 20–40 kertaa nopeampi, ja sanakirja on pienempi ladata.
+- **Ilmoita virheestä kaikkialta.** Sanakortti, taivutusmuodot, sanastot, peli, valokuvahaku ja lausenäkymät: virheilmoitus valmistelee sähköpostin.
+- **Tallennetut ääntämiset.** Kuunnellut sanat säilyvät laitteella käytettäviksi ilman verkkoa; enimmäiskoon voi valita ja ne voi tyhjentää kohdassa *Sanakortti*.
+- **Astevaihtelun värit.** Valitse vahvan ja heikon asteen värit tai alleviivaus, myös värisokeille sopiva valmis vaihtoehto.
+- **Koltansaamen käännökset** (tarkistamaton, oletuksena pois) suomennosten kautta, varoituksen kanssa.
+- **Tietosuoja.** Sovellus ei lähetä käyttötilastoja; Googlen ML Kitin tilastot on poistettu käytöstä. Kuva ei koskaan lähde puhelimesta. Verkkoa käytetään vain Divvunin ääntämispalveluun, kun painat kaiutinta.
+- **Saavutettavuus ja korjaukset.** Parempi kontrasti, näppäimistökäyttö ja ruudunlukijan nimet; Takaisin ja Esc sulkevat yhden kerroksen kerrallaan; liian vanha Androidin WebView näyttää selvän ilmoituksen ikuisen latauksen sijaan; puhelimen fonttikoon muutos ei enää lataa sovellusta uudelleen.
 - **Taivutusluokka.** Sanakortti näyttää substantiivin ja verbin luokan (I parillistavuinen, II paritontavuinen, III supistuma), kun lähde ja sanan muodot ovat samaa mieltä. Substantiiveille näytetään myös asteet. Muille sanoille luokkaa ei arvata.
 - **Itä ja länsi.** Alueittain vaihtelevat sanat ja käännökset on merkitty (it) ja (lä). Saman sanan kaksi kirjoitusasua, kuten *girku* ja *kirku*, ovat samalla kortilla, jonka löytää kummallakin. Eri sanoista, kuten *gánda* ja *lunta*, on linkki toiseen.
 - **Haku.** Aluemerkityt käännökset, kuten *patja*, löytyvät nyt.
