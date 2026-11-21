@@ -70,10 +70,57 @@ def cached_path(text, voice):
     return os.path.join(cache_dir(), voice_id, f"{digest}.wav")
 
 
-def fetch(text, voice=DEFAULT_VOICE):
-    """Palauttaa polun äänitiedostoon; hakee sen palvelusta, jos sitä ei ole välimuistissa."""
+DEFAULT_LIMIT_MB = 1024  # välimuistin enimmäiskoko; täyttyessä pisimpään kuuntelematta olleet poistetaan
+
+
+def cache_files():
+    """[(polku, viimeksi kuunneltu, koko)] välimuistin äänitiedostoista."""
+    out = []
+    for root, _dirs, files in os.walk(cache_dir()):
+        for name in files:
+            if name.endswith(".wav"):
+                p = os.path.join(root, name)
+                try:
+                    st = os.stat(p)
+                except OSError:
+                    continue
+                out.append((p, st.st_mtime, st.st_size))
+    return out
+
+
+def stats():
+    files = cache_files()
+    return {"n": len(files), "bytes": sum(f[2] for f in files)}
+
+
+def prune(limit_mb=DEFAULT_LIMIT_MB):
+    """Poistaa pisimpään kuuntelematta olleet, kunnes välimuisti mahtuu rajaan (kuuntelu päivittää muutosajan)."""
+    limit = max(1, int(limit_mb)) * 1024 * 1024
+    files = sorted(cache_files(), key=lambda f: f[1])
+    total = sum(f[2] for f in files)
+    for p, _t, size in files:
+        if total <= limit:
+            break
+        try:
+            os.remove(p)
+            total -= size
+        except OSError:
+            pass
+
+
+def clear():
+    shutil.rmtree(cache_dir(), ignore_errors=True)
+
+
+def fetch(text, voice=DEFAULT_VOICE, limit_mb=None):
+    """Palauttaa polun äänitiedostoon; hakee sen palvelusta, jos sitä ei ole välimuistissa.
+    limit_mb: uuden tiedoston jälkeen välimuisti karsitaan tähän kokoon (None = ei karsintaa)."""
     path = cached_path(text, voice)
     if os.path.exists(path) and os.path.getsize(path) > 0:
+        try:
+            os.utime(path)  # viimeksi kuunneltu: karsinta poistaa vanhimmat ensin
+        except OSError:
+            pass
         return path
 
     request = urllib.request.Request(
@@ -92,6 +139,8 @@ def fetch(text, voice=DEFAULT_VOICE):
     with open(tmp, "wb") as f:
         f.write(audio)
     os.replace(tmp, path)
+    if limit_mb:
+        prune(limit_mb)
     return path
 
 

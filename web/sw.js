@@ -1,22 +1,41 @@
 /* Service worker: sovellus ja sanakirja toimivat ilman verkkoyhteyttä ensimmäisen käynnin jälkeen.
    Kun tiedostoja päivitetään, kasvata VERSION, jolloin selaimet hakevat uudet tiedostot. */
-const VERSION = "satni-v7";
+const VERSION = "satni-v267";
+// Sanastojen äänet: tervehdysten keskustelu saameksi; sanat ja lauseet kolmella äänellä hakemistosta (audio/s/index.json)
+const AUDIO = ["audio/tervehdykset-sme.ogg"];
+// Minipelin palauteäänet (Biret): viikonpäivät, vuodenajat ja kuukaudet, oikein ja väärin
+for (let i = 0; i < 27; i++) AUDIO.push(`audio/peli/aika-${i}-ok.ogg`, `audio/peli/aika-${i}-no.ogg`);
+for (let i = 0; i < 11; i++) AUDIO.push(`audio/peli/kysy-${i}-ok.ogg`, `audio/peli/kysy-${i}-no.ogg`);
 const APP_SHELL = [
-  "./", "index.html", "styles.css", "i18n.js", "app.js", "manifest.webmanifest",
+  "./", "index.html", "boot.js", "styles.css", "i18n.js", "app.js", "lauseet.js", "sanastot.js", "harjoitus.js", "audio/w/harjoitus.json", "audio/s/index.json", "data/sanastot.json", "minipeli.js", "data/minipeli.json", "manifest.webmanifest",
   "vendor/sql-wasm.js", "vendor/sql-wasm.wasm",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/coffee.svg",
   "voices/biret.wav", "voices/mahtte.wav", "voices/sunna.wav",  // äänivalinnan näytteet
   "licenses/NOTICES.txt", "licenses/GPL-3.0.txt", "licenses/LGPL-3.0.txt", "licenses/CC-BY-4.0.txt", "licenses/CC-BY-3.0.txt",  // Lisenssit
-  "licenses/MPL-2.0.txt", "licenses/Apache-2.0.txt", "vendor/LICENSE-sql.js.txt",
+  "licenses/MPL-2.0.txt", "licenses/Apache-2.0.txt", "licenses/CC-BY-SA-4.0.txt", "vendor/LICENSE-sql.js.txt",
 ];
 const DATA = "data/satni-web.db.gz";
-// Sanakirjalla on oma välimuistinsa, jottei 21 Mt ladata uudelleen joka sovelluspäivityksessä.
+// Sanakirjalla on oma välimuistinsa, jottei noin 47 Mt ladata uudelleen joka sovelluspäivityksessä.
 // Kasvata numeroa, kun tietokannan sisältö tai rakenne muuttuu (v2: käännökset kielittäin, v3: käänteiset sanakirjat,
-// v5: astevaihtelun korjaus, dilli ll ~ l)
-const DATA_CACHE = "satni-data-v5";
+// v5: astevaihtelun korjaus, dilli ll ~ l, v6: taivutusluokat,
+// v7: muiden saamenkielten käännöksiä lisää ja suomennosehdotukset, v8: espanja, v9: haku ilman sulkeissa olevia tarkenteita,
+// v10: Tarkoititko-hakusanat muille kielille, v11: englantia Wiktionarysta)
+const DATA_CACHE = "satni-data-v56";  // v56: ryhmä A tarkistettu, 24 pois; v55: yhdyssanojen suomennokset + ryhmä B; v54: yhdyssanojen suomennokset + ryhmä C; v53: yhdyssanojen tarkistetut suomennokset (cmp_fin); v52: suomen sanojen yleisyys vain Voikon hyväksymille; v51: johdokset (der_base, der_fin: váralašvuohta ≈ vaarallisuus); v50: suomen yleiset sanat yhdyssanojen käännökseen; v49: norjan sanaparit (satni-nob-ngram.db.gz); v48: suomen sanojen yleisyys (fin_unigram); v47: suomen sanaparit (satni-fin-ngram.db.gz, Leipzig CC BY); v46: inari ja koltta omiin tiedostoihinsa; v45: koltansaame kuviin (sms_words, sms_forms, sms_cmp); v44: inarin partitiivi, passiivi, vertailumuodot, teonnimi; v43: inarinsaame kuviin (smn_words, smn_forms, smn_cmp); v42: sme_cmp (saamen yhdysmuodot); v41: fin_cmp (suomen yhdyssanojen alkuosat); v40: fin_also
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(VERSION).then((cache) => cache.addAll(APP_SHELL)));
+  // cache: "reload": sovelluksen tiedostot verkosta eikä selaimen HTTP-välimuistista (muuten vanha app.js voisi jäädä);
+  // äänilistat saavat tulla HTTP-välimuistista, ne muuttuvat harvoin ja ovat isoja
+  const fresh = (f) => new Request(f, { cache: "reload" });
+  event.waitUntil(caches.open(VERSION).then((cache) =>
+    cache.addAll(APP_SHELL.map(fresh)).then(() => Promise.allSettled([
+      ...AUDIO.map((f) => cache.add(f)),
+      // Kuunteluharjoituksen sanat (harjoitus.js): tiedostot hakemistosta, suomi ja saame kustakin sanasta
+      cache.match("audio/w/harjoitus.json").then((r) => r.json()).then((d) => Promise.allSettled(
+        d.lists.flatMap((l) => l.rows.flatMap((r, k) => [`audio/w/${l.id}-${k}-fi.ogg`, `audio/w/${l.id}-${k}-sme.ogg`,
+          ...Object.values(r.v || {}).map((x) => x[0]).filter((f) => f.startsWith("audio/w/"))])).map((f) => cache.add(f)))),
+      cache.match("audio/s/index.json").then((r) => r.json()).then((d) => Promise.allSettled(
+        Object.entries(d).flatMap(([v, idx]) => Object.values(idx).map((n) => `audio/s/${v}/${n}.ogg`)).map((f) => cache.add(f)))),
+    ]))));
   self.skipWaiting();
 });
 
@@ -33,8 +52,9 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (event.request.method !== "GET" || url.origin !== location.origin) return;
 
-  if (url.pathname.endsWith(DATA)) {
-    // Sanakirja (~40 Mt): välimuistista, verkosta vain ensimmäisellä kerralla
+  // Sanakirja ja inarin/koltan kuvasanastot (data/satni-smn.db.gz, satni-sms.db.gz; ladataan vain valittaessa)
+  if (url.pathname.endsWith(DATA) || /\/data\/satni-(smn|sms|fin-ngram|nob-ngram)\.db\.gz$/.test(url.pathname)) {
+    // Sanakirja (~47 Mt): välimuistista, verkosta vain ensimmäisellä kerralla
     event.respondWith(caches.open(DATA_CACHE).then(async (cache) => {
       const cached = await cache.match(event.request);
       if (cached) return cached;
@@ -55,6 +75,8 @@ self.addEventListener("fetch", (event) => {
         }
         return response;
       })
-      .catch(() => caches.match(event.request, { ignoreSearch: true }).then((r) => r || caches.match("index.html")))
+      // index.html vain sivun avaukselle: muuten puuttuva tiedosto (esim. licenses/desktop/files.txt) saisi sivun HTML:n
+      .catch(() => caches.match(event.request, { ignoreSearch: true })
+        .then((r) => r || (event.request.mode === "navigate" ? caches.match("index.html") : Response.error())))
   );
 });

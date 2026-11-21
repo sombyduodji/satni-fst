@@ -3,7 +3,14 @@ pluginManagement {
 }
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories { google(); mavenCentral() }
+    repositories {
+        google(); mavenCentral()
+        // Tesseract4Android (Apache-2.0) on vain JitPackissa: JitPackista haetaan vain tämä ryhmä, ei mitään muuta
+        exclusiveContent {
+            forRepository { maven { url "https://jitpack.io" } }
+            filter { includeGroup "cz.adaptech.tesseract4android" }
+        }
+    }
 }
 rootProject.name = "satni-fst"
 include ":app"

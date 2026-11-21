@@ -7,6 +7,7 @@ Web-tiedostot (web/) tarjotaan sisäiselle selaimelle omalla satni://app/ -osoit
 file://-osoitteista selain ei salli sanakirjan lataamista eikä välimuistia. Ulkoiset linkit
 (Giellatekno, sähköposti) avataan käyttäjän tavallisessa selaimessa.
 """
+import json
 import mimetypes
 import os
 import subprocess
@@ -86,6 +87,21 @@ class WebFileHandler(QWebEngineUrlSchemeHandler):
         if path.startswith("tts/"):
             self.start_tts(job, path[4:])
             return
+        # Tallennetut ääntämiset (Asetukset → Sanakortti): määrä ja koko, tyhjennys, karsinta uuteen rajaan
+        if path in ("ttsinfo", "ttsclear", "ttsprune"):
+            if path == "ttsclear":
+                tts.clear()
+            elif path == "ttsprune":
+                try:
+                    limit = int(parse_qs(job.requestUrl().query()).get("limit", [tts.DEFAULT_LIMIT_MB])[0])
+                except ValueError:
+                    limit = tts.DEFAULT_LIMIT_MB
+                tts.prune(limit)
+            buffer = QBuffer(parent=job)
+            buffer.setData(QByteArray(json.dumps(tts.stats()).encode()))
+            buffer.open(QBuffer.OpenModeFlag.ReadOnly)
+            job.reply(b"application/json", buffer)
+            return
         if path == "copy":
             QApplication.clipboard().setText(parse_qs(job.requestUrl().query()).get("text", [""])[0])
             buffer = QBuffer(parent=job)
@@ -106,7 +122,12 @@ class WebFileHandler(QWebEngineUrlSchemeHandler):
         job.reply(mime.encode(), buffer)
 
     def start_tts(self, job, voice_id):
-        text = parse_qs(job.requestUrl().query()).get("text", [""])[0].strip()
+        query = parse_qs(job.requestUrl().query())
+        text = query.get("text", [""])[0].strip()
+        try:
+            limit = int(query.get("limit", [tts.DEFAULT_LIMIT_MB])[0])
+        except ValueError:
+            limit = tts.DEFAULT_LIMIT_MB
         voice = next((name for name, vid in tts.VOICES.items() if vid == voice_id), tts.DEFAULT_VOICE)
         if not text:
             job.fail(QWebEngineUrlRequestJob.Error.RequestFailed)
@@ -117,7 +138,7 @@ class WebFileHandler(QWebEngineUrlSchemeHandler):
 
         def worker():
             try:
-                self.tts_ready.emit(job, tts.fetch(text, voice), None)
+                self.tts_ready.emit(job, tts.fetch(text, voice, limit), None)
             except Exception as e:
                 self.tts_ready.emit(job, None, e)
 
@@ -164,7 +185,10 @@ class AppPage(QWebEnginePage):
     def acceptNavigationRequest(self, url, nav_type, is_main_frame):
         if url.scheme() == SCHEME.decode():
             return True
-        open_external(url)
+        # Vain verkko- ja sähköpostilinkit järjestelmälle (kuten ExternalLinkPage): ei file:-, data:- tms.
+        # osoitteita xdg-openille
+        if url.scheme() in ("http", "https", "mailto"):
+            open_external(url)
         return False
 
     def createWindow(self, window_type):

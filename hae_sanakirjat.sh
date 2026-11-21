@@ -1,6 +1,9 @@
 #!/bin/sh
 # Hakee tai päivittää GiellaLT:n sanakirjat, joista import_full_dict.py lukee muiden kielten käännökset
-# (dict-sme-*) ja suomen- ja norjankielisen haun (dict-fin-sme, dict-nob-sme).
+# (dict-sme-*) ja suomen- ja norjankielisen haun (dict-fin-sme, dict-nob-sme). dict-smn-sme, dict-smj-sme ja
+# dict-sma-sme täydentävät puuttuvia saamenkielten käännöksiä; dict-smn-fin ja dict-fin-smn ovat suomennosehdotuksia
+# varten (pivot_fin.py). dict-sme-spa ja dict-spa-sme: espanjan käännökset (spa_data.py, Excel-tiedostot).
+# dict-sme: pohjoissaamenkieliset määritelmät (sme_definitions.py).
 # Puuttuva repo kloonataan, olemassa oleva päivitetään (git pull). Lopuksi tulostetaan käytetyt versiot.
 #
 # LÄHDE: GiellaLT / Divvun / Giellatekno, UiT Norjan arktinen yliopisto (https://github.com/giellalt).
@@ -9,7 +12,8 @@
 # dict-sme-fin on tallennettu tähän repoon tiedostoina, eikä sitä päivitetä täällä.
 cd "$(dirname "$0")" || exit 1
 for repo in dict-sme-nob dict-sme-eng dict-sme-smn dict-sme-smj dict-sme-sma dict-fin-sme dict-nob-sme \
-            dict-sms-mul dict-fin-sms dict-nob-sms; do
+            dict-sms-mul dict-fin-sms dict-nob-sms dict-smn-sme dict-smj-sme dict-sma-sme \
+            dict-smn-fin dict-fin-smn dict-sme-spa dict-spa-sme dict-sme; do
     if [ -d "$repo/.git" ]; then
         echo "Päivitetään $repo..."
         git -C "$repo" pull --ff-only --quiet || echo "  $repo: päivitys epäonnistui"
@@ -41,10 +45,16 @@ if [ ! -f giella-fin/analyser-gt-desc.hfstol ] || [ "$1" = "--paivita-fin" ]; th
     fi
     rm -rf "$TMP"
 fi
+# Wiktionary (CC BY-SA 4.0, kaikki.org): englanti sanoille, joilla sitä ei ole (wiktionary_eng.py). Lataus on noin 8 Gt,
+# joten vain kerran tai pyydettäessä (--paivita-wiktionary); poiminta tallentuu hakemistoon wiktionary/.
+if [ ! -f wiktionary/se.json.gz ] || [ "$1" = "--paivita-wiktionary" ]; then
+    python3 wiktionary_eng.py --hae || echo "  Wiktionary: haku epäonnistui"
+fi
 echo
 echo "Versiot:"
 for repo in dict-sme-nob dict-sme-eng dict-sme-smn dict-sme-smj dict-sme-sma dict-fin-sme dict-nob-sme \
-            dict-sms-mul dict-fin-sms dict-nob-sms; do
+            dict-sms-mul dict-fin-sms dict-nob-sms dict-smn-sme dict-smj-sme dict-sma-sme \
+            dict-smn-fin dict-fin-smn dict-sme; do
     [ -d "$repo/.git" ] && echo "  $repo $(git -C "$repo" log -1 --format='%h %cs')"
 done
 [ -f giella-fin/VERSION ] && echo "  lang-fin $(cat giella-fin/VERSION)"

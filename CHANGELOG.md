@@ -3,11 +3,45 @@
 All releases of Sátni FST. Downloads: [GitHub releases](https://github.com/sombyduodji/satni-fst/releases).
 [Suomi](CHANGELOG.fi.md) · [Norsk](CHANGELOG.nb.md)
 
-## Next version (not released)
+## 1.0.0 — 2026-11-21
 
+The first full release. Besides the dictionary, the app now has word lists with pronunciation, a listening practice, a word game and a much better photo search.
+
+- **New look on phones.** A bottom bar with Search, Word lists, Game and More; the tools you switch on (Photo, Sentence) get their own buttons there. Settings are grouped into pages: Look, Word card, Translation languages, History, Tools and Experimental.
+- **Word lists.** Topic lists with pronunciation by Biret, Máhtte and Sunná: numbers and ordinals, days, months and seasons, family, colours, question words, reindeer, weather and more. Tap a word to hear it, copy it or open its word card. The greetings can be heard as a conversation.
+- **Listening practice** (Finnish menu language). Harri says a word in Finnish, you get a moment to think, and the Sámi answer is spoken and shown. Choose topics, number ranges, direction, thinking time and voice; it keeps playing with the screen off and can be stopped from the notification.
+- **Word game.** Pick the right translation from four, or write the word in Sámi (hints cost a point, missing special letters too). Beginner and advanced levels and short topic games (ordinals, time words, colours, question words, animals); in the time and question games Biret says the right answer. Best results on a podium. Double taps cannot answer twice or skip the result.
+- **Photo search** (Android, switch on under *Tools*). Full-screen photo with the words marked; tap a word for its translation in the right form (*beavddis* = pöydässä). *Pick sentence* translates the whole sentence word by word in context, and *Choose words yourself* lets you paint or circle the words with a finger. Sideways photos are turned automatically. Photos can also be read as Finnish or Norwegian text and translated into Sámi.
+- **Better photo reading.** Words the phone reads wrongly are corrected more often: missing special letters, a double letter read as one, *I*/*l* mix-ups and words broken at the end of a line. Unknown Sámi words get a second reading with the National Library of Norway's Sámi text recognition model, on the phone. Compounds are split into their parts when the whole word is not in the dictionary.
+- **Inari and Skolt Sámi in photos** (experimental, off by default). The app recognises the language by itself and translates through the Inari or Skolt dictionaries.
+- **Inari Sámi in the game and word lists** (experimental, *Tools*).
+- **Sentence translator** (experimental, Finnish menu language). A short Finnish sentence becomes a North Sámi sentence built from the dictionary's words and forms; tap a word to change its reading or form.
+- **Related words in other Sámi languages.** The word card shows the same word in Inari, Skolt, Lule and South Sámi where Álgu, the etymological database of the Sámi languages, links them (*boazu*: puásui, puäʒʒ, boatsoj, bovtse). About 13,000 words.
+- **Place names.** Sámi place names in Norway with their Norwegian names (*Guovdageaidnu* – Kautokeino) from Kartverket, and Finnish names for about 400 places such as Utsjoki and Ivalo.
+- **Better Finnish.** About 145 wrong or misleading Finnish translations corrected after a check against independent references, such as *ektui* (suhteen, verrattuna), *gáhttet* (suojella) and *hárjeheaddji* (valmentaja). About 1,300 compounds that had no Finnish get a checked translation, and words ending in *-vuohta* get a Finnish *-uus/-yys* suggestion (*mánnávuohta* ≈ lapsuus).
+- **Wildcard search.** `?` stands for one letter and `*` for any letters: `á?bmogis`, `bo*`. Patterns starting with a wildcard need three letters.
+- **Faster search.** Searching is 20–40 times faster and the dictionary is smaller to download.
+- **Report a mistake everywhere.** Word card, inflection forms, word lists, the game, photo search and the sentence views all have a report button that prepares an email.
+- **Stored pronunciations.** Words you have listened to are kept on the device for offline use; choose the maximum size or clear them under *Word card*.
+- **Gradation colours.** Choose the colours of the strong and weak grade, or underlining, including a colour-blind friendly preset.
+- **Skolt Sámi translations** (unchecked, off by default) through the Finnish translations, with a warning that they may be wrong.
+- **Privacy.** The app sends no usage statistics; Google ML Kit's statistics are switched off. Photos never leave the phone. The only network use is the Divvun pronunciation service when you press the speaker.
+- **Accessibility and fixes.** Better contrast, keyboard use and screen reader labels; Back and Esc close one layer at a time; a too-old Android WebView shows a clear message instead of loading forever; changing the phone's font size no longer reloads the app.
+- **Inflection class.** The word card shows the class of nouns and verbs (I even-syllable, II odd-syllable, III contracted) when the source and the word's forms agree. Nouns also show their grades. No class is guessed for other words.
 - **East and west.** Words and translations that differ by area are marked (it)/(lä) in Finnish and (ø)/(v) in Norwegian. Two spellings of the same word, such as *girku* and *kirku*, share one card that either spelling finds. Different words get a link to each other, such as *gánda* and *lunta*.
 - **Search.** Translations with an area mark, such as *patja*, are now found.
 - **Pronunciation.** A new tap stops the sound that is playing and cancels any request still on its way, so sounds no longer overlap or play one after another.
+- **More Sámi translations.** About 40 words get a missing Inari, Lule or Southern Sámi translation from GiellaLT's Inari, Lule and Southern Sámi to North Sámi dictionaries.
+- **Finnish suggestions (experimental).** For words with no Finnish translation, the word card can show a suggestion made through Inari Sámi or Norwegian, marked as unchecked. About 2,150 words get one. Switch it on under *Experimental features*.
+- **Spanish.** Spanish translations for about 7,600 words, including about two thirds of the most common ones, with meanings and example sentences from GiellaLT's Spanish dictionaries by Ángel. Switch them on under *Other languages*.
+- **Search in other languages.** Languages switched on under *Other languages* can also be used to search, after North Sámi and Finnish or Norwegian matches: *perro* finds *beana*. The result list shows which language matched. Only base forms are found.
+- **Search finds translations with a note in brackets.** *naida* now finds words translated "naida (kerran)", and *immoral* finds "immoral (of women)": about 3,400 words that could only be found by typing the note too.
+- **"Did you mean" in the search box and for other languages.** While typing, the search box suggests the word with its missing special letters (*cahci* → *čáhci*), also in the languages switched on under *Other languages* (*arbol* → *árbol*, *tjielte* → *tjïelte*). The suggestion only adds letters, never swaps them.
+- **More English.** About 3,100 words get English from Wiktionary, and about 1,800 more show an unchecked English suggestion. English search also ignores a leading *to* or *a* (*read* finds "to read").
+- **Finnish forms in the inflection table corrected.** The Finnish translation next to each Sámi form now uses standard Finnish: *haluan*, not *haluun*; *kauniista*, not *kaunista*; *kiipijöihin*, not *kiipijiin*; *pelastusliiveiltä*, not *pelastusliiveilta*. About 1,900 words changed. Every Finnish form is checked against the Voikko spell checker and the GiellaLT analyser. Where no correct form could be confirmed, the table cell shows no Finnish instead of a wrong one.
+- **Style labels.** Translations that are vulgar, derogatory or offensive now carry a label on the word card, in the meanings and in the result list, such as *perse* (vulgar), *muija* (derogatory) and *tater* (offensive). The labels come from Wiktionary's own markings and were reviewed by hand: 37 translation words are marked.
+- **Cleaner English.** About 1,100 English "translations" that were really grammar notes from Konrad Nielsen's dictionary ("continuative of njuol’got", "caus. of rok’čit"), Sámi words in the old spelling, or German left over from the Sámi–German original ("den Schlucken haben") are removed, and about 370 more lose such a note but keep their English ("middlemost (= gâs’kâlâmŏs)" → "middlemost"). Wiktionary English that Wiktionary marks as offensive is only used when the Sámi word itself is marked so, and then with the label.
+- **Spelling fixes.** About 60 Finnish typos and outdated spellings in the translations are corrected, such as *kaivosyitys* → *kaivosyritys*, *taitelija* → *taiteilija* and *tietokonenohjelma* → *tietokoneohjelma*; each was confirmed with two spell checkers and by hand. Spanish typos such as *latimarse* → *lastimarse* and *reluctacia* → *reluctancia* are corrected, and work notes ("XXX") left in the source dictionaries are removed.
 
 ## 0.9.3 — 2026-11-03
 

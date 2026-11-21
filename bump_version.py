@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # Kirjoittaa version.py-tiedoston (sovellukset ja build-skriptit lukevat sen) gitin tiedoista.
-# Versio on muotoa X.Y.Z.VVVVKKPP.N: X.Y.Z on julkaisun numero tiedostosta RELEASE_VERSION (sama kuin
-# GitHub-julkaisun tagi vX.Y.Z), VVVVKKPP viimeisimmän commitin päivämäärä ja N monesko sen päivän commit
+# Versio on muotoa X.Y.Z[.W].VVVVKKPP.N: X.Y.Z[.W] on julkaisun numero tiedostosta RELEASE_VERSION (sama kuin
+# GitHub-julkaisun tagi vX.Y.Z[.W]), VVVVKKPP viimeisimmän commitin päivämäärä ja N monesko sen päivän commit
 # se on. Sama commit saa siis saman version jokaisella koneella (tämä kone, kannettava, Forgejo-runner).
 # Committaamattomat muutokset: loppuun "+muokattu" (Androidin versionCode on sama kuin commitilla).
 # Androidin versionCode: päivämäärä * 100 + N (0.7.3.20261030.6 -> 2026103006), siksi N enintään 99.
-# Uusi julkaisu kasvattaa yleensä viimeistä numeroa tiedostossa RELEASE_VERSION: 0.7.1 -> 0.7.2.
+# Julkaisun numero kasvatetaan komennolla release.py: "sisalto" (uutta sisältöä, 0.9.3 -> 0.9.4, 0.9.9 -> 1.0.0)
+# tai "korjaus" (korjaukset ja käännökset, 0.9.3 -> 0.9.3.1, 0.9.3.9 -> 0.9.4).
 import os
 import datetime
 import subprocess

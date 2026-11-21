@@ -17,14 +17,15 @@ cp docs/screenshots/*.png "$OUT/screenshots/" || exit 1
 cp -r web "$OUT/app" || exit 1
 # Selainversion Tietoa-ikkunaan julkaisun numero (RELEASE_VERSION)
 WEB_VERSION=$(cat RELEASE_VERSION)
-sed -i "s|<title>|<script>window.SATNI_WEB_VERSION = \"$WEB_VERSION\";</script>\n  <title>|" "$OUT/app/index.html"
-grep -q "SATNI_WEB_VERSION = \"$WEB_VERSION\"" "$OUT/app/index.html" || { echo "Selainversion numeron lisäys epäonnistui"; exit 1; }
+# meta-tagina eikä skriptinä: sisällön suojauskäytäntö (CSP, index.html) kieltää sivun sisäiset skriptit
+sed -i "s|<title>|<meta name=\"satni-web-version\" content=\"$WEB_VERSION\">\n  <title>|" "$OUT/app/index.html"
+grep -q "name=\"satni-web-version\" content=\"$WEB_VERSION\"" "$OUT/app/index.html" || { echo "Selainversion numeron lisäys epäonnistui"; exit 1; }
 touch "$OUT/.nojekyll"  # ei Jekyll-käsittelyä
 
 # Selainten välimuistit nimetään sisällön mukaan (web/sw.js): uusi sanakirja tai sovellus korvaa vanhan
 # välimuistin. Muuten kerran ladattu sanakirja jäisi selaimeen pysyvästi.
 DATA_HASH=$(sha256sum web/data/satni-web.db.gz | cut -c1-12)
-APP_HASH=$(cd web && cat index.html styles.css i18n.js app.js sw.js manifest.webmanifest | sha256sum | cut -c1-12)
+APP_HASH=$(cd web && cat index.html boot.js styles.css i18n.js app.js sw.js manifest.webmanifest | sha256sum | cut -c1-12)
 sed -i -e "s/^const VERSION = \"\(satni-v[0-9]*\)\";/const VERSION = \"\1-$APP_HASH\";/" \
        -e "s/^const DATA_CACHE = \"\(satni-data-v[0-9]*\)\";/const DATA_CACHE = \"\1-$DATA_HASH\";/" "$OUT/app/sw.js"
 grep -q "satni-data-v[0-9]*-$DATA_HASH" "$OUT/app/sw.js" || { echo "sw.js:n välimuistien nimeäminen epäonnistui"; exit 1; }

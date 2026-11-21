@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Varmuuskopio ja siirto uuteen puhelimeen (Android 12+, android:dataExtractionRules): vain asetukset, historia ja
+     suosikit (WebViewin localStorage) sekä sovelluksen omat asetustiedostot. Ei välimuistia eikä tekstintunnistuksen
+     kuvia (cache/ocr). Samat säännöt: backup_rules.xml. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="root" path="app_webview/Default/Local Storage/" />
+        <include domain="sharedpref" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="root" path="app_webview/Default/Local Storage/" />
+        <include domain="sharedpref" path="." />
+    </device-transfer>
+</data-extraction-rules>

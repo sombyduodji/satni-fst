@@ -3,7 +3,10 @@
 LÄHTEET (ks. CREDITS.md):
   - Sanakirjat: GiellaLT / Divvun / Giellatekno, UiT Norjan arktinen yliopisto, lisenssi CC BY 4.0:
     dict-sme-fin, dict-sme-nob, dict-sme-eng, dict-sme-smn, dict-sme-smj, dict-sme-sma (käännökset)
-    sekä dict-fin-sme ja dict-nob-sme (haku suomeksi ja norjaksi). https://github.com/giellalt
+    sekä dict-fin-sme ja dict-nob-sme (haku suomeksi ja norjaksi) ja dict-smn-sme, dict-smj-sme ja
+    dict-sma-sme (puuttuvat inarin-, luulajan- ja eteläsaamen käännökset). https://github.com/giellalt
+  - Espanja: GiellaLT dict-sme-spa ja dict-spa-sme (Ángel, CC BY 4.0), Excel-tiedostot (spa_data.py).
+  - Englanti, kun GiellaLT:n dict-sme-eng:ssä sitä ei ole: Wiktionary (CC BY-SA 4.0) kaikki.org:sta (wiktionary_eng.py).
   - Taivutus: GiellaLT lang-sme -analysaattori ja -generaattori (src/fst/), lisenssi GPL-3.0.
 CC BY 4.0 edellyttää muutosten mainitsemista: sanakirjat yhdistetään, niihin lisätään FST:llä
 generoidut taivutusmuodot ja astevaihtelu, korjaukset.tsv:n korjaukset sovelletaan ja suomennosten
@@ -12,15 +15,26 @@ norjalaiset kirjaimet korjataan (ks. CREDITS.md: "Changes made to the dictionary
 import sqlite3
 import subprocess
 import os
+import re
 import glob
 import sys
-import threading
+import concurrent.futures
+import functools
 import xml.etree.ElementTree as ET
 
 import dialects
 import gradation
+import inflection_class
+import semantics
+import sme_definitions
+import sikor_freq
+import algu_related
+import kartverket_names
 import fin_forms
+import sme_passive
 import nob_forms
+import spa_data
+import wiktionary_eng
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 GENERATOR = os.path.join(SCRIPT_DIR, "src", "fst", "generator-gt-norm.hfst")
@@ -32,13 +46,24 @@ LANGUAGES = ["fin", "nob", "eng", "smn", "smj", "sma"]
 XML_DIRS = {lang: os.path.join(SCRIPT_DIR, f"dict-sme-{lang}", "src") for lang in LANGUAGES}
 # Käänteiset sanakirjat (suomi/norja -> saame): parantavat hakua suomen- ja norjankielisillä sanoilla
 REVERSE_DIRS = {lang: os.path.join(SCRIPT_DIR, f"dict-{lang}-sme", "src") for lang in ("fin", "nob")}
-TRANSLATION_COLUMNS = {lang: "finnish_translation" if lang == "fin" else f"{lang}_translation" for lang in LANGUAGES}
+# Käänteisen sanakirjan väärä sanaluokka, joka vie hakusanan väärälle saamen sanalle: (kieli, hakusana, saamennos) ->
+# oikea sanaluokka. dict-fin-sme: mitä (Adv) -> maid (Adv) on esimerkin (maid don doppe oidnet?) mukaan pronomini
+# maid (mii-sanan akkusatiivi), ei adverbi maid "myös" (tarkistettu 2026-11-08)
+REVERSE_POS_FIXES = {("fin", "mitä", "maid"): "Pron"}
+# Muiden saamenkielten sanakirjat (inari/luulaja/etelä -> pohjoissaame): täydentävät vain puuttuvia käännöksiä
+# (sanakirjat dict-sme-smn/smj/sma ovat jo lähes samat, ks. fill_sami_translations)
+SAMI_REVERSE_DIRS = {lang: os.path.join(SCRIPT_DIR, f"dict-{lang}-sme", "src") for lang in ("smn", "smj", "sma")}
+# Espanja luetaan Excel-tiedostoista (spa_data.py), muut GiellaLT:n XML-sanakirjoista
+TRANSLATION_LANGS = LANGUAGES + ["spa"]
+TRANSLATION_COLUMNS = {lang: "finnish_translation" if lang == "fin" else f"{lang}_translation" for lang in TRANSLATION_LANGS}
 CORRECTIONS_FILE = os.path.join(SCRIPT_DIR, "korjaukset.tsv")
 # <t t_type="..."> -viittaukset kielioppisivuille (oahpa.no), eivät käännöksiä eivätkä saamen sanoja
 GRAMMAR_POINTERS = ("grammar", "grammarexpl")
 
-# Montako hfst-lookup-prosessia ajetaan rinnakkain
-WORKERS = max(1, min(8, os.cpu_count() or 1))
+# Montako hfst-lookup-prosessia ajetaan rinnakkain (SATNI_WORKERS) ja montako kyselyä kukin saa kerrallaan:
+# 5 000 kyselyä vie generaattorilla noin 300 Mt (mitattu 2026-11-06), joten kahdeksan prosessia noin 2,5 Gt
+WORKERS = int(os.environ.get("SATNI_WORKERS") or max(1, min(8, os.cpu_count() or 1)))
+LOOKUP_BATCH = 5000
 # Aikaraja sekunteina yhdelle syötteelle: muutama muiden kielten sanakirjojen sana jumittaa analysaattorin
 # loputtomiin (tavallinen sana vie ~30 ms)
 LOOKUP_TIME_CUTOFF = "2"
@@ -98,7 +123,17 @@ INFLECTION_START = {"Sg", "Pl", "Nom", "Attr", "Inf", "Ess"}
 
 
 # Suomennoksissa on paikoin norjalaiset kirjaimet suomalaisten tilalla (esim. "viisikymmentæ")
-FINNISH_LETTER_FIXES = str.maketrans({"æ": "ä", "Æ": "Ä", "ø": "ö", "Ø": "Ö"})
+# Päivätesti 2026-11-14: huurṛe (r ja alapiste), T˸n (U+02F8 kaksoispisteen sijaan), nauˈunta (painomerkki heittomerkin sijaan)
+FINNISH_LETTER_FIXES = str.maketrans({"æ": "ä", "Æ": "Ä", "ø": "ö", "Ø": "Ö", "ṛ": "r", "˸": ":", "ˈ": "’"})
+# Päivätesti 2026-11-14: rakennevirheet suomennoksissa (tupla pilkku, tyhjät sulut, sulkematon sulku, vanhalla
+# oikeinkirjoituksella kirjoitettu saamenkielinen esimerkki suomennoksen sisällä: skádjat)
+FINNISH_TEXT_FIXES = [
+    (re.compile(r",\s*,"), ","),
+    (re.compile(r"\s*,\s*$"), ""),
+    (re.compile(r"\s*\(\s*=\s*\)"), ""),
+    (re.compile(r"^(pistää \(nopeasti, usein t\. useita esineitä)$"), r"\1)"),
+    (re.compile(r"\s*\(oppa várrẹvielti skádjá beatnagiid ciellamis = koko vaaranrinne raikuu koirien haukunnasta\.\)"), ""),
+]
 
 
 # FST:n tuottamat muodot, joita ei oteta tietokantaan: lang-sme 6b1ae1cb40 tuottaa nämä lyhenteille EMRIP ja
@@ -109,8 +144,74 @@ REJECTED_FORMS = {"EMRIPa", "Radisson-SASa"} | {f"info:{ending}" for ending in (
 ACRONYM_TAGS = {"Sg+Nom", "Sg+Gen", "Sg+Acc"}
 
 
+# Suomennosten kirjoitusvirheet ja vanhentuneet kirjoitusasut (tarkistettu 2026-11-06): kumpikaan oikoluin (Voikko,
+# lang-fin) ei tunne vanhaa sanaa, molemmat tuntevat korjatun, ja korjaus on yhden kirjaimen päässä (tai valittu
+# käsin, kun Voikon ehdotus oli väärä: kaivosyitys -> kaivosyritys); käyty käsin läpi, harvinaiset ja murresanat säilyvät
+FINNISH_TYPOS = {
+ "arkelologi": "arkeologi", "arkkitehtooninen": "arkkitehtoninen", "aurinkopaneli": "aurinkopaneeli",
+ "ekspisiittisesti": "eksplisiittisesti", "fäärsaarelainen": "färsaarelainen", "haastellinen": "haasteellinen",
+ "harmooninen": "harmoninen", "ideolooginen": "ideologinen", "irroittautua": "irrottautua", "kaivosyitys": "kaivosyritys",
+ "kallionjykänne": "kallionjyrkänne", "kaulalihkakset": "kaulalihakset", "kovääninen": "kovaääninen",
+ "kultuurihistoriallinen": "kulttuurihistoriallinen", "käprisyneenä": "käpristyneenä", "käyttätyä": "käyttäytyä",
+ "legitiimys": "legitiimiys", "limonaadi": "limonadi", "lutherilainen": "luterilainen", "lyhykalloinen": "lyhytkalloinen",
+ "mietittyttää": "mietityttää", "monikulkio": "monikulmio", "muinaisimuistojen": "muinaismuistojen", "näköoala": "näköala",
+ "osaanottaja": "osanottaja", "petrooli": "petroli", "ponttooni": "ponttoni", "pylvägrafiikka": "pylväsgrafiikka",
+ "reiitin": "reititin", "renesanssi": "renessanssi", "selvityminen": "selviytyminen", "selvityä": "selviytyä",
+ "smirkeli": "smirgeli", "standarisoida": "standardisoida", "synagooga": "synagoga", "taitelija": "taiteilija",
+ "tendessi": "tendenssi", "teorema": "teoreema", "tietokonenohjelma": "tietokoneohjelma", "tiibettiläinen": "tiibetiläinen",
+ "toisijaisesti": "toissijaisesti", "topograafinen": "topografinen", "tulisase": "tuliase", "vaihtehtoinen": "vaihtoehtoinen",
+ "yleieurooppalainen": "yleiseurooppalainen", "biograafinen": "biografinen", "kliniikka": "klinikka", "kamina": "kamiina",
+ "jystää": "jyystää", "loidommas": "loitommas", "loidompana": "loitompana", "röhistely": "röyhistely", "neljittäin": "nelittäin",
+ "nykyäys": "nykäys", "ylimistö": "ylimystö", "vähintäinkin": "vähintäänkin", "pöllyyttää": "pöllyttää",
+ "suolisolbmu": "suolisolmu", "kurenuohtta": "kurenuotta", "interrogatiiviprononomini": "interrogatiivipronomini",
+ "vistous": "viistous", "virtava": "virtaava",
+ # yötesti 2026-11-12 (5 000 yleisintä sanaa, Voikko tuntee vain korjatun): hávális, leansmánnekantuvra, rohttet,
+ # fidnofágalaš, otná, dassá/dassái, fágasuorgi
+ "kerrallaa": "kerrallaan", "nimesmiestoimisto": "nimismiestoimisto", "vetaista": "vetäistä",
+ "yrtysammatillinen": "yritysammatillinen", "tämänpäivinen": "tämänpäiväinen", "siihen astinen": "siihenastinen",
+ "ammatti-alue": "ammattialue",
+ # täystesti 2026-11-12 (3 000 yleisimmän sanan suomennokset, Voikko): gilvit = kylvää, čielgat = selkiytyä
+ "kylvätä": "kylvää", "selkeentyä": "selkiytyä",
+ # päivätesti 2026-11-14 (árvofápmu): saamen á suomennoksessa
+ "árvovalta": "arvovalta", "ráju": "raju",
+}
+_FINNISH_TYPO_RE = re.compile(r"\b(" + "|".join(sorted(FINNISH_TYPOS, key=len, reverse=True)) + r")\b")
+
+
 def fix_finnish_text(text):
-    return text.translate(FINNISH_LETTER_FIXES)
+    text = _FINNISH_TYPO_RE.sub(lambda m: FINNISH_TYPOS[m.group(1)], text.translate(FINNISH_LETTER_FIXES))
+    for pattern, repl in FINNISH_TEXT_FIXES:
+        text = pattern.sub(repl, text)
+    return text
+
+
+# Muiden kielten kirjoitusvirheet: offline-tarkistus 2026-11-10 (Hunspell nb/nn/en/es, Norsk ordbank, yhdyssanojen
+# jako tunnettuihin osiin, Divvunin oikolukijat), jokainen luettu käsin. Englannissa myös
+# Nielsenin vanhat kirjoitusasut rince ja trambled.
+OTHER_TYPOS = {
+    "nob": {"utjevningsmadat": "utjevningsmandat", "stemmeseddelkonvoutt": "stemmeseddelkonvolutt",
+            "statsmetereolog": "statsmeteorolog", "dokumetasjonsarbeid": "dokumentasjonsarbeid",
+            "hodebeskyttelsse": "hodebeskyttelse", "førskolelærerudanning": "førskolelærerutdanning",
+            "koorderingsansvar": "koordineringsansvar", "avgresningsproblem": "avgrensningsproblem",
+            "uoverenstemmelse": "uoverensstemmelse", "stipendiatstillling": "stipendiatstilling",
+            "strukturmeldning": "strukturmelding", "rehabilieringsstipend": "rehabiliteringsstipend",
+            "semuljegryn": "semulegryn", "ultraviolett": "ultrafiolett",
+            "kulturminneregistreingsprosjekt": "kulturminneregistreringsprosjekt"},
+    "eng": {"lenght": "length", "rince": "rinse", "wich": "which", "trambled": "trampled"},
+    "sma": {"paramentarihkere": "parlamentarihkere"},
+}
+_OTHER_TYPO_RE = {lang: re.compile(r"\b(" + "|".join(sorted(t, key=len, reverse=True)) + r")\b") for lang, t in OTHER_TYPOS.items()}
+# Lähteen homonyyminumero käännöksen perässä (dict-sme-smj: bårråt¹, dict-sme-smn: kuullâđ¹)
+_HOMONYM_NUMBER_RE = re.compile(r"(?<=\w)[¹²³⁴⁵⁶⁷⁸⁹⁰]+")
+
+
+def fix_text(lang, text):
+    """Käännöstekstin korjaukset kielen mukaan (suomi: fix_finnish_text, muut: OTHER_TYPOS) ja homonyyminumerot pois."""
+    if lang == "fin":
+        text = fix_finnish_text(text)
+    elif lang in OTHER_TYPOS:
+        text = _OTHER_TYPO_RE[lang].sub(lambda m: OTHER_TYPOS[lang][m.group(1)], text)
+    return _HOMONYM_NUMBER_RE.sub("", text)
 
 
 # Sanaluokka puuttuu (dict-sme-eng: pos="Xxx"): päätellään toisesta sanakirjasta tai FST:stä
@@ -133,18 +234,93 @@ XML_LANG = '{http://www.w3.org/XML/1998/namespace}lang'
 
 
 def _clean(text):
-    return " ".join(text.split()) if text else ""
+    """Välilyönnit siistiksi ja työmerkinnät XXX, XXXX ja _XXX pois (dict-sme-fin njavki: "päällä vita
+    korvamerkissä XXX", dict-sme-nob: "om enkeltindivid_XXX"); pelkästä merkinnästä tulee tyhjä."""
+    if not text:
+        return ""
+    words = [re.sub(r"_XXX+$", "", w) for w in text.split()]
+    return " ".join(w for w in words if w and not re.fullmatch(r"X{3,}", w))
+
+
+# Työmerkinnät, jotka ovat sanakirjassa käännöksen paikalla: dict-sme-eng:n X_smeeng.xml:ssä "(ei LpDict)"
+# (74 sanaa, Kotuksen aineistosta 2013) eli englantia ei löytynyt lähteestä
+# "attr." on dict-sme-fin:ssä kolmen adjektiivin käännöksenä (<t>attr.</t>: ollu, olu, bealleálás), ei suomen sana
+NOT_TRANSLATIONS = {"(ei LpDict)", "attr."}
 
 
 def _placeholder(text):
-    """Täyttämätön käännöspaikka, esim. "_FIN_" tai "_NOB_"."""
-    return len(text) > 2 and text.startswith("_") and text.endswith("_") and text[1:-1].isupper()
+    """Täyttämätön käännöspaikka, esim. "_FIN_" tai "_NOB_", tai työmerkintä (NOT_TRANSLATIONS)."""
+    return (len(text) > 2 and text.startswith("_") and text.endswith("_") and text[1:-1].isupper()) or text in NOT_TRANSLATIONS
+
+
+# dict-sme-eng:n X_smeeng.xml on Konrad Nielsenin sanakirjasta, ja siinä on johdinten kielioppimerkintöjä
+# ("continuative of njuol’got", "caus. of rok’čit") ja viittauksia saamen sanoihin Nielsenin vanhalla
+# kirjoitusasulla (gâs’kâlâmŏs, vǣnʒâs). Ne eivät ole englantia (tarkistettu Hunspellilla 2026-11-06).
+# Vanhat kirjaimet ja Nielsenin heittomerkki sanan sisällä (vai’det, saw’re, cieg’gât); englannin one’s, don’t,
+# you’re, we’ll ja I’ve eivät ole merkintöjä
+NIELSEN_OLD = re.compile(r"[âêîôûǣæʒǥǯāēīōūŏĕǡ¹²³]")
+_APOSTROPHE = re.compile(r"([^\W\d_]+)’([^\W\d_]+)")
+_ENGLISH_APOSTROPHE = {"s", "t", "ll", "ve", "d", "m"}
+
+
+def _nielsen(text):
+    """Vanha kirjain tai Nielsenin heittomerkki sanan sisällä; englannin one’s, don’t, you’re ja we’ll eivät ole."""
+    if NIELSEN_OLD.search(text):
+        return True
+    return any(after.lower() not in _ENGLISH_APOSTROPHE and not (after.lower() == "re" and before.lower() in ("you", "we", "they"))
+               for before, after in _APOSTROPHE.findall(text))
+
+
+NIELSEN_GRAMMAR = re.compile(r"^=|\b(continuative|freq\.?|frequentative|caus\.?|causative|mom\.?|momentaneous|subit\.?|"
+                             r"subitive|diminutive|deminutive|dimin\.(-\w+)?|inchoative|reflexive|(shorter |longer )?passive|"
+                             r"a stronger form)\s+(of|to|from|corresponding)\b", re.I)
+
+
+# Saksaa (Nielsenin sanakirja oli saame-saksa), ruotsia, suomea ja norjaa X_smeeng.xml:n englannin paikalla;
+# löydetty Hunspellilla (en_GB, en_US) ja saksan funktiosanoilla, käyty läpi käsin 2026-11-06
+NOT_ENGLISH = {
+    "Brücke", "Dame im Kartenspiel", "Drüse", "Fell am Unterleib des Rens", "Fett zwischen Bug und Hals des Rentiers",
+    "Gras (kurz und dünn", "wächst auf Wiesen)", "Gras (kurz und dünn, wächst auf Wiesen)",
+    "Halsblock des Hundes (hindert den Hund daran wegzulaufen)", "Kante des Kragens des lappischen Pelzmantels",
+    "Larve der Rachenbremse", "Männchen", "Nähnadel", "Riefe (der Büchse)", "Stange im Heuschober", "Sünde",
+    "Türseite (der Lappenhütte od. Stube)", "Zelttuch für den Unterstand (meistens aus Sackleinwand)",
+    "auf einem Pfahl / vier Pfählen stehender Speicher", "den Schlucken haben",
+    # 2026-11-10: saksaa sanoilla, joilla on jo englanti (viellja: Bruder, brother; ákšu: Axt, axe; náskál: Ahle, awl;
+    # nábár: Bohrer, drill ...)
+    "Bruder", "Axt", "Ahle", "Bohrer",
+    "dunkle Pelzeinfassung an der Wintermütze der Männer", "dünn werden", "dürre Föhre", "eine offene Stelle (im Eis)",
+    "einen Schnitt od. Riß machen", "kalt (von Wasser)", "krächzen", "kurz- und glatthaarig", "männlich", "fremd",
+    "nicht verwandt", "nicht zur Sache gehörig", "schmale Pelzeinfassung an der Öffnung des ledernen Fausthandschuhs",
+    "schmächtig", "sich an etw. heranschleichen", "sich die Hosen herauf- od. herunterziehen", "säugen", "träumen",
+    "winseln (von Hunden und jungen Hündchen)", "wünschen", "aussen-", "brauner Tonkrug", "damit", "dann", "dass",
+    "denn", "drohen", "geneigt (z.B. Baum)", "gezimmerte Ecke", "jung", "schlank", "sie zwei", "weibliches Renkalb",
+    "beröm", "säga", "storsåte", "minuutti", "spekefisk"}
+ENGLISH_TYPOS = {"motherlesss": "motherless", "selfrighteous": "self-righteous",
+                 # 2026-11-10: Nielsenin saksa ainoana englantina (vársá, áisá, spižá, olgo-) ja latinan suku (boska)
+                 "Fohlen": "foal", "Deichsel": "shaft (of a sledge or cart)", "Pferdepeitsche": "whip",
+                 "Aussenluft": "outside, outer", "Archangelica": "angelica (Angelica archangelica)"}
+
+
+def clean_nielsen_english(text):
+    """Englannin käännös ilman Nielsenin merkintöjä: "middlemost (= gâs’kâlâmŏs)" -> "middlemost";
+    kielioppimerkintä, vanhaa saamea sisältävä selitys ("become njar’bâd") tai muu kieli kuin englanti
+    (NOT_ENGLISH: "den Schlucken haben") -> "" (jätetään pois)."""
+    if NIELSEN_GRAMMAR.search(text) or text in NOT_ENGLISH:
+        return ""
+    text = ENGLISH_TYPOS.get(text, text)
+    # Sisimmät sulkeet ensin, jotta myös sisäkkäiset poistuvat: "hiccup (= njâk(kâ)kâs’tet)" -> "hiccup"
+    while True:
+        new = re.sub(r"\s*\([^()]*\)", lambda m: "" if _nielsen(m.group(0)) else m.group(0), text).strip()
+        if new == text:
+            break
+        text = new
+    return "" if _nielsen(text) else text
 
 
 def parse_meaning(mg, lang="fin"):
     """Yksi merkitysryhmä <mg> kielellä lang: käännökset, selitykset, käyttörajoitus (<re>), tunnisteet (<gramm>),
     alue (<geo>: N = Norja, S = Suomi, R = Ruotsi) ja esimerkkilauseet (<xg>)."""
-    fix = fix_finnish_text if lang == "fin" else (lambda text: text)
+    fix = functools.partial(fix_text, lang)
     meaning = new_meaning(lang)
     for tg in mg.findall('tg'):
         tg_lang = tg.get(XML_LANG)
@@ -152,8 +328,10 @@ def parse_meaning(mg, lang="fin"):
             continue
         for t_elem in tg.findall('t'):
             text = fix(_clean(t_elem.text))
+            if lang == "eng":
+                text = clean_nielsen_english(text)
             # t_type="grammar"/"grammarexpl" on viittaus kielioppisivulle ("Les om lokativ"), ei käännös
-            if not text or t_elem.get('t_type') in GRAMMAR_POINTERS:
+            if not text or _placeholder(text) or t_elem.get('t_type') in GRAMMAR_POINTERS:
                 continue
             # t_type="expl" on selitys (esim. "naisen nimi"), ei varsinainen käännös
             target = meaning["explanations"] if t_elem.get('t_type') == "expl" else meaning["translations"]
@@ -278,6 +456,62 @@ def merge_duplicate_entries(entries, by_lemma):
     print(f"Yhdistettiin {merged} rinnakkaista sanaa (saman sanan kaksoiskappaleet)")
 
 
+# Hakusanan lopussa sulkeissa rakenne tai tyyli (bahkket (gosa nu), suostut (soapmásii), molla (mus.)): päivätesti
+# 2026-11-14, 34 sanaa. Sulkeinen ei kuulu sanaan, joten sanalle ei syntynyt taivutustaulukkoa eikä "bahkket" löytänyt
+# sitä. Merkintä siirretään käännöksen perään ("vängätä, ängetä (gosa nu)"), ja sana yhdistetään saman sanaluokan
+# perussanaan; jos sellaista ei ole, sana saa hakusanaksi pelkän perusmuodon. Keskellä olevat sulkeet (bidjat (bargi)
+# bággolupmui) ovat fraasin osa ja jäävät; haku löytää ne ilman sulkeita (export_web_data.py: variant_fold).
+_BRACKET_LEMMA_RE = re.compile(r"^(.+?)\s*\(([^()]+)\)$")
+_BRACKETS_RE = re.compile(r"\s*\([^()]*\)")
+
+
+def resolve_bracket_lemmas(entries, by_lemma):
+    merged = renamed = 0
+    for key in [k for k in entries if _BRACKET_LEMMA_RE.match(k[0])]:
+        lemma, pos, subtype = key
+        base, note = (x.strip() for x in _BRACKET_LEMMA_RE.match(lemma).groups())
+        if not base or "(" in base:
+            continue
+        data = entries.pop(key)
+        by_lemma[lemma].remove(key)
+        if not by_lemma[lemma]:
+            del by_lemma[lemma]
+        # Merkintä kunkin kielen viimeisen käännöksen ja kunkin merkityksen perään (yksi kerta kieltä kohden)
+        for items in data["translations"].values():
+            if items and not items[-1].endswith(f"({note})"):
+                items[-1] = f"{items[-1]} ({note})"
+        for m in data["meanings"]:
+            target = m["translations"] or m["explanations"]
+            if target and not target[-1].endswith(f"({note})"):
+                target[-1] = f"{target[-1]} ({note})"
+        dst = find_entry(entries, by_lemma, base, pos, subtype)
+        # Käänteisen sanakirjan sanaluokka tulee suomen hakusanasta (nyrkinisku N -> čorpmahallat (soapmásii)), joten
+        # perussana kelpaa myös toisella sanaluokalla (čorpmahallat V, Neahttadigisánit ja lang-sme: verbi)
+        if not dst and str(data.get("new_from", "")).endswith("-sme") and by_lemma.get(base):
+            dst = existing_lemma_entry(by_lemma, base, pos)
+        if dst:
+            # Perussanalla jo sama käännös (molla: "molli" ja "molli (mus.)"; garastallat: "kovistella (jkta)" ja
+            # "kovistella (soapmásiin)"; čorpmahallat: "saada nyrkinisku (jklta)" kattaa "nyrkinisku"): kaksoiskappale pois
+            bare = lambda text: _BRACKETS_RE.sub("", text).strip()
+            covered = lambda text, have: any(bare(text) == bare(h) or re.search(r"(?<!\w)" + re.escape(bare(text)) + r"(?!\w)", h)
+                                             for h in have) if bare(text) else False
+            for lang, items in data["translations"].items():
+                have = entries[dst]["translations"].get(lang, [])
+                data["translations"][lang] = [i for i in items if not covered(i, have)]
+            for m in data["meanings"]:
+                have = [t for d in entries[dst]["meanings"] if d["lang"] == m["lang"] for t in d["translations"] + d["explanations"]]
+                m["translations"] = [t for t in m["translations"] if not covered(t, have)]
+                m["explanations"] = [t for t in m["explanations"] if not covered(t, have)]
+            data["meanings"] = [m for m in data["meanings"] if m["translations"] or m["explanations"] or m["examples"]]
+            _merge_entry(entries[dst], data)
+            merged += 1
+        else:
+            entries[(base, pos, subtype)] = data
+            by_lemma.setdefault(base, []).append((base, pos, subtype))
+            renamed += 1
+    print(f"Sulkeisiin päättyvät hakusanat: {merged} yhdistettiin perussanaan, {renamed} sai hakusanaksi perusmuodon")
+
+
 def _merge_entry(dst, src):
     for lang, items in src["translations"].items():
         target = dst["translations"].setdefault(lang, [])
@@ -367,7 +601,13 @@ def parse_xml_dictionaries():
             print(f"  dict-sme-{lang}: {merged} käännöstä olemassa oleviin sanoihin, {added} uutta sanaehdokasta")
 
     parse_reverse_dictionaries(entries, by_lemma)
+    fill_sami_translations(entries, by_lemma)
+    fill_spanish(entries, by_lemma)
+    resolve_bracket_lemmas(entries, by_lemma)
     merge_duplicate_entries(entries, by_lemma)
+    # Vasta yhdistämisen jälkeen: muuten Wiktionaryn englanti voisi täyttää rinnakkaisen sanan, joka sitten yhdistetään
+    # sanaan, jolla GiellaLT:n englanti jo on (37 sanaa 2026-11-06)
+    wiktionary_eng.fill_english(entries, by_lemma, find_entry)
 
     words = [
         (lemma, pos, subtype, data["sem_type"], {l: ", ".join(t) for l, t in data["translations"].items() if t})
@@ -387,7 +627,7 @@ def parse_reverse_dictionaries(entries, by_lemma):
         if not xml_files:
             print(f"Sanakirjaa dict-{lang}-sme ei löydy, ohitetaan (hae: ./hae_sanakirjat.sh).")
             continue
-        fix = fix_finnish_text if lang == "fin" else (lambda text: text)
+        fix = functools.partial(fix_text, lang)
         pairs = added = 0
         for filepath in xml_files:
             filename = os.path.basename(filepath)
@@ -415,6 +655,7 @@ def parse_reverse_dictionaries(entries, by_lemma):
                                 or t_elem.get('t_type') == "expl"):
                             continue
                         pos = detect_pos(t_elem.get('pos') or head_elem.get('pos'), filename)
+                        pos = REVERSE_POS_FIXES.get((lang, headword, lemma), pos)
                         subtype = ""
                         if pos == "Prop":
                             pos, subtype = "N", "Prop"
@@ -447,29 +688,179 @@ def parse_reverse_dictionaries(entries, by_lemma):
         print(f"  dict-{lang}-sme: {pairs} hakusana-saamennos-paria, {added} uutta sanaehdokasta")
 
 
+def fill_sami_translations(entries, by_lemma):
+    """dict-smn-sme, dict-smj-sme ja dict-sma-sme: hakusana (inari/luulaja/etelä) tulee käännökseksi sanalle,
+    jolla ei ole tämän kielen käännöstä dict-sme-smn/smj/sma:sta (esim. mii -> inari mij). Uusia sanoja ei
+    lisätä, eikä hakusanoja lisätä hakuun. Saamen sana liitetään vain, jos lemma ja sanaluokka osoittavat
+    yhteen sanaan, jottei käännös mene väärälle homonyymille."""
+    for lang, xml_dir in SAMI_REVERSE_DIRS.items():
+        xml_files = sorted(glob.glob(os.path.join(xml_dir, "*.xml")))
+        if not xml_files:
+            print(f"Sanakirjaa dict-{lang}-sme ei löydy, ohitetaan (hae: ./hae_sanakirjat.sh).")
+            continue
+        filled_words = set()
+        for filepath in xml_files:
+            filename = os.path.basename(filepath)
+            if filename == "meta.xml":
+                continue
+            try:
+                root = ET.parse(filepath).getroot()
+            except ET.ParseError as e:
+                print(f"Virhe XML-tiedoston {filename} käsittelyssä: {e}")
+                continue
+            for entry in root.iter('e'):
+                head_elem = entry.find('lg/l')
+                headword = _clean(head_elem.text) if head_elem is not None else ""
+                if not headword:
+                    continue
+                for tg in entry.iter('tg'):
+                    if tg.get(XML_LANG) not in (None, "sme"):
+                        continue
+                    for t_elem in tg.findall('t'):
+                        lemma = _clean(t_elem.text)
+                        if (not lemma or _placeholder(lemma) or t_elem.get('t_type') in GRAMMAR_POINTERS
+                                or t_elem.get('t_type') == "expl"):
+                            continue
+                        pos = detect_pos(t_elem.get('pos') or head_elem.get('pos'), filename)
+                        subtype = ""
+                        if pos == "Prop":
+                            pos, subtype = "N", "Prop"
+                        keys = by_lemma.get(lemma, [])
+                        key = find_entry(entries, by_lemma, lemma, pos, subtype) or (keys[0] if len(keys) == 1 else None)
+                        if key is None:
+                            continue
+                        data = entries[key]
+                        if data["translations"].get(lang) and key not in filled_words:
+                            continue
+                        filled_words.add(key)
+                        trans = data["translations"].setdefault(lang, [])
+                        if headword not in trans:
+                            trans.append(headword)
+                            meaning = next((m for m in data["meanings"] if m["lang"] == lang), None)
+                            if meaning is None:
+                                meaning = new_meaning(lang)
+                                data["meanings"].append(meaning)
+                            meaning["translations"].append(headword)
+        print(f"  dict-{lang}-sme: käännös {len(filled_words)} sanalle, jolta se puuttui")
+
+
+def _spanish_pos(raw):
+    """dict-sme-spa:n sanaluokka (VLc, "A, N", Attr) -> FST:n tagi; Lc-pääte ja toinen vaihtoehto jätetään pois."""
+    first = (raw or "").split(",")[0].strip()
+    if first.endswith("Lc"):
+        first = first[:-2]
+    return "A" if first == "Attr" else detect_pos(first, "") if first else UNKNOWN_POS
+
+
+def _spanish_entry(entries, by_lemma, lemma, pos, subtype=""):
+    keys = by_lemma.get(lemma, [])
+    return find_entry(entries, by_lemma, lemma, pos, subtype) or (keys[0] if len(keys) == 1 else None)
+
+
+def fill_spanish(entries, by_lemma):
+    """Espanjankieliset käännökset (spa_data.py): dict-sme-spa:n merkitykset sanoille, jotka jo ovat sanakirjassa,
+    ja dict-spa-sme:n hakusanat sanoille, joilla espanjaa ei vielä ole. Uusia sanoja ei lisätä, eikä espanjan
+    sanoja lisätä hakuun. Peräkkäiset rivit, joilla ei ole käyttörajoitusta, selitystä, kielioppitietoa eikä
+    esimerkkiä, ovat synonyymejä ja yhdistetään yhdeksi merkitykseksi."""
+    meanings = spa_data.sme_spa_meanings()
+    if not meanings:
+        print("Espanjan sanakirjaa dict-sme-spa ei löydy, ohitetaan (hae: ./hae_sanakirjat.sh).")
+        return
+    words = set()
+    previous = None
+    for lemma, raw_pos, subtype, m in meanings:
+        key = _spanish_entry(entries, by_lemma, lemma, _spanish_pos(raw_pos), subtype)
+        if key is None:
+            previous = None
+            continue
+        data = entries[key]
+        trans = data["translations"].setdefault("spa", [])
+        plain = not (m["restrictions"] or m["explanations"] or m["labels"] or m["examples"])
+        if plain and previous and previous[0] == key:
+            meaning = previous[1]
+            meaning["translations"] += [t for t in m["translations"] if t not in meaning["translations"]]
+        else:
+            meaning = new_meaning("spa", m["translations"])
+            meaning.update(restrictions=m["restrictions"], explanations=m["explanations"], labels=m["labels"],
+                           examples=[(sme, spa, "") for sme, spa in m["examples"]])
+            data["meanings"].append(meaning)
+        previous = (key, meaning) if plain else None
+        for text in m["translations"]:
+            if text not in trans:
+                trans.append(text)
+        words.add(key)
+    # Selitys sanakortin käännösriville vain, jos sanalla ei ole yhtään varsinaista käännöstä
+    for key in words:
+        data = entries[key]
+        if not data["translations"].get("spa"):
+            data["translations"]["spa"] = [e for m in data["meanings"] if m["lang"] == "spa" for e in m["explanations"]][:1]
+    filled = set()
+    for head, lemma, raw_pos in spa_data.spa_sme_pairs():
+        key = _spanish_entry(entries, by_lemma, lemma, _spanish_pos(raw_pos))
+        if key is None or (key in words and key not in filled):
+            continue
+        data = entries[key]
+        if data["translations"].get("spa") and key not in filled:
+            continue
+        filled.add(key)
+        trans = data["translations"].setdefault("spa", [])
+        if head not in trans:
+            trans.append(head)
+            meaning = next((m for m in data["meanings"] if m["lang"] == "spa"), None)
+            if meaning is None:
+                meaning = new_meaning("spa")
+                data["meanings"].append(meaning)
+            meaning["translations"].append(head)
+    print(f"  espanja: dict-sme-spa {len(words)} sanalle, dict-spa-sme {len(filled)} sanalle, jolta se puuttui")
+
+
 def apply_corrections(words, details):
     """Soveltaa korjaukset.tsv-tiedoston käsin tehdyt korjaukset XML:stä luettuihin sanoihin."""
     if not os.path.exists(CORRECTIONS_FILE):
         return words
 
     corrections = {}
+    eng_corrections = {}  # valinnainen 4. sarake: englannin käännökset (korvaavat esim. Wiktionaryn englannin)
+    nob_corrections = {}  # valinnainen 5. sarake: norjan käännökset (ministeriija = departement, ei ministeri)
+    sister_corrections = {}  # valinnaiset 6.–8. sarake: inarin, luulajan ja eteläsaamen käännökset (dict-sme-smj: viikonpäivät)
     with open(CORRECTIONS_FILE, encoding="utf-8") as f:
         for line_no, line in enumerate(f, 1):
             line = line.rstrip("\n")
             if not line.strip() or line.lstrip().startswith("#"):
                 continue
             parts = [p.strip() for p in line.split("\t")]
-            if len(parts) != 3 or not parts[0] or not parts[1]:
-                print(f"  korjaukset.tsv rivi {line_no}: odotettiin 3 sarkaimella erotettua saraketta, ohitetaan")
+            if not 3 <= len(parts) <= 8 or not parts[0] or not parts[1]:
+                print(f"  korjaukset.tsv rivi {line_no}: odotettiin 3-8 sarkaimella erotettua saraketta, ohitetaan")
                 continue
-            lemma, pos, trans = parts
-            trans = fix_finnish_text(trans)
-            corrections[(lemma, POS_MAP.get(pos.upper(), pos))] = trans
+            lemma, pos, trans = parts[:3]
+            key = (lemma, POS_MAP.get(pos.upper(), pos))
+            if len(parts) >= 4 and parts[3]:
+                eng_corrections[key] = parts[3]
+            if len(parts) >= 5 and parts[4]:
+                nob_corrections[key] = parts[4]
+            for lang, value in zip(("smn", "smj", "sma"), parts[5:8]):
+                if value:
+                    sister_corrections.setdefault(key, {})[lang] = value
+            if trans:  # tyhjä suomennossarake: suomennos säilyy, vain englanti korjataan
+                corrections[key] = fix_finnish_text(trans)
 
     result = []
     applied = set()
     for lemma, pos, subtype, sem_type, trans in words:
         key = (lemma, pos)
+        if key in nob_corrections:
+            trans = {**trans, "nob": nob_corrections[key]}
+            info = details.setdefault((lemma, pos, subtype), {"freq": None, "notes": [], "meanings": [], "reverse": []})
+            info["meanings"] = [m for m in info["meanings"] if m["lang"] != "nob"] + [new_meaning("nob", [nob_corrections[key]])]
+        if key in sister_corrections:
+            trans = {**trans, **sister_corrections[key]}
+            info = details.setdefault((lemma, pos, subtype), {"freq": None, "notes": [], "meanings": [], "reverse": []})
+            info["meanings"] = [m for m in info["meanings"] if m["lang"] not in sister_corrections[key]] + [
+                new_meaning(lang, [v]) for lang, v in sister_corrections[key].items()]
+        if key in eng_corrections:
+            trans = {**trans, "eng": eng_corrections[key]}
+            info = details.setdefault((lemma, pos, subtype), {"freq": None, "notes": [], "meanings": [], "reverse": []})
+            info["meanings"] = [m for m in info["meanings"] if m["lang"] != "eng"] + [new_meaning("eng", [eng_corrections[key]])]
         if key in corrections:
             applied.add(key)
             if corrections[key] == "-":
@@ -477,8 +868,13 @@ def apply_corrections(words, details):
             trans = {**trans, "fin": corrections[key]}
             # Korjattu suomennos korvaa XML:n suomenkieliset merkitykset (muut kielet säilyvät)
             info = details.setdefault((lemma, pos, subtype), {"freq": None, "notes": [], "meanings": [], "reverse": []})
-            info["meanings"] = [new_meaning("fin", [corrections[key]])] + [
-                m for m in info["meanings"] if m["lang"] != "fin"]
+            # Vanhojen merkitysten esimerkkilauseet siirtyvät korjattuun merkitykseen (ennen ne katosivat: 35
+            # esimerkkiä, esim. oalát, váili; 2026-11-20)
+            fixed = new_meaning("fin", [corrections[key]])
+            for m in info["meanings"]:
+                if m["lang"] == "fin":
+                    fixed["examples"] += [e for e in m["examples"] if e not in fixed["examples"]]
+            info["meanings"] = [fixed] + [m for m in info["meanings"] if m["lang"] != "fin"]
             info["new_from"] = "fin"
         result.append((lemma, pos, subtype, sem_type, trans))
 
@@ -488,7 +884,8 @@ def apply_corrections(words, details):
             result.append((lemma, pos, "", "", {"fin": trans}))
             details[(lemma, pos, "")] = {"freq": None, "notes": [], "new_from": "fin", "reverse": [],
                                          "meanings": [new_meaning("fin", [trans])]}
-    print(f"Sovellettiin {len(corrections)} korjausta tiedostosta korjaukset.tsv.")
+    print(f"Sovellettiin {len(corrections)} suomennoksen, {len(eng_corrections)} englannin, {len(nob_corrections)} norjan ja "
+          f"{len(sister_corrections)} muun saamen kielen korjausta tiedostosta korjaukset.tsv.")
     return result
 
 
@@ -499,8 +896,9 @@ def run_hfst_lookup(fst_path, queries):
     if not queries:
         return {}
 
-    chunk_size = (len(queries) + WORKERS - 1) // WORKERS
-    chunks = [queries[i:i + chunk_size] for i in range(0, len(queries), chunk_size)]
+    # Pienet erät jaetaan prosesseille sitä mukaa kuin ne vapautuvat: hfst-lookupin muisti kasvaa syötteen mukana
+    # (generaattorilla ~36 kt kyselyä kohti, 200 000 kyselyä ~5 Gt), ja vaikeat sanat jakautuvat tasaisemmin
+    chunks = [queries[i:i + LOOKUP_BATCH] for i in range(0, len(queries), LOOKUP_BATCH)]
     outputs = [None] * len(chunks)
     errors = []
 
@@ -514,20 +912,18 @@ def run_hfst_lookup(fst_path, queries):
                 encoding="utf-8",
             )
             if proc.returncode != 0:
-                errors.append(proc.stderr.strip())
+                errors.append(proc.stderr.strip() or f"paluuarvo {proc.returncode}")
             outputs[idx] = proc.stdout
         except OSError as e:
             errors.append(str(e))
             outputs[idx] = ""
 
-    threads = [threading.Thread(target=worker, args=(i, c)) for i, c in enumerate(chunks)]
-    for t in threads:
-        t.start()
-    for t in threads:
-        t.join()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS) as pool:
+        list(pool.map(worker, range(len(chunks)), chunks))
 
+    # Kaatunut erä (esim. muisti loppui) jättäisi sanoilta taivutukset pois, joten tuonti keskeytetään
     if errors:
-        print(f"hfst-lookup virhe: {errors[0]}")
+        raise RuntimeError(f"hfst-lookup epäonnistui {len(errors)} erässä: {errors[0] or 'ei virheilmoitusta (tapettu?)'}")
 
     results = {}
     for out in outputs:
@@ -729,9 +1125,12 @@ def main():
     print(f"  {len(queries)} generointikyselyä, {WORKERS} rinnakkaista prosessia")
     generated = run_hfst_lookup(GENERATOR, queries)
 
-    if os.path.exists(DB_FILE):
-        os.remove(DB_FILE)
-    conn = sqlite3.connect(DB_FILE)
+    # Uusi tietokanta kirjoitetaan ensin väliaikaiseen tiedostoon, joka korvaa satni.db:n vasta valmiina:
+    # keskeytynyt ajo (esim. muisti loppuu) ei jätä sovellusta ilman tietokantaa
+    tmp_db = DB_FILE + ".uusi"
+    if os.path.exists(tmp_db):
+        os.remove(tmp_db)
+    conn = sqlite3.connect(tmp_db)
     cursor = conn.cursor()
 
     cursor.execute('''
@@ -747,6 +1146,7 @@ def main():
             smn_translation TEXT,
             smj_translation TEXT,
             sma_translation TEXT,
+            spa_translation TEXT,
             freq INTEGER,
             notes TEXT
         )
@@ -852,8 +1252,17 @@ def main():
 
     add_gradation(cursor)
     dialects.apply(cursor)
+    # Luokka vasta kirjoitusasujen yhdistämisen jälkeen, kuten --vain-taivutusluokka-ajossa: yhdistetyn sanan
+    # taulukossa ovat molempien asujen muodot (oambealle ja oarpmealle), ja luokka näytetään vain, jos ne sopivat
+    inflection_class.apply(cursor)
+    semantics.apply(cursor)
+    sme_definitions.apply(cursor)
+    sikor_freq.apply(cursor)
+    algu_related.apply(cursor)
+    kartverket_names.apply(cursor)
     nob_forms.add_nob_forms(cursor)
     fin_forms.add_fin_forms(cursor)
+    sme_passive.apply(cursor)
 
     print("Luodaan tietokantaan indeksit...")
     cursor.execute("CREATE INDEX idx_lemma ON dictionary(sme_lemma COLLATE NOCASE);")
@@ -867,6 +1276,7 @@ def main():
     conn.commit()
     conn.execute("VACUUM;")
     conn.close()
+    os.replace(tmp_db, DB_FILE)
 
     print("\nSanaluokka      sanoja   joilla taivutusmuotoja")
     for pos, (total, with_forms) in sorted(stats.items(), key=lambda x: -x[1][0]):
@@ -879,6 +1289,42 @@ if __name__ == "__main__":
         # Päivittää vain astevaihtelutiedot olemassa olevaan tietokantaan (nopea, ei FST-ajoa)
         conn = sqlite3.connect(DB_FILE)
         add_gradation(conn.cursor())
+        conn.commit()
+        conn.close()
+    elif "--vain-taivutusluokka" in sys.argv:
+        # Päivittää vain taivutusluokat olemassa olevaan tietokantaan (nopea, ei FST-ajoa)
+        conn = sqlite3.connect(DB_FILE)
+        inflection_class.apply(conn.cursor())
+        conn.commit()
+        conn.close()
+    elif "--vain-ihmiset" in sys.argv:
+        # Päivittää vain ihmistä tarkoittavien substantiivien merkinnän (semantics.py; nopea, ei FST-ajoa)
+        conn = sqlite3.connect(DB_FILE)
+        semantics.apply(conn.cursor())
+        conn.commit()
+        conn.close()
+    elif "--vain-maaritelmat" in sys.argv:
+        # Päivittää vain saamenkieliset määritelmät (sme_definitions.py, dict-sme; nopea, ei FST-ajoa)
+        conn = sqlite3.connect(DB_FILE)
+        sme_definitions.apply(conn.cursor())
+        conn.commit()
+        conn.close()
+    elif "--vain-sikor" in sys.argv:
+        # korpusfrekvenssit puuttuville (sikor_freq.py, SIKOR CC BY 3.0; nopea, ei FST-ajoa)
+        conn = sqlite3.connect(DB_FILE)
+        sikor_freq.apply(conn.cursor())
+        conn.commit()
+        conn.close()
+    elif "--vain-algu" in sys.argv:
+        # sukulaissanat muissa saamen kielissä (algu_related.py, Álgu CC BY 4.0; ~30 s, ei FST-ajoa)
+        conn = sqlite3.connect(DB_FILE)
+        algu_related.apply(conn.cursor())
+        conn.commit()
+        conn.close()
+    elif "--vain-paikannimet" in sys.argv:
+        # Norjan saamenkieliset paikannimet (kartverket_names.py, Kartverket CC BY 4.0; ~80 s)
+        conn = sqlite3.connect(DB_FILE)
+        kartverket_names.apply(conn.cursor())
         conn.commit()
         conn.close()
     elif "--vain-suoman" in sys.argv:
