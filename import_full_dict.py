@@ -1310,19 +1310,19 @@ if __name__ == "__main__":
         conn.commit()
         conn.close()
     elif "--vain-sikor" in sys.argv:
-        # test-lahteet: korpusfrekvenssit puuttuville (sikor_freq.py, SIKOR CC BY 3.0; nopea, ei FST-ajoa)
+        # korpusfrekvenssit puuttuville (sikor_freq.py, SIKOR CC BY 3.0; nopea, ei FST-ajoa)
         conn = sqlite3.connect(DB_FILE)
         sikor_freq.apply(conn.cursor())
         conn.commit()
         conn.close()
     elif "--vain-algu" in sys.argv:
-        # test-lahteet: sukulaissanat muissa saamen kielissä (algu_related.py, Álgu CC BY 4.0; ~30 s, ei FST-ajoa)
+        # sukulaissanat muissa saamen kielissä (algu_related.py, Álgu CC BY 4.0; ~30 s, ei FST-ajoa)
         conn = sqlite3.connect(DB_FILE)
         algu_related.apply(conn.cursor())
         conn.commit()
         conn.close()
     elif "--vain-paikannimet" in sys.argv:
-        # test-lahteet: Norjan saamenkieliset paikannimet (kartverket_names.py, Kartverket CC BY 4.0; ~80 s)
+        # Norjan saamenkieliset paikannimet (kartverket_names.py, Kartverket CC BY 4.0; ~80 s)
         conn = sqlite3.connect(DB_FILE)
         kartverket_names.apply(conn.cursor())
         conn.commit()

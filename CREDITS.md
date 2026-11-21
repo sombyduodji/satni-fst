@@ -139,7 +139,7 @@ often single words occur (at least five times; used to choose compound translati
 Goldhahn, D., Eckart, T. & Quasthoff, U. (2012): Building Large Monolingual Dictionaries at the Leipzig Corpora Collection:
 From 100 to 200 Languages. LREC 2012.
 
-## New open sources (test branch test-lahteet)
+## Open sources added 2026-11-21
 
 Downloaded by [`hae_lahteet.sh`](hae_lahteet.sh) from the publishers' own addresses; not part of this repository.
 

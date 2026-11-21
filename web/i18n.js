@@ -21,7 +21,7 @@ const UI_TEXTS = {
     searchPlaceholderMid: "Hae saameksi tai suomeksi", searchPlaceholderShort: "Hae sanaa",
     search: "Hae",
     ocrTitle: "Hae sanaa valokuvasta", ocrCamera: "📷 Ota kuva", ocrGallery: "🖼️ Valitse kuva",
-    ocrIntro: "Ota kuva saamen- tai suomenkielisestä tekstistä tai valitse kuva, ja valitse suunta yltä. Teksti tunnistetaan puhelimessa, eikä kuva lähde laitteelta.",
+    ocrIntro: "Ota kuva saamen- tai suomenkielisestä tekstistä tai valitse kuva. Kielet vaihdetaan yläreunan kielipainikkeesta. Teksti tunnistetaan puhelimessa, eikä kuva lähde laitteelta.",
     ocrWorking: "Tunnistetaan tekstiä…", ocrFinding: "Haetaan sanoja…", ocrSecond: "tarkistetaan epävarmoja sanoja…",
     ocrFound: (n) => `Sanakirjan sanoja ${n} · napauta sanaa · zoomaa sormilla`,
     ocrSami: "Saame", ocrUiLang: "Suomi", ocrDirTitle: "Kuvan kieli ja käännös",
@@ -37,8 +37,8 @@ const UI_TEXTS = {
     experimental: "Kokeelliset käännökset", experimentalOn: "Käytössä", experimentalOff: "Pois käytöstä",
     experimentalHint: "Konekäännöksiä ja ehdotuksia sanoille, joilla ei ole käännöstä sanakirjoissa. Ne ovat vielä kehitteillä, ja niissä voi olla virheitä. Palaute auttaa!",
     // Lausekääntäjä (test-lauseet, lauseet.js)
-    lauseTitle: "Lausekääntäjä", lauseBadge: "kokeilu", lauseShort: "Lause", ocrShort: "Kuva", expLauseDesc: "Lyhyt suomenkielinen lause saameksi. Avataan yläpalkin puhekuplasta.",
-    expLauseInfo: `<p>Yläpalkkiin tulee <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg> puhekuplapainike, joka avaa lausekääntäjän: kirjoita lyhyt suomenkielinen lause, niin sovellus
+    lauseTitle: "Lausekääntäjä", lauseBadge: "kokeilu", lauseShort: "Lause", ocrShort: "Kuva", expLauseDesc: "Lyhyt suomenkielinen lause saameksi. Avataan Lause-painikkeesta.",
+    expLauseInfo: `<p>Alapalkkiin (leveällä näytöllä yläpalkkiin) tulee <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg> Lause-painike, joka avaa lausekääntäjän: kirjoita lyhyt suomenkielinen lause, niin sovellus
       tekee siitä pohjoissaamenkielisen lauseen sanakirjan sanoista ja taivutusmuodoista.</p>
       <p>Jokainen sana näkyy omana laatikkonaan; napauttamalla voit vaihtaa tulkinnan tai saamen sanan. Lause on
       likimääräinen: se sopii lyhyisiin arkilauseisiin, ei pitkiin tai vaikeisiin.</p>`,
@@ -54,11 +54,15 @@ const UI_TEXTS = {
     ttsStoreHead: "Tallennetut ääntämiset", ttsStoreInfo: (n, size, limit) => `${n} sanaa · ${size} / ${limit}`, ttsNone: "Ei tallennettuja ääntämisiä", ttsLimit: "Enimmäiskoko", ttsStoreNote: "Kuunnellut sanat tallentuvat laitteelle, joten ne soivat heti myös ilman verkkoa. Kun raja täyttyy, pisimpään kuuntelematta olleet poistetaan.", ttsClear: "Tyhjennä tallennetut ääntämiset", ttsClearTitle: "Tyhjennetäänkö tallennetut ääntämiset?", ttsClearBody: "Sanat haetaan seuraavalla kuuntelukerralla taas verkosta. Sanastojen, harjoituksen ja pelin äänitteet, suosikit ja historia säilyvät.", ttsCleared: "Tallennetut ääntämiset tyhjennetty",
     harjTitle: "Harjoittele kuunnellen", harjTileSub: "Sana suomeksi, hetki miettimisaikaa, vastaus saameksi", harjHelp: "Kuule sana, mieti vastaus, kuule ja näe oikea. Jatkuu, kunnes pysäytät.", harjTopics: "Aiheet", harjRange: "Lukualue", harjAll: "Valitse kaikki", harjNone: "Tyhjennä", harjStartN: (n) => `Aloita · ${n} sanaa`, harjHearFi: "suomeksi", harjHearSme: "saameksi", harjLists: "Listat", harjWords: (n) => `${n} sanaa`, harjDir: "Suunta", harjDirFi: "suomi → saame", harjDirSme: "saame → suomi", harjThink: "Miettimisaika", harjOrder: "Järjestys", harjShuffle: "sekoitettu", harjInOrder: "listan järjestys", harjAwake: "Pidä näyttö päällä", harjScreenOff: "Näytön voi sammuttaa: harjoitus jatkuu, ja sen voi pysäyttää ilmoituksesta.", harjPickList: "Valitse ainakin yksi lista.", harjStart: "Aloita", harjAskSme: "Mikä se on saameksi?", harjAskFi: "Mikä se on suomeksi?", harjRound: (n) => `${n}. kierros`, harjPause: "Tauko", harjResume: "Jatka", harjNext: "Seuraava", harjNotifTitle: "Sátni FST · harjoitus", harjNumbers: "Luvut", harjOrdinals: "Järjestysluvut",
     lauseClear: "Tyhjennä lause", lauseCheckWord: "Näytä sanan tiedot", lauseInSentence: "Tässä lauseessa", lauseChoose: "Valitse tämä", lauseFullCard: "Koko sanakortti",
-    expOcr: "Valokuvahaku", expOcrDesc: "Tunnistaa valokuvan tekstistä sanakirjan sanat. Käynnistys yläpalkin kamerapainikkeesta.",
-    expOcrInfo: `<p>Yläpalkkiin tulee <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg> kamerapainike. Ota kuva tekstistä tai valitse kuva, ja sanakirjan sanat merkitään
-      kuvaan. Napauta sanaa, niin näet käännöksen.</p>
-      <p>Teksti tunnistetaan puhelimessa Googlen ML Kitillä, eikä kuva lähde laitteelta. ML Kitin käyttötilastojen
-      lähetys Googlelle on poistettu käytöstä.</p>`,
+    expOcr: "Valokuvahaku", expOcrDesc: "Tunnistaa valokuvan tekstistä sanakirjan sanat ja kääntää sanoja ja lauseita. Avataan Kuva-painikkeesta.",
+    expOcrInfo: `<p>Alapalkkiin (leveällä näytöllä yläpalkkiin) tulee <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg> Kuva-painike. Ota kuva tekstistä tai valitse
+      kuva, ja sanakirjan sanat merkitään kuvaan. Napauta sanaa, niin näet käännöksen. <b>Poimi lause</b> kääntää koko
+      lauseen, ja <b>Valitse sanat itse</b> -toiminnolla voit maalata tai ympyröidä sormella haluamasi sanat.</p>
+      <p>Kuvan kieli valitaan kielipainikkeesta: pohjoissaame, käännöskieli (suomi tai norja; sanat käännetään saameksi) sekä inarin- ja
+      koltansaame, jos ne on otettu käyttöön asetuksista.</p>
+      <p>Teksti tunnistetaan puhelimessa Googlen ML Kitillä. Tuntemattomat saamen sanat luetaan vielä toiseen kertaan
+      Norjan kansalliskirjaston saamen tekstintunnistusmallilla (Tesseract), myös puhelimessa. Kuva ei lähde
+      laitteelta, ja ML Kitin käyttötilastojen lähetys Googlelle on poistettu käytöstä.</p>`,
     expTableTr: "Taivutusmuotojen käännökset", expTableTrDesc: "Konekäännös jokaisen muodon alla taivutustaulukossa.",
     positionOn: "päällä", positionUnder: "alla",
     expTableTrInfo: `<p>Taivutustaulukon muotojen alle tulee konekäännös pienellä: <i>mun lean – minä olen</i>. Duaali merkitään
@@ -118,8 +122,8 @@ const UI_TEXTS = {
     textSize: "Tekstin koko", textSizeSystem: "Laitteen", textSizeNote: "Laitteen: sama tekstikoko kuin laitteen omissa asetuksissa.",
     previewHouse: "talo", previewInHouse: "talossa",
     showGradeDesc: "Vahva ja heikko aste väreinä", voiceHead: "Ääntämisen ääni",
-    toolsIntro: "Päälle kytketyn työkalun painike näkyy yläpalkissa. BETA-merkityt ovat vielä kehitteillä.",
-    toolGameDesc: "Sanapeli: valitse oikea vaihtoehto tai kirjoita sana saameksi.", toolWordlistsDesc: "Aihekohtaiset sanalistat ääntämyksineen.",
+    toolsIntro: "Päälle kytketyn työkalun painike näkyy alapalkissa (leveällä näytöllä yläpalkissa). BETA-merkityt ovat vielä kehitteillä.",
+    toolGameDesc: "Sanapeli: valitse oikea vaihtoehto tai kirjoita sana saameksi.", toolWordlistsDesc: "Aihekohtaiset sanalistat ääntämyksineen ja kuunteluharjoitus.",
     toolAlways: "Aina", toolSmnDesc: "Sanat myös inarinsaameksi; osa vielä tarkistamatta.",
     langSource: { eng: "Wiktionary ja Giellatekno", smn: "Giellatekno", smj: "Giellatekno", sma: "Giellatekno", spa: "dict-sme-spa (UNED)", sms: "suomennosten kautta" },
     historyNote: "Suosikit ja historia näkyvät valikossa ja aloitussivulla.",
@@ -176,10 +180,10 @@ const UI_TEXTS = {
       <dt>Astevaihtelu</dt><dd>vahva aste <b class="gd">GD</b> ja heikko aste <b class="hd">HD</b> omilla väreillään (valittavissa asetuksista).</dd>
       <dt>Ääntäminen</dt><dd>🔈 sanan vieressä, tai napauta taulukon muotoa: kuuntele tai kopioi.</dd>
       <dt>Suosikit</dt><dd>★ tallentaa sanan omalle listalle.</dd>
-      <dt>Sanastot</dt><dd><svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5.6 4 9 4 12 6c3-2 6.4-2 9-.5V19c-2.6-1.5-6-1.5-9 .5-3-2-6.4-2-9-.5z"/><path d="M12 6v13.5"/><path d="M15.5 5.2v5.3l1.5-1.2 1.5 1.2V4.9"/></svg> oikeassa yläkulmassa: aihekohtaiset sanalistat ääntämyksineen (luvut, kuukaudet, perhe, värit…), osassa kuunneltava äänilista.</dd>
+      <dt>Sanastot</dt><dd><svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5.6 4 9 4 12 6c3-2 6.4-2 9-.5V19c-2.6-1.5-6-1.5-9 .5-3-2-6.4-2-9-.5z"/><path d="M12 6v13.5"/><path d="M15.5 5.2v5.3l1.5-1.2 1.5 1.2V4.9"/></svg> alapalkissa: aihekohtaiset sanalistat ääntämyksineen (luvut, kuukaudet, perhe, värit…) ja kuunteluharjoitus.</dd>
       <dt>Minipeli</dt><dd><svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 8h11a4 4 0 0 1 3.9 4.9l-.8 3.6a2.3 2.3 0 0 1-4 .9L15 15.5H9l-1.6 1.9a2.3 2.3 0 0 1-4-.9l-.8-3.6A4 4 0 0 1 6.5 8z"/><path d="M8 10.5v3M6.5 12h3"/></svg> sanapeli: valitse oikea neljästä tai kirjoita sana saameksi (vihjeet maksavat pisteitä). Aloittelija, edistynyt tai aihe (järjestysluvut, ajat, värit, kysymyssanat, eläimet). Inarinsaame kokeellisena asetuksista. Piilotettavissa asetuksista.</dd>
-      <dt>Kuva ja lause</dt><dd><svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg> hakee sanat valokuvasta (sovelluksessa), <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg> kääntää lyhyen suomenkielisen lauseen. Kokeellisia: kytke päälle valikosta, jolloin painikkeet ilmestyvät ylhäälle.</dd>
-      <dt>Valikko</dt><dd>☰ ylhäällä: kieli, asetukset, suosikit ja historia, muut kielet ja kokeelliset ominaisuudet.</dd>`,
+      <dt>Kuva ja lause</dt><dd><svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg> hakee ja kääntää sanat ja lauseet valokuvasta (Android-sovelluksessa), <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg> kääntää lyhyen suomenkielisen lauseen. Kokeellisia: kytke päälle kohdasta Lisää → Työkalut, jolloin painikkeet ilmestyvät alapalkkiin.</dd>
+      <dt>Lisää</dt><dd>☰ alapalkissa (leveällä näytöllä ylhäällä): kieli, asetukset, työkalut, suosikit ja historia, muut kielet ja kokeelliset ominaisuudet.</dd>`,
     menuTip: "Kieli ja asetukset löytyvät valikosta.",
     tryThese: "Kokeile:", randomWord: "Satunnainen sana",
     listen: "Kuuntele", fetching: "Haetaan…", listenTo: (text) => `Kuuntele: ${text}`,
@@ -283,9 +287,10 @@ const UI_TEXTS = {
          (Språkbanken / Nasjonalbiblioteket, CC BY 4.0), koltansaame (kokeellinen) GiellaLT dict-sms-mul, dict-fin-sms ja
          dict-nob-sms (CC BY 4.0 / 3.0), norjan käännökset (kokeellinen) Apertium apertium-sme-nob (GPL-2.0-or-later), suomennosehdotukset (kokeellinen) GiellaLT dict-smn-sme, dict-smn-fin ja dict-fin-smn (CC BY 4.0), espanjan käännökset GiellaLT dict-sme-spa ja dict-spa-sme (Ángel, CC BY 4.0), osa englannin käännöksistä Wiktionary (CC BY-SA 4.0, kaikki.org), sql.js (MIT). Android-sovelluksen kokeellinen
          tekstintunnistus: Google ML Kit (Googlen käyttöehdot). Kuva käsitellään puhelimessa eikä lähde laitteelta,
-         ja ML Kitin käyttötilastojen lähetys Googlelle on poistettu käytöstä. Kuvan inarin- ja koltansaamen
+         ja ML Kitin käyttötilastojen lähetys Googlelle on poistettu käytöstä. Tuntemattomien saamen sanojen toinen luku:
+         Tesseract (Apache-2.0) ja Norjan kansalliskirjaston saamen malli (Nasjonalbiblioteket, CC BY 4.0; Enstad ym. 2025). Kuvan inarin- ja koltansaamen
          taivutusmuodot: GiellaLT lang-smn ja lang-sms (GPL-3.0). Kuvan lausenäkymän suomen ja norjan sanaparit:
-         Leipzig Corpora Collection (Wortschatz Leipzig, CC BY; vain sanaparien ja sanojen määrät, ei lauseita). Sátni FST on vapaa ohjelma (GPL-3.0).
+         Leipzig Corpora Collection (Wortschatz Leipzig, CC BY; vain sanaparien ja sanojen määrät, ei lauseita). Sukulaissanat muissa saamen kielissä: Álgu (Kotimaisten kielten keskus, CC BY 4.0). Paikannimet: Kartverket Stedsnavn (© Kartverket, CC BY 4.0). Korpusfrekvenssit: SIKOR (UiT, CC BY 3.0). Sátni FST on vapaa ohjelma (GPL-3.0).
          Astevaihtelun ryhmät: Oahpa (Giellatekno). Kaikki lähteet, lisenssit ja tehdyt muutokset: Lisenssit-painike alla.
          Lähdekoodi: <a href="https://github.com/sombyduodji/satni-fst" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst</a>.</p>
       </details>`,
@@ -303,7 +308,7 @@ const UI_TEXTS = {
     searchPlaceholderMid: "Søk på samisk eller norsk", searchPlaceholderShort: "Søk etter ord",
     search: "Søk",
     ocrTitle: "Søk etter ord i et bilde", ocrCamera: "📷 Ta bilde", ocrGallery: "🖼️ Velg bilde",
-    ocrIntro: "Ta et bilde av samisk eller norsk tekst eller velg et bilde, og velg retning øverst. Teksten gjenkjennes på telefonen, og bildet forlater ikke enheten.",
+    ocrIntro: "Ta et bilde av samisk eller norsk tekst eller velg et bilde. Språkene byttes med språkknappen øverst. Teksten gjenkjennes på telefonen, og bildet forlater ikke enheten.",
     ocrWorking: "Gjenkjenner tekst…", ocrFinding: "Søker etter ord…", ocrSecond: "kontrollerer usikre ord…",
     ocrFound: (n) => `Ord fra ordboka: ${n} · trykk på et ord · zoom med fingrene`,
     ocrSami: "Samisk", ocrUiLang: "Norsk", ocrDirTitle: "Språk i bildet og oversettelse",
@@ -318,8 +323,8 @@ const UI_TEXTS = {
     ocrFix: "Rett", ocrReportShort: "Meld feil", ocrBackToSugs: "Tilbake til forslag", sentSelect: "Velg ordene selv", selHint: "Mal over ordene med fingeren eller tegn en ring rundt dem · to fingre flytter", selCount: (n) => `${n} ord valgt`, ocrTargetAdded: (n) => `${n} lagt til som oversettelsesspråk`, ocrSourceAdded: (n) => `${n} lagt til som bildespråk`, ocrNoSugs: "Ingen forslag.",
     experimental: "Eksperimentelle oversettelser", experimentalOn: "På", experimentalOff: "Av",
     experimentalHint: "Maskinoversettelser og forslag for ord som ikke har oversettelse i ordbøkene. De er fortsatt under utvikling og kan inneholde feil. Tilbakemeldinger hjelper!",
-    lauseTitle: "Setningsoversetter", lauseBadge: "prøve", lauseShort: "Setning", ocrShort: "Bilde", expLauseDesc: "Kort finsk setning til samisk. Åpnes med snakkeboble-knappen i topplinjen.",
-    expLauseInfo: `<p>I topplinjen kommer en <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg> snakkeboble-knapp som åpner setningsoversetteren: skriv en kort setning på finsk, så
+    lauseTitle: "Setningsoversetter", lauseBadge: "prøve", lauseShort: "Setning", ocrShort: "Bilde", expLauseDesc: "Kort finsk setning til samisk. Åpnes med Setning-knappen.",
+    expLauseInfo: `<p>I bunnlinjen (på bred skjerm i topplinjen) kommer en <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg> Setning-knapp som åpner setningsoversetteren: skriv en kort setning på finsk, så
       lager appen en nordsamisk setning av ordboksordene og bøyningsformene.</p>
       <p>Hvert ord vises i sin egen boks; trykk for å bytte tolkning eller samisk ord. Setningen er omtrentlig: den passer
       for korte hverdagssetninger, ikke lange eller vanskelige.</p>`,
@@ -335,10 +340,14 @@ const UI_TEXTS = {
     ttsStoreHead: "Lagrede uttaler", ttsStoreInfo: (n, size, limit) => `${n} ord · ${size} / ${limit}`, ttsNone: "Ingen lagrede uttaler", ttsLimit: "Maks. størrelse", ttsStoreNote: "Ord du har lyttet til, lagres på enheten, så de spilles straks også uten nett. Når grensen er nådd, fjernes de som har vært lengst ubrukt.", ttsClear: "Tøm lagrede uttaler", ttsClearTitle: "Tømme lagrede uttaler?", ttsClearBody: "Ordene hentes fra nettet igjen neste gang du lytter. Lydene i ordlistene, øvingen og spillet, favoritter og historikk beholdes.", ttsCleared: "Lagrede uttaler er tømt",
     harjTitle: "Øv med lytting", harjTileSub: "Ordet, litt betenkningstid, svaret på samisk", harjHelp: "Hør ordet, tenk på svaret, hør og se det riktige. Fortsetter til du stopper.", harjTopics: "Emner", harjRange: "Tallområde", harjAll: "Velg alle", harjNone: "Fjern alle", harjStartN: (n) => `Start · ${n} ord`, harjHearFi: "på finsk", harjHearSme: "på samisk", harjLists: "Lister", harjWords: (n) => `${n} ord`, harjDir: "Retning", harjDirFi: "finsk → samisk", harjDirSme: "samisk → finsk", harjThink: "Betenkningstid", harjOrder: "Rekkefølge", harjShuffle: "blandet", harjInOrder: "listens rekkefølge", harjAwake: "Hold skjermen på", harjScreenOff: "Du kan slå av skjermen: øvingen fortsetter, og du kan stoppe den fra varselet.", harjPickList: "Velg minst én liste.", harjStart: "Start", harjAskSme: "Hva heter det på samisk?", harjAskFi: "Hva heter det på finsk?", harjRound: (n) => `runde ${n}`, harjPause: "Pause", harjResume: "Fortsett", harjNext: "Neste", harjNotifTitle: "Sátni FST · øving", harjNumbers: "Tall", harjOrdinals: "Ordenstall",
     lauseClear: "Tøm setningen", lauseCheckWord: "Vis opplysninger om ordet", lauseInSentence: "I denne setningen", lauseChoose: "Velg dette", lauseFullCard: "Hele ordkortet",
-    expOcr: "Bildesøk", expOcrDesc: "Finner ordene fra ordboka i teksten på et bilde. Starter med kameraknappen i topplinjen.",
-    expOcrInfo: `<p>I topplinjen kommer en <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg> kameraknapp. Ta et bilde av tekst eller velg et bilde, så blir ordene fra ordboka
-      merket i bildet. Trykk på et ord for å se oversettelsen.</p>
-      <p>Teksten gjenkjennes på telefonen med Googles ML Kit, og bildet forlater ikke enheten. ML Kits sending av
+    expOcr: "Bildesøk", expOcrDesc: "Finner ordene fra ordboka i teksten på et bilde og oversetter ord og setninger. Åpnes med Bilde-knappen.",
+    expOcrInfo: `<p>I bunnlinjen (på bred skjerm i topplinjen) kommer en <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg> Bilde-knapp. Ta et bilde av tekst eller
+      velg et bilde, så blir ordene fra ordboka merket i bildet. Trykk på et ord for å se oversettelsen. <b>Hent setning</b>
+      oversetter hele setningen, og med <b>Velg ordene selv</b> kan du male eller ringe inn ordene du vil ha med fingeren.</p>
+      <p>Bildets språk velges med språkknappen: nordsamisk, oversettelsesspråket (norsk eller finsk; ordene oversettes til samisk) og enaresamisk og
+      skoltesamisk hvis de er slått på i innstillingene.</p>
+      <p>Teksten gjenkjennes på telefonen med Googles ML Kit. Ukjente samiske ord leses en gang til med Nasjonalbibliotekets
+      samiske tekstgjenkjenningsmodell (Tesseract), også på telefonen. Bildet forlater ikke enheten, og ML Kits sending av
       bruksstatistikk til Google er slått av.</p>`,
     expTableTr: "Oversettelse av bøyingsformer", expTableTrDesc: "Maskinoversettelse under hver form i bøyingstabellen.",
     positionOn: "på", positionUnder: "under",
@@ -397,8 +406,8 @@ const UI_TEXTS = {
     textSize: "Tekststørrelse", textSizeSystem: "Enhetens", textSizeNote: "Enhetens: samme tekststørrelse som i innstillingene på enheten.",
     previewHouse: "hus", previewInHouse: "i huset",
     showGradeDesc: "Sterkt og svakt stadium i farger", voiceHead: "Stemme for uttale",
-    toolsIntro: "Når et verktøy er slått på, vises knappen i topplinjen. Verktøy merket BETA er fortsatt under utvikling.",
-    toolGameDesc: "Ordspill: velg riktig alternativ eller skriv ordet på samisk.", toolWordlistsDesc: "Ordlister etter tema, med uttale.",
+    toolsIntro: "Når et verktøy er slått på, vises knappen i bunnlinjen (på bred skjerm i topplinjen). Verktøy merket BETA er fortsatt under utvikling.",
+    toolGameDesc: "Ordspill: velg riktig alternativ eller skriv ordet på samisk.", toolWordlistsDesc: "Ordlister etter tema, med uttale og lytteøvelse.",
     toolAlways: "Alltid", toolSmnDesc: "Ordene også på enaresamisk; noen er ennå ikke kontrollert.",
     langSource: { eng: "Wiktionary og Giellatekno", smn: "Giellatekno", smj: "Giellatekno", sma: "Giellatekno", spa: "dict-sme-spa (UNED)", sms: "via finske oversettelser" },
     historyNote: "Favoritter og historikk vises i menyen og på startsiden.",
@@ -455,10 +464,10 @@ const UI_TEXTS = {
       <dt>Stadieveksling</dt><dd>sterkt stadium <b class="gd">GD</b> og svakt stadium <b class="hd">HD</b> i hver sin farge (kan velges i innstillingene).</dd>
       <dt>Uttale</dt><dd>🔈 ved ordet, eller trykk på en form i tabellen: lytt eller kopier.</dd>
       <dt>Favoritter</dt><dd>★ lagrer ordet i din egen liste.</dd>
-      <dt>Ordlister</dt><dd><svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5.6 4 9 4 12 6c3-2 6.4-2 9-.5V19c-2.6-1.5-6-1.5-9 .5-3-2-6.4-2-9-.5z"/><path d="M12 6v13.5"/><path d="M15.5 5.2v5.3l1.5-1.2 1.5 1.2V4.9"/></svg> øverst til høyre: ordlister etter tema med uttale (tall, måneder, familie, farger…), noen med lydliste å lytte til.</dd>
+      <dt>Ordlister</dt><dd><svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5.6 4 9 4 12 6c3-2 6.4-2 9-.5V19c-2.6-1.5-6-1.5-9 .5-3-2-6.4-2-9-.5z"/><path d="M12 6v13.5"/><path d="M15.5 5.2v5.3l1.5-1.2 1.5 1.2V4.9"/></svg> i bunnlinjen: ordlister etter tema med uttale (tall, måneder, familie, farger…) og lytteøvelse.</dd>
       <dt>Minispill</dt><dd><svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 8h11a4 4 0 0 1 3.9 4.9l-.8 3.6a2.3 2.3 0 0 1-4 .9L15 15.5H9l-1.6 1.9a2.3 2.3 0 0 1-4-.9l-.8-3.6A4 4 0 0 1 6.5 8z"/><path d="M8 10.5v3M6.5 12h3"/></svg> ordspill: velg riktig av fire eller skriv ordet på samisk (hint koster poeng). Nybegynner, viderekommen eller et emne (ordenstall, tid, farger, spørreord, dyr). Enaresamisk som eksperiment i innstillingene. Kan skjules i innstillingene.</dd>
-      <dt>Bilde og setning</dt><dd><svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg> finner ord i et bilde (i appen), <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg> oversetter en kort finsk setning. Eksperimentelle: slå dem på i menyen, så dukker knappene opp øverst.</dd>
-      <dt>Meny</dt><dd>☰ øverst: språk, innstillinger, favoritter og historikk, andre språk og eksperimentelle funksjoner.</dd>`,
+      <dt>Bilde og setning</dt><dd><svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg> finner og oversetter ord og setninger i et bilde (i Android-appen), <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg> oversetter en kort finsk setning. Eksperimentelle: slå dem på under Mer → Verktøy, så dukker knappene opp i bunnlinjen.</dd>
+      <dt>Mer</dt><dd>☰ i bunnlinjen (på bred skjerm øverst): språk, innstillinger, verktøy, favoritter og historikk, andre språk og eksperimentelle funksjoner.</dd>`,
     menuTip: "Språk og innstillinger finner du i menyen.",
     tryThese: "Prøv:", randomWord: "Tilfeldig ord",
     listen: "Lytt", fetching: "Henter…", listenTo: (text) => `Lytt: ${text}`,
@@ -560,9 +569,10 @@ const UI_TEXTS = {
          (Språkbanken / Nasjonalbiblioteket, CC BY 4.0), skoltesamisk (eksperimentelt) GiellaLT dict-sms-mul, dict-fin-sms og
          dict-nob-sms (CC BY 4.0 / 3.0), norske oversettelser (eksperimentelt) Apertium apertium-sme-nob (GPL-2.0-or-later), finske forslag (eksperimentelt) GiellaLT dict-smn-sme, dict-smn-fin og dict-fin-smn (CC BY 4.0), spanske oversettelser GiellaLT dict-sme-spa og dict-spa-sme (Ángel, CC BY 4.0), en del av de engelske oversettelsene Wiktionary (CC BY-SA 4.0, kaikki.org), sql.js (MIT). Eksperimentell tekstgjenkjenning i
          Android-appen: Google ML Kit (Googles vilkår). Bildet behandles på telefonen og forlater ikke enheten,
-         og ML Kits sending av bruksstatistikk til Google er slått av. Bøyingsformer for enaresamisk og
+         og ML Kits sending av bruksstatistikk til Google er slått av. Annen lesing av ukjente samiske ord: Tesseract
+         (Apache-2.0) og Nasjonalbibliotekets samiske modell (Nasjonalbiblioteket, CC BY 4.0; Enstad mfl. 2025). Bøyingsformer for enaresamisk og
          skoltesamisk i bilder: GiellaLT lang-smn og lang-sms (GPL-3.0). Finske og norske ordpar i setningsvisningen
-         for bilder: Leipzig Corpora Collection (Wortschatz Leipzig, CC BY; bare antall ordpar og ord, ingen setninger). Sátni FST er fri programvare (GPL-3.0).
+         for bilder: Leipzig Corpora Collection (Wortschatz Leipzig, CC BY; bare antall ordpar og ord, ingen setninger). Beslektede ord i andre samiske språk: Álgu (Institutet för de inhemska språken i Finland, CC BY 4.0). Stedsnavn: Kartverket Stedsnavn (© Kartverket, CC BY 4.0). Korpusfrekvenser: SIKOR (UiT, CC BY 3.0). Sátni FST er fri programvare (GPL-3.0).
          Stadievekslingsgrupper: Oahpa (Giellatekno). Alle kilder, lisenser og endringer: Lisenser-knappen nedenfor.
          Kildekode: <a href="https://github.com/sombyduodji/satni-fst" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst</a>.</p>
       </details>`,

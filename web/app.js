@@ -1144,7 +1144,7 @@ function loadWord(id) {
   try {
     alsoFin = all(`SELECT items FROM fin_also WHERE word_id = ?`, [id])[0]?.items || "";
   } catch (e) { /* vanha aineisto ilman lisäsuomennoksia */ }
-  // test-lahteet: sukulaissanat muissa saamen kielissä (algu_related.py, Álgu / Kotus, CC BY 4.0)
+  // Sukulaissanat muissa saamen kielissä (algu_related.py, Álgu / Kotus, CC BY 4.0)
   let related = [];
   try {
     related = all(`SELECT lang, word FROM related_sami WHERE word_id = ? ORDER BY rowid`, [id]);
@@ -1369,7 +1369,7 @@ function extraDidYouMean(query, results) {
   }
   return out.sort((a, b) => b.freq - a.freq).slice(0, 2);
 }
-// test-lahteet: Norjan saamenkieliset paikannimet (kartverket_names.py, Kartverket CC BY 4.0): haku saamen- tai
+// Norjan saamenkieliset paikannimet (kartverket_names.py, Kartverket CC BY 4.0): haku saamen- tai
 // norjankielisellä nimellä näyttää vastineen (Guovdageaidnu – Kautokeino, taajama)
 function renderPlaceNames(query) {
   const box = $("place-hits");
