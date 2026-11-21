@@ -105,13 +105,15 @@ abstract class PlayAssets extends DefaultTask {
     void run() {
         def edits = [
             "index.html": { it.replaceAll(/(?s)\s*<h3 data-i18n="supportCoffeeTitle".*?data-i18n="supportThanks"><\/p>/, "")
-                              .replace("Osallistu ja tue", "Osallistu") },
+                              .replace("Osallistu ja tue", "Osallistu").replace('<span data-i18n="menuSupport">Tue</span>', '<span data-i18n="menuSupport">Osallistu</span>') },
             "i18n.js": { it.replaceAll(/(?s)\n\s*supportCoffeeTitle: ".*?",/, "")
                            .replaceAll(/(?s)\n\s*supportCoffee: `.*?`,/, "")
                            .replaceAll(/(?s)\n\s*supportNote: `.*?`,/, "")
                            .replaceAll(/\n\s*supportThanks: ".*?",/, "")
                            .replace('support: "Osallistu ja tue"', 'support: "Osallistu"')
-                           .replace('support: "Bidra og støtt"', 'support: "Bidra"') },
+                           .replace('support: "Bidra og støtt"', 'support: "Bidra"')
+                           .replace('menuSupport: "Tue"', 'menuSupport: "Osallistu"')
+                           .replace('menuSupport: "Støtt"', 'menuSupport: "Bidra"') },
             "sw.js": { it.replace(' "icons/coffee.svg",', "") },
             "styles.css": { it.replaceAll(/(?m)^\/\*[^\n]*coffee[^\n]*\n/, "")
                               .replaceAll(/(?m)^[^\n{]*coffee[^\n{]*\{[^}]*\}\n/, "") },
@@ -121,7 +123,7 @@ abstract class PlayAssets extends DefaultTask {
         sources.files.each { file ->
             def text = edits[file.name](file.getText("UTF-8"))
             // kahvi/kaffe kokonaisena sanana: lausekääntäjän esimerkki "saisinko yhden kahvin" ei ole tukilinkki (1.0.0)
-            def left = (text =~ /(?i)coffee|\bkahvi(t)?\b|\bkaffe\b|supportNote|supportThanks|ja tue|og støtt/)
+            def left = (text =~ /(?i)coffee|\bkahvi(t)?\b|\bkaffe\b|supportNote|supportThanks|ja tue|og støtt|menuSupport: "(Tue|Støtt)"|>Tue</)
             if (left.find()) throw new GradleException("Play-versioon jäi tukilinkin tekstiä (${file.name}): ${left.group()}")
             new File(out, file.name).setText(text, "UTF-8")
         }
