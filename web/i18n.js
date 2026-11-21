@@ -532,7 +532,7 @@ const UI_TEXTS = {
     gtTitle: "Ordet i Giellateknos ordbok Neahttadigisánit (oversettelser, ordhistorie, eksempler fra tekster)", satniTitle: "Ordet i ordbøkene på sátni.org",
     langName: { fin: "finsk", nob: "norsk", eng: "engelsk", smn: "enaresamisk", smj: "lulesamisk", sma: "sørsamisk", sms: "skoltesamisk", spa: "spansk" },
     smeDef: "Forklaring på samisk", smeDefSyn: "samme som",
-    relatedSami: "Beslektede ord i andre samiske språk", relatedNote: "Samme opphav, betydningen kan avvike. Kilde: Álgu (Institutet för de inhemska språken i Finland).",
+    relatedSami: "Beslektede ord i andre samiske språk", relatedNote: "Samme opphav, betydningen kan avvike. Kilde: Álgu (Kotus, Institute for the Languages of Finland).",
     placeName: "Stedsnavn", placeSource: "© Kartverket",
     placeTypes: { by: "by", tettsted: "tettsted", tettbebyggelse: "tettsted", bygdelagBygd: "bygd", grend: "grend", kommune: "kommune",
       fjell: "fjell", vann: "vann", tjern: "tjern", elv: "elv", bekk: "bekk", fjord: "fjord", "øy": "øy", "øyISjø": "øy",
@@ -572,7 +572,7 @@ const UI_TEXTS = {
          og ML Kits sending av bruksstatistikk til Google er slått av. Annen lesing av ukjente samiske ord: Tesseract
          (Apache-2.0) og Nasjonalbibliotekets samiske modell (Nasjonalbiblioteket, CC BY 4.0; Enstad mfl. 2025). Bøyingsformer for enaresamisk og
          skoltesamisk i bilder: GiellaLT lang-smn og lang-sms (GPL-3.0). Finske og norske ordpar i setningsvisningen
-         for bilder: Leipzig Corpora Collection (Wortschatz Leipzig, CC BY; bare antall ordpar og ord, ingen setninger). Beslektede ord i andre samiske språk: Álgu (Institutet för de inhemska språken i Finland, CC BY 4.0). Stedsnavn: Kartverket Stedsnavn (© Kartverket, CC BY 4.0). Korpusfrekvenser: SIKOR (UiT, CC BY 3.0). Sátni FST er fri programvare (GPL-3.0).
+         for bilder: Leipzig Corpora Collection (Wortschatz Leipzig, CC BY; bare antall ordpar og ord, ingen setninger). Beslektede ord i andre samiske språk: Álgu (Kotus, Institute for the Languages of Finland, CC BY 4.0). Stedsnavn: Kartverket Stedsnavn (© Kartverket, CC BY 4.0). Korpusfrekvenser: SIKOR (UiT, CC BY 3.0). Sátni FST er fri programvare (GPL-3.0).
          Stadievekslingsgrupper: Oahpa (Giellatekno). Alle kilder, lisenser og endringer: Lisenser-knappen nedenfor.
          Kildekode: <a href="https://github.com/sombyduodji/satni-fst" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst</a>.</p>
       </details>`,
