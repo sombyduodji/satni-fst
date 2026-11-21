@@ -2978,7 +2978,9 @@ function renderSettingsSummary() {
     (settings.gradeUnderline ? `, ${t("sumUnderline")}` : "") : "";
   set("sum-card", [t(settings.showGrade ? "sumGradeOn" : "sumGradeOff") + (gradeSum ? ` (${gradeSum})` : ""), settings.voice].join(" · "));
   const langs = [...activeExtraLangs().map((l) => capitalize(langName(l))), ...(settings.skolt ? [capitalize(langName("sms"))] : [])];
-  set("sum-langs", langs.length ? langs.join(", ") : t("sumNone"));
+  // Kokeelliset käännökset ovat Käännöskielet-sivulla (2026-11-21): päällä olevien määrä yhteenvetoon
+  const expOn = ({ fi: ["tableTr", "pivotFin"], nb: ["tableTr", "apertium"], en: ["engMt"] }[settings.uiLang] || []).filter((k) => settings.exp[k]).length;
+  set("sum-langs", (langs.length ? langs.join(", ") : t("sumNone")) + (expOn ? ` · ${t("experimental")}: ${expOn}` : ""));
   const fi = settings.uiLang === "fi";
   const tools = [settings.game ? t("minipeli") : "", t("sanastot"), settings.exp.ocr && window.SatniOcr ? t("expOcr") : "",
     settings.exp.lause && fi ? t("lauseTitle") : "", settings.gameSmn ? capitalize(langName("smn")) : ""].filter(Boolean);

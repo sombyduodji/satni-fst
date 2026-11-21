@@ -355,7 +355,6 @@
         </div>
         <h3 class="set-h" data-i18n="setMore">Lisää</h3>
         <div class="set-card">
-<button type="button" class="set-nav" data-go="exp"><span class="set-ico" aria-hidden="true">🧪</span><span class="set-txt"><span class="set-title"><b data-i18n="experimental"></b><span class="beta-tag">BETA</span></span><small id="sum-exp"></small></span><span class="chev" aria-hidden="true">›</span></button>
 <button type="button" class="set-nav" data-go="history"><span class="set-ico" aria-hidden="true">🕘</span><span class="set-txt"><b data-i18n="setHistory"></b><small id="sum-history"></small></span><span class="chev" aria-hidden="true">›</span></button>
         </div>
         <div class="set-card">
@@ -427,6 +426,35 @@
         <div class="set-card">
           <div id="extra-langs" class="extra-langs"></div>
         </div>
+        <!-- Kokeelliset käännökset kieliluettelon alla (käyttäjä 2026-11-21: samaan paikkaan kuin muut kielet) -->
+        <h3 class="set-h set-h-sep"><span data-i18n="experimental"></span> <span class="beta-tag">BETA</span></h3>
+        <p class="set-beta-note" data-i18n="experimentalHint"></p>
+        <section id="experimental-section" class="experimental">
+          <div class="set-card">
+          <div class="toggle-list">
+            <label class="switch-row" id="exp-tabletr-row">
+              <span class="switch-text"><span data-i18n="expTableTr">Taivutusmuotojen käännökset</span>
+                <span class="muted small" data-i18n="expTableTrDesc"></span></span>
+              <input type="checkbox" class="switch" role="switch" data-exp="tableTr">
+            </label>
+            <label class="switch-row" id="exp-apertium-row">
+              <span class="switch-text"><span data-i18n="expApertium">Norjannokset konekäännöksenä</span>
+                <span class="muted small" data-i18n="expApertiumDesc"></span></span>
+              <input type="checkbox" class="switch" role="switch" data-exp="apertium">
+            </label>
+            <label class="switch-row" id="exp-pivotfin-row">
+              <span class="switch-text"><span data-i18n="expPivotFin">Suomennosehdotukset</span>
+                <span class="muted small" data-i18n="expPivotFinDesc"></span></span>
+              <input type="checkbox" class="switch" role="switch" data-exp="pivotFin">
+            </label>
+            <label class="switch-row" id="exp-engmt-row" hidden>
+              <span class="switch-text"><span data-i18n="expEngMt">English machine translations</span>
+                <span class="muted small" data-i18n="expEngMtDesc"></span></span>
+              <input type="checkbox" class="switch" role="switch" data-exp="engMt">
+            </label>
+          </div>
+          </div>
+        </section>
       </div>
       <!-- Työkalut: yläpalkin painikkeet. Kokeilussa olevat työkalut BETA-merkinnällä (päälle kytkettäessä hyväksyntäikkuna,
            app.js: bindExperimental); valmistuessaan merkintä poistetaan eikä mitään tarvitse siirtää. -->
@@ -457,35 +485,6 @@
           </div>
         </div>
         <p class="setting-note" id="game-smn-note" data-i18n="gameSmnNote"></p>
-      </div>
-      <div class="set-page" data-page="exp" hidden>
-        <p class="set-beta-note" data-i18n="experimentalHint"></p>
-        <section id="experimental-section" class="experimental">
-          <div class="set-card">
-          <div class="toggle-list">
-            <label class="switch-row" id="exp-tabletr-row">
-              <span class="switch-text"><span data-i18n="expTableTr">Taivutusmuotojen käännökset</span>
-                <span class="muted small" data-i18n="expTableTrDesc"></span></span>
-              <input type="checkbox" class="switch" role="switch" data-exp="tableTr">
-            </label>
-            <label class="switch-row" id="exp-apertium-row">
-              <span class="switch-text"><span data-i18n="expApertium">Norjannokset konekäännöksenä</span>
-                <span class="muted small" data-i18n="expApertiumDesc"></span></span>
-              <input type="checkbox" class="switch" role="switch" data-exp="apertium">
-            </label>
-            <label class="switch-row" id="exp-pivotfin-row">
-              <span class="switch-text"><span data-i18n="expPivotFin">Suomennosehdotukset</span>
-                <span class="muted small" data-i18n="expPivotFinDesc"></span></span>
-              <input type="checkbox" class="switch" role="switch" data-exp="pivotFin">
-            </label>
-            <label class="switch-row" id="exp-engmt-row" hidden>
-              <span class="switch-text"><span data-i18n="expEngMt">English machine translations</span>
-                <span class="muted small" data-i18n="expEngMtDesc"></span></span>
-              <input type="checkbox" class="switch" role="switch" data-exp="engMt">
-            </label>
-          </div>
-          </div>
-        </section>
       </div>
       <div class="set-page" data-page="history" hidden>
         <div class="set-card">
