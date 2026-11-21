@@ -139,6 +139,21 @@ often single words occur (at least five times; used to choose compound translati
 Goldhahn, D., Eckart, T. & Quasthoff, U. (2012): Building Large Monolingual Dictionaries at the Leipzig Corpora Collection:
 From 100 to 200 Languages. LREC 2012.
 
+## New open sources (test branch test-lahteet)
+
+Downloaded by [`hae_lahteet.sh`](hae_lahteet.sh) from the publishers' own addresses; not part of this repository.
+
+- **Corpus frequencies:** [SIKOR North Saami lemma frequency list 2015-10-10](http://hdl.handle.net/11509/106),
+  © UiT The Arctic University of Norway (Giellatekno and Divvun), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
+  [`sikor_freq.py`](sikor_freq.py) fills the frequency only for words that have none; letters and abbreviations are left out.
+- **Related words in other Sámi languages:** [Álgu](https://kaino.kotus.fi/algu), the Etymological Database of the Saami
+  Languages (XML 16.3.2023), © Kotimaisten kielten keskus, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+  [`algu_related.py`](algu_related.py) uses only the links between related words and shows a word only when it is in the
+  current Inari, Skolt, Lule or South Sámi dictionary. Álgu's Finnish and German meanings are not used.
+- **Sámi place names in Norway:** [Stedsnavn](https://kartkatalog.geonorge.no/metadata/30caed2f-454e-44be-b5cc-26bb5c0110ca),
+  © Kartverket, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). [`kartverket_names.py`](kartverket_names.py) keeps
+  places with both a North Sámi and a Norwegian name (main and side names), with Lule and South Sámi names.
+
 ## Norwegian inflection — Norsk ordbank, CC BY
 
 The inflected forms of the Norwegian translations (*hus – huset – husene*, *gjøre – gjorde – gjort*)

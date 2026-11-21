@@ -27,6 +27,9 @@ import gradation
 import inflection_class
 import semantics
 import sme_definitions
+import sikor_freq
+import algu_related
+import kartverket_names
 import fin_forms
 import sme_passive
 import nob_forms
@@ -1254,6 +1257,9 @@ def main():
     inflection_class.apply(cursor)
     semantics.apply(cursor)
     sme_definitions.apply(cursor)
+    sikor_freq.apply(cursor)
+    algu_related.apply(cursor)
+    kartverket_names.apply(cursor)
     nob_forms.add_nob_forms(cursor)
     fin_forms.add_fin_forms(cursor)
     sme_passive.apply(cursor)
@@ -1301,6 +1307,24 @@ if __name__ == "__main__":
         # Päivittää vain saamenkieliset määritelmät (sme_definitions.py, dict-sme; nopea, ei FST-ajoa)
         conn = sqlite3.connect(DB_FILE)
         sme_definitions.apply(conn.cursor())
+        conn.commit()
+        conn.close()
+    elif "--vain-sikor" in sys.argv:
+        # test-lahteet: korpusfrekvenssit puuttuville (sikor_freq.py, SIKOR CC BY 3.0; nopea, ei FST-ajoa)
+        conn = sqlite3.connect(DB_FILE)
+        sikor_freq.apply(conn.cursor())
+        conn.commit()
+        conn.close()
+    elif "--vain-algu" in sys.argv:
+        # test-lahteet: sukulaissanat muissa saamen kielissä (algu_related.py, Álgu CC BY 4.0; ~30 s, ei FST-ajoa)
+        conn = sqlite3.connect(DB_FILE)
+        algu_related.apply(conn.cursor())
+        conn.commit()
+        conn.close()
+    elif "--vain-paikannimet" in sys.argv:
+        # test-lahteet: Norjan saamenkieliset paikannimet (kartverket_names.py, Kartverket CC BY 4.0; ~80 s)
+        conn = sqlite3.connect(DB_FILE)
+        kartverket_names.apply(conn.cursor())
         conn.commit()
         conn.close()
     elif "--vain-suoman" in sys.argv:

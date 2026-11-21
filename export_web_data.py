@@ -295,6 +295,10 @@ def main():
                                source TEXT);
         -- Pohjoissaamenkieliset määritelmät (sme_definitions.py, GiellaLT dict-sme): synonyms pilkuin, examples rivinvaihdoin
         CREATE TABLE sme_definitions (word_id INTEGER, nr INTEGER, definition TEXT, synonyms TEXT, examples TEXT);
+        -- test-lahteet: sukulaissanat muissa saamen kielissä (algu_related.py, Álgu / Kotus, CC BY 4.0)
+        CREATE TABLE related_sami (word_id INTEGER, lang TEXT, word TEXT);
+        -- test-lahteet: Norjan saamenkieliset paikannimet (kartverket_names.py, Kartverket, CC BY 4.0)
+        CREATE TABLE placenames (sme TEXT, nob TEXT, smj TEXT, sma TEXT, type TEXT, municipality TEXT);
         -- Käännösten taivutus: norja (Norsk ordbank, nob_forms.py) ja suomi (GiellaLT lang-fin, fin_forms.py).
         -- WITHOUT ROWID: avain toimii hakemistona, eikä erillistä indeksiä (sanojen kopiota) tarvita
         CREATE TABLE nob_forms (word TEXT, pos TEXT, forms TEXT, PRIMARY KEY (word, pos)) WITHOUT ROWID;
@@ -418,6 +422,12 @@ def main():
     if src.execute("SELECT 1 FROM sqlite_master WHERE name = 'sme_definitions'").fetchone():
         dst.executemany("INSERT INTO sme_definitions VALUES (?,?,?,?,?)", src.execute(
             "SELECT word_id, nr, definition, synonyms, examples FROM sme_definitions ORDER BY word_id, nr"))
+    if src.execute("SELECT 1 FROM sqlite_master WHERE name = 'related_sami'").fetchone():
+        dst.executemany("INSERT INTO related_sami VALUES (?,?,?)", src.execute(
+            "SELECT word_id, lang, word FROM related_sami ORDER BY word_id, lang, rowid"))
+    if src.execute("SELECT 1 FROM sqlite_master WHERE name = 'placenames'").fetchone():
+        dst.executemany("INSERT INTO placenames VALUES (?,?,?,?,?,?)", src.execute(
+            "SELECT sme, nob, smj, sma, type, municipality FROM placenames ORDER BY sme"))
 
     if src.execute("SELECT 1 FROM sqlite_master WHERE name = 'nob_forms'").fetchone():
         dst.executemany("INSERT INTO nob_forms VALUES (?,?,?)",
@@ -498,6 +508,9 @@ def main():
         CREATE INDEX idx_sme_passive_surface ON sme_passive(surface);
         CREATE INDEX idx_examples_word ON examples(word_id);
         CREATE INDEX idx_sme_definitions_word ON sme_definitions(word_id);
+        CREATE INDEX idx_related_sami_word ON related_sami(word_id);
+        CREATE INDEX idx_placenames_sme ON placenames(sme COLLATE NOCASE);
+        CREATE INDEX idx_placenames_nob ON placenames(nob COLLATE NOCASE);
     """)
     dst.commit()
     dst.execute("VACUUM")
