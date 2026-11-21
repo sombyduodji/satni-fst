@@ -89,14 +89,14 @@ def compound_stems(words, speller):
     """Yhdyssanan alkumuodot: perusmuoto, yksikön genetiivi ja viimeinen vokaali vaihdettuna; oikoluku hyväksyy
     ehdokas + molemmat jälkiosat. Sama muoto kahdelle sanalle -> se, jolla on enemmän käännöksiä."""
     best = {}
-    for wid, lemma, pos, gen, ntrans in words:
+    for wid, lemma, pos, gens, ntrans in words:
         if pos not in ("N", "A") or not lemma.isalpha():
             continue
         low = lemma.lower()
-        cands = {low} | ({gen.lower()} if gen else set())
+        cands = {low} | {g.lower() for g in gens}
         if low[-1] in VOWELS:
             cands.update(low[:-1] + v for v in "aáâeiou")
-        for c in cands:
+        for c in sorted(cands):
             if len(c) >= 3 and (c not in best or ntrans > best[c][0]) and all(speller.spell(c + h) for h in CMP_HEADS):
                 best[c] = (ntrans, wid)
     return sorted((c, wid) for c, (_, wid) in best.items())
@@ -174,11 +174,14 @@ def main():
     except Exception:
         speller = None
     if speller:
-        gen = {}
+        # Kaikki yksikön genetiivit (osalla sanoista kaksi, esim. astevaihtelun takia): ennen joukosta poimittiin
+        # satunnainen yksi, jolloin ~145 smn_cmp-riviä vaihteli ajosta toiseen (2026-11-21). Oikoluku tarkistaa
+        # jokaisen ehdokkaan, joten molemmat kelpaavat.
+        gen = collections.defaultdict(set)
         for s, i, tag in rows:
             if tag == "Sg+Gen":
-                gen.setdefault(i, s)
-        cw = [(i, l, p, gen.get(i), len(entries[(l, p)]["fin"]) + len(entries[(l, p)]["sme"])) for (l, p), i in ids.items()]
+                gen[i].add(s)
+        cw = [(i, l, p, sorted(gen.get(i, ())), len(entries[(l, p)]["fin"]) + len(entries[(l, p)]["sme"])) for (l, p), i in ids.items()]
         cmp_rows = compound_stems(cw, speller)
         speller.terminate()
         con.executemany("INSERT INTO smn_cmp VALUES (?,?)", cmp_rows)
