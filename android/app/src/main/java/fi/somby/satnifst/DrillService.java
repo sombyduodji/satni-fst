@@ -1,6 +1,7 @@
 package fi.somby.satnifst;
 
 import android.app.Notification;
+import android.graphics.drawable.Icon;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -111,6 +112,10 @@ public final class DrillService extends Service {
         if (ACTION_START.equals(action)) {
             halt();  // uusi harjoitus vanhan päälle
             if (!configure(pendingConfig)) {
+                // startForegroundService vaatii startForegroundin ennen lopetusta (Android 9+ kaataisi sovelluksen):
+                // tyhjä sanalista (esim. tallennettu lista, jota ei enää ole) -> näkyviin hetkeksi ja heti pois
+                goForeground();
+                stopForeground(true);
                 stopSelf();
                 return START_NOT_STICKY;
             }
@@ -118,7 +123,7 @@ public final class DrillService extends Service {
             goForeground();
             if (!requestFocus()) paused = true;
             session.setActive(true);
-            wakeLock.acquire(4 * 60 * 60 * 1000L);  // yläraja: unohtunut harjoitus ei pidä laitetta hereillä loputtomiin
+            awake(!paused);
             emit("state", true);
             if (!paused) step();
             else refresh();
@@ -164,6 +169,7 @@ public final class DrillService extends Service {
             case ACTION_PAUSE:
                 if (paused) return;
                 paused = true;
+                awake(false);  // tauolla laite saa nukkua (ennen hereillä jopa 4 h)
                 halt();
                 emit("state", false);
                 refresh();
@@ -172,12 +178,14 @@ public final class DrillService extends Service {
                 if (!paused) return;
                 if (!requestFocus()) return;
                 paused = false;
+                awake(true);
                 emit("state", false);
                 step();  // kesken jäänyt sana alusta
                 break;
             case ACTION_NEXT:
                 halt();
                 paused = false;
+                awake(true);
                 advance();
                 break;
             case ACTION_STOP:
@@ -251,7 +259,7 @@ public final class DrillService extends Service {
             mp.prepare();
             mp.start();
             player = mp;
-            android.util.Log.d(TAG, "soi " + path + " " + mp.getDuration() + " ms");  // testit: jokainen ääni kuuluu
+            if ((getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) android.util.Log.d(TAG, "soi " + path + " " + mp.getDuration() + " ms");  // testit: jokainen ääni kuuluu
         } catch (Exception e) {
             android.util.Log.w(TAG, "ääntä ei voitu avata " + path, e);
             handler.postDelayed(finish, 800);
@@ -307,6 +315,12 @@ public final class DrillService extends Service {
     }
 
     // --- Ilmoitus ja mediaistunto ---
+    /** Osittainen herätyslukko vain soitettaessa; yläraja 4 h, ettei unohtunut harjoitus pidä laitetta hereillä loputtomiin. */
+    private void awake(boolean on) {
+        if (on) wakeLock.acquire(4 * 60 * 60 * 1000L);
+        else if (wakeLock.isHeld()) wakeLock.release();
+    }
+
     private void goForeground() {
         Notification n = buildNotification();
         if (Build.VERSION.SDK_INT >= 29) startForeground(NOTIFICATION, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
@@ -349,9 +363,9 @@ public final class DrillService extends Service {
                 .setOngoing(!paused)
                 .setShowWhen(false)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
-                .addAction(new Notification.Action.Builder(null, tStop, action(ACTION_STOP, 1)).build())
-                .addAction(new Notification.Action.Builder(null, paused ? tPlay : tPause, action(paused ? ACTION_PLAY : ACTION_PAUSE, 2)).build())
-                .addAction(new Notification.Action.Builder(null, tNext, action(ACTION_NEXT, 3)).build())
+                .addAction(new Notification.Action.Builder(Icon.createWithResource(this, android.R.drawable.ic_menu_close_clear_cancel), tStop, action(ACTION_STOP, 1)).build())
+                .addAction(new Notification.Action.Builder(Icon.createWithResource(this, paused ? android.R.drawable.ic_media_play : android.R.drawable.ic_media_pause), paused ? tPlay : tPause, action(paused ? ACTION_PLAY : ACTION_PAUSE, 2)).build())
+                .addAction(new Notification.Action.Builder(Icon.createWithResource(this, android.R.drawable.ic_media_next), tNext, action(ACTION_NEXT, 3)).build())
                 .setStyle(new Notification.MediaStyle().setMediaSession(session.getSessionToken()).setShowActionsInCompactView(0, 1, 2));
         if (Build.VERSION.SDK_INT < 26) b.setPriority(Notification.PRIORITY_LOW).setSound(null);
         return b.build();
