@@ -15,7 +15,7 @@ const PELI_TEXTS = {
     unfinished: (n) => `kesken ${n} p`, restart: "Aloita kesken jäänyt peli alusta",
     title: "Minipeli", pick: "Valitse peli", best: "Paras", none: "–", score: (n) => `${n} oikein`,
     lead: "Valitse oikea käännös neljästä. Yksi väärä vastaus päättää pelin.",
-    modes: { beginner: ["Aloittelija", "Yleisimmät sanat"], advanced: ["Edistynyt", "Kaikki 1 089 sanaa"],
+    modes: { beginner: ["Aloittelija", "Yleisimmät sanat"], advanced: ["Edistynyt", "Kaikki sanat"],
       ordinals: ["Järjestysluvut", "1.–100."], time: ["Viikonpäivät, vuodenajat ja kuukaudet", "Biret sanoo oikean vastauksen"],
       colours: ["Värit", "9 väriä"], questions: ["Kysymyssanat", "Biret sanoo oikean vastauksen"], animals: ["Eläimet", "23 eläintä"] },
     groups: { words: "Sanat", cats: "Aiheet" }, groupSub: { words: "Sanakirjan sanoja kahdella tasolla", cats: "Lyhyitä teemapelejä" },
@@ -39,7 +39,7 @@ const PELI_TEXTS = {
     unfinished: (n) => `uferdig ${n} p`, restart: "Start det uferdige spillet på nytt",
     title: "Minispill", pick: "Velg spill", best: "Best", none: "–", score: (n) => `${n} riktige`,
     lead: "Velg riktig oversettelse av fire. Ett feil svar avslutter spillet.",
-    modes: { beginner: ["Nybegynner", "De vanligste ordene"], advanced: ["Viderekommen", "Alle 1 089 ord"],
+    modes: { beginner: ["Nybegynner", "De vanligste ordene"], advanced: ["Viderekommen", "Alle ordene"],
       ordinals: ["Ordenstall", "1.–100."], time: ["Ukedager, årstider og måneder", "Biret sier riktig svar"],
       colours: ["Farger", "9 farger"], questions: ["Spørreord", "Biret sier riktig svar"], animals: ["Dyr", "23 dyr"] },
     groups: { words: "Ord", cats: "Emner" }, groupSub: { words: "Ord fra ordboka på to nivåer", cats: "Korte temaspill" },
@@ -214,8 +214,9 @@ function peliSamiSwitch(sami) {
 // Tilan alaotsikko: pohjoissaamessa kiinteät tekstit, inarinsaamessa sanamäärä (ei Biretin ääntä)
 function peliModeSub(id, sami) {
   const T = pt();
-  if (sami === "sme") return T.modes[id][1];
-  if (id === "beginner") return T.modes[id][1];
+  // Sanamäärä aina datasta (ennen kiinteä "Kaikki 1 089 sanaa", vaikka sanoja oli 1 079; testi 2026-11-21)
+  if (id === "advanced") return T.allWords(peliPool(id, sami).length);
+  if (sami === "sme" || id === "beginner") return T.modes[id][1];
   const n = peliPool(id, sami).length;
   return id === "advanced" ? T.allWords(n) : T.count(n);
 }
@@ -557,9 +558,13 @@ function peliSubmit() {
   peliNext(q, r.related ? 3000 : r.almost ? 2400 : 1200);
 }
 
+let peliHintAt = 0;
 async function peliHint(btn) {
   const q = peliRun?.q;
   if (!q || !q.write || peliBusy) return;
+  // Tuplanapautus ei saa ottaa kahta vihjettä (kumpikin maksaa pisteen; testi 2026-11-21)
+  if (performance.now() - peliHintAt < 600) return;
+  peliHintAt = performance.now();
   if (q.hints < 2) {
     q.hints++;
     peliSave();
