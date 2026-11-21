@@ -3,6 +3,46 @@
 Sátni FST:n kaikki versiot. Lataukset: [GitHub-julkaisut](https://github.com/sombyduodji/satni-fst/releases).
 [English](CHANGELOG.md) · [Norsk](CHANGELOG.nb.md)
 
+## 1.0.0 — 2026-11-21
+
+Ensimmäinen täysi versio. Sanakirjan lisäksi sovelluksessa on nyt sanastot ääntämyksineen, kuunteluharjoitus, sanapeli ja paljon parempi valokuvahaku.
+
+- **Uusi ilme puhelimessa.** Alapalkissa Haku, Sanastot, Peli ja Lisää; käyttöön otetut työkalut (Kuva, Lause) saavat sinne omat painikkeensa. Asetukset on jaettu sivuiksi: Ulkoasu, Sanakortti, Käännöskielet, Historia, Työkalut ja Kokeelliset.
+- **Sanastot.** Aihekohtaiset sanalistat Biretin, Máhtten ja Sunnán ääntäminä: luvut ja järjestysluvut, viikonpäivät, kuukaudet ja vuodenajat, suku, värit, kysymyssanat, porot, sää ja muuta. Napauta sanaa: kuuntele, kopioi tai avaa sanakortti. Tervehdykset voi kuunnella keskusteluna.
+- **Kuunteluharjoitus.** Harri sanoo sanan suomeksi, saat hetken miettimisaikaa, ja saamenkielinen vastaus kuuluu ja näkyy. Valitse aiheet, lukualueet, suunta, miettimisaika ja ääni; harjoitus jatkuu näytön sammuttua, ja sen voi pysäyttää ilmoituksesta.
+- **Sanapeli.** Valitse oikea käännös neljästä tai kirjoita sana saameksi (vihje maksaa pisteen, samoin puuttuvat erikoiskirjaimet). Aloittelija- ja edistynyt-taso sekä lyhyitä aihepelejä (järjestysluvut, ajat, värit, kysymyssanat, eläimet); aika- ja kysymyspeleissä Biret sanoo oikean vastauksen. Parhaat tulokset palkintokorokkeella. Tuplanapautus ei vastaa kahdesti eikä ohita tulosta.
+- **Valokuvahaku** (Android, kytke päälle kohdasta *Työkalut*). Kuva koko näytöllä ja sanat merkittyinä; napauta sanaa, niin näet käännöksen oikeassa muodossa (*beavddis* = pöydässä). *Poimi lause* kääntää koko lauseen sana sanalta lauseyhteyden mukaan, ja *Valitse sanat itse* -toiminnolla voit maalata tai ympyröidä sanat sormella. Sivuttain oleva kuva käännetään itsestään. Kuvan voi lukea myös suomen- tai norjankielisenä tekstinä ja kääntää saameksi.
+- **Parempi kuvan luku.** Väärin luetut sanat korjautuvat useammin: puuttuvat erikoiskirjaimet, yhdeksi luettu kaksoiskirjain, *I*/*l*-sekaannukset ja rivin lopussa katkenneet sanat. Tuntemattomat saamen sanat luetaan toiseen kertaan Norjan kansalliskirjaston saamen tekstintunnistusmallilla puhelimessa. Yhdyssana jaetaan osiin, jos koko sanaa ei ole sanakirjassa.
+- **Inarin- ja koltansaame kuvissa** (kokeellinen, oletuksena pois). Sovellus tunnistaa kielen itse ja kääntää inarin tai koltan sanakirjojen kautta.
+- **Inarinsaame pelissä ja sanastoissa** (kokeellinen, *Työkalut*).
+- **Lausekääntäjä** (kokeellinen). Lyhyt suomenkielinen lause pohjoissaameksi sanakirjan sanoista ja muodoista; napauttamalla voi vaihtaa sanan tulkinnan tai muodon.
+- **Sukulaissanat muissa saamen kielissä.** Sanakortti näyttää saman sanan inarin-, koltan-, luulajan- ja eteläsaamessa, kun saamelaiskielten etymologinen tietokanta Álgu yhdistää ne (*boazu*: puásui, puäʒʒ, boatsoj, bovtse). Noin 13 000 sanaa.
+- **Paikannimet.** Norjan saamenkieliset paikannimet norjankielisine niminen (*Guovdageaidnu* – Kautokeino) Kartverketiltä ja suomenkieliset nimet noin 400 paikalle, kuten Utsjoki ja Ivalo.
+- **Parempi suomi.** Noin 145 väärää tai harhaanjohtavaa suomennosta korjattu riippumattomia lähteitä vasten tarkistettuina, esimerkiksi *ektui* (suhteen, verrattuna), *gáhttet* (suojella) ja *hárjeheaddji* (valmentaja). Noin 1 300 yhdyssanaa, joilta suomennos puuttui, sai tarkistetun suomennoksen, ja *-vuohta*-loppuiset sanat saavat *-uus/-yys*-ehdotuksen (*mánnávuohta* ≈ lapsuus).
+- **Jokerihaku.** `?` on yksi kirjain ja `*` mitä tahansa kirjaimia: `á?bmogis`, `bo*`. Jokerimerkillä alkava haku tarvitsee kolme kirjainta.
+- **Nopeampi haku.** Haku on 20–40 kertaa nopeampi, ja sanakirja on pienempi ladata.
+- **Ilmoita virheestä kaikkialta.** Sanakortti, taivutusmuodot, sanastot, peli, valokuvahaku ja lausenäkymät: virheilmoitus valmistelee sähköpostin.
+- **Tallennetut ääntämiset.** Kuunnellut sanat säilyvät laitteella käytettäviksi ilman verkkoa; enimmäiskoon voi valita ja ne voi tyhjentää kohdassa *Sanakortti*.
+- **Astevaihtelun värit.** Valitse vahvan ja heikon asteen värit tai alleviivaus, myös värisokeille sopiva valmis vaihtoehto.
+- **Koltansaamen käännökset** (tarkistamaton, oletuksena pois) suomennosten kautta, varoituksen kanssa.
+- **Tietosuoja.** Sovellus ei lähetä käyttötilastoja; Googlen ML Kitin tilastot on poistettu käytöstä. Kuva ei koskaan lähde puhelimesta. Verkkoa käytetään vain Divvunin ääntämispalveluun, kun painat kaiutinta.
+- **Saavutettavuus ja korjaukset.** Parempi kontrasti, näppäimistökäyttö ja ruudunlukijan nimet; Takaisin ja Esc sulkevat yhden kerroksen kerrallaan; liian vanha Androidin WebView näyttää selvän ilmoituksen ikuisen latauksen sijaan; puhelimen fonttikoon muutos ei enää lataa sovellusta uudelleen.
+- **Taivutusluokka.** Sanakortti näyttää substantiivin ja verbin luokan (I parillistavuinen, II paritontavuinen, III supistuma), kun lähde ja sanan muodot ovat samaa mieltä. Substantiiveille näytetään myös asteet. Muille sanoille luokkaa ei arvata.
+- **Itä ja länsi.** Alueittain vaihtelevat sanat ja käännökset on merkitty (it) ja (lä). Saman sanan kaksi kirjoitusasua, kuten *girku* ja *kirku*, ovat samalla kortilla, jonka löytää kummallakin. Eri sanoista, kuten *gánda* ja *lunta*, on linkki toiseen.
+- **Haku.** Aluemerkityt käännökset, kuten *patja*, löytyvät nyt.
+- **Ääntäminen.** Uusi napautus pysäyttää soivan äänen ja peruu kesken olevan haun, joten äänet eivät enää soi päällekkäin tai peräkkäin.
+- **Lisää saamenkielten käännöksiä.** Noin 40 sanaa saa puuttuvan inarin-, luulajan- tai eteläsaamen käännöksen GiellaLT:n inarin-, luulajan- ja eteläsaamen ja pohjoissaamen sanakirjoista.
+- **Suomennosehdotukset (kokeellinen).** Sanalle, jolla ei ole suomennosta, sanakortti voi näyttää inarinsaamen tai norjan kautta muodostetun ehdotuksen, joka on merkitty tarkistamattomaksi. Ehdotus on noin 2 150 sanalla. Kytke päälle kohdasta *Kokeelliset ominaisuudet*.
+- **Espanja.** Espanjankieliset käännökset noin 7 600 sanalle, myös noin kahdelle kolmasosalle yleisimmistä, merkityksineen ja esimerkkilauseineen GiellaLT:n espanjan sanakirjoista, jotka on tehnyt Ángel. Kytke päälle kohdasta *Muut kielet*.
+- **Haku muilla kielillä.** Muut kielet -asetuksessa valituilla kielillä voi myös hakea, pohjoissaamen ja suomen osumien jälkeen: *perro* löytää sanan *beana*. Tuloslista kertoo, millä kielellä sana löytyi. Vain perusmuodot löytyvät.
+- **Haku löytää käännökset, joissa on tarkenne sulkeissa.** *naida* löytää nyt sanat, joiden käännös on "naida (kerran)", ja *immoral* käännöksen "immoral (of women)": noin 3 400 sanaa, jotka löytyivät aiemmin vain kirjoittamalla tarkennekin.
+- **"Tarkoititko" hakukentässä ja muilla kielillä.** Hakukenttä ehdottaa jo kirjoittaessa sanaa, josta puuttuvat erikoiskirjaimet on lisätty (*cahci* → *čáhci*), myös Muut kielet -asetuksessa valituilla kielillä (*arbol* → *árbol*, *tjielte* → *tjïelte*). Ehdotus vain lisää kirjaimia eikä vaihda niitä.
+- **Lisää englantia.** Noin 3 100 sanaa saa englannin käännöksen Wiktionarysta, ja noin 1 800 sanalle näytetään tarkistamaton englannin ehdotus. Englanninkielinen haku ei välitä alun sanoista *to* ja *a* (*read* löytää "to read").
+- **Taivutustaulukon suomennokset korjattu.** Saamen muodon vieressä oleva suomennos on nyt yleiskieltä: *haluan* eikä *haluun*, *kauniista* eikä *kaunista*, *kiipijöihin* eikä *kiipijiin*, *pelastusliiveiltä* eikä *pelastusliiveilta*. Noin 1 900 sanaa muuttui. Jokainen suomen muoto on tarkistettu Voikko-oikolukimella ja GiellaLT:n analysaattorilla. Jos oikeaa muotoa ei voitu varmistaa, solussa ei näytetä suomennosta väärän sijaan.
+- **Tyylimerkinnät.** Alatyyliset, halventavat ja loukkaavat käännökset on merkitty sanakorttiin, merkityksiin ja tuloslistaan, esimerkiksi *perse* (alatyylinen), *muija* (halventava) ja *tater* (loukkaava). Merkinnät tulevat Wiktionaryn omista merkinnöistä, ja ne on käyty käsin läpi: merkittyjä käännössanoja on 37.
+- **Siistimpi englanti.** Noin 1 100 englannin "käännöstä", jotka olivat oikeasti Konrad Nielsenin sanakirjan kielioppimerkintöjä ("continuative of njuol’got", "caus. of rok’čit"), vanhalla kirjoitusasulla kirjoitettuja saamen sanoja tai saksaa saame–saksa-alkuteoksesta ("den Schlucken haben"), on poistettu, ja noin 370 käännöksestä on poistettu tällainen merkintä niin, että englanti säilyy ("middlemost (= gâs’kâlâmŏs)" → "middlemost"). Wiktionaryn loukkaavaksi merkitsemää englantia käytetään vain, jos saamen sanakin on merkitty sellaiseksi, ja silloin merkinnän kanssa.
+- **Kirjoitusvirheitä korjattu.** Noin 60 suomennosten kirjoitusvirhettä ja vanhentunutta kirjoitusasua on korjattu, esimerkiksi *kaivosyitys* → *kaivosyritys*, *taitelija* → *taiteilija* ja *tietokonenohjelma* → *tietokoneohjelma*; jokainen on varmistettu kahdella oikolukimella ja käsin. Espanjan kirjoitusvirheet kuten *latimarse* → *lastimarse* ja *reluctacia* → *reluctancia* on korjattu, ja lähdesanakirjoihin jääneet työmerkinnät ("XXX") on poistettu.
+
 ## 0.9.3 — 2026-11-03
 
 - **Astevaihtelu korjattu.** Vahva ja heikko aste olivat väärin päin noin 340 sanalla, joukossa yleisiä sanoja kuten *dilli*, *gilli*, *sivva*, *nisu* ja *biras*. Sanakortti ja taivutustaulukon värit ovat nyt oikein. Myös ryhmän nimi korjattiin noin 450 sanalta, esimerkiksi *listu*.

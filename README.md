@@ -19,17 +19,21 @@ Sátni FST combines the open dictionaries and morphology of [GiellaLT](https://g
 - About 80 000 North Sámi words, about 74 000 of them with full inflection tables
   (all moods for verbs, cases in singular and plural for nominals)
 - Consonant gradation shown in colour (strong grade GD / weak grade HD)
-- Translations in Finnish and Norwegian, and for some words English, Inari, Lule and Southern Sámi
+- Translations in Finnish and Norwegian, and for some words English, Spanish, Inari, Lule and Southern Sámi
 - Search with a North Sámi word, an inflected form (*dagan* → *dahkat*) or a Finnish/Norwegian word, also with a
   clitic (*boađátgo*, *tuletko* → *boahtit*); the word card explains the clitic and shows it in Finnish too
 - "Did you mean" when Sámi letters are missing (*boadatgo* → *boađátgo*, *cahci* → *čáhci*)
 - Pronunciation with Divvun's speech synthesis (voices Biret, Máhtte, Sunná; needs a network connection)
-- Android, experimental: look up words from a photo, from Sámi to Finnish/Norwegian and back — tap a marked word
-  for its translation and pronunciation (text recognised on the phone with Google ML Kit; the photo stays on the
-  phone, ML Kit may send anonymous usage statistics to Google; switch on under *Experimental features* at the
-  bottom of the menu)
-- Experimental: Skolt Sámi words on the word card, from GiellaLT's Skolt Sámi dictionaries (switch on under
-  *Experimental features*)
+- Word lists by topic with pronunciation (numbers, days and months, family, colours, question words, reindeer,
+  weather …) and, with the Finnish user interface, a listening practice
+- A word game: pick the right translation or write the word in Sámi, with levels and topic games
+- Related words in other Sámi languages from Álgu, and Sámi place names in Norway from Kartverket
+- Android, photo search (switch on under *More → Tools*): tap a marked word for its translation, or translate a whole
+  sentence; the text is recognised on the phone with Google ML Kit and, for unknown Sámi words, the National
+  Library of Norway's Sámi Tesseract model. The photo stays on the phone and no usage statistics are sent.
+  Inari and Skolt Sámi photos are experimental
+- Experimental: a Finnish-to-North-Sámi sentence translator, Inari Sámi in the game and word lists, and Skolt Sámi
+  translations on the word card (switch on under *More → Tools* and *Translation languages*)
 - User interface in Finnish or Norwegian, light and dark theme, history and favourites
 
 ## Screenshots
@@ -88,7 +92,7 @@ The finished apps are built from these steps. Most build steps run in Docker, so
 |---|---|---|
 | 1. Download the GiellaLT dictionaries | `./hae_sanakirjat.sh` | git |
 | 2. Build the database (`satni.db`, ~10 min) | `python3 import_full_dict.py` | Python 3, [HFST](https://hfst.github.io/) (`hfst-lookup`) |
-| 3. Desktop apps (AppImage + Windows) | `./build.sh` | Docker; a Windows VM for the Windows build (see `build_qt_exe.sh`) |
+| 3. Desktop apps (AppImage + Windows) | `./build.sh` | Docker; a Windows PC or VM for the Windows build (see `build_qt_exe.sh`) |
 | 4. Android app (APK) | `./build_apk.sh` | Docker |
 | 5. Release | attach `dist/Satni_FST-x86_64.AppImage`, `dist/satni-fst-windows.zip` and `dist/satni-fst.apk` to a GitHub release | — |
 | 6. Home page (GitHub Pages) | `./julkaise_sivu.sh` (`--vain-kokoa` builds it without publishing) | git |
@@ -136,8 +140,6 @@ Feedback and suggestions are welcome by email.
 > **Suomeksi:** Ongelmista voi ilmoittaa sähköpostitse <satni@somby.fi> tai GitHubissa. Palaute ja ehdotukset ovat tervetulleita sähköpostitse.
 > **På norsk:** Problemer kan meldes på e-post <satni@somby.fi> eller på GitHub. Tilbakemeldinger og forslag tas gjerne imot på e-post.
 
-<a href="https://buymeacoffee.com/sombyduodji"><img src="site/coffee.svg" alt="" width="40" height="40" align="absmiddle"></a>
-Sátni FST is free and will stay free. If you find it useful, you can
-[buy me a coffee](https://buymeacoffee.com/sombyduodji).
+Sátni FST is free and will stay free.
 
 Juha Somby

@@ -1,7 +1,15 @@
 <!doctype html>
-<html lang="fi">
+<html lang="fi" translate="no">
 <head>
   <meta charset="utf-8">
+  <!-- Sisällön suojauskäytäntö (yötesti 2026-11-14): vain omat skriptit (ei sivun sisäisiä eikä inline-tapahtumia), sql.js:n
+       WebAssembly, puhepalvelu api-giellalt.uit.no. Sama sivu toimii GitHub Pagesissa, Android-sovelluksessa
+       (appassets.androidplatform.net) ja työpöytäsovelluksessa (satni://app). Tyylit inline-sallittuina: näkymät
+       asettavat värit style-attribuutteina (--tc, --tb). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https://api-giellalt.uit.no; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <!-- Ei selaimen konekäännöstä (käyttäjä 2026-11-20): Chrome ja Firefox tarjosivat sivun kääntämistä, mikä muuttaisi
+       myös saamen sanat ja taivutusmuodot. Käyttöliittymä on jo omalla kielellään (fi/nb). -->
+  <meta name="google" content="notranslate">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Sátni FST</title>
   <meta name="description" content="Pohjoissaamen–suomen sanakirja ja taivutusgeneraattori">
@@ -10,16 +18,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="styles.css">
-  <script>
-    // Teema ja kieli heti ennen piirtämistä, ettei sivu välähdä väärän värisenä
-    try {
-      const s = JSON.parse(localStorage.getItem("satni-settings") || "{}");
-      if (s.theme === "light" || s.theme === "dark") document.documentElement.dataset.theme = s.theme;
-      if (s.uiLang === "nb") document.documentElement.lang = "nb";
-    } catch (e) {}
-    // Android-sovellus jättää tilarivin tilan itse (MainActivity): yläpalkki ei lisää sitä toista kertaa
-    if (location.hostname === "appassets.androidplatform.net") document.documentElement.classList.add("android-app");
-  </script>
+  <script src="boot.js"></script>
 </head>
 <body class="drawer-layout">
   <header class="topbar">
@@ -32,19 +31,34 @@
         <div class="brand-sub" data-i18n="brandSub">Pohjoissaamen avoin sanakirja ja taivutusgeneraattori</div>
       </div>
     </a>
+    <!-- Työkalut oikeassa yläkulmassa: kamera (tekstintunnistus, vain Android-sovelluksessa: window.SatniOcr), lausekääntäjä
+         (kokeellinen, lauseet.js) ja sanastot (sanastot.js). Piilotettu painike ei vie tilaa. -->
+    <div class="header-tools">
+    <button class="chip-btn head-btn ocr-btn" id="ocr-btn" data-i18n-title="ocrTitle" data-i18n-aria="ocrTitle" hidden disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+    <button class="chip-btn head-btn lause-btn" id="lause-btn" data-i18n-title="lauseTitle" data-i18n-aria="lauseTitle" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg></button>
+    <button class="chip-btn head-btn peli-btn" id="peli-btn" data-i18n-aria="minipeli" data-i18n-title="minipeli"></button>
+    <button class="chip-btn head-btn sanasto-btn" id="sanasto-btn" data-i18n-aria="sanastot" data-i18n-title="sanastot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5.6 4 9 4 12 6c3-2 6.4-2 9-.5V19c-2.6-1.5-6-1.5-9 .5-3-2-6.4-2-9-.5z"/><path d="M12 6v13.5"/><path d="M15.5 5.2v5.3l1.5-1.2 1.5 1.2V4.9"/></svg></button>
+    </div>
   </header>
   <div class="stripe"><span></span><span></span><span></span><span></span></div>
 
   <div class="searchbar">
     <div class="search-box">
-      <input id="search" type="search" autocomplete="off" spellcheck="false"
+      <input id="search" type="search" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="100"
              placeholder="Hae saameksi, käännöksellä tai taivutusmuodolla" aria-label="Hae"
              data-i18n-placeholder="searchPlaceholder" data-i18n-aria="search" disabled>
+      <!-- Tyhjennys (Androidin hakukentässä ei ole omaa ×-painiketta; selainten oma piilotetaan, styles.css) -->
+      <button type="button" id="search-clear" class="search-clear" data-i18n-aria="clearSearch" data-i18n-title="clearSearch" hidden>×</button>
       <ul id="suggestions" class="suggestions" role="listbox" hidden></ul>
     </div>
-    <button class="primary-btn" id="search-btn" data-i18n="search" disabled>Hae</button>
-    <!-- Tekstintunnistus valokuvasta: vain Android-sovelluksessa (window.SatniOcr, MainActivity) -->
-    <button class="chip-btn ocr-btn" id="ocr-btn" data-i18n-title="ocrTitle" data-i18n-aria="ocrTitle" hidden disabled>📷</button>
+    <!-- Kapealla näytöllä Hae on pelkkä suurennuslasi -->
+    <button class="primary-btn" id="search-btn" data-i18n-aria="search" disabled><span class="sb-label" data-i18n="search">Hae</span><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></button>
+  </div>
+  <!-- Hidas jokerihaku (*ortnega): tila ja edistyminen; hakukenttää voi muokata sillä aikaa (app.js: wildcardSearch) -->
+  <div id="search-busy" class="search-busy" role="status" hidden>
+    <span class="sugg-ring"></span><span class="search-busy-text"></span>
+    <button type="button" id="search-busy-cancel" class="link-btn" data-i18n="cancel">Peruuta</button>
+    <i class="search-busy-bar"></i>
   </div>
 
   <div id="drawer-scrim" class="drawer-scrim"></div>
@@ -55,93 +69,54 @@
       <!-- ☰-valikko: sovelluksen nimi ja tekijä, suosikit ja historia, asetukset avattavana ja lopuksi tiedot.
            Käännökset ovat aina käyttöliittymän kielellä (suomi/norja); Muut kielet -asetuksella valittujen kielten
            käännökset näkyvät lisäksi sanakortissa, ja kaikki kielet Merkitykset-välilehdellä. -->
+      <div class="menu-grab" aria-hidden="true"></div>
       <div class="menu-head">
         <a class="home-link" href="./" data-i18n-title="home"><img src="icons/icon-192.png" alt="" class="menu-logo"></a>
-        <div>
-          <a class="home-link menu-name" href="./" data-i18n-title="home">Sátni FST</a>
-          <button class="menu-author" id="author-btn"><span data-i18n="madeBy">Tekijä</span> Juha Somby</button>
-        </div>
+        <a class="home-link menu-name" href="./" data-i18n-title="home">Sátni FST</a>
       </div>
-      <section>
-        <h3 data-i18n="favourites">★ Suosikit</h3>
-        <ul id="favourites" class="word-list"></ul>
-      </section>
-      <section>
-        <h3 data-i18n="history">Historia</h3>
+      <!-- Historia ja suosikit välilehtinä: lista ei työnnä toimintoja (asetukset, palaute, tuki) näytön alle -->
+      <div class="menu-tabs" role="tablist">
+        <button type="button" role="tab" id="menu-tab-history" data-mtab="history" aria-controls="menu-history" aria-selected="true" data-i18n="history">Historia</button>
+        <button type="button" role="tab" id="menu-tab-favourites" data-mtab="favourites" aria-controls="menu-favourites" aria-selected="false"><span data-i18n="favourites">★ Suosikit</span> <span id="fav-count" class="mt-n"></span></button>
+      </div>
+      <section id="menu-history" class="menu-pane" role="tabpanel" aria-labelledby="menu-tab-history">
         <ul id="history" class="word-list"></ul>
         <div class="history-actions">
-          <button class="link-btn" id="history-more" data-i18n="historyMore" hidden>Lisää…</button>
-          <button class="link-btn" id="clear-history" data-i18n="clearHistory">Tyhjennä historia</button>
+          <button class="link-btn" id="history-clear-menu" data-i18n="clearHistory">Tyhjennä historia</button>
+          <button class="link-btn more" id="history-more" hidden></button>
         </div>
       </section>
-      <details class="menu-settings">
-        <summary data-i18n="settings">Asetukset</summary>
-        <section id="settings-section" class="settings-section">
-          <div class="setting-row stack"><span data-i18n="language">Kieli</span>
-            <div id="drawer-lang" class="lang-switch" role="radiogroup" data-i18n-aria="uiLanguage"></div></div>
-          <div class="setting-row" id="theme-row"><span data-i18n="theme">Teema</span>
-            <select id="theme-select" data-i18n-aria="theme">
-              <option value="auto" data-i18n="themeAuto">Automaattinen</option>
-              <option value="light" data-i18n="themeLight">Vaalea</option>
-              <option value="dark" data-i18n="themeDark">Tumma</option>
-            </select></div>
-          <label class="switch-row" id="grade-option"><span data-i18n="showGrade">Näytä astevaihtelu</span>
-            <input type="checkbox" class="switch" role="switch" id="grade-toggle" checked></label>
-          <div class="setting-row voice-head"><span data-i18n="voice">Ääni</span></div>
-          <div id="voice-list" class="voice-list" role="radiogroup" data-i18n-aria="voice"></div>
-        </section>
-        <section>
-          <h3 data-i18n="otherLanguages">Muut kielet</h3>
-          <p class="muted small" data-i18n="extraLangsHint"></p>
-          <div id="extra-langs" class="extra-langs"></div>
-        </section>
-        <!-- Kokeelliset ominaisuudet, kukin oma kytkimensä (oletuksena pois). Päälle kytkettäessä ikkuna kertoo, mitä
-             ominaisuus tekee (app.js: bindExperimental). Kuvasta haku vain Android-sovelluksessa. -->
-        <section id="experimental-section" class="experimental">
-          <h3 data-i18n="experimental">Kokeelliset ominaisuudet</h3>
-          <p class="muted small" data-i18n="experimentalHint"></p>
-          <div class="toggle-list">
-            <label class="switch-row" id="exp-ocr-row" hidden>
-              <span class="switch-text"><span data-i18n="expOcr">Valokuvahaku</span>
-                <span class="muted small" data-i18n="expOcrDesc"></span></span>
-              <input type="checkbox" class="switch" role="switch" data-exp="ocr">
-            </label>
-            <label class="switch-row">
-              <span class="switch-text"><span data-i18n="expSms">Koltansaame</span>
-                <span class="muted small" data-i18n="expSmsDesc"></span></span>
-              <input type="checkbox" class="switch" role="switch" data-exp="sms">
-            </label>
-            <label class="switch-row">
-              <span class="switch-text"><span data-i18n="expTableTr">Konekäännökset taulukossa</span>
-                <span class="muted small" data-i18n="expTableTrDesc"></span></span>
-              <input type="checkbox" class="switch" role="switch" data-exp="tableTr">
-            </label>
-            <label class="switch-row">
-              <span class="switch-text"><span data-i18n="expApertium">Apertium-käännökset</span>
-                <span class="muted small" data-i18n="expApertiumDesc"></span></span>
-              <input type="checkbox" class="switch" role="switch" data-exp="apertium">
-            </label>
-          </div>
-        </section>
-      </details>
-      <nav class="menu-links">
-        <button id="about-btn" data-i18n="about">Tietoa</button>
-        <button id="feedback-btn" data-i18n="sendFeedback">Lähetä palautetta</button>
-        <button id="support-btn" data-i18n="support">Osallistu ja tue</button>
-        <p class="muted small" id="menu-version"></p>
+      <section id="menu-favourites" class="menu-pane" role="tabpanel" aria-labelledby="menu-tab-favourites" hidden>
+        <ul id="favourites" class="word-list"></ul>
+      </section>
+      <nav class="menu-links menu-acts">
+        <button id="settings-btn" class="menu-act pri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.8 1.2V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-2.8-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.8H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.8-1.2V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 2.8 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.8h.1a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.2 1.1z"/></svg><span data-i18n="settings">Asetukset</span></button>
+        <button id="feedback-btn" class="menu-act" data-i18n-title="sendFeedback"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><span data-i18n="menuFeedback">Palaute</span></button>
+        <button id="support-btn" class="menu-act" data-i18n-title="support"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.600-7 10-7 10z"/></svg><span data-i18n="menuSupport">Tue</span></button>
       </nav>
+      <div class="menu-foot">
+        <button class="menu-author" id="author-btn"><span class="ma-by"><span data-i18n="madeBy">Tekijä</span> Juha Somby</span><span class="ma-link"><span data-i18n="menuAbout">Tietoa ja lisenssit</span> ›</span></button>
+        <span class="muted small" id="menu-version"></span>
+      </div>
     </aside>
 
     <main id="main">
       <section id="loading" class="card loading">
         <h2 data-i18n="loadingTitle">Ladataan sanakirjaa…</h2>
-        <p id="loading-text" data-i18n="loadingText">Ensimmäisellä kerralla ladataan noin 40 Mt. Sen jälkeen sanakirja toimii myös ilman verkkoyhteyttä.</p>
+        <p id="loading-text" data-i18n="loadingText">Ensimmäisellä kerralla ladataan noin 47 Mt. Sen jälkeen sanakirja toimii myös ilman verkkoyhteyttä.</p>
         <div class="progress"><div id="progress-bar"></div></div>
       </section>
 
       <section id="welcome" class="card welcome" hidden>
         <div id="welcome-lang" class="lang-switch" role="radiogroup" data-i18n-aria="uiLanguage"></div>
-        <h1 data-i18n="welcomeTitle">Bures boahtin! – Tervetuloa</h1>
+        <!-- Tervehdys vuorokaudenajan mukaan ja tämä päivä saameksi (app.js: renderToday) -->
+        <h1 id="welcome-title" lang="se">Bures boahtin!</h1>
+        <p id="today" class="today" lang="se"></p>
+        <!-- Viimeksi haetut ja suosikit aloitussivulla (app.js: renderRecent) -->
+        <div id="welcome-recent" hidden>
+          <p class="muted small" data-i18n="recentHead">Viimeksi haetut</p>
+          <div id="recent-chips" class="chips"></div>
+        </div>
         <p class="lead" data-i18n="welcomeLead"></p>
         <dl class="tips" data-i18n-html="welcomeTips"></dl>
         <p class="muted small" data-i18n="tryThese">Kokeile:</p>
@@ -151,6 +126,8 @@
       <div id="results" class="chips results" hidden></div>
       <!-- Tarkoititko: sama sana saamen erikoiskirjaimin (app.js: didYouMean) -->
       <div id="did-you-mean" class="did-you-mean" hidden></div>
+      <!-- Saamenkielinen paikannimi ja sen norjankielinen vastine (app.js: renderPlaceNames, © Kartverket) -->
+      <div id="place-hits" class="place-hits" hidden></div>
 
       <article id="word" class="card word" hidden>
         <div class="word-top">
@@ -158,17 +135,45 @@
             <h1 id="lemma"></h1>
             <span id="pos-badge" class="badge"></span>
             <!-- Kuuntele: pyöreä kaiutinpainike, äänen haun ajan pyörivä kehä (styles.css) -->
+            <span class="word-actions">
             <button id="speak-btn" class="speak-btn" data-i18n-title="listen" data-i18n-aria="listen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
             <button id="fav-btn" class="star-btn">☆</button>
+            </span>
+            <!-- Virheilmoitus kaiuttimen ja suosikin vieressä: lomake, joka valmistelee sähköpostin käyttäjän omaan
+                 sovellukseen (app.js: openReport). Ei mahdu samalle riville pitkän sanan kanssa: rivittyy oikealle. -->
+            <a href="#" id="report-btn" class="report-top"><span aria-hidden="true">⚑</span> <span data-i18n="reportError">Ilmoita virheestä</span></a>
           </div>
         </div>
         <p class="translation"><span id="translation"></span> <a href="#" id="more-meanings" class="more"></a></p>
+        <!-- Haku ei löytänyt sanaa: yhdyssanan osat ja koko sanan käännös (app.js: renderSearchParts) -->
+        <div id="search-parts" class="search-parts" hidden></div>
+        <p id="sme-def" class="sme-def" lang="se" hidden></p>
         <p id="apertium-line" class="translation" hidden></p>
+        <p id="pivot-fin-line" class="translation" hidden></p>
+        <!-- Johdettu suomennos (der_fin.py): váralašvuohta ≈ vaarallisuus, kun sanakirjassa ei ole suomennosta -->
+        <p id="der-fin-line" class="translation" hidden></p>
         <p id="form-translation" class="form-translation" hidden></p>
         <p id="extra-translations" class="extra-translations" hidden></p>
         <p id="position-line" class="muted small" hidden></p>
-        <div id="gradation" class="gradation"></div>
+        <p id="dialect-line" class="muted small" hidden></p>
+        <!-- Astevaihtelu tiiviinä rivinä (kokeilu B, test-fable): täydet tiedot Astevaihtelu-välilehdellä, jotta
+             taivutustaulukko näkyy ensimmäisellä näytöllä -->
+        <button type="button" id="grad-sum" class="grad-sum" hidden></button>
         <p id="word-info" class="muted small"></p>
+      </article>
+
+      <nav id="tabs" class="tabs" hidden>
+        <button data-tab="table" class="active" data-i18n="tabTable">Taivutus</button>
+        <button data-tab="grade" id="grade-tab" data-i18n="gradation">Astevaihtelu</button>
+        <button data-tab="meanings" id="meanings-tab">Merkitykset</button>
+        <button data-tab="raw" data-i18n="tabRaw">Kaikki muodot</button>
+      </nav>
+      <section id="panel-table" class="card panel" hidden></section>
+      <section id="panel-grade" class="card panel" hidden><div id="gradation" class="gradation"></div></section>
+      <section id="panel-meanings" class="card panel" hidden></section>
+      <section id="panel-raw" class="card panel" hidden></section>
+      <!-- Kortin alaosa välilehtien jälkeen: virheilmoitus ja linkit muualle -->
+      <section id="word-foot" class="card word-foot" hidden>
         <!-- Sanasta muualla: pyöristetyt linkkipillerit kortin alaosassa (styles.css) -->
         <section id="word-links" class="word-links" hidden>
           <h3 class="links-head" data-i18n="elsewhere">Sanasta muualla</h3>
@@ -177,16 +182,7 @@
             <a id="satni-link" class="link-pill satni" target="_blank" rel="noopener" data-i18n-title="satniTitle"><span class="lp-mark">s</span>sátni.org<span class="lp-arrow">↗</span></a>
           </div>
         </section>
-      </article>
-
-      <nav id="tabs" class="tabs" hidden>
-        <button data-tab="table" class="active" data-i18n="tabTable">Taivutus</button>
-        <button data-tab="meanings" id="meanings-tab">Merkitykset</button>
-        <button data-tab="raw" data-i18n="tabRaw">Kaikki muodot</button>
-      </nav>
-      <section id="panel-table" class="card panel" hidden></section>
-      <section id="panel-meanings" class="card panel" hidden></section>
-      <section id="panel-raw" class="card panel" hidden></section>
+      </section>
     </main>
   </div>
 
@@ -247,6 +243,15 @@
   </dialog>
 
   <!-- Kokeellisen ominaisuuden käyttöönotto: mitä se tekee (app.js: bindExperimental) -->
+  <!-- Tallennettujen ääntämisten tyhjennys vain vahvistuksen jälkeen -->
+  <dialog id="tts-clear-dlg" class="exp-dlg">
+    <h2 data-i18n="ttsClearTitle">Tyhjennetäänkö tallennetut ääntämiset?</h2>
+    <p data-i18n="ttsClearBody"></p>
+    <div class="dialog-actions">
+      <button type="button" class="chip-btn" id="tts-clear-cancel" data-i18n="cancel">Peruuta</button>
+      <button type="button" class="chip-btn primary" id="tts-clear-ok" data-i18n="clearHistoryOk">Tyhjennä</button>
+    </div>
+  </dialog>
   <!-- Historian tyhjennys vain vahvistuksen jälkeen -->
   <dialog id="clear-history-dlg" class="exp-dlg">
     <h2 data-i18n="clearHistoryTitle">Tyhjennetäänkö historia?</h2>
@@ -266,6 +271,44 @@
     </div>
   </dialog>
 
+  <!-- Virheilmoitus sanakortista: mikä on väärin, mikä olisi oikein; "Valmistele sähköposti" avaa käyttäjän oman
+       sähköpostisovelluksen (mailto), jossa on sanan ja haun tiedot. Mitään ei lähetetä automaattisesti. -->
+  <dialog id="report-dlg" class="exp-dlg report-dlg">
+    <h2 data-i18n="reportError">Ilmoita virheestä</h2>
+    <p id="report-about" class="muted small"></p>
+    <fieldset class="report-kinds">
+      <legend data-i18n="reportWhat">Mikä on väärin?</legend>
+      <label><input type="radio" name="report-kind" value="trans" checked>
+        <span><span data-i18n="reportKindTrans"></span> <select id="report-lang" class="report-card-only"></select></span></label>
+      <!-- Sanakortti: väärä sana ja taivutus; sanastolista (sanastot.js): saamen sana tai muoto ja äänite -->
+      <label class="report-card-only"><input type="radio" name="report-kind" value="word"><span data-i18n="reportKindWord"></span></label>
+      <label class="report-card-only"><input type="radio" name="report-kind" value="form"><span data-i18n="reportKindForm"></span></label>
+      <label class="report-list-only report-nogame"><input type="radio" name="report-kind" value="sme"><span data-i18n="reportKindSme"></span></label>
+      <label class="report-list-only report-nogame"><input type="radio" name="report-kind" value="audio"><span data-i18n="reportKindAudio"></span></label>
+      <label class="report-game-only"><input type="radio" name="report-kind" value="inappropriate"><span data-i18n="reportKindBad"></span></label>
+      <label><input type="radio" name="report-kind" value="other"><span data-i18n="reportKindOther"></span></label>
+    </fieldset>
+    <label class="report-text report-list-only"><span data-i18n="reportWhichWord"></span><input type="text" id="report-word"></label>
+    <label class="report-text"><span data-i18n="reportFix"></span><textarea id="report-text" rows="3"></textarea></label>
+    <div class="dialog-actions">
+      <button type="button" class="chip-btn" id="report-cancel" data-i18n="cancel">Peruuta</button>
+      <button type="button" class="chip-btn primary" id="report-send" data-i18n="reportSend">Valmistele sähköposti</button>
+    </div>
+  </dialog>
+
+  <!-- Koltansaame Muut kielet -kohdassa: varoitus päälle kytkettäessä, ja siinä valinta pohjoissaamen sanakorteille
+       (app.js: openSkoltDialog). Pois kytkeminen poistaa molemmat. -->
+  <dialog id="skolt-dlg" class="exp-dlg">
+    <h2 data-i18n="skoltDlgTitle">Otetaanko koltansaame käyttöön?</h2>
+    <div data-i18n-html="skoltDlgBody"></div>
+    <label class="skolt-option"><input type="checkbox" id="skolt-via">
+      <span><span data-i18n="skoltViaLabel"></span><span class="muted small" data-i18n="skoltViaDesc"></span></span></label>
+    <div class="dialog-actions">
+      <button type="button" class="chip-btn" id="skolt-cancel" data-i18n="cancel">Peruuta</button>
+      <button type="button" class="chip-btn primary" id="skolt-ok" data-i18n="expEnable">Ota käyttöön</button>
+    </div>
+  </dialog>
+
   <!-- Lisenssit ja tekijänoikeudet: web/licenses/ (työpöytäversiossa lisäksi licenses/desktop/, app.js: showLicenses) -->
   <dialog id="licenses-dlg" class="licenses-dlg">
     <h2 data-i18n="licensesTitle">Lisenssit ja tekijänoikeudet</h2>
@@ -275,33 +318,300 @@
   </dialog>
 
   <!-- Tekstintunnistus: kuva ja sen sanat (app.js: openOcr, ocrResult) -->
-  <div id="ocr-view" class="ocr-view" hidden>
-    <div class="ocr-head">
-      <button class="chip-btn" id="ocr-camera" data-i18n="ocrCamera">📷 Ota kuva</button>
-      <button class="chip-btn" id="ocr-gallery" data-i18n="ocrGallery">🖼️ Valitse kuva</button>
-      <button class="chip-btn" id="ocr-close" data-i18n="close">Sulje</button>
+  <!-- Lausekääntäjä: suomenkielinen lause -> sanat laatikoina (saamen muoto ja perusmuoto) -> saamenkielinen lause -->
+  <!-- Sanastot: yleisnäkymä (ruudukko) ja lista; sanastot.js -->
+  <!-- Minipeli (minipeli.js): neljän vaihtoehdon sanapeli, sama koko näytön näkymä kuin sanastoissa -->
+  <div id="peli-view" class="sanasto-view peli-view" hidden>
+    <div class="sanasto-head">
+      <button type="button" class="chip-btn" id="peli-back" data-i18n-aria="back" hidden>←</button>
+      <h2 id="peli-title"></h2>
+      <span id="peli-meta-head" class="peli-meta-head"></span>
+      <button type="button" class="chip-btn peli-rules-btn" id="peli-rules-btn" aria-expanded="false">ⓘ</button>
+      <button type="button" class="chip-btn peli-mute" id="peli-mute" aria-pressed="false"></button>
+      <button type="button" class="chip-btn" id="peli-close" data-i18n="close">Sulje</button>
     </div>
-    <!-- Suunta (saame -> käyttöliittymän kieli tai toisin päin) ja merkintätyyli (kehys/alleviivaus, väri) -->
-    <div class="ocr-bar">
-      <button class="ocr-dir" id="ocr-dir"></button>
-      <button class="ocr-style-btn" id="ocr-style-btn" data-i18n-title="ocrStyle" data-i18n-aria="ocrStyle"></button>
-      <div id="ocr-style" class="ocr-style" hidden>
-        <div class="lang-switch ocr-seg" id="ocr-style-seg" role="radiogroup">
-          <button data-style="frame" data-i18n="ocrFrame">Kehys</button>
-          <button data-style="underline" data-i18n="ocrUnderline">Alleviivaus</button>
+    <div class="stripe"><span></span><span></span><span></span><span></span></div>
+    <div id="peli-body" class="peli-body"></div>
+  </div>
+
+  <!-- Asetukset omana näkymänään (2026-11-14): pääsivulla aiheet ja nykyinen valinta, kukin aihe avautuu omaksi
+       alasivukseen (app.js: openSettings, settingsPage). Takaisin ja Esc: alasivulta pääsivulle, sitten kiinni. -->
+  <div id="settings-view" class="sanasto-view settings-view" hidden>
+    <div class="sanasto-head">
+      <button type="button" class="chip-btn" id="settings-back" data-i18n-aria="back">←</button>
+      <h2 id="settings-title" data-i18n="settings">Asetukset</h2>
+      <button type="button" class="chip-btn" id="settings-close" data-i18n="close">Sulje</button>
+    </div>
+    <div class="stripe"><span></span><span></span><span></span><span></span></div>
+    <div class="sanasto-body settings-body">
+      <div class="set-page" data-page="main">
+        <h3 class="set-h" data-i18n="setGeneral">Yleiset</h3>
+        <div class="set-card">
+<button type="button" class="set-nav" data-go="look"><span class="set-ico" aria-hidden="true">🌐</span><span class="set-txt"><b data-i18n="setLook"></b><small id="sum-look"></small></span><span class="chev" aria-hidden="true">›</span></button>
+<button type="button" class="set-nav" data-go="card"><span class="set-ico" aria-hidden="true">📖</span><span class="set-txt"><b data-i18n="setCard"></b><small id="sum-card"></small></span><span class="chev" aria-hidden="true">›</span></button>
+<button type="button" class="set-nav" data-go="langs"><span class="set-ico" aria-hidden="true">🗣️</span><span class="set-txt"><b data-i18n="setLangs"></b><small id="sum-langs"></small></span><span class="chev" aria-hidden="true">›</span></button>
+<button type="button" class="set-nav" data-go="tools"><span class="set-ico" aria-hidden="true">🧰</span><span class="set-txt"><b data-i18n="setTools"></b><small id="sum-tools"></small></span><span class="chev" aria-hidden="true">›</span></button>
         </div>
-        <div class="ocr-swatches" id="ocr-swatches" role="radiogroup"></div>
+        <h3 class="set-h" data-i18n="setMore">Lisää</h3>
+        <div class="set-card">
+<button type="button" class="set-nav" data-go="exp"><span class="set-ico" aria-hidden="true">🧪</span><span class="set-txt"><span class="set-title"><b data-i18n="experimental"></b><span class="beta-tag">BETA</span></span><small id="sum-exp"></small></span><span class="chev" aria-hidden="true">›</span></button>
+<button type="button" class="set-nav" data-go="history"><span class="set-ico" aria-hidden="true">🕘</span><span class="set-txt"><b data-i18n="setHistory"></b><small id="sum-history"></small></span><span class="chev" aria-hidden="true">›</span></button>
+        </div>
+        <div class="set-card">
+          <button type="button" class="set-nav" id="settings-about"><span class="set-ico" aria-hidden="true">ℹ️</span><span class="set-txt"><b data-i18n="setAbout"></b><small id="sum-about"></small></span><span class="chev" aria-hidden="true">›</span></button>
+        </div>
+      </div>
+      <div class="set-page" data-page="look" hidden>
+        <h3 class="set-h" data-i18n="uiLanguage">Käyttöliittymän kieli</h3>
+        <div class="set-card set-pad"><div id="drawer-lang" class="lang-switch seg-full" role="radiogroup" data-i18n-aria="uiLanguage"></div></div>
+        <h3 class="set-h" data-i18n="theme">Teema</h3>
+        <div class="set-card set-pad">
+          <div id="theme-seg" class="seg-ctl" role="radiogroup" data-i18n-aria="theme">
+            <button role="radio" data-theme-opt="auto" data-i18n="themeAuto">Automaattinen</button>
+            <button role="radio" data-theme-opt="light" data-i18n="themeLight">Vaalea</button>
+            <button role="radio" data-theme-opt="dark" data-i18n="themeDark">Tumma</button>
+          </div>
+          <p class="set-note" data-i18n="themeNote"></p>
+        </div>
+        <h3 class="set-h" data-i18n="textSize">Tekstin koko</h3>
+        <div class="set-card set-pad">
+          <div id="textsize-seg" class="seg-ctl" role="radiogroup" data-i18n-aria="textSize">
+            <button role="radio" data-size="system" data-i18n="textSizeSystem">Laitteen</button>
+            <button role="radio" data-size="85" class="ts-a" style="font-size:12.5px">A</button>
+            <button role="radio" data-size="100" class="ts-a" style="font-size:15px">A</button>
+            <button role="radio" data-size="115" class="ts-a" style="font-size:17.5px">A</button>
+            <button role="radio" data-size="130" class="ts-a" style="font-size:20px">A</button>
+          </div>
+          <div class="text-preview"><b lang="se">viessu</b> – <span data-i18n="previewHouse">talo</span><br><b lang="se">viesus</b> ‘<span data-i18n="previewInHouse">talossa</span>’</div>
+          <p class="set-note" data-i18n="textSizeNote"></p>
+        </div>
+      </div>
+      <div class="set-page" data-page="card" hidden>
+        <div class="set-card">
+          <label class="switch-row" id="grade-option"><span class="switch-text"><span data-i18n="showGrade">Näytä astevaihtelu</span><span class="muted small" data-i18n="showGradeDesc"></span></span>
+            <input type="checkbox" class="switch" role="switch" id="grade-toggle" checked></label>
+        </div>
+        <h3 class="set-h" data-i18n="gradeStyleHead">Astevaihtelun merkintä</h3>
+        <div class="set-card set-pad">
+          <div class="grade-preview"><span class="muted small" data-i18n="gradeSample">esimerkki</span>
+            <span class="gp-words" lang="se" translate="no"><span class="gd">viessu</span> → <span class="hd">viesu</span></span>
+            <span class="gp-tags"><b class="gd">GD</b> <b class="hd">HD</b></span></div>
+          <div class="set-sub" data-i18n="gradeGdColor">Vahva aste (GD)</div>
+          <div class="swatches" id="gd-swatches" role="radiogroup" data-i18n-aria="gradeGdColor"></div>
+          <div class="set-sub" data-i18n="gradeHdColor">Heikko aste (HD)</div>
+          <div class="swatches" id="hd-swatches" role="radiogroup" data-i18n-aria="gradeHdColor"></div>
+          <button type="button" class="link-btn grade-cvd" id="grade-cvd" data-i18n="gradeCvd">Värisokeille sopiva: sininen ja oranssi</button>
+        </div>
+        <div class="set-card">
+          <label class="switch-row"><span class="switch-text"><span data-i18n="gradeUnderline">Alleviivaus</span>
+            <span class="muted small" data-i18n="gradeUnderlineDesc"></span></span>
+            <input type="checkbox" class="switch" role="switch" id="grade-underline"></label>
+        </div>
+        <h3 class="set-h" data-i18n="voiceHead">Ääntämisen ääni</h3>
+        <div class="set-card set-pad">
+          <div id="voice-list" class="voice-list" role="radiogroup" data-i18n-aria="voice"></div>
+        </div>
+        <!-- Tallennetut ääntämiset: kokoraja ja tyhjennys (app.js: renderTtsStore) -->
+        <h3 class="set-h" data-i18n="ttsStoreHead">Tallennetut ääntämiset</h3>
+        <div class="set-card set-pad tts-store">
+          <p class="tts-store-info" id="tts-store-info"></p>
+          <div class="tts-sub" id="tts-limit-label" data-i18n="ttsLimit">Enimmäiskoko</div>
+          <div id="tts-limit-seg" class="seg-ctl" role="radiogroup" aria-labelledby="tts-limit-label"></div>
+          <p class="set-note" data-i18n="ttsStoreNote"></p>
+          <button type="button" class="chip-btn tts-clear" id="tts-clear" data-i18n="ttsClear">Tyhjennä tallennetut ääntämiset</button>
+        </div>
+      </div>
+      <div class="set-page" data-page="langs" hidden>
+        <p class="set-intro" data-i18n="extraLangsHint"></p>
+        <div class="set-card">
+          <div id="extra-langs" class="extra-langs"></div>
+        </div>
+      </div>
+      <!-- Työkalut: yläpalkin painikkeet. Kokeilussa olevat työkalut BETA-merkinnällä (päälle kytkettäessä hyväksyntäikkuna,
+           app.js: bindExperimental); valmistuessaan merkintä poistetaan eikä mitään tarvitse siirtää. -->
+      <div class="set-page" data-page="tools" hidden>
+        <p class="set-intro" data-i18n="toolsIntro"></p>
+        <div class="set-card">
+          <div class="toggle-list">
+            <label class="switch-row" id="game-option"><span class="switch-text"><span class="set-title"><span data-i18n="minipeli">Minipeli</span></span>
+              <span class="muted small" data-i18n="toolGameDesc"></span></span>
+              <input type="checkbox" class="switch" role="switch" id="game-toggle" checked></label>
+            <div class="switch-row tool-fixed"><span class="switch-text"><span class="set-title"><span data-i18n="sanastot">Sanastot</span></span>
+              <span class="muted small" data-i18n="toolWordlistsDesc"></span></span><span class="tool-always" data-i18n="toolAlways">Aina</span></div>
+            <label class="switch-row" id="exp-ocr-row" hidden>
+              <span class="switch-text"><span class="set-title"><span data-i18n="expOcr">Valokuvahaku</span><span class="beta-tag">BETA</span></span>
+                <span class="muted small" data-i18n="expOcrDesc"></span></span>
+              <input type="checkbox" class="switch" role="switch" data-exp="ocr">
+            </label>
+            <!-- Valokuvahaun kielet (app.js: renderOcrOpts): kuvan lisäkielet ja käännöskielet, näkyy kun haku on päällä -->
+            <div id="ocr-opts" class="ocr-opts" hidden></div>
+            <label class="switch-row" id="exp-lause-row">
+              <span class="switch-text"><span class="set-title"><span data-i18n="lauseTitle">Lausekääntäjä</span><span class="beta-tag">BETA</span></span>
+                <span class="muted small" data-i18n="expLauseDesc"></span></span>
+              <input type="checkbox" class="switch" role="switch" data-exp="lause">
+            </label>
+            <label class="switch-row" id="game-smn-option"><span class="switch-text"><span class="set-title"><span data-i18n="gameSmn">Inarinsaame minipelissä ja sanastoissa</span><span class="beta-tag">BETA</span></span>
+              <span class="muted small" data-i18n="toolSmnDesc"></span></span>
+              <input type="checkbox" class="switch" role="switch" id="game-smn-toggle"></label>
+          </div>
+        </div>
+        <p class="setting-note" id="game-smn-note" data-i18n="gameSmnNote"></p>
+      </div>
+      <div class="set-page" data-page="exp" hidden>
+        <p class="set-beta-note" data-i18n="experimentalHint"></p>
+        <section id="experimental-section" class="experimental">
+          <div class="set-card">
+          <div class="toggle-list">
+            <label class="switch-row">
+              <span class="switch-text"><span data-i18n="expTableTr">Taivutusmuotojen käännökset</span>
+                <span class="muted small" data-i18n="expTableTrDesc"></span></span>
+              <input type="checkbox" class="switch" role="switch" data-exp="tableTr">
+            </label>
+            <label class="switch-row" id="exp-apertium-row">
+              <span class="switch-text"><span data-i18n="expApertium">Norjannokset konekäännöksenä</span>
+                <span class="muted small" data-i18n="expApertiumDesc"></span></span>
+              <input type="checkbox" class="switch" role="switch" data-exp="apertium">
+            </label>
+            <label class="switch-row" id="exp-pivotfin-row">
+              <span class="switch-text"><span data-i18n="expPivotFin">Suomennosehdotukset</span>
+                <span class="muted small" data-i18n="expPivotFinDesc"></span></span>
+              <input type="checkbox" class="switch" role="switch" data-exp="pivotFin">
+            </label>
+          </div>
+          </div>
+        </section>
+      </div>
+      <div class="set-page" data-page="history" hidden>
+        <div class="set-card">
+          <button type="button" class="set-nav" id="clear-history"><span class="set-ico" aria-hidden="true">🗑️</span><span class="set-txt"><b data-i18n="clearHistory">Tyhjennä historia</b><small id="sum-clear"></small></span></button>
+        </div>
+        <p class="set-note set-intro" data-i18n="historyNote"></p>
       </div>
     </div>
-    <p id="ocr-status" class="muted small"></p>
-    <!-- Kuva koko jäljellä olevalla alueella: zoomaus kahdella sormella, siirto vetämällä. Sanakirjan sanat
-         alleviivattuina; napautus avaa kuplan (sana, käännös, kuuntele), kuplan napautus sanakirjan. -->
+  </div>
+  <!-- Alapalkki kapealla näytöllä (kokeilu, haara test-fable; docs/tutkimus-ui): yläpalkin työkalut peukalon ulottuville
+       nimettyinä. Painikkeet käyttävät samoja toimintoja kuin yläpalkin painikkeet (app.js: bindBottomNav). -->
+  <nav id="bottom-nav" class="bottom-nav" data-i18n-aria="navLabel">
+    <button type="button" data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><span data-i18n="navSearch">Haku</span></button>
+    <button type="button" data-nav="sanasto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5.6 4 9 4 12 6c3-2 6.4-2 9-.5V19c-2.6-1.5-6-1.5-9 .5-3-2-6.4-2-9-.5z"/><path d="M12 6v13.5"/></svg><span data-i18n="sanastot">Sanastot</span></button>
+    <button type="button" data-nav="peli"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M8.6 8.6h.01M15.4 8.6h.01M12 12h.01M8.6 15.4h.01M15.4 15.4h.01" stroke-width="2.6"/></svg><span data-i18n="navGame">Peli</span></button>
+    <button type="button" data-nav="lause" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h8"/></svg><span data-i18n="navSentence">Lause</span></button>
+    <button type="button" data-nav="ocr" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg><span data-i18n="navPhoto">Kuva</span></button>
+    <button type="button" data-nav="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span data-i18n="navMore">Lisää</span></button>
+  </nav>
+  <div id="sanasto-view" class="sanasto-view" hidden>
+    <div class="sanasto-head">
+      <button type="button" class="chip-btn" id="sanasto-back" data-i18n-aria="back" hidden>←</button>
+      <span id="sanasto-ico" class="st-ico head-ico" hidden></span>
+      <h2 id="sanasto-title"></h2>
+      <span id="sanasto-pos" class="sanasto-pos"></span>
+      <button type="button" id="sanasto-speak" class="speak-btn" data-i18n-title="listen" data-i18n-aria="listen" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
+      <button type="button" class="chip-btn" id="sanasto-close" data-i18n="close">Sulje</button>
+    </div>
+    <div class="stripe"><span></span><span></span><span></span><span></span></div>
+    <div id="sanasto-body" class="sanasto-body"></div>
+  </div>
+
+  <div id="lause-view" class="lause-view" hidden>
+    <div class="lause-head">
+      <h2 data-i18n="lauseTitle">Lausekääntäjä</h2>
+      <button type="button" class="chip-btn" id="lause-close" data-i18n="close">Sulje</button>
+    </div>
+    <p class="muted small" data-i18n="lauseHint"></p>
+    <!-- × tyhjentää lauseen ja sanojen valinnat (lauseet.js: lauseClear); näkyy vain, kun kentässä on tekstiä -->
+    <div class="lause-input-wrap">
+      <textarea id="lause-input" rows="2" data-i18n-placeholder="lausePlaceholder"></textarea>
+      <button type="button" id="lause-clear" class="lause-clear" data-i18n-title="lauseClear" data-i18n-aria="lauseClear" hidden>×</button>
+    </div>
+    <div id="lause-chips" class="lause-chips"></div>
+    <div id="lause-pop" class="lause-pop" hidden></div>
+    <div id="lause-card" class="lause-card" hidden></div>
+    <div id="lause-result" class="lause-result" hidden>
+      <p class="muted small" data-i18n="lauseResult">Saameksi (likimääräinen, tarkista sanat)</p>
+      <div class="lause-sme-row">
+        <p id="lause-sme" class="lause-sme"></p>
+        <!-- Lause ääneen Divvunin puhesynteesillä (app.js: speak), samalla äänellä kuin sanat -->
+        <button id="lause-speak" class="speak-btn" data-i18n-title="listen" data-i18n-aria="listen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
+      </div>
+      <p class="report-line lause-report"><a href="#" class="report-link" id="lause-report"><span aria-hidden="true">⚑</span>
+        <span data-i18n="reportError">Ilmoita virheestä</span></a></p>
+    </div>
+  </div>
+
+  <!-- Lause kuvasta: sanat siruina, käännös alla, sanan korjaus alapaneelissa (app.js: renderSentView) -->
+  <div id="sent-view" class="sent-view" hidden>
+    <div class="sent-head">
+      <button type="button" class="chip-btn" id="sent-back" data-i18n-aria="back">←</button>
+      <h2 data-i18n="sentTitle">Lause kuvasta</h2>
+      <!-- Sanat itse kuvasta, jos automaattinen lauseen raja osui väärin (app.js: startWordSelect) -->
+      <button type="button" class="chip-btn sent-select" id="sent-select" data-i18n="sentSelect">Valitse sanat itse</button>
+    </div>
+    <div id="sent-body" class="sent-body"></div>
+    <div id="sent-sheet" class="sent-sheet" hidden></div>
+  </div>
+  <!-- Kuvahaku (uusi ilme 2026-11-20): kuva koko näytöllä, päällä vain sulje, kielipainike ja ⋯; alhaalla Valitse kuva,
+       laukaisin ja Poimi lause. Sanan napautus avaa alapaneelin (#ocr-bubble); kielet, kääntö ja merkintä ⋯-paneelissa. -->
+  <div id="ocr-view" class="ocr-view empty" hidden>
+    <!-- Kuva koko alueella: zoomaus kahdella sormella, siirto vetämällä (app.js: bindOcrGestures) -->
     <div id="ocr-stage" class="ocr-stage">
       <div id="ocr-photo" class="ocr-photo"></div>
-      <div id="ocr-bubble" class="ocr-bubble" role="group" hidden></div>
+      <div class="ocr-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        <p data-i18n="ocrIntro"></p>
+      </div>
       <!-- Tekstin tunnistus ja sanojen haku käynnissä: pyörivä kehä kuvan keskellä (app.js: setOcrBusy) -->
       <div id="ocr-busy" class="ocr-busy" hidden><span class="ocr-spinner"></span></div>
+      <!-- Sanojen valinta sormella: maalaus (avoin veto) tai ympyrä (suljettu veto); piirto näkyy tässä -->
+      <svg id="ocr-stroke" class="ocr-stroke" aria-hidden="true"><polyline points=""/></svg>
+      <!-- Napautetun sanan alapaneeli (app.js: pickOcrWord, pickUnknownOcrWord) -->
+      <section id="ocr-bubble" class="ocr-sheet" role="dialog" hidden></section>
     </div>
+    <div class="ocr-top">
+      <div class="ocr-top-row">
+        <button class="ocr-round" id="ocr-close" data-i18n-aria="close" data-i18n-title="close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        <button class="ocr-pill" id="ocr-dir" aria-haspopup="dialog"></button>
+        <button class="ocr-round" id="ocr-more" aria-haspopup="dialog" data-i18n-aria="ocrMore" data-i18n-title="ocrMore"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+      </div>
+      <p id="ocr-status" class="ocr-status" role="status"></p>
+      <!-- Kuvassa on kieli, jota ei ole otettu käyttöön (inarinsaame): vihje asetuksiin (app.js: showOcrHint) -->
+      <div id="ocr-offer" class="ocr-offer" role="status" hidden></div>
+    </div>
+    <!-- Sanojen valinnan palkki: Peruuta · n sanaa · Valmis (app.js: startWordSelect) -->
+    <div class="ocr-selbar" id="ocr-selbar" hidden>
+      <button type="button" class="chip-btn" id="ocr-sel-cancel" data-i18n="cancel">Peruuta</button>
+      <span id="ocr-sel-count"></span>
+      <button type="button" class="chip-btn primary" id="ocr-sel-done" data-i18n="sentDone">Valmis</button>
+    </div>
+    <div class="ocr-bottom">
+      <button class="ocr-tool" id="ocr-gallery"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg></span><b data-i18n="ocrGalleryShort">Valitse kuva</b></button>
+      <button class="ocr-shutter" id="ocr-camera" data-i18n-aria="ocrShoot" data-i18n-title="ocrShoot"><span></span></button>
+      <button class="ocr-tool" id="ocr-pick"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg></span><b data-i18n="sentPick">Poimi lause</b></button>
+    </div>
+    <!-- ⋯ ja kielipainike: kuvan kieli, käännöskieli, kuvan kääntö 90°, merkintätapa ja väri (app.js: renderOcrSettings) -->
+    <section id="ocr-settings" class="ocr-sheet ocr-settings" role="dialog" data-i18n-aria="ocrMore" hidden>
+      <div class="sh-handle"></div>
+      <div class="sh-body">
+        <div class="os-sec"><div class="os-head"><span data-i18n="ocrFromLabel">Kuvan kieli</span></div><div class="os-chips" id="ocr-from-list"></div></div>
+        <div class="os-sec"><div class="os-head"><span data-i18n="ocrToLabel">Käännös</span>
+          <button class="os-swap" id="ocr-swap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4L3 8l4 4"/><path d="M3 8h14"/><path d="M17 20l4-4-4-4"/><path d="M21 16H7"/></svg><span data-i18n="ocrSwap">Vaihda suunta</span></button></div>
+          <div class="os-chips" id="ocr-to-list"></div></div>
+        <div class="os-sep"></div>
+        <div class="os-sec"><div class="os-head"><span data-i18n="ocrPhotoSect">Kuva</span></div>
+          <div class="os-rot">
+            <button id="ocr-rotate-left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span data-i18n="ocrRotL">Käännä vasemmalle</span></button>
+            <button id="ocr-rotate-right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg><span data-i18n="ocrRotR">Käännä oikealle</span></button>
+          </div></div>
+        <div class="os-sec"><div class="os-head"><span data-i18n="ocrMarkSect">Sanojen merkintä</span></div>
+          <div class="os-mark">
+            <div class="os-seg" id="ocr-style-seg" role="radiogroup">
+              <button data-style="underline" role="radio" data-i18n="ocrUnderline">Alleviivaus</button>
+              <button data-style="frame" role="radio" data-i18n="ocrFrame">Kehys</button>
+            </div>
+            <div class="ocr-swatches" id="ocr-swatches" role="radiogroup"></div>
+          </div></div>
+      </div>
+      <button class="os-done" id="ocr-settings-done" data-i18n="sentDone">Valmis</button>
+    </section>
   </div>
 
   <!-- Sanakortin muodon kupla: kuuntele ja kopioi (app.js: openFormPop) -->
@@ -312,5 +622,9 @@
   <script src="vendor/sql-wasm.js"></script>
   <script src="i18n.js"></script>
   <script src="app.js"></script>
+  <script src="lauseet.js"></script>
+  <script src="sanastot.js"></script>
+  <script src="harjoitus.js"></script>
+  <script src="minipeli.js"></script>
 </body>
 </html>

@@ -3,6 +3,46 @@
 Alle versjoner av Sátni FST. Nedlastinger: [GitHub-utgivelser](https://github.com/sombyduodji/satni-fst/releases).
 [English](CHANGELOG.md) · [Suomi](CHANGELOG.fi.md)
 
+## 1.0.0 — 2026-11-21
+
+Den første fullstendige versjonen. I tillegg til ordboka har appen nå ordlister med uttale, lytteøvelse, et ordspill og et mye bedre bildesøk.
+
+- **Nytt utseende på telefon.** En bunnlinje med Søk, Ordlister, Spill og Mer; verktøy du slår på (Bilde, Setning) får egne knapper der. Innstillingene er delt i sider: Utseende, Ordkort, Oversettelsesspråk, Historikk, Verktøy og Eksperimentelt.
+- **Ordlister.** Ordlister etter tema med uttale av Biret, Máhtte og Sunná: tall og ordenstall, ukedager, måneder og årstider, familie, farger, spørreord, rein, vær og mer. Trykk på et ord: lytt, kopier eller åpne ordkortet. Hilsenene kan høres som en samtale.
+- **Lytteøvelse** (finsk menyspråk). Harri sier et ord på finsk, du får litt tenketid, og det samiske svaret høres og vises. Velg emner, tallområder, retning, tenketid og stemme; øvelsen fortsetter med skjermen av og kan stoppes fra varselet.
+- **Ordspill.** Velg riktig oversettelse av fire, eller skriv ordet på samisk (hint koster et poeng, det samme gjør manglende spesialbokstaver). Nivåene nybegynner og viderekommen og korte emnespill (ordenstall, tid, farger, spørreord, dyr); i tids- og spørrespillene sier Biret det riktige svaret. Beste resultater på en pallplass. Dobbelttrykk kan ikke svare to ganger eller hoppe over resultatet.
+- **Bildesøk** (Android, slå på under *Verktøy*). Bildet på hele skjermen med ordene merket; trykk på et ord for å se oversettelsen i riktig form (*beavddis* = på bordet). *Hent setning* oversetter hele setningen ord for ord etter sammenhengen, og med *Velg ordene selv* kan du male eller ringe inn ordene med fingeren. Et bilde som ligger på siden, snus automatisk. Bildet kan også leses som norsk eller finsk tekst og oversettes til samisk.
+- **Bedre lesing av bilder.** Ord som telefonen leser feil, rettes oftere: manglende spesialbokstaver, dobbel bokstav lest som én, *I*/*l*-forvekslinger og ord som er delt på slutten av en linje. Ukjente samiske ord leses en gang til med Nasjonalbibliotekets samiske tekstgjenkjenningsmodell på telefonen. Sammensatte ord deles i deler når hele ordet ikke står i ordboka.
+- **Enaresamisk og skoltesamisk i bilder** (eksperimentelt, av som standard). Appen kjenner igjen språket selv og oversetter gjennom de enaresamiske eller skoltesamiske ordbøkene.
+- **Enaresamisk i spillet og ordlistene** (eksperimentelt, *Verktøy*).
+- **Setningsoversetter** (eksperimentelt, finsk menyspråk). En kort finsk setning blir en nordsamisk setning av ordbokas ord og former; trykk på et ord for å bytte tolkning eller form.
+- **Beslektede ord i andre samiske språk.** Ordkortet viser det samme ordet på enaresamisk, skoltesamisk, lulesamisk og sørsamisk der Álgu, den etymologiske databasen for de samiske språkene, kobler dem (*boazu*: puásui, puäʒʒ, boatsoj, bovtse). Omtrent 13 000 ord.
+- **Stedsnavn.** Samiske stedsnavn i Norge med norske navn (*Guovdageaidnu* – Kautokeino) fra Kartverket, og finske navn for omtrent 400 steder som Utsjoki og Ivalo.
+- **Bedre finsk.** Omtrent 145 gale eller misvisende finske oversettelser er rettet etter kontroll mot uavhengige kilder. Omtrent 1 300 sammensatte ord uten finsk har fått en kontrollert oversettelse.
+- **Jokersøk.** `?` er én bokstav og `*` hvilke som helst bokstaver: `á?bmogis`, `bo*`. Et søk som begynner med et jokertegn, trenger tre bokstaver.
+- **Raskere søk.** Søket er 20–40 ganger raskere, og ordboka er mindre å laste ned.
+- **Meld fra om feil overalt.** Ordkort, bøyningsformer, ordlister, spill, bildesøk og setningsvisninger: meldingen gjør klar en e-post.
+- **Lagret uttale.** Ord du har lyttet til, lagres på enheten for bruk uten nett; velg maksimal størrelse eller tøm dem under *Ordkort*.
+- **Farger for stadieveksling.** Velg farger for sterkt og svakt stadium eller understreking, også et ferdig valg for fargeblinde.
+- **Skoltesamiske oversettelser** (ikke kontrollert, av som standard) gjennom de finske oversettelsene, med en advarsel.
+- **Personvern.** Appen sender ingen bruksstatistikk; Google ML Kits statistikk er slått av. Bilder forlater aldri telefonen. Nettet brukes bare til Divvuns uttaletjeneste når du trykker på høyttaleren.
+- **Tilgjengelighet og rettelser.** Bedre kontrast, tastaturbruk og navn for skjermlesere; Tilbake og Esc lukker ett lag om gangen; en for gammel Android WebView gir en tydelig melding i stedet for evig lasting; endring av skriftstørrelsen på telefonen laster ikke lenger appen på nytt.
+- **Bøyningsklasse.** Ordkortet viser klassen til substantiv og verb (I likestavelses, II ulikestavelses, III kontrahert) når kilden og ordets former stemmer overens. Substantiv viser også stadiene. For andre ord blir klassen ikke gjettet.
+- **Øst og vest.** Ord og oversettelser som varierer etter område er merket (ø) og (v). To skrivemåter av samme ord, som *girku* og *kirku*, deler ett kort som begge finner. Ulike ord, som *gánda* og *lunta*, har lenke til hverandre.
+- **Søk.** Oversettelser med områdemerke, som *patja*, blir nå funnet.
+- **Uttale.** Et nytt trykk stopper lyden som spilles og avbryter en forespørsel som pågår, så lyder ikke lenger spilles oppå hverandre eller etter hverandre.
+- **Flere samiske oversettelser.** Omtrent 40 ord får en manglende enaresamisk, lulesamisk eller sørsamisk oversettelse fra GiellaLTs enaresamisk-, lulesamisk- og sørsamisk-nordsamiske ordbøker.
+- **Finske forslag (eksperimentelt).** For ord uten finsk oversettelse kan ordkortet vise et forslag laget via enaresamisk eller norsk, merket som ikke kontrollert. Omtrent 2 150 ord får et. Slå det på under *Eksperimentelle funksjoner*.
+- **Spansk.** Spanske oversettelser for omtrent 7 600 ord, også omtrent to tredjedeler av de vanligste, med betydninger og eksempelsetninger fra GiellaLTs spanske ordbøker laget av Ángel. Slå dem på under *Andre språk*.
+- **Søk på andre språk.** Språk som er slått på under *Andre språk* kan også brukes til å søke, etter treff på nordsamisk og norsk: *perro* finner *beana*. Resultatlisten viser hvilket språk som ga treff. Bare grunnformer blir funnet.
+- **Søket finner oversettelser med en presisering i parentes.** *naida* finner nå ord som er oversatt med "naida (kerran)", og *immoral* finner "immoral (of women)": omtrent 3 400 ord som før bare ble funnet hvis man skrev presiseringen også.
+- **«Mente du» i søkefeltet og på andre språk.** Mens du skriver, foreslår søkefeltet ordet med de manglende spesialbokstavene (*cahci* → *čáhci*), også på språk som er slått på under *Andre språk* (*arbol* → *árbol*, *tjielte* → *tjïelte*). Forslaget legger bare til bokstaver og bytter dem aldri.
+- **Mer engelsk.** Omtrent 3 100 ord får engelsk oversettelse fra Wiktionary, og omtrent 1 800 flere viser et ukontrollert engelsk forslag. Engelsk søk ser bort fra *to* og *a* først (*read* finner «to read»).
+- **Finske former i bøyingstabellen rettet.** Den finske oversettelsen ved hver samisk form er nå standard finsk: *haluan*, ikke *haluun*; *kauniista*, ikke *kaunista*; *kiipijöihin*, ikke *kiipijiin*; *pelastusliiveiltä*, ikke *pelastusliiveilta*. Omtrent 1 900 ord er endret. Hver finsk form er kontrollert mot stavekontrollen Voikko og GiellaLT-analysatoren. Der ingen riktig form kunne bekreftes, viser cellen ingen finsk i stedet for en feil form.
+- **Stilmerking.** Oversettelser som er vulgære, nedsettende eller støtende, er nå merket på ordkortet, i betydningene og i resultatlisten, for eksempel *perse* (vulgært), *muija* (nedsettende) og *tater* (støtende). Merkingen kommer fra Wiktionarys egne merknader og er gått gjennom for hånd: 37 oversettelsesord er merket.
+- **Ryddigere engelsk.** Omtrent 1 100 engelske «oversettelser» som egentlig var grammatikknotater fra Konrad Nielsens ordbok («continuative of njuol’got», «caus. of rok’čit»), samiske ord i gammel skrivemåte eller tysk fra den samisk–tyske originalen («den Schlucken haben»), er fjernet, og omtrent 370 til har mistet en slik merknad, men beholder engelsken («middlemost (= gâs’kâlâmŏs)» → «middlemost»). Engelsk fra Wiktionary som Wiktionary merker som støtende, brukes bare når det samiske ordet selv er merket slik, og da med merknaden.
+- **Skrivefeil rettet.** Omtrent 60 skrivefeil og foreldede skrivemåter i de finske oversettelsene er rettet, for eksempel *kaivosyitys* → *kaivosyritys*, *taitelija* → *taiteilija* og *tietokonenohjelma* → *tietokoneohjelma*; hver er bekreftet med to stavekontroller og for hånd. Spanske skrivefeil som *latimarse* → *lastimarse* og *reluctacia* → *reluctancia* er rettet, og arbeidsmerknader («XXX») i kildeordbøkene er fjernet.
+
 ## 0.9.3 — 2026-11-03
 
 - **Stadieveksling rettet.** Sterkt og svakt stadium var byttet om på omtrent 340 ord, blant dem vanlige ord som *dilli*, *gilli*, *sivva*, *nisu* og *biras*. Ordkortet og fargene i bøyingstabellen er nå riktige. Gruppenavnet er også rettet på omtrent 450 ord, for eksempel *listu*.

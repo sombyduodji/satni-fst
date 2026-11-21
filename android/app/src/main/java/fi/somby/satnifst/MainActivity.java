@@ -80,7 +80,9 @@ public class MainActivity extends Activity {
         settings.setAllowContentAccess(false);
         // Ääntäminen soitetaan vasta, kun ääni on haettu verkosta (napautuksen jälkeen)
         settings.setMediaPlaybackRequiresUserGesture(false);
-        settings.setTextZoom(100);
+        // Tekstin koko (Asetukset → Kieli ja ulkoasu, app.js: applyTextSize): tallennettu valinta heti, ennen sivun
+        // latautumista, ettei teksti hyppää; -1 = laitteen fonttikoko (Asetukset → Näyttö → Fonttikoko)
+        applyTextZoom(getPreferences(MODE_PRIVATE).getInt(PREF_TEXT_ZOOM, -1));
 
         // Ei venytystä reunojen yli vierittäessä (sovellus ei ole verkkosivu)
         web.setOverScrollMode(android.view.View.OVER_SCROLL_NEVER);
@@ -88,6 +90,10 @@ public class MainActivity extends Activity {
         // Vain sovelluksen omat sivut latautuvat WebViewiin (ulkoiset linkit avataan muissa sovelluksissa)
         ocr = new Ocr(this, web);
         web.addJavascriptInterface(ocr, "SatniOcr");
+        web.addJavascriptInterface(new AppBridge(), "SatniApp");
+        // Kuunteluharjoituksen tila sivulle (DrillService soittaa myös näytön ollessa pois päältä)
+        DrillService.listener = json -> web.post(() ->
+                web.evaluateJavascript("window.satniDrill && satniDrill.event(" + json + ")", null));
         // Android 13+: takaisin-ele tulee tätä kautta (onBackPressed ei aina tule kutsutuksi)
         if (Build.VERSION.SDK_INT >= 33) {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
@@ -166,12 +172,103 @@ public class MainActivity extends Activity {
     private void showVersion(WebView view) {
         String version;
         try {
-            version = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            android.content.pm.PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+            version = pi.versionName;
+            // DEV-versiossa myös koontinumero: versionName on sama kaikissa DEV-koonneissa, joten muuten ei näe,
+            // onko puhelimessa uusin APK (2026-11-19)
+            @SuppressWarnings("deprecation") int code = pi.versionCode;
+            if (version != null && version.contains("DEV")) version += " · " + code;
         } catch (android.content.pm.PackageManager.NameNotFoundException e) {
             return;
         }
         view.evaluateJavascript("window.SATNI_VERSION = '" + version + "'; window.SATNI_PLATFORM = 'android';"
                 + " if (window.applyStaticTexts) applyStaticTexts();", null);
+    }
+
+    // Näppäimistö takaisin, kun ikkuna saa kohdistuksen takaisin (OnePlus OxygenOS 16: Gboardin näppäimistön vaihto
+    // välilyönnin pitkällä painalluksella sulki näppäimistön; Android 15 ja 16 -emulaattoreissa sitä ei tapahdu).
+    // Vain jos näppäimistö oli auki ikkunan menettäessä kohdistuksen, sovellus ei käynyt taustalla välillä ja keskeytys
+    // oli lyhyt (kuten kielen valinta Gboardin ikkunasta): pidemmän keskeytyksen (keskustelukupla, jaettu näyttö)
+    // jälkeen näppäimistö ei avaudu itsestään.
+    private static final long RESTORE_MAX_MS = 15000;
+    private boolean imeOpenWhenFocusLost;
+    private boolean pausedSinceFocusLost;
+    private long focusLostAt;
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (!hasFocus) {
+            imeOpenWhenFocusLost = imeVisible();
+            pausedSinceFocusLost = false;
+            focusLostAt = android.os.SystemClock.uptimeMillis();
+            if (imeOpenWhenFocusLost) {
+                web.evaluateJavascript("window.__satniImeField = document.activeElement"
+                        + " && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName) ? document.activeElement : null", null);
+            }
+            return;
+        }
+        if (imeOpenWhenFocusLost && !pausedSinceFocusLost
+                && android.os.SystemClock.uptimeMillis() - focusLostAt < RESTORE_MAX_MS) {
+            web.postDelayed(this::restoreKeyboard, 300);  // näppäimistö ehtii palata itsestään, jos se palaa
+        }
+        imeOpenWhenFocusLost = false;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        DrillService.resend();  // näyttö takaisin päälle: harjoituskortti vastaamaan soittoa
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        pausedSinceFocusLost = true;
+    }
+
+    private void restoreKeyboard() {
+        if (imeVisible()) {
+            return;
+        }
+        // Sama kenttä uudelleen valituksi vain, jos kohdistus ei ole siirtynyt muualle (esim. käyttäjän napautus)
+        web.evaluateJavascript("(function () { var f = window.__satniImeField, a = document.activeElement;"
+                + " window.__satniImeField = null;"
+                + " if (!f || !f.isConnected || f.disabled || f.offsetParent === null) return false;"
+                + " if (a !== f && a && a !== document.body) return false;"
+                + " if (a !== f) f.focus({ preventScroll: true });"
+                + " return document.activeElement === f; })()", result -> {
+            if ("true".equals(result)) {
+                web.requestFocus();
+                android.view.inputmethod.InputMethodManager imm = getSystemService(android.view.inputmethod.InputMethodManager.class);
+                if (imm != null) {
+                    imm.showSoftInput(web, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+                }
+            }
+        });
+    }
+
+    /** Onko näppäimistö näkyvissä. Android 11+: ikkunan reunusten tieto; vanhemmat: näkyvä alue on yli 15 %
+     *  ikkunaa matalampi (näppäimistö peittää alaosan, windowSoftInputMode = adjustResize). */
+    private boolean imeVisible() {
+        if (Build.VERSION.SDK_INT >= 30) {
+            WindowInsets insets = web.getRootWindowInsets();
+            return insets != null && insets.isVisible(WindowInsets.Type.ime());
+        }
+        View root = web.getRootView();
+        android.graphics.Rect visible = new android.graphics.Rect();
+        root.getWindowVisibleDisplayFrame(visible);
+        int height = root.getHeight();
+        return height > 0 && height - visible.bottom > height * 0.15;
+    }
+
+    /** Puhelimen fonttikoon muutos ei käynnistä näkymää uudelleen (manifestin configChanges: fontScale), joten sivu ja
+     *  sen tila (kuva, valitut sanat, kuunteluharjoitus, peli) säilyvät; tekstin koko päivitetään tässä. Ennen sivu latautui
+     *  uudelleen ja esim. kuvahaun kuva katosi (yötesti 2026-11-21, Samsung). */
+    @Override
+    public void onConfigurationChanged(android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        applyTextZoom(getPreferences(MODE_PRIVATE).getInt(PREF_TEXT_ZOOM, -1));
     }
 
     @Override
@@ -213,6 +310,9 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        DrillService.listener = null;
+        // Sovellus suljettiin (takaisin viimeisestä näkymästä): harjoitus loppuu
+        if (isFinishing()) DrillService.control(this, DrillService.ACTION_STOP);
         ocr.close();
         web.destroy();
         super.onDestroy();
@@ -272,6 +372,53 @@ public class MainActivity extends Activity {
             } catch (IOException e) {
                 return new WebResourceResponse("text/plain", "utf-8", 404, "Not Found", headers, null);
             }
+        }
+    }
+
+    private static final String PREF_TEXT_ZOOM = "textZoom";
+
+    /** Tekstin zoomaus prosentteina; -1 = laitteen fonttikoko (fontScale), rajattu 50–300 %. */
+    private void applyTextZoom(int percent) {
+        int zoom = percent < 0 ? Math.round(getResources().getConfiguration().fontScale * 100) : percent;
+        web.getSettings().setTextZoom(Math.max(50, Math.min(300, zoom)));
+    }
+
+    /** Sivulle näkyvä silta (window.SatniApp): vain tekstin koko. Tallennetaan, jotta se on käytössä heti seuraavalla
+     *  käynnistyksellä ennen sivun latautumista. */
+    private class AppBridge {
+        /** Kuunteluharjoitus (web/harjoitus.js): soittolista, miettimisaika ja ilmoituksen tekstit JSONina. */
+        @android.webkit.JavascriptInterface
+        public void drillStart(String config) {
+            DrillService.start(MainActivity.this, config);
+        }
+
+        /** Natiivi soitin vain Android 10+:lla: MediaPlayer soittaa Ogg Opus -tiedostoja vasta siitä alkaen. Vanhemmilla
+         *  harjoitus soi sivun omalla soittimella (WebView soittaa Opusta kaikilla versioilla), ilman näytönsammutusta. */
+        @android.webkit.JavascriptInterface
+        public boolean drillSupported() {
+            return Build.VERSION.SDK_INT >= 29;
+        }
+
+        /** Näyttö päällä kuunteluharjoituksen ajan (käyttäjän valinta); pois, kun harjoitus suljetaan. */
+        @android.webkit.JavascriptInterface
+        public void keepScreenOn(boolean on) {
+            runOnUiThread(() -> {
+                if (on) getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                else getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            });
+        }
+
+        /** pause, play, next, stop */
+        @android.webkit.JavascriptInterface
+        public void drillControl(String cmd) {
+            DrillService.control(MainActivity.this, cmd);
+        }
+
+        @android.webkit.JavascriptInterface
+        public void setTextZoom(int percent) {
+            int value = percent < 0 ? -1 : Math.max(50, Math.min(300, percent));
+            getPreferences(MODE_PRIVATE).edit().putInt(PREF_TEXT_ZOOM, value).apply();
+            runOnUiThread(() -> applyTextZoom(value));
         }
     }
 }

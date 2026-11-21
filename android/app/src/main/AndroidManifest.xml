@@ -1,18 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Ääntäminen haetaan Divvunin puhepalvelusta -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Sanastojen kuunteluharjoitus jatkuu näytön sammuttua (DrillService): etualan mediapalvelu ja
+         herätyslukko miettimistaukojen ajaksi. Mediaistunnon ilmoitus ei tarvitse POST_NOTIFICATIONS-lupaa. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="Sátni FST"
+        android:label="${appLabel}"
         android:supportsRtl="false"
         android:theme="@style/AppTheme">
         <activity
             android:name=".MainActivity"
-            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|keyboard"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|keyboard|fontScale"
             android:exported="true"
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize">
@@ -27,6 +35,10 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
+        <service
+            android:name=".DrillService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
         <!-- Tekstintunnistus: kamerasovellus kirjoittaa kuvan tähän (MainActivity.Ocr). CAMERA-lupaa ei
              pyydetä: kuvan ottaa järjestelmän kamerasovellus, ja ilmoitettu mutta myöntämätön lupa estäisi sen. -->
         <provider
@@ -38,6 +50,22 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/ocr_paths" />
         </provider>
+        <!-- Ei käyttötilastoja Googlelle (verkkoyhteystarkistus, docs/verkkoyhteydet-2026-11-18.md):
+             1) WebView ei lähetä omia tilastojaan, vaikka laitteen diagnostiikkatietojen jako olisi päällä.
+             2) ML Kit (tekstintunnistus) tallentaa jokaisesta tunnistuksesta tapahtumia (pysyvä tunniste, laite, kesto,
+                kuvan koko) ja lähettäisi ne firebaselogging.googleapis.com:iin Googlen datatransport-kirjaston CCT-
+                taustapalvelulla. Palvelun rekisteröinti poistetaan, jolloin tapahtumilla ei ole lähetyskanavaa.
+                Kirjasto itse jää (ML Kit viittaa siihen suoraan), mutta se ei avaa yhteyksiä. -->
+        <meta-data
+            android:name="android.webkit.WebView.MetricsOptOut"
+            android:value="true" />
+        <service
+            android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+            tools:node="merge">
+            <meta-data
+                android:name="backend:com.google.android.datatransport.cct.CctBackendFactory"
+                tools:node="remove" />
+        </service>
     </application>
 
     <!-- Android 11+: kamerasovelluksen löytäminen (pakettien näkyvyys) -->

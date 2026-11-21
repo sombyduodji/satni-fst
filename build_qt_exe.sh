@@ -1,43 +1,83 @@
 #!/bin/sh
-# Rakentaa Qt-työpöytäsovelluksen Windows-version Windows-virtuaalikoneessa (libvirt) SSH:n kautta.
+# Rakentaa Qt-työpöytäsovelluksen Windows-version SSH:n kautta Windows-koneessa, joka on joko
+# lähiverkon PC (herätetään Wake-on-LANilla) tai virtuaalikone (libvirt).
 # Tulos: dist/satni-fst-windows.zip (kansio: satni-fst.exe + _internal). Qt WebEngine on niin suuri,
 # ettei yksittäistä .exe-tiedostoa kannata tehdä: se purkaisi ~500 Mt joka käynnistyksellä.
 cd "$(dirname "$0")" || exit 1
 
-# ANONYMISOITU: virtuaalikoneen nimi, käyttäjätunnus ja SSH-avain eivät ole tässä tiedostossa.
+# ANONYMISOITU: koneiden nimet, osoitteet, käyttäjätunnukset ja SSH-avaimet eivät ole tässä tiedostossa.
 # Omat arvot annetaan ympäristömuuttujina tai tiedostossa build_qt_exe.local (ei versionhallinnassa,
 # ks. .gitignore), esim.:
 #   SATNI_WIN_VM=oma-windows-vm
 #   SATNI_WIN_USER=oma-tunnus
 #   SATNI_WIN_KEY=$HOME/.ssh/oma_avain
-# Virtuaalikone: Windows 10/11, Python 3.12 (C:\Program Files\Python312), OpenSSH-palvelin ja
-# avainkirjautuminen. Käännöskansio C:\satni-build luodaan automaattisesti.
+# Jos SATNI_WIN_PC_HOST on annettu, käytetään virtuaalikoneen sijaan lähiverkon PC:tä:
+#   SATNI_WIN_PC_HOST=192.0.2.10
+#   SATNI_WIN_PC_MAC=00:00:5E:00:53:01
+#   SATNI_WIN_PC_BROADCAST=192.0.2.255
+#   SATNI_WIN_PC_USER=oma-tunnus
+#   SATNI_WIN_PC_KEY=$HOME/.ssh/oma_avain
+# Muut asetukset ympäristömuuttujina:
+#   SATNI_WIN_USE_VM=1    käytä virtuaalikonetta, vaikka PC on määritelty
+#   SATNI_WIN_SHUTDOWN=1  sammuta PC onnistuneen käännöksen jälkeen, ellei joku ole kirjautuneena
+#   SATNI_WIN_OUT=polku   tuloksen polku (oletus dist/satni-fst-windows.zip)
+# Windows-kone: Windows 10/11, Python 3.12 (C:\Program Files\Python312), OpenSSH-palvelin
+# (oletuskuorena PowerShell) ja avainkirjautuminen. Käännöskansio C:\satni-build luodaan automaattisesti.
 [ -f ./build_qt_exe.local ] && . ./build_qt_exe.local
+USE_PC=""
+[ -n "$SATNI_WIN_PC_HOST" ] && [ -z "$SATNI_WIN_USE_VM" ] && USE_PC=1
 VM="${SATNI_WIN_VM:-windows-build}"
-WIN_USER="${SATNI_WIN_USER:-builder}"
-SSH_KEY="${SATNI_WIN_KEY:-$HOME/.ssh/id_ed25519}"
+if [ -n "$USE_PC" ]; then
+    WIN_USER="${SATNI_WIN_PC_USER:-builder}"
+    SSH_KEY="${SATNI_WIN_PC_KEY:-$HOME/.ssh/id_ed25519}"
+else
+    WIN_USER="${SATNI_WIN_USER:-builder}"
+    SSH_KEY="${SATNI_WIN_KEY:-$HOME/.ssh/id_ed25519}"
+fi
+OUT="${SATNI_WIN_OUT:-dist/satni-fst-windows.zip}"
 VM_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/satni-fst-build/winvm"
-# Oma salasanaton avain vain tälle virtuaalikoneelle (näkyy vain tältä koneelta NAT-verkossa)
+mkdir -p "$VM_DIR" || exit 1
+# Oma salasanaton avain vain tälle Windows-koneelle
 SSH_OPTS="-i $SSH_KEY -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=10 -o LogLevel=ERROR -o UserKnownHostsFile=$VM_DIR/known_hosts -o StrictHostKeyChecking=accept-new"
 
-# Virtuaalikone käyntiin tarvittaessa ja sen osoite
-if [ "$(virsh -c qemu:///system domstate $VM 2>/dev/null)" != "running" ]; then
-    virsh -c qemu:///system start $VM >/dev/null || exit 1
+if [ -n "$USE_PC" ]; then
+    # PC hereille tarvittaessa: taikapaketti lähiverkon yleislähetyksenä ja enintään 5 minuutin odotus
+    IP="$SATNI_WIN_PC_HOST"
+    if ! ssh $SSH_OPTS "$WIN_USER@$IP" "exit" 2>/dev/null; then
+        [ -n "$SATNI_WIN_PC_MAC" ] && [ -n "$SATNI_WIN_PC_BROADCAST" ] || { echo "SATNI_WIN_PC_MAC tai SATNI_WIN_PC_BROADCAST puuttuu"; exit 1; }
+        MAC_HEX=$(echo "$SATNI_WIN_PC_MAC" | tr -d ':-')
+        python3 -c "import socket; s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1); s.sendto(b'\xff' * 6 + bytes.fromhex('$MAC_HEX') * 16, ('$SATNI_WIN_PC_BROADCAST', 9))" || exit 1
+        echo "Taikapaketti lähetetty, odotetaan PC:tä $IP"
+        DEADLINE=$(($(date +%s) + 300))
+        until ssh $SSH_OPTS "$WIN_USER@$IP" "exit" 2>/dev/null; do
+            if [ "$(date +%s)" -ge "$DEADLINE" ]; then
+                echo "PC:hen $IP ei saatu SSH-yhteyttä 5 minuutissa. Virtuaalikoneella: SATNI_WIN_USE_VM=1 ./build_qt_exe.sh"
+                exit 2
+            fi
+            sleep 5
+        done
+    fi
+    echo "Windows-PC: $IP"
+else
+    # Virtuaalikone käyntiin tarvittaessa ja sen osoite
+    if [ "$(virsh -c qemu:///system domstate $VM 2>/dev/null)" != "running" ]; then
+        virsh -c qemu:///system start $VM >/dev/null || exit 1
+    fi
+    for i in $(seq 1 60); do
+        IP=$(virsh -c qemu:///system domifaddr $VM --source lease 2>/dev/null | awk '/ipv4/ {split($4,a,"/"); print a[1]; exit}')
+        [ -n "$IP" ] && ssh $SSH_OPTS "$WIN_USER@$IP" "exit" 2>/dev/null && break
+        IP=""
+        sleep 5
+    done
+    [ -n "$IP" ] || { echo "Virtuaalikoneeseen ei saatu SSH-yhteyttä"; exit 1; }
+    echo "Virtuaalikone: $IP"
 fi
-for i in $(seq 1 60); do
-    IP=$(virsh -c qemu:///system domifaddr $VM --source lease 2>/dev/null | awk '/ipv4/ {split($4,a,"/"); print a[1]; exit}')
-    [ -n "$IP" ] && ssh $SSH_OPTS "$WIN_USER@$IP" "exit" 2>/dev/null && break
-    IP=""
-    sleep 5
-done
-[ -n "$IP" ] || { echo "Virtuaalikoneeseen ei saatu SSH-yhteyttä"; exit 1; }
-echo "Virtuaalikone: $IP"
 
 # build.sh on jo kasvattanut versiota, jotta .exe ja AppImage saavat saman numeron
 [ -n "$SKIP_VERSION_BUMP" ] || python3 bump_version.py || exit 1
 [ -f web/data/satni-web.db.gz ] || python3 export_web_data.py || exit 1
 
-# Lähdekoodi virtuaalikoneelle (vain sovelluksen tarvitsemat tiedostot)
+# Lähdekoodi Windows-koneelle (vain sovelluksen tarvitsemat tiedostot)
 SRC_TAR="${XDG_CACHE_HOME:-$HOME/.cache}/satni-fst-build/satni-src.tar"
 tar -cf "$SRC_TAR" satni_desktop.py tts.py version.py sami_icon.ico web || exit 1
 ssh $SSH_OPTS "$WIN_USER@$IP" "Remove-Item -Recurse -Force C:\satni-build\src -ErrorAction SilentlyContinue; New-Item -ItemType Directory -Force C:\satni-build\src | Out-Null" || exit 1
@@ -67,6 +107,11 @@ Compress-Archive -Path C:\satni-build\dist\satni-fst -DestinationPath C:\satni-b
 if (-not (Test-Path C:\satni-build\satni-fst-windows.zip)) { exit 1 }
 ' || exit 1
 
-mkdir -p dist
-scp -q $SSH_OPTS "$WIN_USER@$IP":C:/satni-build/satni-fst-windows.zip dist/satni-fst-windows.zip || exit 1
-ls -la dist/satni-fst-windows.zip
+mkdir -p "$(dirname "$OUT")"
+scp -q $SSH_OPTS "$WIN_USER@$IP":C:/satni-build/satni-fst-windows.zip "$OUT" || exit 1
+ls -la "$OUT"
+
+# PC jää oletuksena päälle, koska seuraava käännös voi tulla pian. Sammutus vain pyydettäessä.
+if [ -n "$USE_PC" ] && [ -n "$SATNI_WIN_SHUTDOWN" ]; then
+    ssh $SSH_OPTS "$WIN_USER@$IP" 'if (quser 2>$null) { "Windows-PC jää päälle: käyttäjä on kirjautuneena" } else { "Sammutetaan Windows-PC"; shutdown /s /t 0 }'
+fi

@@ -1,38 +1,55 @@
 /* Värit samat kuin työpöytäversion ui_theme.py:ssä */
 :root {
   --bg: #f4f6fa; --surface: #ffffff; --surface-alt: #f6f8fb; --border: #e2e8f0;
-  --text: #0f172a; --muted: #64748b; --subtle: #94a3b8;
+  --text: #0f172a; --muted: #5b6b80; --subtle: #617083;  /* --subtle koristemerkkeihin (→ · / ↗), kontrasti 4,5:1 */
   --accent: #2563eb; --accent-hover: #1d4ed8; --accent-text: #ffffff;
+  --on-flag: #ffffff;  /* teksti lippuvärin päällä (pelin päätoimintopainikkeet) */
+  --flag-red: #e11d48; --flag-yellow: #ca8a04; --flag-blue: #2563eb; --flag-green: #16a34a;
+  /* Painikkeen tausta ja teksti lippuvärillä: keltainen ja vihreä tummempina, jotta kontrasti on vähintään 4,5:1.
+     Samat (--tb) myös lippuvärisiin teksteihin: sanastolistan numerot, pelin kirjaimet A–D (yötesti 2026-11-14) */
+  --btn-red: #e11d48; --btn-yellow: #a16207; --btn-blue: #2563eb; --btn-green: #15803d;
+  --on-green: #fff;
   --chip: #e8edf4; --chip-hover: #dbe3ee; --chip-text: #1e293b;
   --section: #eef2f8; --select: #dbeafe;
   --gd: #15803d; --gd-bg: #dcfce7; --hd: #c2410c; --hd-bg: #ffedd5;
   --gt: #9f1239; --gt-bg: #fff1f2; --gt-hover: #ffe4e6;
   --speak: #1d4ed8; --speak-bg: #eff6ff; --speak-hover: #dbeafe;
+  --reg: #a85d00; --reg-strong: #b3261e;
   --radius: 10px;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0f141b; --surface: #171e27; --surface-alt: #1b232e; --border: #2a3441;
-    --text: #e5e9f0; --muted: #94a3b8; --subtle: #64748b;
+    --text: #e5e9f0; --muted: #94a3b8; --subtle: #8391a5;
     --accent: #3b82f6; --accent-hover: #60a5fa;
+    --flag-red: #fb7185; --flag-yellow: #facc15; --flag-blue: #60a5fa; --flag-green: #4ade80;
+    --on-flag: #0f141b;
+    --btn-red: #fb7185; --btn-yellow: #facc15; --btn-blue: #60a5fa; --btn-green: #4ade80;
+    --on-green: #052e16;
     --chip: #232c38; --chip-hover: #2d3846; --chip-text: #e2e8f0;
     --section: #1f2834; --select: #1e3a5f;
     --gd: #4ade80; --gd-bg: #123220; --hd: #fb923c; --hd-bg: #3a2210;
     --gt: #fda4af; --gt-bg: #35141d; --gt-hover: #4a1c28;
     --speak: #93c5fd; --speak-bg: #162447; --speak-hover: #1e3160;
+    --reg: #f0a34a; --reg-strong: #ff8a80;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0f141b; --surface: #171e27; --surface-alt: #1b232e; --border: #2a3441;
-  --text: #e5e9f0; --muted: #94a3b8; --subtle: #64748b;
+  --text: #e5e9f0; --muted: #94a3b8; --subtle: #8391a5;
   --accent: #3b82f6; --accent-hover: #60a5fa;
+    --flag-red: #fb7185; --flag-yellow: #facc15; --flag-blue: #60a5fa; --flag-green: #4ade80;
+    --on-flag: #0f141b;
+    --btn-red: #fb7185; --btn-yellow: #facc15; --btn-blue: #60a5fa; --btn-green: #4ade80;
+    --on-green: #052e16;
   --chip: #232c38; --chip-hover: #2d3846; --chip-text: #e2e8f0;
   --section: #1f2834; --select: #1e3a5f;
   --gd: #4ade80; --gd-bg: #123220; --hd: #fb923c; --hd-bg: #3a2210;
   --gt: #fda4af; --gt-bg: #35141d; --gt-hover: #4a1c28;
   --speak: #93c5fd; --speak-bg: #162447; --speak-hover: #1e3160;
+  --reg: #f0a34a; --reg-strong: #ff8a80;
   color-scheme: dark;
 }
 
@@ -51,8 +68,8 @@ a { color: var(--accent); }
 [hidden] { display: none !important; }
 .muted { color: var(--muted); }
 .small { font-size: 13px; }
-b.gd, .gd { color: var(--gd); }
-b.hd, .hd { color: var(--hd); }
+b.gd, .gd { color: var(--grade-gd, var(--gd)); }
+b.hd, .hd { color: var(--grade-hd, var(--hd)); }
 
 /* Yläpalkki */
 .topbar {
@@ -83,6 +100,174 @@ select {
 }
 .chip-btn:hover, .icon-btn:hover { background: var(--chip-hover); }
 .icon-btn { display: none; font-size: 18px; line-height: 1; }
+/* Sanastot: kirjapainike ylätunnisteen oikeassa reunassa ja näkymä (sanastot.js) */
+.header-tools { margin-left: auto; display: flex; gap: 6px; flex: none; }
+.head-btn { padding: 6px 9px; line-height: 0; flex: none; }
+.head-btn svg { width: 22px; height: 22px; }
+.head-btn[hidden] { display: none; }
+@media (max-width: 400px) { .header-tools { gap: 4px; } .head-btn { padding: 6px 7px; } .head-btn svg { width: 21px; height: 21px; } }
+.tip-ico { width: 1.15em; height: 1.15em; vertical-align: -0.2em; color: var(--accent); }
+/* Koko näytön näkymän ollessa auki alla oleva sivu ei vieritä (app.js: bindViewFocus), muuten työpöydällä näkyy
+   kaksi vierityspalkkia */
+html.view-open { overflow: hidden; }
+.sanasto-view { position: fixed; inset: 0; z-index: 46; background: var(--bg); display: flex; flex-direction: column; }
+.sanasto-view[hidden] { display: none; }
+.sanasto-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); }
+.sanasto-view > .stripe { flex: none; }
+.sanasto-view > .stripe + .sanasto-body { padding-top: 12px; }
+.sanasto-head:has(.head-ico:not([hidden])) h2 { font-size: 18px; line-height: 1.15; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.sanasto-head { gap: 8px; }
+.head-ico { width: 34px !important; height: 34px !important; border-radius: 10px !important; }
+.head-ico svg { width: 19px !important; height: 19px !important; }
+.head-ico[hidden] { display: none !important; }
+/* Kortit kevyesti irti taustasta (vaalea teema); tumma teema ilman varjoa */
+.sanasto-view { --card-shadow: 0 1px 2px rgba(15, 23, 42, .05), 0 4px 14px rgba(15, 23, 42, .05); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sanasto-view { --card-shadow: none; } }
+:root[data-theme="dark"] .sanasto-view { --card-shadow: none; }
+.sanasto-tile, .sl-card, .num-table, .mrow, .colour, .compass, .kt-node, .kt-side, .cv-b.l, .cv-chip, .rd-life, .ico-tile, .q-card, .tl-step,
+.tl-now, .season, .day, .snow-card { box-shadow: var(--card-shadow); }
+.sl-card .mrow { box-shadow: none; }
+.sl-card, .num-table, .compass, .rd-life, .q-card, .colour, .ico-tile { border-radius: 16px; }
+.sanasto-head h2 { margin: 0; font-size: 20px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sanasto-head .speak-btn { flex: none; }
+/* Android-sovelluksessa tilarivin tila on jo reunuksessa (kuten .topbar) */
+.android-app .sanasto-head { padding-top: 12px; }
+.sanasto-body { flex: 1; overflow-y: auto; padding: 4px 16px 24px; display: flex; flex-direction: column; gap: 8px; }
+/* Yleisnäkymä: ryhmät lipun väreillä, kortissa värillinen ikonimerkki, nimi, saamen esimakusanat ja sanamäärä */
+.sanasto-intro { margin: 0 0 2px; font-size: 13px; color: var(--muted); }
+.sanasto-group { display: flex; flex-direction: column; gap: 6px; }
+.sanasto-group + .sanasto-group { margin-top: 10px; }
+.sanasto-group h3, .sl-sec h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.sanasto-group h3::before, .sl-sec h3::before, .nt-sec::before { content: ""; width: 14px; height: 4px; border-radius: 2px; background: var(--tc); }
+.sanasto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 6px; }
+.sanasto-tile { display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 10px; border-radius: 14px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; text-align: left;
+  cursor: pointer; transition: border-color .15s, transform .1s, background .15s; -webkit-tap-highlight-color: transparent; }
+.sanasto-tile:hover { border-color: color-mix(in srgb, var(--tc) 55%, var(--border)); }
+.sanasto-tile:active { transform: scale(.985); background: color-mix(in srgb, var(--tc) 6%, var(--surface)); }
+.sanasto-tile:focus-visible { outline: 2px solid var(--tc); outline-offset: 1px; }
+.st-ico { flex: none; width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--tc) 16%, transparent); color: var(--tc); }
+.st-ico svg { width: 22px; height: 22px; }
+.st-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.st-title { font-size: 15px; font-weight: 600; line-height: 1.25; }
+.st-prev { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-n { flex: none; min-width: 26px; padding: 2px 7px; border-radius: 999px; font-size: 12px; font-weight: 600; text-align: center;
+  color: var(--muted); background: var(--surface-alt); border: 1px solid var(--border); }
+.sanasto-hint { margin: 2px 0 4px; font-size: 13px; color: var(--muted); }
+/* Listasivu: ohje värillisenä palkkina, osiot omina kortteinaan (rivit ohuin viivoin), väri listan ryhmästä (--tc) */
+.sanasto-body > .sanasto-hint:first-child { margin: 0 0 4px; padding: 8px 12px; border-radius: 10px; color: var(--text);
+  background: color-mix(in srgb, var(--tc, var(--accent)) 10%, var(--surface)); border-left: 3px solid var(--tc, var(--accent)); }
+.sanasto-hint .sh-line { display: block; }
+.sanasto-hint .sh-line b { font-weight: 600; }
+.sanasto-hint .sh-line span { color: var(--muted); }
+.sanasto-body > .sanasto-hint:last-child { text-align: center; font-size: 12px; margin-top: 6px; }
+.sl-sec { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+.sl-sec + .sl-sec { margin-top: 8px; }
+/* Kortti ruudukkona: 1 px rako näkyy viivana (kortin tausta = reunaväri), yhden muodon sanat kaksi rinnakkain */
+.sl-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1px; background: var(--border);
+  border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.sl-card > .sanasto-row { grid-column: 1 / -1; border: 0; border-radius: 0; background: var(--surface); padding: 9px 12px; min-width: 0; }
+.sl-card > .sanasto-row.one { grid-column: auto; display: flex; flex-direction: column; justify-content: flex-start; gap: 1px; }
+.sl-card > .sanasto-row.one.wide { grid-column: 1 / -1; }
+.sanasto-row.one .sg-ui { font-size: 13px; color: var(--muted); line-height: 1.25; }
+.sanasto-row.one .one-w { font-size: 16px; line-height: 1.3; }
+.sanasto-row.one .sw-wrap { white-space: normal; flex-wrap: wrap; }
+.sanasto-row.ptab { display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); column-gap: 6px; padding: 8px 10px; }
+.sanasto-row.mrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: 8px; row-gap: 1px; }
+.mr-main { display: inline-flex; align-items: center; gap: 1px; min-width: 0; font-size: 17px; white-space: nowrap; }
+.mr-fi { font-size: 13px; color: var(--muted); text-align: right; }
+.mr-main { flex-wrap: wrap; row-gap: 0; }
+.mr-dial { margin: 0 0 0 2px; font-size: 10.5px; font-weight: 600; color: var(--muted); align-self: flex-start; line-height: 1.4; }
+.mr-sep { margin: 0 6px; color: var(--muted); }
+.mrow:has(.mr-dial) .mr-main { font-size: 16px; }
+.mr-note { grid-column: 2; grid-row: 2; font-size: 12px; font-style: italic; color: var(--muted); text-align: right; white-space: nowrap; }
+.mr-forms { grid-column: 1 / -1; grid-row: 2; font-size: 13px; color: var(--muted); }
+.mrow:has(.mr-note) .mr-forms { grid-column: 1; }
+.pt-cell { display: flex; flex-direction: column; min-width: 0; }
+.pt-cell .sw { font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
+.pt-fi { font-size: 11.5px; color: var(--muted); line-height: 1.2; overflow-wrap: anywhere; }
+.sanasto-row.one .sanasto-note { font-size: 12px; color: var(--muted); line-height: 1.25; }
+.nt-sec { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 10px 0 4px !important; font-size: 12px;
+  font-weight: 700; letter-spacing: .06em; color: var(--muted); }
+.num-table > .nt-head + .nt-head + .nt-sec { border-top: 0; padding-top: 2px !important; }
+.nt-sec + .nt-n, .nt-sec + .nt-n + .nt-cell, .nt-sec + .nt-n + .nt-cell + .nt-cell { border-top: 0; }
+.sanasto-row { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
+.sanasto-row.num { display: flex; align-items: center; gap: 8px; padding: 2px 8px; line-height: 1.2; }
+.sanasto-body:has(.sanasto-row.num) { gap: 4px; }
+.sanasto-n { font-size: 16px; font-weight: 700; min-width: 2.1em; text-align: right; color: var(--accent); }
+/* Lukutaulukko: numero | perusluku | järjestysluku, ohuet viivat rivien välissä */
+.num-table { display: grid; grid-template-columns: 1.9em minmax(0, 1fr) minmax(0, 1fr); column-gap: 8px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 4px 12px 6px; flex-shrink: 0; }
+.num-table > * { padding: 5px 0; border-top: 1px solid var(--border); min-width: 0; }
+/* Sarakeotsikot: nimi ja esimerkki, pysyvät näkyvissä taulukkoa vieritettäessä */
+.num-table > .nt-head, .num-table > .nt-corner { border-top: 0; position: sticky; top: -12px; z-index: 2; background: var(--surface);
+  padding: 14px 0 6px; margin-top: -6px; box-shadow: 0 1px 0 var(--border); }
+.nt-head { display: flex; flex-direction: column; gap: 1px; }
+.nt-head b { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: .01em; }
+.nt-head small { font-size: 11.5px; color: var(--muted); }
+/* Osion kaistale: väli lihavoituna listan värillä, alla soittopainikkeet sarakkeiden kohdalla */
+.num-table > .nt-band { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; align-items: center; border-top: 0;
+  margin: 10px -8px 2px; padding: 6px 8px; border-radius: 11px; background: color-mix(in srgb, var(--tc, var(--accent)) 9%, var(--surface)); }
+.num-table > .nt-head + .nt-head + .nt-band { margin-top: 8px; }
+.nt-band > .nt-sec { grid-column: 2 / -1; padding: 0 !important; font-size: 14px; letter-spacing: .02em; color: var(--tb, var(--tc, var(--accent))); }
+.nt-band > .nt-sec::before { display: none; }
+.nt-band > * { min-width: 0; }
+.nt-band + .nt-n, .nt-band + .nt-n + .nt-cell, .nt-band + .nt-n + .nt-cell + .nt-cell { border-top: 0; }
+/* Lukutaulukko luettavammaksi: ei pisteviivoja, joka toinen rivi sävytetty, toistuvat osat vaaleampina */
+#sanasto-body .num-table .sw { text-decoration: none; }
+.num-table .np { color: var(--muted); font-weight: 400; }
+.num-table { column-gap: 0; }
+.num-table > .nt-cell { font-size: 14px; padding-left: 7px; padding-right: 2px; }
+.num-table > .nt-n { padding-right: 2px; }
+.num-table > .nt-n, .num-table > .nt-cell { border-top: 0; }
+.num-table > .zebra { background: color-mix(in srgb, var(--tc, var(--accent)) 6%, transparent); }
+.num-table > .nt-n.zebra { border-radius: 8px 0 0 8px; } .num-table > .nt-cell.zebra + .nt-cell.zebra { border-radius: 0 8px 8px 0; }
+.nt-n { font-size: 15px; font-weight: 700; color: var(--tb, var(--tc, var(--accent))); display: flex; align-items: center; justify-content: flex-end; }
+.nt-cell { display: flex; flex-direction: column; justify-content: center; font-size: 14px; line-height: 1.2; }
+.nt-cell .num-fi { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 1.2em; }
+.nt-ico { display: inline-flex; gap: 2px; }
+.nt-sub { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.nt-cell .sw-ico { width: 22px; height: 22px; }
+.nt-cell .sw-ico svg { width: 13px; height: 13px; }
+.num-words { display: flex; flex-wrap: wrap; align-items: center; column-gap: 10px; row-gap: 0; min-width: 0; }
+.num-words .sw-ico { width: 22px; height: 22px; }
+.num-words .sw-ico svg { width: 13px; height: 13px; }
+.num-card { font-size: 16px; }
+.num-ord { font-size: 14px; }
+.num-fi { color: var(--muted); font-size: 13px; }
+.sanasto-row .ui-line { font-size: 13px; color: var(--muted); margin-bottom: 3px; }
+.sanasto-row .sme-line { font-size: 16px; display: flex; align-items: center; column-gap: 8px; flex-wrap: wrap; line-height: 1.25; }
+.sw-wrap { display: inline-flex; align-items: center; gap: 1px; white-space: nowrap; }
+.sw-ico { width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--accent);
+  display: inline-grid; place-items: center; cursor: pointer; flex: none; }
+.sw-ico:active { background: var(--chip); }
+.sw-ico svg { width: 13px; height: 13px; }
+.sw-ico.loading { opacity: .5; }
+.sanasto-row .sub-line { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.sanasto-row .sw { cursor: pointer; border-radius: 4px; -webkit-touch-callout: none; user-select: none; }
+.sanasto-row .sw:active { background: var(--chip); }
+/* Sanastojen sana avaa kuplan: hento pisteviiva vihjeenä, valittu sana korostettuna */
+#sanasto-body .sw { cursor: pointer; border-radius: 4px; text-decoration: underline dotted color-mix(in srgb, var(--muted) 60%, transparent);
+  text-decoration-thickness: 1.5px; text-underline-offset: 4px; -webkit-tap-highlight-color: transparent; }
+#sanasto-body .sw.picked { background: var(--select); box-shadow: 0 0 0 3px var(--select); text-decoration: none; }
+.sanasto-row .sw.main { font-weight: 700; }
+/* Laatikko taulukkona: sarakeotsikkona suomen muoto, alla saamen muoto (sanastot.js) */
+.sanasto-row.sg { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); column-gap: 8px; row-gap: 2px; align-items: center; }
+.sanasto-row.sg.dial { grid-template-columns: 1.7em repeat(var(--cols), minmax(0, 1fr)); }
+.sg-ui { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.sg-span, .sg-full { grid-column: 1 / -1; }
+.sanasto-row.sg.dial .sg-span { grid-column: 2 / -1; }
+.sg-cell { font-size: 15px; min-width: 0; }
+.sg-cell .sw-wrap { white-space: nowrap; gap: 0; flex-wrap: wrap; }
+.sanasto-row.sg.rows { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); row-gap: 1px; }
+.sg-cell .sw-ico { width: 20px; height: 20px; }
+.sg-cell .sw-ico svg { width: 12px; height: 12px; }
+/* Murremerkintä omassa sarakkeessaan vasemmalla (tyhjä, jos sanalla ei ole murre-eroa) */
+.sanasto-dial { justify-self: start; font-size: 11px; color: var(--muted); padding: 1px 6px; border-radius: 99px; background: var(--chip); text-align: center; }
+.sanasto-dial:empty { display: block; background: none; padding: 0; }
+.sanasto-note { font-size: 13px; color: var(--muted); font-style: italic; margin-top: 3px; }
 
 /* Käyttöliittymän kieli: valitsin valikossa ja aloitussivulla */
 .lang-switch svg {
@@ -104,7 +289,7 @@ select {
 .primary-btn:disabled { opacity: .5; cursor: default; }
 .link-btn { background: none; border: 0; color: var(--muted); font-size: 13px; cursor: pointer; padding: 4px 0; }
 .link-btn:hover { color: var(--accent); }
-.history-actions { display: flex; align-items: center; margin-top: 8px; }
+.history-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
 .history-actions .link-btn { padding: 10px 0; }
 #clear-history { margin-left: auto; }
 
@@ -129,7 +314,10 @@ select {
 .suggestions li.sugg-loading { color: var(--muted); font-size: 13px; cursor: default; pointer-events: none; }
 .sugg-ring { width: 14px; height: 14px; flex: none; border-radius: 50%; border: 2px solid var(--line, rgba(127, 127, 127, .3)); border-top-color: var(--accent); animation: speak-spin .8s linear infinite; }
 .suggestions li .sugg-form { color: var(--muted); }
-.suggestions li .pos { color: var(--subtle); font-size: 12px; }
+/* Tarkoititko-ehdotus hakukentän listassa (app.js: suggestWords) */
+.suggestions li.sugg-dym .sugg-dym-label { color: var(--muted); font-size: 13px; }
+/* Tarkoititko-rivit ovat tavallisia rivejä otsikon alla (ennen: sininen sana samalla rivillä kuin "Tarkoititko") */
+.suggestions li .pos { color: var(--muted); font-size: 12px; }
 .suggestions li .trans { color: var(--muted); font-size: 13px; margin-left: auto; text-align: right; }
 .suggestions li.active, .suggestions li:hover { background: var(--select); }
 
@@ -154,7 +342,10 @@ select {
 .toggle-list .switch-row { align-items: flex-start; }
 .toggle-list .switch { margin-top: 2px; }
 .extra-translations { font-size: 15px; margin: -4px 0 10px; }
-.word-list .empty { color: var(--subtle); font-size: 13px; padding: 4px 8px; }
+/* Saamenkielinen määritelmä (dict-sme) sanakortissa käännöksen alla */
+.sme-def { font-size: 15px; margin: -4px 0 10px; font-style: italic; color: var(--muted); }
+.sme-def b { font-style: normal; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; margin-right: 6px; }
+.word-list .empty { color: var(--muted); font-size: 13px; padding: 4px 8px; }
 
 .card {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
@@ -167,10 +358,16 @@ main > * + * { margin-top: 12px; }
 .progress { height: 8px; background: var(--chip); border-radius: 99px; overflow: hidden; margin-top: 12px; }
 #progress-bar { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
 .welcome h1 { margin: 4px 0; font-size: 26px; }
+/* Tämä päivä saameksi otsikon alla */
+.today { margin: 2px 0 10px; font-size: 16.5px; font-weight: 600; }
 .lead { color: var(--muted); margin-top: 0; font-size: 16px; }
-.tips { display: grid; grid-template-columns: 120px 1fr; gap: 6px 12px; margin: 18px 0 22px; }
+/* Aloitussivun vinkit taulukkona kuten taivutustaulukko: rivit viivoin erotettuina, joka toinen sävytetty */
+.tips { display: grid; grid-template-columns: 130px 1fr; margin: 18px 0 22px; border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden; }
+.tips dt, .tips dd { margin: 0; padding: 9px 12px; border-top: 1px solid var(--border); }
+.tips dt:first-of-type, .tips dd:first-of-type { border-top: 0; }
+.tips dt:nth-of-type(even), .tips dd:nth-of-type(even) { background: var(--surface-alt); }
 .tips dt { color: var(--accent); font-weight: 700; }
-.tips dd { margin: 0; }
 /* Kertavihje valikosta (app.js: showMenuTip); napautus menee vihjeen läpi sen alla olevalle */
 .menu-tip {
   position: fixed; z-index: 35; max-width: min(320px, calc(100vw - 32px)); padding: 10px 14px; border-radius: 10px;
@@ -191,6 +388,9 @@ main > * + * { margin-top: 12px; }
 }
 .chips button:hover { background: var(--chip-hover); }
 .chips button.selected { background: var(--accent); color: var(--accent-text); }
+/* Tummassa teemassa --accent (#3b82f6) on valkoiselle tekstille liian vaalea (3,7:1): valittu siru tummemmalla sinisellä */
+:root[data-theme="dark"] .chips button.selected { background: #2563eb; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .chips button.selected { background: #2563eb; } }
 .chips button.random { background: var(--speak-bg); color: var(--speak); }
 .results button { font-size: 13px; }
 /* Tarkoititko: sama sana saamen erikoiskirjaimin */
@@ -210,14 +410,194 @@ main > * + * { margin-top: 12px; }
 .word-title { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .word-title h1 { margin: 0; font-size: 32px; line-height: 1.15; }
 .badge { background: var(--chip); color: var(--chip-text); border-radius: 6px; padding: 2px 8px; font-size: 13px; font-weight: 600; }
-.star-btn { background: none; border: 0; font-size: 24px; color: var(--subtle); cursor: pointer; padding: 0 4px; }
+.star-btn { background: none; border: 0; font-size: 24px; color: var(--muted); cursor: pointer; padding: 0 4px; }
 .star-btn.on { color: #eab308; }
+/* Virheilmoitus otsikkorivin lopussa (ei kilpaile kuuntelun kanssa): himmeä pilleri, oikeaan reunaan */
+.report-top { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--border); color: var(--muted); font-size: 13px; text-decoration: none; white-space: nowrap; }
+.report-top:hover { color: var(--accent); border-color: var(--accent); }
 .speak-btn {
   position: relative; flex: none; display: inline-grid; place-items: center; width: 40px; height: 40px;
   padding: 0; border: 0; border-radius: 50%; cursor: pointer; background: var(--speak-bg); color: var(--speak);
   transition: transform .1s, filter .1s;
 }
 .speak-btn svg { width: 21px; height: 21px; }
+/* Äänilista soi (sanastot.js): pysäytysneliö ja kehä, joka täyttyy soiton edetessä */
+.speak-btn.playing svg:not(.play-ring) { width: 19px; height: 19px; }
+.play-ring { position: absolute; inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px); transform: rotate(-90deg); pointer-events: none; }
+/* Lukutaulukon osion soittopainike: kaiutin + Kuuntele; soidessa pysäytysneliö ja täyttyvä kehä kuvakkeen ympärillä */
+.nt-play { display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px 3px 3px; border-radius: 999px; border: 0;
+  background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 0 0 1px color-mix(in srgb, var(--tc, var(--accent)) 25%, transparent);
+  color: var(--text); font: inherit; font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums; cursor: pointer;
+  transition: transform .1s, filter .1s; -webkit-tap-highlight-color: transparent; }
+.nt-play:active { transform: scale(.94); filter: brightness(.92); }
+/* Ilmansuunnat kompassina */
+.compass { display: grid; grid-template-columns: 1fr auto 1fr; grid-template-rows: auto auto auto; gap: 10px 8px; align-items: center;
+  justify-items: center; padding: 16px 8px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); flex-shrink: 0; }
+.cmp-rose { grid-area: 2 / 2; width: 92px; height: 92px; }
+.cmp-rose svg { width: 100%; height: 100%; }
+.cmp-rose circle { fill: color-mix(in srgb, var(--tc, var(--accent)) 7%, var(--surface)); stroke: var(--border); stroke-width: 1.5; }
+.cmp-n { fill: #dc2626; } .cmp-s { fill: var(--muted); } .cmp-ew { fill: color-mix(in srgb, var(--muted) 55%, transparent); }
+.cmp-dir { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1px; min-width: 0; }
+.cmp-n.cmp-dir { grid-area: 1 / 1 / 2 / 4; } .cmp-s.cmp-dir { grid-area: 3 / 1 / 4 / 4; }
+.cmp-w.cmp-dir { grid-area: 2 / 1; } .cmp-e.cmp-dir { grid-area: 2 / 3; }
+.cmp-sme { font-size: 19px; font-weight: 700; }
+.cmp-fi { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.cmp-forms { font-size: 13px; color: var(--muted); }
+/* Värit: jokainen omalla rivillään, vasemmalla värikaistale joka liukuu kortin pohjaan */
+.colour-grid { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+.colour { position: relative; display: flex; align-items: center; gap: 14px; min-height: 54px; padding: 6px 14px 6px 6px; border-radius: 14px;
+  border: 1px solid var(--border); overflow: hidden;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c) 34%, var(--surface)) 0%, color-mix(in srgb, var(--c) 10%, var(--surface)) 40%, var(--surface) 75%); }
+.col-sw { flex: none; align-self: stretch; width: 42px; border-radius: 10px; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .col-sw { box-shadow: inset 0 0 0 1px rgba(255,255,255,.28); } }
+:root[data-theme="dark"] .col-sw { box-shadow: inset 0 0 0 1px rgba(255,255,255,.28); }
+.col-txt { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.col-sme { font-size: 17px; font-weight: 700; }
+.col-ex { font-size: 13px; }
+.col-ex .sw { font-weight: 600; }
+.col-ex-fi { color: var(--muted); }
+.col-fi { flex: none; font-size: 13px; color: var(--muted); }
+/* Sukupuu */
+.kin-tree { display: flex; flex-direction: column; align-items: stretch; gap: 14px; flex-shrink: 0; }
+.kt-level { display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; }
+.kt-level + .kt-level::before, .kt-sides::before, .kt-sides + .kt-level::before { content: ""; position: absolute; top: -14px; left: 50%; width: 2px; height: 12px; background: var(--border); }
+.kt-sides { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.kt-cap { font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); text-align: center; }
+.kt-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.kt-node { display: flex; flex-direction: column; align-items: center; gap: 0; min-width: 84px; padding: 7px 10px; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--border); text-align: center; }
+.kt-node.you { justify-content: center; background: color-mix(in srgb, var(--tc, var(--accent)) 16%, var(--surface)); border-color: color-mix(in srgb, var(--tc, var(--accent)) 45%, transparent); }
+.kt-node.you .kt-sme { font-weight: 700; color: var(--tb, var(--tc, var(--accent))); }
+.kt-sme { font-size: 16px; font-weight: 700; }
+.kt-fi { font-size: 11.5px; color: var(--muted); line-height: 1.25; }
+.kt-side { --sc: #2563eb; display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 8px; border-radius: 14px;
+  background: color-mix(in srgb, var(--sc) 7%, var(--surface)); border: 1px solid color-mix(in srgb, var(--sc) 25%, transparent); }
+.kt-side.m { --sc: #db2777; }
+.kt-side .kt-cap { color: var(--sc); }
+.kt-side .kt-node { min-width: 0; }
+.kt-node.parent { border-color: color-mix(in srgb, var(--sc) 45%, transparent); }
+.kt-node.parent .kt-sme { font-size: 17px; }
+.kt-sib { display: flex; flex-direction: column; gap: 5px; }
+.kt-sib .kt-node { padding: 5px 8px; }
+/* Tervehdykset keskusteluna */
+.cv { display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; }
+.cv .kt-cap { text-align: left; }
+.cv-b { max-width: 78%; display: flex; flex-direction: column; padding: 8px 13px; border-radius: 16px; }
+.cv-b.l { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.cv-b.r { align-self: flex-end; background: color-mix(in srgb, var(--tc, var(--accent)) 16%, var(--surface)); border-bottom-right-radius: 4px; text-align: right; }
+/* Puhuja kuplan vieressä: poika vasemmalla, tyttö oikealla */
+.cv-line { display: flex; align-items: flex-end; gap: 7px; }
+.cv-line.r { flex-direction: row-reverse; }
+.cv-line .cv-b { max-width: calc(100% - 50px); }
+.cv-face { flex: none; width: 38px; height: 38px; border-radius: 50%; overflow: hidden; display: block;
+  background: #dbe4f5; box-shadow: 0 0 0 1.5px var(--border); }
+.cv-face.r { background: #f5dbe0; }
+.cv-face svg { width: 100%; height: 100%; display: block; }
+.cv-sme { font-size: 17px; font-weight: 700; }
+.cv-fi { font-size: 12.5px; color: var(--muted); }
+.cv-more { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; flex-shrink: 0; }
+.cv-chip { display: flex; flex-direction: column; padding: 6px 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+.cv-chip .cv-sme { font-size: 15px; }
+/* Porot: elämänkaari kahdella kaistalla */
+.rd-life { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; padding: 10px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); }
+.rd-calf { grid-column: 1 / -1; display: flex; justify-content: center; }
+.rd-lane { font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; text-align: center; color: #2563eb; }
+.rd-lane.f { color: #db2777; }
+.rd-node { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 7px 8px; border-radius: 12px;
+  background: color-mix(in srgb, var(--tc, var(--accent)) 7%, var(--surface)); border: 1px solid var(--border); }
+.rd-calf .rd-node { min-width: 130px; }
+.ico-tile.rd-herd { flex-direction: column; align-items: flex-start; gap: 0; }
+/* Lumisanat omana korttinaan */
+.snow-card { margin-top: 8px; padding: 10px; border-radius: 16px; background: color-mix(in srgb, #0ea5e9 9%, var(--surface)); border: 1px solid color-mix(in srgb, #0ea5e9 30%, transparent); flex-shrink: 0; }
+.snow-card h3 { margin: 0 0 8px; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #0284c7; }
+.snow-card h3 svg { width: 18px; height: 18px; }
+.snow-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.snow-w { display: flex; flex-direction: column; padding: 8px 10px; border-radius: 12px; background: var(--surface); }
+/* Kysymyssanat */
+.q-list { display: flex; flex-direction: column; gap: 6px; }
+.q-card { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: 12px; padding: 9px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); }
+.q-word { display: flex; flex-direction: column; padding-right: 10px; border-right: 2px solid color-mix(in srgb, var(--tc, var(--accent)) 35%, transparent); }
+.q-sme { font-size: 20px; font-weight: 800; color: var(--tb, var(--tc, var(--accent))); }
+.q-fi { font-size: 12px; color: var(--muted); }
+.q-ex { display: flex; flex-direction: column; min-width: 0; }
+.q-ex .sw { font-size: 15px; font-weight: 600; }
+.q-ex-fi { font-size: 12.5px; color: var(--muted); }
+/* Päivät aikajanana ja "nyt" omana sirunaan */
+.timeline { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: stretch; gap: 4px; }
+.tl-step { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 0; padding: 10px 4px;
+  border-radius: 14px; background: var(--surface); border: 1px solid var(--border); text-align: center; }
+.tl-step.today { background: color-mix(in srgb, var(--tc, var(--accent)) 14%, var(--surface)); border-color: color-mix(in srgb, var(--tc, var(--accent)) 45%, transparent); }
+.tl-step.today .tl-sme { font-size: 19px; }
+.tl-fi { font-size: 12px; color: var(--muted); }
+.tl-sme { font-size: 17px; font-weight: 700; }
+.tl-arrow { align-self: center; color: var(--muted); font-size: 15px; }
+.tl-now { display: flex; align-items: center; gap: 8px; align-self: center; margin-top: 2px; padding: 6px 14px; border-radius: 999px;
+  background: var(--surface); border: 1px solid var(--border); }
+.tl-dot { width: 8px; height: 8px; border-radius: 50%; background: #16a34a; box-shadow: 0 0 0 3px color-mix(in srgb, #16a34a 25%, transparent); }
+/* Kello ja aika: kuvakkeelliset tiilet */
+.ico-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ico-tile { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 10px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); }
+.ico-tile svg { flex: none; width: 34px; height: 34px; padding: 6px; border-radius: 10px; color: var(--tc, var(--accent));
+  background: color-mix(in srgb, var(--tc, var(--accent)) 12%, var(--surface)); }
+.it-txt { display: flex; flex-direction: column; min-width: 0; }
+.it-sme { font-size: 16px; font-weight: 700; }
+.it-fi { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+/* Vuorokausi: taivaan värit aamusta yöhön, kulmassa aurinko tai kuu */
+.day-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.day { --dc: #b45309; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 1px; min-width: 0;
+  padding: 10px 12px 12px; border-radius: 14px; border: 1px solid rgba(0,0,0,.06); color: #1f2937; }
+.day > span { position: relative; z-index: 1; }
+.day .sw, .day .day-ui { color: inherit; }
+.day-art { position: absolute; right: -8px; bottom: -10px; width: 86px; height: 86px; opacity: .55; pointer-events: none; }
+.day-art .sun { fill: #fbbf24; } .day-art .ray line, .day-art .hz, .day-art .wave line { stroke: #f59e0b; stroke-width: 3; stroke-linecap: round; }
+.day-art .moon { fill: #fde68a; } .day-art .crater { fill: #fcd34d; } .day-art .star { fill: #fef9c3; }
+.day.d0 { background: linear-gradient(170deg, #fff7ed 0%, #fed7aa 100%); }
+.day.d1 { background: linear-gradient(170deg, #e0f2fe 0%, #fef9c3 100%); --dc: #a16207; }
+.day.d2 { background: linear-gradient(180deg, #bae6fd 0%, #e0f2fe 100%); --dc: #0369a1; }
+.day.d3 { background: linear-gradient(170deg, #fef3c7 0%, #fdba74 100%); --dc: #c2410c; }
+.day.d4 { background: linear-gradient(180deg, #fdba74 0%, #f9a8d4 100%); --dc: #9d174d; }
+.day.d4 .day-art .sun { fill: #f97316; } .day.d4 .day-art .hz, .day.d4 .day-art .wave line { stroke: #be185d; }
+.day.d5 { background: linear-gradient(180deg, #3730a3 0%, #1e1b4b 100%); color: #e5e7eb; --dc: #c7d2fe; }
+.day.d6 { background: linear-gradient(180deg, #172554 0%, #020617 100%); color: #e5e7eb; --dc: #a5b4fc; }
+.day.d5 .day-art, .day.d6 .day-art { opacity: .85; }
+.day.d5 .day-ui, .day.d6 .day-ui { color: #a5b4fc; }
+.day.d5 .sw, .day.d6 .sw { text-decoration-color: rgba(229,231,235,.45); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .day:not(.d5):not(.d6) { filter: brightness(.82) saturate(.9); } }
+:root[data-theme="dark"] .day:not(.d5):not(.d6) { filter: brightness(.82) saturate(.9); }
+.day:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.day-fi { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--dc); }
+.day-sme { font-size: 17px; font-weight: 700; }
+.day-form { overflow-wrap: anywhere; }
+.day-form { font-size: 13px; }
+.day-ui { opacity: .7; }
+/* Vuodenajat: 2 x 4 ruudukko, kevät vihreä, kesä keltainen, syksy oranssi, talvi sininen */
+.season-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex-shrink: 0; }
+.season { --sc: #16a34a; position: relative; display: flex; flex-direction: column; gap: 1px; min-width: 0; padding: 10px 12px 11px; border-radius: 14px;
+  background: color-mix(in srgb, var(--sc) 7%, var(--surface)); border: 1px solid color-mix(in srgb, var(--sc) 28%, transparent);
+  border-top: 4px solid var(--sc); }
+.season.s1 { --sc: #d97706; } .season.s2 { --sc: #ea580c; } .season.s3 { --sc: #2563eb; }
+.season.main { background: color-mix(in srgb, var(--sc) 15%, var(--surface)); }
+.se-ico { position: absolute; top: 9px; right: 10px; width: 22px; height: 22px; color: var(--sc); opacity: .45; }
+.season.main .se-ico { opacity: .75; }
+.se-fi { padding-right: 26px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: color-mix(in srgb, var(--sc) 75%, var(--text)); }
+.se-sme { font-size: 18px; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+.se-form { font-size: 13.5px; color: var(--text); opacity: .9; }
+.se-ui { font-size: 12.5px; color: var(--muted); }
+.se-note { margin-top: 3px; align-self: flex-start; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600;
+  color: color-mix(in srgb, var(--sc) 80%, var(--text)); background: color-mix(in srgb, var(--sc) 14%, var(--surface)); }
+.list-band { display: flex; align-items: center; gap: 10px; margin: 2px 0 8px; }
+.list-band > span { font-size: 12.5px; color: var(--muted); }
+.pl-ico { position: relative; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%;
+  background: var(--speak-bg); color: var(--speak); }
+.pl-ico svg:not(.play-ring) { width: 14px; height: 14px; }
+.pl-ico .play-ring { inset: -2px; width: calc(100% + 4px); height: calc(100% + 4px); }
+.nt-play.playing .pl-ico svg:not(.play-ring) { width: 13px; height: 13px; }
+/* Puhepalvelun haku kesken: kehä pyörii osittaisena, kunnes ääni alkaa ja kehä täyttyy soiton mukaan */
+.play-ring.pending { animation: ring-wait .9s linear infinite; }
+.play-ring.pending circle { stroke-dashoffset: 72; }
+@keyframes ring-wait { from { transform: rotate(-90deg); } to { transform: rotate(270deg); } }
+.play-ring circle { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 100; }
 .speak-btn:hover { background: var(--speak-hover); }
 .speak-btn:active { transform: scale(.88); filter: brightness(.9); }
 .speak-btn:disabled { cursor: progress; }
@@ -236,7 +616,10 @@ main > * + * { margin-top: 12px; }
   font-size: 12px; font-weight: 800; background: var(--accent); color: var(--accent-text);
 }
 .link-pill.gt .lp-mark { background: var(--gt); color: var(--gt-bg); }
-.lp-arrow { color: var(--subtle); font-size: 12px; margin-left: -2px; }
+/* Tumma teema: s-merkin pohja tummempi sininen, valkoinen kirjain vähintään 4,5:1 (yötesti 2026-11-14) */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .link-pill:not(.gt) .lp-mark { background: #2563eb; } }
+:root[data-theme="dark"] .link-pill:not(.gt) .lp-mark { background: #2563eb; }
+.lp-arrow { color: var(--muted); font-size: 12px; margin-left: -2px; }
 /* Leveällä näytöllä oma solu sanan oikealla puolella; kapealla rivi kortin alaosassa */
 @media (min-width: 821px) {
   .word { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 24px; align-items: start; }
@@ -268,12 +651,17 @@ main > * + * { margin-top: 12px; }
 .gc-val .other { color: var(--muted); }
 .grad-cell.group .gc-val { font-size: 14px; font-weight: 600; }
 .gc-val .nw { white-space: nowrap; }
+.grad-cell.infl-class { flex-basis: 100%; }
+.gradation > .muted + .grad-cells { margin-top: 8px; }
+.gc-rule { display: block; margin-top: 2px; font-size: 13px; font-weight: 400; white-space: normal; color: var(--muted); }
+.gc-rule .gd { color: var(--grade-gd, var(--gd)); }
+.gc-rule .hd { color: var(--grade-hd, var(--hd)); }
 .gradation .arrow { color: var(--subtle); font-weight: 400; margin: 0 2px; }
 /* Puhelimessa sanapari ja ryhmä omille riveilleen, koska pitkät sanat eivät mahdu puolikkaaseen; väliin konsonantit ja asteet */
 @media (max-width: 480px) {
   .grad-cells { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .grad-cell { min-width: 0; padding-inline: 10px; }
-  .grad-cell.forms, .grad-cell.group { grid-column: 1 / -1; }
+  .grad-cell.forms, .grad-cell.group, .grad-cell.infl-class { grid-column: 1 / -1; }
   .gc-val { white-space: normal; overflow-wrap: anywhere; }
 }
 #word-info:empty { display: none; }
@@ -302,6 +690,30 @@ table.paradigm tbody tr:nth-child(even) td { background: var(--surface-alt); }
 table.paradigm tr.section td {
   background: var(--section) !important; color: var(--accent); font-weight: 700; padding-top: 10px;
 }
+/* Verbitaulukko: yksikkö, duaali ja monikko omissa pyöristetyissä laatikoissaan, pääosioiden välissä rako.
+   Kapeassa näkymässä vaihtoehtoiset muodot rivittyvät /-merkin kohdalta, jotta laatikon oikea reuna näkyy. */
+table.paradigm.grouped { border-collapse: separate; border-spacing: 0; --grp-line: color-mix(in srgb, var(--accent) 22%, transparent); }
+table.paradigm.grouped td { white-space: normal; }
+table.paradigm.grouped .form, table.paradigm.grouped .pron, table.paradigm.grouped .form-tr { white-space: nowrap; }
+table.paradigm.grouped tbody tr td { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+table.paradigm.grouped tbody tr td:first-child { border-left: 1px solid var(--grp-line); }
+table.paradigm.grouped tbody tr td:last-child { border-right: 1px solid var(--grp-line); }
+table.paradigm.grouped td.label { padding-left: 14px; }
+table.paradigm.grouped tr.g-first td { border-top: 1px solid var(--grp-line); padding-top: 8px; }
+table.paradigm.grouped tr.g-last td { border-bottom: 1px solid var(--grp-line); padding-bottom: 8px; }
+table.paradigm.grouped tr.g-first td:first-child { border-top-left-radius: 16px; }
+table.paradigm.grouped tr.g-first td:last-child { border-top-right-radius: 16px; }
+table.paradigm.grouped tr.g-last td:first-child { border-bottom-left-radius: 16px; }
+table.paradigm.grouped tr.g-last td:last-child { border-bottom-right-radius: 16px; }
+table.paradigm.grouped tr.section td { border-left: 0; border-right: 0; padding-bottom: 6px; }
+table.paradigm.grouped tr.section td:first-child, table.paradigm.grouped thead th:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+table.paradigm.grouped tr.section td:last-child, table.paradigm.grouped thead th:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+table.paradigm.grouped tr.gap td { height: 6px; padding: 0; background: transparent; border: 0; }
+table.paradigm.grouped tr.gap-sec td { height: 14px; }
+table.paradigm.grouped tr.gap-after td { height: 4px; }
+.table-wrap + .table-wrap { margin-top: 14px; }
+/* Ruudukkotaulukoissa (sijamuodot) laatikon sisällä hento raidoitus, joka auttaa pitkän rivin seuraamisessa */
+table.paradigm.boxed tbody tr:not(.gap):not(.section):nth-child(even) td { background: color-mix(in srgb, var(--accent) 9%, transparent); }
 .form { cursor: pointer; border-radius: 4px; }
 .form:hover { background: var(--select); }
 .form.picked { background: var(--select); outline: 2px solid var(--accent); }
@@ -354,26 +766,33 @@ table.paradigm tr.section td {
 .support-actions a { text-decoration: none; display: inline-block; }
 .feedback-dlg { width: min(460px, calc(100vw - 32px)); }
 .sep { color: var(--subtle); }
-.hint { color: var(--subtle); font-size: 13px; margin: 12px 0 0; }
+.hint { color: var(--muted); font-size: 13px; margin: 12px 0 0; }
 
 /* Merkitykset */
 .meaning { margin: 0 0 18px; }
 .lang-head { margin: 22px 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 .meaning .head { font-weight: 700; font-size: 16px; }
 .meaning .nr { color: var(--accent); margin-right: 6px; }
+.meaning.also-meanings { margin-top: -6px; font-size: 15px; }
 .meaning .expl { font-style: italic; font-weight: 400; }
 .meaning .restr { font-style: italic; color: var(--muted); font-weight: 400; font-size: 14px; }
+.reg-label { display: inline-block; border: 1px solid var(--reg); color: var(--reg); border-radius: 5px; padding: 0 5px;
+             font-size: 12px; font-weight: 500; font-style: normal; line-height: 1.5; vertical-align: 1px; }
+.reg-label.reg-offensive { border-color: var(--reg-strong); color: var(--reg-strong); }
+/* Tuloslistan ja hakuehdotusten painikkeissa merkintä painikkeen värillä, jotta se näkyy myös valitussa */
+button .reg-label, li .reg-label { color: inherit; border-color: currentColor; opacity: 0.85; font-size: 11px; }
 .meaning .tag { background: var(--chip); color: var(--muted); border-radius: 5px; padding: 1px 6px; font-size: 12px; font-weight: 400; margin-left: 6px; }
 .example { margin: 6px 0 0 24px; }
 .example .sme { display: block; }
 .example .fin { display: block; color: var(--muted); }
-.example .missing { display: block; color: var(--subtle); font-style: italic; font-size: 13px; }
+.example .missing { display: block; color: var(--muted); font-style: italic; font-size: 13px; }
 .raw { font-family: ui-monospace, "DejaVu Sans Mono", monospace; font-size: 13px; }
 .raw .tag { color: var(--muted); display: inline-block; min-width: 200px; }
 
 dialog {
   background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 12px;
-  max-width: 540px; padding: 24px 28px;
+  /* Ei leveämpi kuin näyttö myöskään suurella fonttikoolla (pitkät sanat, yötesti 2026-11-15: Tietoa 478 px / 412 px) */
+  max-width: min(540px, calc(100vw - 32px)); padding: 24px 28px; overflow-wrap: break-word;
 }
 dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
@@ -397,19 +816,189 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 }
 /* Tekstintunnistus (Android-sovellus): kuva koko näytön kokoisena, sanakirjan sanat alleviivattuina samassa
    kohdassa ja asennossa kuin kuvassa; napautetun sanan päällä kupla (sana, käännös, linkki sanakirjaan) */
-.ocr-btn { font-size: 18px; padding: 6px 10px; line-height: 1.2; }
-.ocr-view {
-  position: fixed; inset: 0; z-index: 45; background: var(--bg); padding: 12px;
-  display: flex; flex-direction: column;
+.lause-view { position: fixed; inset: 0; z-index: 45; background: var(--bg); padding: 12px 16px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 10px; }
+.lause-view[hidden] { display: none; }
+/* Sisältö ei saa kutistua, kun se on näyttöä korkeampi (näppäimistö auki, pitkä lause): näkymä vierii.
+   Muuten tekstikenttä painuu matalaksi esim. kaiutinta painettaessa. */
+.lause-view > * { flex-shrink: 0; }
+#lause-input { min-height: 3.2em; }
+.lause-head { display: flex; align-items: center; justify-content: space-between; }
+.lause-head h2 { margin: 0; font-size: 20px; }
+.lause-view > .small { margin: 0; }
+#lause-input { font: inherit; font-size: 17px; padding: 10px 44px 10px 10px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); resize: vertical; width: 100%; box-sizing: border-box; display: block; }
+.lause-input-wrap { position: relative; }
+.lause-clear { position: absolute; top: 6px; right: 6px; width: 34px; height: 34px; border: 0; border-radius: 50%;
+  background: var(--chip); color: var(--muted); font-size: 22px; line-height: 1; cursor: pointer; }
+.lause-clear[hidden] { display: none; }
+.lause-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.lause-chip { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 6px 10px; border-radius: 10px;
+  border: 1px solid transparent; background: var(--gd-bg); color: var(--text); font: inherit; cursor: pointer; text-align: left; }
+.lause-chip.approx { background: var(--chip); }
+.lause-chip.unk { background: var(--hd-bg); border-style: dashed; border-color: var(--hd); }
+.lc-fin { font-size: 12px; color: var(--muted); }
+.lc-sme { font-size: 17px; font-weight: 700; }
+.lc-base { font-size: 12px; color: var(--muted); }
+.lause-pop { padding: 10px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 6px; }
+.lause-pop .lp-head { margin: 0 0 2px; font-weight: 600; font-size: 14px; }
+.lause-pop .lp-top { display: flex; align-items: flex-start; gap: 8px; }
+.lause-pop .lp-top .lp-head { flex: 1; }
+.lause-pop .lp-close { flex: none; width: 32px; height: 32px; margin: -6px -6px 0 0; border: 0; border-radius: 50%;
+  background: transparent; color: var(--muted); font-size: 24px; line-height: 1; cursor: pointer; }
+.lause-chip.open { border-color: var(--accent, #2563eb); box-shadow: 0 0 0 1px var(--accent, #2563eb); }
+.lause-pop .lp-sub { margin: 6px 0 0; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.lause-pop .lp-search { display: block; margin-top: 8px; font-size: 14px; }
+.lause-pop label { display: flex; gap: 8px; align-items: center; cursor: pointer; flex: 1; min-width: 0; }
+.lause-pop .lp-row { display: flex; align-items: center; gap: 8px; }
+.lause-pop .lp-gloss { display: block; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.lause-pop .lp-info { flex: none; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border);
+  background: var(--chip); color: var(--text); font: italic 700 15px/1 Georgia, serif; cursor: pointer; }
+.lause-card { position: fixed; inset: 0; z-index: 60; background: rgba(0, 0, 0, .35); display: flex;
+  align-items: flex-end; justify-content: center; }
+.lause-card[hidden] { display: none; }
+.lcard-box { width: min(560px, 100%); max-height: 75vh; overflow-y: auto; background: var(--surface); color: var(--text);
+  border-radius: 14px 14px 0 0; padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0, 0, 0, .25); }
+.lcard-head { display: flex; align-items: center; gap: 10px; }
+.lcard-lemma { font-size: 22px; font-weight: 700; }
+.lcard-head .lcard-speak { margin-left: auto; }
+.lcard-form { margin: 6px 0 0; }
+.lcard-body .lp-sub { margin: 10px 0 2px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.lcard-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.lause-result { padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+.lause-result .small { margin: 0 0 4px; }
+.lause-sme-row { display: flex; align-items: center; gap: 12px; }
+.lause-sme-row .speak-btn { flex: none; }
+.lause-sme { margin: 0; flex: 1; font-size: 22px; font-weight: 700; }
+#search-btn .sb-icon { display: none; width: 20px; height: 20px; vertical-align: -4px; }
+/* Puhelin: hakukenttä lähes koko leveydeltä, Hae pelkkä suurennuslasi samalla rivillä (kamera ja lausekääntäjä ovat
+   yläpalkissa). Raja 600 px: puhelimet ilmoittavat leveydeksi 360-480 px näytön koon ja fonttikoon asetuksista riippuen. */
+@media (max-width: 600px) {
+  #search-btn .sb-label { display: none; }
+  #search-btn .sb-icon { display: inline; }
+  #search-btn { padding-left: 12px; padding-right: 12px; }
+  .searchbar .search-box { flex: 1 1 calc(100% - 68px); min-width: 0; }
 }
+/* Kuvahaku (uusi ilme 2026-11-20): kuva koko näytöllä, säätimet sen päällä kuin kamerasovelluksessa. Säätimet ovat
+   aina tummia (kuvan päällä), paneelit (sana, ⋯) teeman värisiä. */
+.ocr-view { position: fixed; inset: 0; z-index: 45; background: #0b0d10; color: #e5e9f0; --ov: rgba(23, 30, 39, .82); }
 .ocr-view[hidden] { display: none; }
-.ocr-head { display: flex; flex-wrap: wrap; gap: 8px; }
-.ocr-head #ocr-close { margin-left: auto; }
-#ocr-status { margin: 8px 2px; }
 .ocr-stage {
-  position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none;
-  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
-  border-radius: 8px; background: #111;
+  position: absolute; inset: 0; overflow: hidden; touch-action: none;
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; background: #0b0d10;
+}
+.ocr-top { position: absolute; left: 0; right: 0; top: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: max(12px, env(safe-area-inset-top)) 12px 22px; background: linear-gradient(rgba(11, 13, 16, .85), rgba(11, 13, 16, 0)); pointer-events: none; }
+.ocr-top > * { pointer-events: auto; }
+.ocr-top-row { align-self: stretch; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ocr-round { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--ov); color: #e5e9f0;
+  display: grid; place-items: center; cursor: pointer; padding: 0; }
+.ocr-round svg { width: 20px; height: 20px; }
+.ocr-pill { flex: 0 1 auto; min-width: 0; height: 44px; display: inline-flex; align-items: center; gap: 5px; padding: 0 10px 0 14px; border: 0; border-radius: 22px;
+  background: var(--ov); color: #e5e9f0; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+.ocr-pill span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* Kapea näyttö tai iso fontti: pienempi teksti, nuoli kapeammaksi ja ▾ pois, jotta kielten nimet mahtuvat */
+.ocr-pill.tight { font-size: 13.5px; gap: 3px; padding: 0 12px; }
+.ocr-pill.tight .chev { display: none; }
+.ocr-pill svg { flex: none; width: 16px; height: 16px; color: #94a3b8; }
+.ocr-status { margin: 0; max-width: 100%; padding: 6px 12px; border-radius: 15px; background: var(--ov); font-size: 13px; line-height: 1.35; color: #cbd5e1; text-align: center; }
+.ocr-status:empty { display: none; }
+.ocr-view .ocr-offer { max-width: 560px; margin: 0; background: var(--ov); color: #e5e9f0; }
+.ocr-view .ocr-offer button:not(.primary) { background: transparent; color: #e5e9f0; }
+.ocr-bottom { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center;
+  padding: 30px 18px max(14px, env(safe-area-inset-bottom)); background: linear-gradient(rgba(11, 13, 16, 0), rgba(11, 13, 16, .9) 50%); }
+.ocr-tool { display: flex; flex-direction: column; align-items: center; gap: 5px; border: 0; background: none; color: #e5e9f0; font: inherit;
+  font-size: 13px; font-weight: 500; cursor: pointer; padding: 0; min-width: 0; }
+.ocr-tool:first-child { justify-self: start; }
+.ocr-tool:last-child { justify-self: end; }
+.ocr-tool > span { width: 48px; height: 48px; border-radius: 12px; background: var(--ov); display: grid; place-items: center; }
+.ocr-tool svg { width: 22px; height: 22px; }
+.ocr-tool b { font-weight: 500; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ocr-shutter { justify-self: center; width: 70px; height: 70px; border-radius: 50%; border: 4px solid #e5e9f0; background: none; padding: 4px; cursor: pointer; }
+.ocr-shutter span { display: block; width: 100%; height: 100%; border-radius: 50%; background: var(--accent, #3b82f6); }
+.ocr-shutter:active span { transform: scale(.9); }
+.ocr-view.empty .ocr-pick { visibility: hidden; }
+/* Alkunäkymä (ei kuvaa): kamera-kuvake ja lyhyt ohje keskellä */
+.ocr-empty { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 0 36px 80px;
+  text-align: center; color: #94a3b8; }
+.ocr-view.empty .ocr-empty { display: flex; }
+.ocr-empty svg { width: 64px; height: 64px; color: #64748b; }
+.ocr-empty p { margin: 0; max-width: 340px; font-size: 15px; line-height: 1.5; }
+/* Paneeli alhaalla: napautettu sana (#ocr-bubble) ja ⋯ (#ocr-settings); alapalkki piiloon paneelin ajaksi */
+.ocr-sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; margin: 0 auto; max-width: 560px; max-height: 62%;
+  display: flex; flex-direction: column; gap: 12px; padding: 8px 18px max(14px, env(safe-area-inset-bottom));
+  background: var(--surface); color: var(--text); border-radius: 22px 22px 0 0; box-shadow: 0 -12px 30px rgba(0, 0, 0, .4);
+  text-align: left; cursor: default; user-select: text; -webkit-user-select: text; }
+.ocr-sheet[hidden] { display: none; }
+.ocr-settings { max-height: 86%; }
+.ocr-view:has(.ocr-sheet:not([hidden])) .ocr-bottom { display: none; }
+.sh-handle { flex: none; align-self: center; width: 40px; height: 4px; border-radius: 2px; background: var(--border); }
+.sh-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 8px; }
+.sh-head { display: flex; align-items: flex-start; gap: 12px; }
+.sh-title { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; cursor: pointer; }
+.sh-word { font-size: 26px; font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
+.sh-base { font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.sh-base b { color: var(--text); font-weight: 600; }
+.sh-lab { font-size: 13px; color: var(--muted); }
+.sh-speak { flex: none; width: 48px; height: 48px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer;
+  background: var(--speak-bg); color: var(--speak); position: relative; padding: 0; }
+.sh-speak svg { width: 22px; height: 22px; }
+.sh-speak[hidden] { display: none; }
+.sh-tr { font-size: 20px; line-height: 1.35; overflow-wrap: anywhere; cursor: pointer; }
+.sh-tr .b-more, .ocr-sheet .b-more { color: var(--muted); }
+.sh-note { font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.sh-actions { flex: none; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; padding-top: 6px; border-top: 1px solid var(--border); }
+.sh-actions button { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 2px 2px; border: 0; border-radius: 10px;
+  background: none; color: var(--text); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; min-width: 0; }
+.sh-actions button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sh-actions svg { width: 22px; height: 22px; color: var(--accent); }
+.sh-actions [data-report] svg { color: var(--muted); }
+.sh-read { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.sh-read img { display: block; height: 40px; max-width: calc(100% - 70px); object-fit: contain; object-position: left; border-radius: 6px; border: 1px solid var(--border); }
+.sh-raw { padding: 3px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); font-size: 18px; overflow-wrap: anywhere; }
+.sh-q { font-size: 16px; font-weight: 600; margin-top: 2px; }
+.sh-card { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: 10px 14px; border-radius: 14px;
+  border: 1px solid var(--border); background: var(--surface-alt); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.sh-card b { font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
+.sh-card > span, .sh-part span { font-size: 14px; color: var(--accent); overflow-wrap: anywhere; }
+.sh-parts { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 6px; cursor: default; }
+.sh-part { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 2px 4px; border: 0; border-radius: 8px; background: none;
+  color: var(--text); font: inherit; text-align: left; cursor: pointer; min-width: 0; }
+.sh-plus { color: var(--muted); font-weight: 600; }
+.sh-chips { flex: none; display: flex; flex-wrap: wrap; gap: 8px; }
+.sh-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 20px; border: 1px solid var(--border);
+  background: none; color: var(--text); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+.sh-chip svg { width: 16px; height: 16px; flex: none; }
+.ocr-sheet .pressed { filter: brightness(.85); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+/* ⋯-paneeli */
+.os-sec { display: flex; flex-direction: column; gap: 8px; }
+.os-head { display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 600; min-height: 32px; }
+.os-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.os-chip { display: inline-flex; flex-direction: column; justify-content: center; min-height: 38px; padding: 4px 14px; border-radius: 19px;
+  border: 1px solid var(--border); background: var(--surface-alt); color: var(--text); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; text-align: left; }
+.os-chip small { font-size: 11.5px; font-weight: 400; color: var(--muted); }
+.os-chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-text, #fff); font-weight: 600; }
+.os-chip.on small { color: inherit; opacity: .85; }
+.os-swap { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; border: 0; border-radius: 16px; background: none;
+  color: var(--accent); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.os-swap svg { width: 16px; height: 16px; }
+.os-sep { height: 1px; background: var(--border); flex: none; }
+.os-rot { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.os-rot button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 8px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--surface-alt); color: var(--text); font: inherit; font-size: 14px; cursor: pointer; }
+.os-rot button:disabled { opacity: .45; cursor: default; }
+.os-rot svg { width: 18px; height: 18px; flex: none; }
+.os-mark { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.os-seg { display: flex; padding: 3px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); }
+.os-seg button { min-height: 36px; padding: 0 14px; border: 0; border-radius: 9px; background: none; color: var(--muted); font: inherit; font-size: 14px; cursor: pointer; }
+.os-seg button.active { background: var(--surface-alt); color: var(--text); font-weight: 600; box-shadow: 0 0 0 1px var(--border); }
+.os-done { flex: none; min-height: 50px; border-radius: 14px; border: 0; background: var(--accent); color: var(--accent-text, #fff); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
+/* Matala näyttö (puhelin vaakatasossa): paneeli korkeammaksi, alapalkki matalammaksi */
+@media (orientation: landscape) and (max-height: 520px) {
+  .ocr-sheet { max-height: 88%; }
+  .ocr-bottom { padding-top: 16px; }
+  .ocr-empty { padding-bottom: 40px; }
 }
 .ocr-photo { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 .ocr-photo img { display: block; width: 100%; height: 100%; pointer-events: none; user-select: none; }
@@ -441,23 +1030,46 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .mark-light.style-underline .ocr-word.picked {
   background: color-mix(in srgb, var(--mark) 40%, transparent); box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--mark) 55%, #000);
 }
-/* Suunta ja merkintätapa: pilleri ja paletti kuvan yläpuolella */
-.ocr-bar { position: relative; display: flex; align-items: center; gap: 8px; margin-top: 10px; }
-.ocr-dir, .ocr-style-btn {
-  display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border); background: var(--surface);
-  color: var(--text); border-radius: 99px; padding: 6px 14px; font: inherit; font-weight: 600; cursor: pointer;
+/* Tuntematon sana: himmeä katkoviiva, napautus näyttää lähimmät sanat */
+.ocr-photo .ocr-word.unknown { background: transparent; box-shadow: none; border: 1.5px dashed color-mix(in srgb, var(--mark) 45%, transparent); border-radius: 6px; }
+.ocr-photo .ocr-word.unknown.cap { border-style: dotted; border-color: color-mix(in srgb, var(--mark) 28%, transparent); }
+.ocr-photo .ocr-word.unknown.picked { background: color-mix(in srgb, var(--mark) 14%, transparent); border-color: var(--mark); }
+/* Tuntemattoman sanan otsikko koko kuplan levyinen (pitkä yhdyssana ei kavenna käännössaraketta), selite alle */
+.ocr-bubble .b-unknown > * { grid-column: 1 / -1; }
+.ocr-bubble .b-unknown .b-sme { white-space: normal; overflow-wrap: anywhere; }
+.ocr-bubble .b-unknown .b-tr { color: var(--muted); font-style: italic; font-size: 13px; padding: 0 0 2px; }
+/* Koko yhdyssanan suomennos korpuksesta vahvistettuna (≈ vaaratiedotteita) osien yläpuolella */
+.ocr-bubble .b-whole > * { grid-column: 1 / -1; }
+.ocr-bubble .b-whole .b-tr { font-weight: 600; overflow-wrap: anywhere; }
+/* Ehdokas- ja osarivi: saamen sana ja käännös vierekkäin, kun tilaa on; muuten käännös koko levyisenä sanan alle
+   (suuri tekstikoko 130 %: käännös valui ennen kirjain kirjaimelta kapeaan sarakkeeseen, yötesti 2026-11-18).
+   Saamen sana katkeaa vain, jos se ei mahdu kuplaan yksinkään. */
+.ocr-bubble .b-text .b-cand {
+  grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 12px;
+  cursor: pointer; border-top: 1px solid var(--border); margin-top: 3px; padding-top: 2px;
 }
-.ocr-dir svg { width: 18px; height: 18px; color: var(--accent); }
-.ocr-style-btn { padding: 6px; width: 36px; height: 36px; justify-content: center; margin-left: auto; }
-.ocr-style-btn span { width: 18px; height: 18px; border-radius: 50%; background: var(--mark-preview, #2563eb); }
-.ocr-style {
-  position: absolute; right: 0; top: calc(100% + 6px); z-index: 5; display: flex; flex-direction: column; gap: 12px;
-  padding: 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
+.ocr-bubble .b-cand .b-sme { flex: none; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.ocr-bubble .b-cand .b-tr { flex: 1 1 8em; min-width: 0; overflow-wrap: break-word; }
+/* Matala kuva-alue (puhelin vaakatasossa): kupla mahtuu alueeseen ja sen rivit vierivät (app.js: placeOcrBubble) */
+.ocr-bubble.tight .b-text { max-height: var(--bmax); overflow-y: auto; overscroll-behavior: contain; }
+.ocr-offer {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; padding: 10px 12px;
+  border-radius: 10px; border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent); font-size: 14px;
 }
-.ocr-style[hidden] { display: none; }
-.ocr-seg { float: none; }
-.ocr-seg button { padding: 5px 12px; font-size: 14px; }
+.ocr-offer[hidden] { display: none; }
+.ocr-offer-text { flex: 1 1 200px; }
+.ocr-offer-actions { display: flex; gap: 8px; margin-left: auto; }
+.ocr-offer button { border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 99px; padding: 6px 14px; font: inherit; cursor: pointer; }
+.ocr-offer button.ocr-offer-x { border: 0; background: none; font-size: 20px; line-height: 1; padding: 4px 6px; color: var(--muted); }
+/* Asetukset → Työkalut → Valokuvahaku: kuvan kielet ja käännöskielet */
+.ocr-opts { padding: 2px 8px 10px 8px; }
+.ocr-opts-head { font-size: 13px; font-weight: 600; color: var(--muted); margin: 8px 0 4px; }
+.ocr-opts-row { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.ocr-opt { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; }
+.ocr-opt input { accent-color: var(--accent); width: 18px; height: 18px; }
+.ocr-opts p { margin: 6px 0 0; }
+.ocr-offer button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
 .ocr-swatches { display: flex; gap: 10px; justify-content: center; }
 .ocr-swatches button {
   width: 28px; height: 28px; border-radius: 50%; border: 0; cursor: pointer; background: var(--c);
@@ -466,21 +1078,51 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .ocr-swatches button.active { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--c); }
 .ocr-bubble {
   position: absolute; z-index: 2; display: flex; align-items: center; gap: 12px;
-  max-width: calc(100% - 16px); padding: 8px 8px 8px 14px; border: 0; border-radius: 14px;
-  background: var(--surface); color: var(--text); box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
+  width: max-content; max-width: calc(100% - 16px); padding: 8px 8px 8px 14px; border: 0; border-radius: 14px;
+  background: var(--surface); color: var(--text); box-shadow: 0 0 0 1.5px var(--bubble-ring, transparent), 0 6px 20px rgba(0, 0, 0, .35);
   font: inherit; text-align: left; cursor: pointer; transform: translate(-50%, calc(-100% - 10px));
 }
+/* Tummassa teemassa reunaviiva (myös nuolessa): tumma kupla ei erottunut tummasta kuvasta (käyttäjän kuva 2026-11-18) */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ocr-bubble { --bubble-ring: rgba(255, 255, 255, .55); } }
+:root[data-theme="dark"] .ocr-bubble { --bubble-ring: rgba(255, 255, 255, .55); }
+.ocr-bubble::before {
+  content: ""; position: absolute; left: var(--arrow, 50%); top: 100%; transform: translateX(-50%);
+  border: 10px solid transparent; border-top-color: var(--bubble-ring, transparent);
+}
+.ocr-bubble.below::before { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--bubble-ring, transparent); }
 .ocr-bubble[hidden] { display: none; }
 .ocr-bubble.below { transform: translate(-50%, 10px); }
 .ocr-bubble::after {
-  content: ""; position: absolute; left: var(--arrow, 50%); top: 100%; transform: translateX(-50%);
+  content: ""; position: absolute; left: var(--arrow, 50%); top: calc(100% - 1px); transform: translateX(-50%);
   border: 8px solid transparent; border-top-color: var(--surface);
 }
-.ocr-bubble.below::after { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--surface); }
+.ocr-bubble.below::after { top: auto; bottom: calc(100% - 1px); border-top-color: transparent; border-bottom-color: var(--surface); }
 .ocr-bubble .b-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.ocr-bubble .b-word { font-weight: 700; font-size: 17px; }
-.ocr-bubble .b-lemma { color: var(--muted); font-weight: 400; font-size: 14px; }
-.ocr-bubble .b-trans { color: var(--muted); font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ocr-bubble .b-word { font-weight: 700; font-size: 17px; white-space: nowrap; }
+.ocr-bubble .b-text:has(.b-row) {
+  /* Kuvan sanan kupla: rivi = saamen sana | käännös, sarakkeet tasattuina; perusmuodon rivi ohuen viivan alla */
+  display: grid; grid-template-columns: auto auto; column-gap: 12px; row-gap: 0; align-items: baseline;
+}
+.ocr-bubble .b-row { display: contents; }
+.ocr-bubble .b-more { color: var(--muted); }
+/* Painikkeet vierekkäin; kahden rivin kuplassa päällekkäin, jolloin käännös mahtuu puhelimessa yhdelle riville */
+.ocr-bubble .b-actions { display: flex; align-items: center; gap: 12px; flex: none; }
+.ocr-bubble:has(.b-base) .b-actions { flex-direction: column; gap: 6px; }
+.ocr-bubble:has(.b-base) .b-speak { margin-right: 0; }
+.ocr-bubble .b-sme { font-weight: 700; font-size: 17px; white-space: nowrap; padding: 2px 0; }
+.ocr-bubble .b-tr {
+  font-size: 15px; padding: 2px 0;
+  /* Pitkä käännös (minulla / minulta / minussa / minusta) rivittyy /-merkin kohdalta vasta, kun tila loppuu */
+}
+.ocr-bubble .b-base > * { color: var(--muted); font-weight: 400; font-size: 14px; border-top: 1px solid var(--border); margin-top: 3px; padding-top: 4px; }
+.ocr-bubble .b-base .b-sme { font-weight: 600; }
+.ocr-bubble .b-alt > * { color: var(--muted); font-weight: 400; font-size: 13px; font-style: italic; padding-top: 2px; }
+.ocr-bubble:has(.b-alt) .b-actions { flex-direction: column; gap: 6px; }
+.ocr-bubble .b-form:only-child > *, .ocr-bubble .b-form:first-child:has(+ .b-report:last-child) > * { padding: 3px 0; }
+/* Välikieli (pohjoissaamen kautta: strategalaš) ja virheilmoitus kuplan lopussa, koko levyisinä ja himmeinä */
+.ocr-bubble .b-via > *, .ocr-bubble .b-report > * { grid-column: 1 / -1; }
+.ocr-bubble .b-via .b-tr { color: var(--muted); font-size: 13px; font-style: italic; padding: 1px 0; overflow-wrap: anywhere; }
+.ocr-bubble .b-report .b-tr { color: var(--muted); font-size: 12px; padding: 6px 0 0; margin-top: 4px; border-top: 1px solid var(--border); cursor: pointer; }
 .ocr-bubble .b-open, .ocr-bubble .b-speak, .ocr-bubble .b-copy {
   flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
   background: var(--accent); color: var(--accent-text);
@@ -490,7 +1132,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .ocr-bubble button { border: 0; padding: 0; font: inherit; cursor: pointer; }
 /* Sanakortin muodon kupla: sama ulkoasu kuin kuvan sanakuplalla, sivun päällä */
 .form-pop {
-  position: absolute; z-index: 30; padding: 6px 6px 6px 14px; gap: 10px;
+  position: absolute; z-index: 50; padding: 6px 6px 6px 14px; gap: 10px;
   border: 1px solid var(--border); box-shadow: 0 8px 24px rgba(0, 0, 0, .3);
 }
 .form-pop::before {
@@ -499,9 +1141,17 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 }
 .form-pop.below::before { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--border); }
 .form-pop .b-word { font-size: 16px; }
+/* Virheilmoitus kuplan lopussa: pieni ja himmeä, ei kilpaile kuuntelun ja kopioinnin kanssa */
+.form-pop .b-report { flex: none; width: 30px; height: 34px; background: none; color: var(--muted); font-size: 15px; }
 
 /* Ei Androidin omaa napautuskorostusta (se korosti koko kuplan); painettu painike korostetaan itse */
-.ocr-stage, .ocr-stage * { -webkit-tap-highlight-color: transparent; }
+.ocr-stage, .ocr-stage *, .form-pop, .form-pop * { -webkit-tap-highlight-color: transparent; }
+/* Taivutustaulukko ja sanastot: kuuntelija on koko paneelissa, joten Android korosti koko paneelin; napautettu
+   sana näkyy omalla korostuksellaan (.picked) */
+#panel-table, #panel-raw, #sanasto-body { -webkit-tap-highlight-color: transparent; }
+/* Lausekääntäjä: kuuntelija on koko näkymässä ja kuplassa, joten korostus vain painikkeille */
+#lause-view { -webkit-tap-highlight-color: transparent; }
+#lause-view button { -webkit-tap-highlight-color: rgba(127, 127, 127, .25); }
 .ocr-bubble .b-speak, .ocr-bubble .b-open, .ocr-bubble .b-copy { transition: transform .1s, filter .1s; }
 .ocr-bubble .pressed { filter: brightness(.8); transform: scale(.86); }
 
@@ -541,6 +1191,33 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .exp-dlg { max-width: min(460px, calc(100vw - 32px)); }
 .exp-dlg h2 { margin-top: 0; }
 .exp-dlg p { margin: 0 0 10px; line-height: 1.5; }
+/* Koltansaame: "tarkistamaton"-merkintä, varoitusikkunan valinta ja valikon alavalinta */
+.unchecked-badge { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 6px; font-size: 11px; font-weight: 500;
+  background: var(--hd-bg); color: var(--hd); vertical-align: 1px; }
+.skolt-option { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 14px; padding: 10px 12px; border-radius: 8px;
+  background: var(--surface-alt); cursor: pointer; line-height: 1.45; }
+.skolt-option input { margin-top: 3px; flex: none; }
+.skolt-option .small { display: block; }
+.dev-tag { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 6px; font-size: 0.6em; font-weight: 700;
+  letter-spacing: .04em; vertical-align: 0.25em; background: var(--hd-bg); color: var(--hd); }
+.report-line { margin: 10px 0 0; }
+.report-link { font-size: 13px; color: var(--muted); text-decoration: none; }
+.report-link:hover { color: var(--accent); text-decoration: underline; }
+.report-kinds { border: 0; padding: 0; margin: 0 0 12px; display: flex; flex-direction: column; gap: 6px; }
+.report-kinds legend { padding: 0; margin-bottom: 6px; font-weight: 600; }
+.report-kinds label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; line-height: 1.4; }
+.report-kinds input { margin-top: 3px; flex: none; }
+.report-kinds select { margin-top: 4px; font: inherit; font-size: 13px; padding: 3px 6px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+/* Sama ilmoituslomake sanakortille ja sanastolistalle (sanastot.js: sanastoReport) */
+.report-dlg.list-mode .report-card-only, .report-dlg:not(.list-mode) .report-list-only { display: none; }
+.report-text input { font: inherit; font-size: 14px; padding: 8px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); }
+.sanasto-report { margin: 4px 0 0; }
+.report-text { display: flex; flex-direction: column; gap: 6px; margin: 0 0 14px; font-size: 14px; }
+.report-text textarea { font: inherit; font-size: 14px; padding: 8px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); resize: vertical; }
+.skolt-sub { display: flex; gap: 8px; align-items: center; padding: 2px 8px 6px 26px; font-size: 13px; color: var(--muted); cursor: pointer; }
 .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; font-weight: 600; }
 .switch-text { display: flex; flex-direction: column; gap: 2px; }
 .switch-text .small { font-weight: 400; }
@@ -577,11 +1254,13 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
   .tabs { overflow-x: auto; }
   .tabs button { white-space: nowrap; padding: 10px 10px; font-size: 14px; }
   .topbar, .searchbar { padding-left: 12px; padding-right: 12px; }
+  .search-busy { margin-left: 12px; margin-right: 12px; }
   .card { padding: 14px 16px; }
   .lang-switch { float: none; margin-bottom: 10px; }
   .word-title h1 { font-size: 27px; }
-  .tips { grid-template-columns: 1fr; gap: 0; }
-  .tips dd { margin-bottom: 8px; }
+  .tips { grid-template-columns: 1fr; }
+  .tips dt { padding-bottom: 1px; }
+  .tips dd { border-top: 0; padding-top: 0; padding-bottom: 10px; }
   table.paradigm { font-size: 14px; }
   table.paradigm td, table.paradigm th { padding: 5px 8px; }
 }
@@ -610,6 +1289,8 @@ body.drawer-layout .icon-btn { display: inline-block; }
 .settings-section .check { display: flex; align-items: center; gap: 8px; padding: 6px 8px; }
 .settings-section > .switch-row { padding: 6px 8px; border-radius: 8px; font-size: 14px; font-weight: 400; }
 .settings-section > .switch-row:hover { background: var(--chip); }
+.setting-note { margin: -2px 8px 6px; font-size: 12.5px; line-height: 1.4; color: var(--muted); }
+.setting-note:empty { display: none; }
 /* ☰ vasempaan yläkulmaan; kieli, teema ja ääni ovat valikossa */
 body.drawer-layout .topbar { justify-content: flex-start; }
 body.drawer-layout .topbar .brand { flex: 1; }
@@ -636,3 +1317,896 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 }
 .first-run-lang svg { width: 32px; height: 22px; border-radius: 3px; }
 .base-link { color: var(--accent); font-weight: 600; }
+
+/* --- Minipeli (minipeli.js) ---------------------------------------------------------------------------- */
+.report-dlg:not(.game-mode) .report-game-only, .report-dlg.game-mode .report-nogame { display: none; }
+#peli-title { flex: 1; min-width: 0; }
+.peli-mute { display: grid; place-items: center; width: 40px; padding: 0; }
+.peli-mute svg { width: 20px; height: 20px; }
+.peli-mute.muted { color: var(--muted); }
+/* Vierityssäiliö koko leveydeltä (työpöydällä vierityspalkki ikkunan reunaan, ei sarakkeen keskelle); sisältö
+   keskitetään 640 px:n sarakkeeksi sivutäytteellä */
+.peli-body { flex: 1; overflow-y: auto; padding: 14px max(16px, calc((100% - 608px) / 2)) 28px; display: flex;
+  flex-direction: column; gap: 14px; width: 100%; box-sizing: border-box; }
+.peli-lead { margin: 0; color: var(--muted); }
+/* Osiot: kuvake, otsikko ja alaotsikko */
+.pg-head { display: flex; align-items: center; gap: 11px; margin: 6px 0 10px; }
+.pg-head h3 { margin: 0; font-size: 17px; font-weight: 800; line-height: 1.2; }
+.pg-head p { margin: 1px 0 0; font-size: 12.5px; color: var(--muted); }
+.pg-ico { flex: none; width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border)); }
+.pg-ico svg { width: 19px; height: 19px; }
+/* Säännöt sirumerkkeinä */
+.peli-rules { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.peli-rules li { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px 5px 9px; border-radius: 99px; font-size: 12.5px;
+  font-weight: 600; color: var(--muted); background: var(--surface); border: 1px solid var(--border); }
+.peli-rules li:not(.gain):not(.cost) { padding-left: 11px; }
+.peli-rules b { font-weight: 800; font-variant-numeric: tabular-nums; }
+.peli-rules .gain b { color: var(--btn-green); }
+.peli-rules .cost b { color: var(--flag-red); }
+.peli-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.peli-tile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; text-align: left;
+  padding: 14px 14px 12px; border-radius: 16px; border: 1px solid var(--border); cursor: pointer; font: inherit; color: var(--text);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tc) 18%, var(--surface)) 0%, var(--surface) 70%);
+  box-shadow: var(--card-shadow); overflow: hidden; transition: transform .12s; }
+.peli-tile::before { content: ""; position: absolute; inset: 0 0 auto; height: 4px; background: var(--tc); }
+.peli-tile:active { transform: scale(.97); }
+.pt-name { font-weight: 700; font-size: 16px; line-height: 1.25; }
+.pt-sub { font-size: 13px; color: var(--muted); }
+.pt-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+/* Paras tulos: pokaalimerkki kortin kulmassa */
+.pt-best { position: absolute; top: 12px; right: 12px; display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px 3px 7px;
+  border-radius: 99px; font-size: 13px; font-variant-numeric: tabular-nums; background: var(--surface); border: 1px solid var(--border); }
+.pt-best svg { width: 14px; height: 14px; color: var(--flag-yellow); }
+.pt-best b { color: var(--text); }
+.pt-best.none { opacity: .55; }
+.pt-best.none svg { color: var(--muted); }
+/* Aiheet: tasakorkeat rivit, värijuova vasemmalla */
+.peli-list { display: flex; flex-direction: column; gap: 8px; }
+.peli-tile.row { flex-direction: row; align-items: center; gap: 12px; padding: 12px 12px 12px 16px;
+  background: linear-gradient(100deg, color-mix(in srgb, var(--tc) 14%, var(--surface)) 0%, var(--surface) 55%); }
+.peli-tile.row::before { inset: 0 auto 0 0; width: 4px; height: auto; }
+.peli-tile.row .pt-ico { margin: 0; flex: none; }
+.peli-tile.row .pt-text { flex: 1; }
+.peli-tile.row .pt-name { font-size: 15.5px; }
+.peli-tile.row .pt-sub { font-size: 12.5px; }
+.peli-tile.row .pt-best { position: static; flex: none; }
+.peli-card { position: relative; border-radius: 20px; border: 1px solid var(--border); background: var(--surface);
+  padding: 18px 18px 20px; box-shadow: var(--card-shadow); overflow: hidden; }
+.peli-card::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--tc, var(--accent)); }
+.peli-ask h3 { margin: 6px 0 4px; font-size: 20px; }
+.peli-mode { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; }
+
+/* Kysymys: värillinen näyttämö ja sen alla neljä vastauskorttia */
+.peli-play { position: relative; display: flex; flex-direction: column; gap: 12px; }
+/* Oikein: iso peukalo kasvaa näkyviin, alla oikea sana */
+.peli-splash { position: absolute; inset: -6px; z-index: 2; display: grid; place-items: center; border-radius: 26px;
+  background: color-mix(in srgb, var(--surface) 78%, transparent); backdrop-filter: blur(3px); animation: peli-fade .18s ease-out; }
+.ps-in { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+.ps-thumb { font-size: 120px; line-height: 1; filter: drop-shadow(0 8px 18px rgb(0 0 0 / .25));
+  animation: ps-grow .55s cubic-bezier(.2, 1.4, .4, 1) both; }
+.ps-in b { margin-top: 10px; font-size: 32px; font-weight: 800; letter-spacing: -.01em; color: var(--flag-green); animation: ps-rise .4s .15s both; }
+.ps-in span:last-child { color: var(--muted); font-size: 16px; animation: ps-rise .4s .22s both; }
+@keyframes ps-grow { 0% { transform: scale(.2) rotate(-25deg); opacity: 0; } 60% { transform: scale(1.18) rotate(6deg); opacity: 1; } 100% { transform: scale(1) rotate(0); } }
+@keyframes ps-rise { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .ps-thumb, .ps-in b, .ps-in span:last-child, .peli-splash { animation: none; } }
+.peli-stage { position: relative; border-radius: 24px; padding: 14px 16px 22px; text-align: center; overflow: hidden;
+  background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--tc) 26%, var(--surface)) 0%,
+    color-mix(in srgb, var(--tc) 8%, var(--surface)) 60%, var(--surface) 100%);
+  border: 1px solid color-mix(in srgb, var(--tc) 30%, var(--border)); box-shadow: var(--card-shadow); }
+.peli-meta { display: flex; justify-content: space-between; }
+.peli-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px 4px 8px; border-radius: 99px;
+  background: var(--surface); border: 1px solid var(--border); font-size: 14px; font-variant-numeric: tabular-nums; }
+.peli-pill svg { width: 16px; height: 16px; }
+.peli-pill.streak svg { color: #f97316; }
+.peli-pill.best svg { color: var(--flag-yellow); }
+.peli-pill b { color: var(--text); min-width: 1ch; }
+.peli-score.pop { animation: peli-pop .35s ease-out; }
+@keyframes peli-pop { 0% { transform: scale(1); } 40% { transform: scale(1.5); color: var(--flag-green); } 100% { transform: scale(1); } }
+.peli-q { margin: 16px 0 2px; color: var(--muted); font-size: 14px; }
+.peli-word { margin: 0; font-size: clamp(28px, 9vw, 42px); font-weight: 800; letter-spacing: -.02em; line-height: 1.12;
+  overflow-wrap: anywhere; hyphens: manual; text-wrap: balance; }  /* pehmeät tavuviivat (minipeli.js: peliHy) ensin */
+.peli-opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.peli-opt { position: relative; display: flex; align-items: center; gap: 10px; min-height: 62px; padding: 10px 12px; text-align: left;
+  border-radius: 16px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font: inherit;
+  font-size: 15.5px; font-weight: 600; cursor: pointer; box-shadow: var(--card-shadow);
+  transition: transform .1s, border-color .15s, background .2s; }
+.po-key { flex: none; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font-size: 12.5px;
+  font-weight: 800; color: var(--tb, var(--tc)); background: color-mix(in srgb, var(--tc) 14%, var(--surface)); }
+.po-txt { flex: 1; min-width: 0; overflow-wrap: break-word; hyphens: manual; line-height: 1.25; }
+.po-txt.long { font-size: 14px; letter-spacing: -.01em; }
+.po-txt.xlong { font-size: 12.5px; letter-spacing: -.015em; }  /* pitkä sana (jievjaskuolfi) mahtuu riville */
+/* ✓/✗ pienenä merkkinä kortin kulmassa, ei vie tekstin leveyttä */
+.po-mark { position: absolute; top: -8px; right: -6px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--surface); box-shadow: 0 1px 4px rgb(0 0 0 / .2); }
+.po-mark:empty { display: none; }
+.po-mark svg { width: 16px; height: 16px; }
+.peli-opt:hover:not(:disabled) { border-color: var(--tc); }
+.peli-opt:active:not(:disabled) { transform: scale(.97); }
+.peli-opt:focus-visible { outline: 2px solid var(--tc); outline-offset: 2px; }
+.peli-opt.right { background: color-mix(in srgb, var(--flag-green) 16%, var(--surface)); border-color: var(--flag-green); }
+.peli-opt.right .po-key, .peli-opt.right .po-mark { color: var(--btn-green); }
+.peli-opt.wrong { background: color-mix(in srgb, var(--flag-red) 14%, var(--surface)); border-color: var(--flag-red); }
+.peli-opt.wrong .po-key, .peli-opt.wrong .po-mark { color: var(--flag-red); }
+.peli-opt:disabled { cursor: default; }
+.peli-opt:disabled:not(.right):not(.wrong) { opacity: .55; }
+.peli-report { margin: 0; text-align: center; }
+
+/* Peli päättyi: alhaalta nouseva paneeli kysymyksen päällä */
+.peli-sheet { position: fixed; inset: 0; z-index: 3; display: flex; align-items: flex-end; justify-content: center;
+  background: rgb(10 15 25 / .35); animation: peli-fade .2s ease-out; }
+.peli-sheet-in { width: 100%; max-width: 640px; box-sizing: border-box; background: var(--surface); color: var(--text);
+  border-radius: 26px 26px 0 0; padding: 22px 20px calc(18px + env(safe-area-inset-bottom)); text-align: center;
+  box-shadow: 0 -10px 40px rgb(0 0 0 / .25); animation: peli-up .28s cubic-bezier(.2, .8, .2, 1); max-height: 88%; overflow-y: auto; }
+.peli-sheet-in::before { content: ""; display: block; width: 44px; height: 5px; border-radius: 99px; margin: -8px auto 14px; background: var(--tc); }
+@keyframes peli-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes peli-fade { from { opacity: 0; } to { opacity: 1; } }
+.peli-ring { width: 96px; height: 96px; margin: 0 auto 6px; border-radius: 50%; display: grid; place-content: center;
+  border: 6px solid var(--tc); background: color-mix(in srgb, var(--tc) 12%, var(--surface)); }
+.peli-ring b { font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; }
+.peli-ring span { font-size: 12px; color: var(--muted); }
+.peli-sheet h3 { margin: 6px 0 2px; font-size: 21px; }
+.peli-new { display: inline-flex; align-items: center; gap: 4px; margin-left: 4px; padding: 3px 10px 3px 8px; border-radius: 99px;
+  font-size: 13px; font-weight: 700; vertical-align: 3px; background: color-mix(in srgb, var(--flag-yellow) 30%, var(--surface)); }
+.peli-new svg { width: 14px; height: 14px; color: var(--flag-yellow); }
+.peli-correct { margin: 4px 0 0; color: var(--muted); }
+.peli-correct b { color: var(--text); }
+.peli-correct s { color: var(--flag-red); text-decoration-thickness: 2px; }
+.peli-tops { margin: 16px auto 0; max-width: 320px; text-align: left; }
+.peli-tops h4 { margin: 0 0 6px; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); text-align: center; }
+/* Palkintokoroke: 2. vasemmalla, 1. keskellä korkein, 3. oikealla */
+.peli-podium { display: grid; grid-template-columns: repeat(3, 1fr); align-items: end; gap: 6px; margin: 6px 0 4px; }
+.pd-step { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0; }
+.pd-medal { font-size: 28px; line-height: 1.1; }
+.pd-step.p0 .pd-medal { font-size: 36px; }
+.pd-step b { font-size: 18px; font-variant-numeric: tabular-nums; }
+.pd-date { font-size: 11.5px; color: var(--muted); min-height: 1.2em; }
+.pd-block { width: 100%; margin-top: 4px; border-radius: 10px 10px 4px 4px; display: grid; place-items: start center; padding-top: 6px;
+  font-weight: 800; font-size: 15px; color: rgb(0 0 0 / .45); }
+.pd-step.p0 .pd-block { height: 64px; background: linear-gradient(180deg, #f7d35b, #e9b52a); }
+.pd-step.p1 .pd-block { height: 46px; background: linear-gradient(180deg, #dfe5ec, #b8c2ce); }
+.pd-step.p2 .pd-block { height: 34px; background: linear-gradient(180deg, #e8b48a, #c98a5a); }
+.pd-step.now .pd-block { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--tc); }
+.peli-tops .peli-top { margin-top: 8px; }
+.pd-n { width: 22px; color: var(--muted); font-weight: 700; }
+.peli-top { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-variant-numeric: tabular-nums; }
+.peli-top li { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 12px; background: var(--surface-alt); }
+.peli-top li.now { outline: 2px solid var(--tc); }
+.peli-top li b { font-size: 16px; }
+.peli-top li span:last-child { margin-left: auto; color: var(--muted); font-size: 12.5px; }
+.peli-medal { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800;
+  color: var(--muted); background: var(--border); }
+.peli-medal.m0 { background: #f5c542; color: #5b4300; }
+.peli-medal.m1 { background: #c9d1db; color: #3b4452; }
+.peli-medal.m2 { background: #d9a173; color: #4d2c12; }
+.peli-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+.peli-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.peli-primary, .peli-secondary { font: inherit; font-weight: 700; padding: 12px 14px; border-radius: 14px; cursor: pointer; border: 1px solid var(--border); }
+.peli-primary { background: var(--tb, var(--tc, var(--accent))); color: var(--on-flag, #fff); border-color: transparent; font-size: 16px; }
+.peli-secondary { background: var(--surface-alt); color: var(--text); font-weight: 600; }
+.peli-sheet .peli-report { margin-top: 12px; }
+.peli-ask .peli-actions { flex-direction: row; flex-wrap: wrap; }
+@media (max-width: 330px) { .peli-opts { grid-template-columns: 1fr; } }
+.pt-ico { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 6px;
+  color: var(--tc); background: color-mix(in srgb, var(--tc) 16%, var(--surface)); }
+.pt-ico svg { width: 22px; height: 22px; }
+.pt-ico.small { display: inline-grid; width: 24px; height: 24px; border-radius: 7px; margin: 0 6px -6px 0; }
+.pt-ico.small svg { width: 15px; height: 15px; }
+@media (prefers-reduced-motion: reduce) { .peli-score.pop, .peli-sheet, .peli-sheet-in { animation: none; } .peli-tile, .peli-opt { transition: none; } }
+/* Pelattava kieli (inarinsaame asetuksista): keskitetty kaksiosainen kytkin, kielten omat nimet. Valittu osa täytetty
+   korostusvärillä; korkeus sama kuin aiemmilla siruilla */
+.peli-sami { display: flex; width: fit-content; max-width: 100%; margin: 0 auto; padding: 3px; gap: 2px; border-radius: 99px;
+  background: var(--chip); border: 1px solid var(--border); }
+.sanasto-sami { margin-bottom: 4px; }
+.pl-opt { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 15px; border-radius: 99px;
+  font: inherit; font-size: 14px; font-weight: 700; color: var(--muted); background: transparent; border: 0; cursor: pointer;
+  white-space: nowrap; transition: background-color .18s, color .18s, box-shadow .18s; }
+.pl-opt:hover:not([aria-checked="true"]) { color: var(--text); }
+.pl-opt small { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 99px; color: var(--btn-yellow);
+  background: color-mix(in srgb, var(--flag-yellow) 15%, transparent); }
+.pl-opt[aria-checked="true"] { color: #fff; background: #2563eb;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .18), 0 2px 8px rgba(37, 99, 235, .35); }
+.pl-opt[aria-checked="true"] small { color: #fff; background: rgba(255, 255, 255, .22); }
+.pl-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 400px) { .pl-opt { padding: 6px 11px; font-size: 13.5px; gap: 5px; } .pl-opt small { font-size: 10px; padding: 1px 5px; } }
+/* Kapeimmilla näytöillä (alle 345 px) kokeellisuusmerkki ei mahdu: se näkyy asetuksissa ja inarin ohjetekstissä */
+@media (max-width: 344px) { .pl-opt small { display: none; } }
+@media (prefers-reduced-motion: reduce) { .pl-opt { transition: none; } }
+/* Pelitapa: Vállje (valitse) / Čále (kirjoita): kaksi korttia esikatselulla, valittu täytetty korostusvärillä */
+.peli-style { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ps-opt { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 13px 14px 12px;
+  border-radius: 18px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font: inherit; text-align: left;
+  cursor: pointer; box-shadow: var(--card-shadow); transition: transform .12s, background-color .2s, border-color .2s, box-shadow .2s; }
+.ps-opt:active { transform: scale(.97); }
+.ps-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ps-opt[aria-checked="true"] { color: #fff; border-color: transparent;
+  background: linear-gradient(150deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 72%, #0b1220) 100%);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 32%, transparent); }
+.ps-txt b { display: block; font-size: 20px; font-weight: 800; line-height: 1.1; letter-spacing: -.01em; }
+.ps-txt small { display: block; margin-top: 2px; font-size: 12.5px; opacity: .72; }
+.ps-check { position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  background: rgb(255 255 255 / .24); opacity: 0; transform: scale(.5); transition: opacity .2s, transform .2s; }
+.ps-check svg { width: 14px; height: 14px; }
+.ps-opt[aria-checked="true"] .ps-check { opacity: 1; transform: none; }
+.ps-art { height: 32px; display: flex; align-items: center; }
+.ps-grid4 { display: grid; grid-template-columns: repeat(2, 20px); gap: 4px; }
+.ps-grid4 i { height: 13px; border-radius: 4px; background: color-mix(in srgb, currentColor 20%, transparent); }
+.ps-grid4 i.on { background: var(--flag-green); }
+.ps-opt[aria-checked="true"] .ps-grid4 i.on { background: #4ade80; }
+.ps-field { display: inline-flex; align-items: center; height: 28px; padding: 0 8px 0 9px; border-radius: 8px; font-size: 16px; font-weight: 800;
+  border: 1.5px solid color-mix(in srgb, currentColor 38%, transparent); }
+.ps-field::after { content: ""; width: 2px; height: 16px; margin-left: 2px; background: currentColor; animation: ps-caret 1.1s steps(1) infinite; }
+@keyframes ps-caret { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .ps-field::after { animation: none; } .ps-opt { transition: none; } }
+/* Čále: kirjoituskenttä, vihjeet ja saamen kirjaimet */
+.peli-stage.compact { padding-bottom: 16px; }
+.peli-stage.compact .peli-word { font-size: clamp(24px, 7.5vw, 36px); }
+.pw-pattern { display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; margin: 12px 0 0; font-size: 22px; font-weight: 800; }
+.pw-pattern span { min-width: 1em; padding: 0 1px 2px; border-bottom: 3px solid var(--tc); line-height: 1.2; }
+.pw-pattern .gap { min-width: .5em; border: 0; }
+.pw-len { margin: 6px 0 0; font-size: 12.5px; color: var(--muted); }
+.pw-form { display: flex; gap: 8px; }
+.pw-in { flex: 1; min-width: 0; font: inherit; font-size: 22px; font-weight: 700; padding: 11px 14px; border-radius: 14px;
+  border: 2px solid var(--border); background: var(--surface); color: var(--text); }
+.pw-in:focus { outline: none; border-color: var(--tc); }
+.pw-in.right { border-color: var(--flag-green); }
+.pw-in.almost { border-color: var(--flag-yellow); }
+.pw-in.wrong { border-color: var(--flag-red); color: var(--flag-red); }
+.pw-check { flex: none; }
+.pw-letters { display: grid; grid-template-columns: repeat(var(--keys, 8), minmax(0, 1fr)); gap: 5px; }
+.pw-key { font: inherit; font-size: 21px; font-weight: 700; padding: 9px 0; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); cursor: pointer; touch-action: manipulation; }
+.pw-key:active { transform: scale(.92); background: color-mix(in srgb, var(--tc) 14%, var(--surface)); }
+.pw-key.x { font-size: 14px; color: var(--muted); background: var(--surface-alt); }
+.pw-show { align-self: flex-start; font: inherit; font-size: 13px; border: 0; background: none; color: var(--accent); padding: 2px 0; cursor: pointer; }
+.pw-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.pw-hint-btn { display: inline-flex; align-items: center; gap: 7px; }
+.pw-hint-btn:disabled { opacity: .6; cursor: progress; }
+.pw-cost { font-size: 12px; font-weight: 800; padding: 1px 7px; border-radius: 99px; color: var(--flag-red);
+  background: color-mix(in srgb, var(--flag-red) 14%, transparent); }
+.pw-tip { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 9px 10px; border-radius: 12px; font-size: 13px;
+  color: var(--muted); background: var(--surface-alt); border: 1px solid var(--border); }
+.pw-tip > button { margin-left: auto; flex: none; border: 0; background: none; color: var(--muted); font-size: 15px; cursor: pointer; }
+.ps-pts { font-size: 22px; font-weight: 800; color: var(--flag-green); }
+.ps-almost { font-size: 18px; font-weight: 800; color: var(--flag-yellow); margin-top: 6px; }
+.peli-splash.almost .ps-in b { color: var(--text); }
+.ps-better { font-size: 14px; color: var(--muted); }
+.ps-better b { display: inline; margin: 0; font-size: 17px; color: var(--flag-green); animation: none; }
+.ps-in b mark { color: var(--flag-yellow); background: color-mix(in srgb, var(--flag-yellow) 18%, transparent); border-radius: 4px; padding: 0 1px; }
+@media (max-width: 360px) { .pw-key { font-size: 18px; padding: 8px 0; } .pw-in { font-size: 19px; } }
+
+/* --- Asetukset omana näkymänään (2026-11-14): aiheet korteissa, alasivut, segmenttivalinnat --- */
+.menu-settings-btn { display: flex !important; align-items: center; gap: 10px; font-weight: 700 !important; }
+.menu-settings-btn .chev { margin-left: auto; color: var(--muted); }
+.settings-body { gap: 0; padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+.settings-body .set-page { width: 100%; max-width: 640px; margin: 0 auto; }
+.set-h { margin: 18px 6px 8px; font-size: 12.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.set-page > .set-h:first-child { margin-top: 6px; }
+.set-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 10px; }
+.set-card.set-pad { padding: 12px 14px; }
+.set-card > * + *, .set-card .toggle-list > * + *, .set-card .extra-langs > * + * { border-top: 1px solid var(--border); }
+.set-nav { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; min-height: 56px; background: none; border: 0;
+  color: var(--text); text-align: left; font: inherit; cursor: pointer; }
+.set-nav:hover { background: var(--surface-alt); }
+.set-nav:disabled { opacity: .5; cursor: default; }
+.set-nav .chev { color: var(--muted); font-size: 20px; flex: none; }
+.set-ico { width: 32px; height: 32px; border-radius: 9px; background: var(--section); display: grid; place-items: center; font-size: 16px; flex: none; }
+.set-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.set-txt b { font-weight: 600; font-size: 15.5px; }
+.set-txt small { color: var(--muted); font-size: 13px; line-height: 1.35; }
+.set-txt small:empty { display: none; }
+.beta-tag { display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 6px; font-size: 11px; font-weight: 800;
+  background: #ede9fe; color: #5b21b6; vertical-align: 2px; letter-spacing: .03em; }
+.set-beta-note { margin: 4px 2px 12px; padding: 12px 14px; border-radius: 12px; background: #f5f3ff; border: 1px solid #ddd6fe;
+  color: #4c1d95; font-size: 14px; line-height: 1.45; }
+:root[data-theme="dark"] .beta-tag { background: #3b2a6b; color: #ddd6fe; }
+:root[data-theme="dark"] .set-beta-note { background: #221a3d; border-color: #3b2a6b; color: #ddd6fe; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .beta-tag { background: #3b2a6b; color: #ddd6fe; }
+  :root:not([data-theme="light"]) .set-beta-note { background: #221a3d; border-color: #3b2a6b; color: #ddd6fe; }
+}
+.set-intro { margin: 4px 6px 12px; color: var(--muted); font-size: 14px; line-height: 1.45; }
+.set-note { margin: 10px 2px 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
+.set-note:empty { display: none; }
+.set-card .switch-row { padding: 12px 14px; min-height: 52px; font-weight: 600; }
+.set-card .toggle-list .switch-row, .set-card .extra-langs .switch-row { padding: 12px 14px; border-radius: 0; font-size: 15px; }
+.set-card .toggle-list, .set-card .extra-langs { gap: 0; }
+.set-card .skolt-sub { padding: 0 14px 12px 22px; border-top: 0; }
+.settings-view .experimental { border-top: 0; padding-top: 0; }
+.settings-view .setting-note { margin: 0 6px 10px; }
+.settings-view .voice-list { padding: 0; }
+.settings-view .lang-switch.seg-full { display: flex; width: 100%; }
+.settings-view .lang-switch.seg-full button { flex: 1; justify-content: center; }
+.seg-ctl { display: flex; gap: 2px; padding: 3px; border-radius: 11px; background: var(--chip); }
+.seg-ctl button { flex: 1; min-width: 0; padding: 8px 4px; border: 0; border-radius: 9px; background: none; color: var(--muted);
+  font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seg-ctl button[aria-checked="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgb(0 0 0 / .15); }
+.seg-ctl button.ts-a { flex: .7; line-height: 1; }
+.text-preview { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--section); line-height: 1.5; }
+.text-preview b { color: var(--accent); }
+/* Aloitussivun viimeksi haetut ja hakukentän tyhjän kentän ehdotukset */
+#welcome-recent { margin-bottom: 4px; }
+.recent-star { color: var(--flag-yellow); margin-right: 4px; }
+.sugg-recent { display: flex; align-items: center; gap: 10px; }
+.sugg-recent-ico { width: 18px; text-align: center; color: var(--muted); }
+.set-title { display: flex; align-items: center; flex-wrap: wrap; gap: 0 8px; }
+.set-title .beta-tag { margin-left: 0; }
+.settings-view .sanasto-head h2 { white-space: normal; line-height: 1.15; font-size: 19px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.seg-ctl button { flex: 1 1 auto; padding: 8px 8px; }
+#welcome-recent { margin: 4px 0 12px; }
+#welcome-recent .small { margin: 0 0 6px; }
+
+/* Astevaihtelun merkintä (Asetukset → Sanakortti ja ääntäminen): värit valittavissa (--grade-gd/--grade-hd, app.js:
+   applyGradeStyle) ja alleviivaus, joka erottaa asteet ilman värejä: vahva yhtenäinen, heikko katkoviiva */
+html.grade-underline .gd, html.grade-underline .hd { text-decoration-line: underline; text-decoration-thickness: 2px; text-underline-offset: .2em; }
+html.grade-underline .gd { text-decoration-style: solid; }
+html.grade-underline .hd { text-decoration-style: dashed; }
+.grade-preview { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; padding: 10px 12px; border-radius: 10px; background: var(--section); margin-bottom: 4px; }
+.grade-preview .gp-words { font-size: 18px; font-weight: 700; }
+.grade-preview .gp-tags { margin-left: auto; font-weight: 800; }
+.set-sub { margin: 12px 2px 6px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatches button { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--border); background: var(--sw); cursor: pointer;
+  display: grid; place-items: center; color: #fff; font-size: 18px; font-weight: 800; padding: 0; }
+.swatches button.sw-none { background: var(--surface); color: var(--text); font-size: 14px; }
+.swatches button[aria-checked="true"] { border-color: var(--text); box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--accent); }
+.swatches button[aria-checked="true"]::after { content: "✓"; }
+.swatches button.sw-none[aria-checked="true"]::after { content: "✓"; }
+.grade-cvd { margin-top: 12px; }
+.tool-fixed { cursor: default; }
+.tool-always { flex: none; font-size: 13px; font-weight: 700; color: var(--muted); padding: 4px 10px; border-radius: 999px; background: var(--chip); }
+.set-card .switch-text .set-title { font-weight: 600; }
+/* Ääni asetuksissa sirupainikkeina (Biret ▶ Máhtte ▶ Sunná ▶): valintanappi näkymättömänä, valittu korostettu */
+.settings-view .voice-list { flex-direction: row; gap: 8px; }
+.settings-view .voice-row { flex: 1; min-width: 0; position: relative; gap: 2px; padding: 2px 4px 2px 12px; border-radius: 12px; background: var(--chip); }
+.settings-view .voice-row:has(input:checked) { background: var(--select); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.settings-view .voice-row:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.settings-view .voice-row input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.settings-view .voice-row label { font-weight: 700; padding: 8px 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.settings-view .sample-btn { flex: none; width: 34px; height: 34px; }
+
+/* Hakukentän tyhjennys (×): oma painike, selainten oma pois, ettei niitä ole kahta */
+#search::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; display: none; }
+#search { padding-right: 44px; }
+.search-clear { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border: 0; border-radius: 50%;
+  background: none; color: var(--muted); font-size: 22px; line-height: 1; cursor: pointer; display: grid; place-items: center; }
+.search-clear:hover { background: var(--chip); color: var(--text); }
+.search-clear[hidden] { display: none; }
+/* Sanakortin kaiutin ja tähti aina samalla rivillä (suurella tekstikoolla tähti ei kiedy kaiuttimen alle) */
+.word-actions { display: inline-flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
+/* Historian rivin pitkä painallus: korostus painamisen ajan */
+#history li a.pressing { background: var(--chip); }
+/* Hakukentän ehdotukset ilman erikoiskirjaimia: otsikko "Tarkoititko: oažž…" (ei valittava rivi) */
+.suggestions .sugg-head { padding: 8px 14px 2px; font-size: 13px; color: var(--muted); cursor: default; pointer-events: none; }
+.suggestions .sugg-head b { color: var(--accent); font-weight: 700; }
+/* Koko äänisiru on painike (valitsee ja soittaa näytteen): painallus näkyy */
+.settings-view .voice-row { cursor: pointer; transition: transform .1s, background .15s; -webkit-tap-highlight-color: transparent; }
+.settings-view .voice-row:active { transform: scale(.96); }
+.settings-view .voice-row label { cursor: pointer; }
+
+/* --- Alapalkki kapealla näytöllä (kokeilu, test-fable). Leveällä näytöllä piilossa ja yläpalkki ennallaan. --- */
+.bottom-nav { display: none; }
+@media (max-width: 700px) {
+  body { --nav-h: calc(58px + env(safe-area-inset-bottom)); padding-bottom: var(--nav-h); }
+  body.kbd-open { --nav-h: 0px; }
+  .topbar { display: none; }
+  .searchbar { padding-top: max(10px, env(safe-area-inset-top)); }
+  .android-app .searchbar { padding-top: 10px; }
+  .bottom-nav { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 47; height: var(--nav-h);
+    padding: 4px 4px env(safe-area-inset-bottom); background: var(--surface); border-top: 1px solid var(--border); }
+  body.kbd-open .bottom-nav { display: none; }
+  body.sidebar-open .bottom-nav { z-index: 38; }
+  .bottom-nav button { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    border: 0; background: none; color: var(--muted); font: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer; padding: 0;
+    -webkit-tap-highlight-color: transparent; }
+  .bottom-nav button[hidden] { display: none; }
+  .bottom-nav svg { width: 24px; height: 24px; padding: 2px 14px; box-sizing: content-box; border-radius: 14px; }
+  .bottom-nav button.active { color: var(--accent); }
+  .bottom-nav button.active svg { background: var(--select); }
+  .bottom-nav button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bottom-nav.many button { font-size: 10px; letter-spacing: -.01em; }
+  .bottom-nav.many svg { padding: 2px 10px; }
+  .sanasto-view, .lause-view, .ocr-view, .sent-view, .peli-view, .peli-sheet { bottom: var(--nav-h); }
+  .toast { bottom: calc(24px + var(--nav-h)); }
+  .sidebar { bottom: 0; }
+}
+
+/* Kokeilu B (test-fable): astevaihtelu tiiviinä rivinä kortissa, täydet tiedot välilehdellä */
+.grad-sum { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; width: 100%; margin-top: 12px; padding: 9px 12px;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--surface-alt); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.grad-sum[hidden] { display: none; }
+.grad-sum .gs-forms { font-weight: 700; font-size: 16px; }
+.grad-sum .gs-clusters { font-weight: 700; font-size: 14px; }
+.grad-sum .arrow { color: var(--subtle); font-weight: 400; margin: 0 2px; }
+.grad-sum .gs-more { margin-left: auto; color: var(--muted); font-size: 13px; white-space: nowrap; }
+.grad-sum:hover { border-color: var(--accent); }
+#panel-grade .gradation { margin-top: 0; }
+.word-foot { margin-top: 12px; }
+.word-foot .report-line { margin: 0; }
+.word-foot .word-links { margin-top: 12px; }
+.tabs { overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs button { white-space: nowrap; flex: none; }
+
+/* --- Kokeilu (test-fable): sanastojen ja minipelin asettelu (S1, S2, P1, P2) --- */
+/* S2: edellinen ja seuraava aihe listan lopussa */
+.sanasto-nav { display: flex; align-items: stretch; gap: 8px; margin-top: 14px; }
+.sn-btn { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; padding: 9px 12px; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.sn-btn.next { text-align: right; }
+.sn-btn.none { visibility: hidden; }
+.sn-btn b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sn-btn small { color: var(--muted); font-size: 12px; }
+.sn-pos { align-self: center; flex: none; color: var(--muted); font-size: 12.5px; font-weight: 700; }
+/* P1: kesken jäänyt peli valikon yläosassa */
+.peli-resume { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--select); font-size: 14px; }
+.peli-resume .pr-txt { flex: 1; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.peli-resume svg { width: 15px; height: 15px; color: #ea580c; }
+.pr-btn { flex: none; border: 0; border-radius: 10px; padding: 8px 14px; background: var(--accent); color: var(--accent-text); font: inherit; font-weight: 700; cursor: pointer; }
+/* P2: putki ja ennätys otsikkorivillä */
+.peli-meta-head { display: flex; gap: 6px; flex: none; }
+.peli-meta-head:empty { display: none; }
+.peli-meta-head .peli-pill { margin: 0; }
+@media (max-width: 700px) {
+  /* Alapalkki vaihtaa näkymää: Sulje-painiketta ei tarvita */
+  #sanasto-close, #peli-close { display: none; }
+  /* S1: aiheet kahdessa sarakkeessa, kaikki yhdellä näytöllä */
+  .sanasto-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  .sanasto-tile { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 8px; row-gap: 1px; padding: 7px 8px; }
+  .sanasto-tile .st-ico { grid-row: 1 / span 2; }
+  .sanasto-tile .st-txt { grid-column: 2; }
+  .sanasto-tile .st-prev { display: none; }
+  .sanasto-tile .st-title { font-size: 13px; line-height: 1.2; overflow-wrap: anywhere; hyphens: auto; }
+  .sanasto-tile .st-ico { width: 32px; height: 32px; border-radius: 10px; }
+  .sanasto-tile .st-n { grid-column: 2; justify-self: start; min-width: 0; padding: 0; background: none; border: 0; box-shadow: none;
+    font-size: 11.5px; font-weight: 400; color: var(--muted); }
+  .sanasto-group h3 { margin: 6px 0 5px; }
+  .sanasto-body { gap: 4px; }
+  .sanasto-intro { margin: 0 0 2px; }
+  /* P1: pelitapa yhtenä kytkimenä, säännöt yhdellä rivillä, pelit kahdessa sarakkeessa */
+  .peli-style { gap: 2px; padding: 3px; border-radius: 12px; background: var(--chip); }
+  .peli-style .ps-opt { display: flex; align-items: center; justify-content: center; min-height: 0; padding: 8px 6px; border: 0; border-radius: 9px;
+    background: none; box-shadow: none; color: var(--muted); }
+  .peli-style .ps-opt[aria-checked="true"] { background: var(--accent); color: var(--accent-text); }
+  .peli-style .ps-art, .peli-style .ps-check { display: none; }
+  .peli-style .ps-txt { display: flex; align-items: baseline; gap: 6px; }
+  .peli-style .ps-txt b { font-size: 15px; color: inherit; }
+  .peli-style .ps-txt small { font-size: 12.5px; color: inherit; opacity: .85; }
+  .peli-rules { gap: 0 4px; }
+  .peli-rules li { padding: 0; background: none; border: 0; box-shadow: none; font-size: 12.5px; color: var(--muted); }
+  .peli-rules li:not(:last-child)::after { content: "·"; margin-left: 4px; }
+  .pg-head { margin: 4px 0 6px; gap: 8px; }
+  .pg-head .pg-ico, .pg-head p { display: none; }
+  .pg-head h3 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .peli-grid, .peli-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .peli-tile, .peli-tile.row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 9px; row-gap: 2px;
+    padding: 9px 10px 9px 12px; min-height: 0; }
+  .peli-tile::before, .peli-tile.row::before { inset: 0 auto 0 0; width: 4px; height: auto; }
+  .peli-tile .pt-ico { margin: 0; width: 34px; height: 34px; border-radius: 10px; grid-row: 1 / span 2; }
+  .peli-tile .pt-text { grid-column: 2; min-width: 0; }
+  .peli-tile .pt-name, .peli-tile.row .pt-name { font-size: 13px; line-height: 1.2; overflow-wrap: anywhere; hyphens: auto; }
+  .peli-tile .pt-sub { display: none; }
+  .peli-tile .pt-best, .peli-tile.row .pt-best { position: static; grid-column: 2; justify-self: start; padding: 1px 6px 1px 4px; font-size: 12px; }
+  /* P2: vastaukset alhaalla peukalon ulottuvilla, kysymys keskellä ylempänä */
+  .peli-body:has(> .peli-play) { padding-bottom: 12px; }
+  .peli-play { flex: 1; min-height: 0; }
+  .peli-play .peli-stage { margin: auto 0; }
+  .peli-play .peli-opts { margin-top: auto; gap: 9px; }
+  .peli-play .peli-opt { min-height: 68px; }
+  .peli-play ~ .peli-report { margin: 8px 0 0; text-align: center; }
+}
+
+/* --- Kokeilu V2 (test-fable): minipelin pääsivu: tilastot, pelit riveinä (ennätys ja palkki), säännöt painikkeen takana --- */
+.peli-rules[hidden] { display: none; }
+.peli-rules-btn[hidden] { display: none; }
+.peli-rules-btn { font-size: 13.5px; white-space: nowrap; }
+.peli-rules-btn[aria-expanded="true"] { background: var(--select); }
+.pm-stats { display: flex; gap: 8px; }
+.pm-stat { flex: 1; min-width: 0; padding: 9px 6px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border);
+  text-align: center; font-size: 11.5px; color: var(--muted); line-height: 1.25; }
+.pm-stat b { display: block; font-size: 20px; color: var(--text); font-variant-numeric: tabular-nums; }
+.pm-list { display: flex; flex-direction: column; gap: 8px; }
+.peli-tile.pm-row { display: flex; flex-direction: row; align-items: center; gap: 11px; padding: 10px 12px; min-height: 0; border-radius: 14px; }
+.peli-tile.pm-row::before { display: none; }
+.peli-tile.pm-row .pt-ico { margin: 0; flex: none; width: 38px; height: 38px; border-radius: 11px; grid-row: auto; }
+.pm-row .pm-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.pm-row .pt-name { font-size: 15px; font-weight: 700; line-height: 1.2; }
+.pm-row .pt-name small { font-weight: 400; color: var(--muted); font-size: 13px; }
+.pm-bar { display: block; height: 6px; border-radius: 3px; background: var(--chip); overflow: hidden; }
+.pm-bar i { display: block; height: 100%; border-radius: 3px; background: var(--tb, var(--tc)); }
+.pm-best { flex: none; min-width: 52px; text-align: right; display: flex; flex-direction: column; line-height: 1.15; }
+.pm-best small { font-size: 11.5px; color: var(--muted); }
+.pm-best b { font-size: 17px; font-variant-numeric: tabular-nums; }
+.pm-best.none b { color: var(--muted); }
+.pm-row.unfinished { border-color: var(--accent); box-shadow: 0 0 0 2px var(--select); }
+.pm-fresh { margin: 0; text-align: center; }
+@media (max-width: 700px) { .peli-rules:not([hidden]) { padding: 8px 10px; border-radius: 10px; background: var(--surface-alt); } }
+
+/* Sanastojen kohennus (test-fable): määrä ja sijainti otsikkorivillä, äänimerkki laatassa, numeroidut rivit,
+   murremerkit pieninä merkkeinä, lukujen hyppysirut; sanojen pisteviiva pois (napautusohje on listan lopussa) */
+.sanasto-pos { flex: none; font-size: 12.5px; font-weight: 600; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sanasto-pos:empty { display: none; }
+.st-n { line-height: 1.3; }
+.st-aud { width: 11px; height: 11px; margin-left: 5px; vertical-align: -1px; color: var(--tb, var(--tc, var(--accent))); }
+#sanasto-body .sw { text-decoration: none; }
+#sanasto-body .sw:active { background: var(--chip); }
+.sl-card.numbered > .sanasto-row.mrow { grid-template-columns: 1.2em minmax(0, 1fr) auto; column-gap: 7px; }
+.mr-w { display: inline-flex; align-items: center; white-space: nowrap; }
+.mr-n { grid-row: 1 / span 2; align-self: center; text-align: right; font-size: 13px; font-weight: 700; color: var(--tb, var(--tc, var(--accent)));
+  font-variant-numeric: tabular-nums; }
+.sl-card.numbered .mr-forms { grid-column: 2 / -1; }
+.sl-card.numbered .mrow:has(.mr-note) .mr-forms { grid-column: 2; }
+.sl-card.numbered .mr-note { grid-column: 3; }
+.mr-dial { align-self: center; margin-left: 2px; padding: 0 3px; border-radius: 5px; background: var(--chip); font-size: 10.5px; font-weight: 700;
+  line-height: 1.5; color: var(--muted); }
+.mr-fi { font-size: 13.5px; }
+.sl-card > .sanasto-row.mrow { padding: 10px 12px; }
+.sl-card.numbered .mrow:has(.mr-dial) .mr-main { font-size: 15px; }
+.sl-card.numbered .mr-sep { margin: 0 3px; }
+/* Pronominit: lyhyt perusmuoto kapeampaan, pitkä illatiivi (munnuide) leveämpään sarakkeeseen */
+.sanasto-row.ptab { grid-template-columns: .78fr 1.05fr 1.25fr 1fr; }
+/* Luvut: hyppysirut kiinni yläreunassa, sarakeotsikot niiden alla */
+.num-jump { position: sticky; top: -12px; z-index: 3; display: flex; gap: 5px; margin: -12px -4px 0; padding: 10px 4px 8px; background: var(--bg);
+  overflow-x: auto; scrollbar-width: none; flex: none; }
+.num-jump::-webkit-scrollbar { display: none; }
+/* Harjoittele kuunnellen -painike yläpuolella: ei negatiivista ylämarginaalia, joka peitti painikkeen alareunan */
+.hj-open ~ .num-jump { margin-top: 0; }
+.nj { flex: 1 1 auto; padding: 6px 4px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  font: inherit; font-size: 13px; font-weight: 700; white-space: nowrap; cursor: pointer; font-variant-numeric: tabular-nums; }
+.nj.on { background: var(--tb, var(--accent)); border-color: var(--tb, var(--accent)); color: var(--surface); }
+.nj:focus-visible { outline: 2px solid var(--tc, var(--accent)); outline-offset: 1px; }
+.num-jump ~ .num-table > .nt-head, .num-jump ~ .num-table > .nt-corner { top: 34px; }
+.num-table .sw.main { font-weight: 600; font-size: 15px; }
+
+/* Valikon kohennus M2 (test-fable): historia ja suosikit välilehtinä käännöksineen, toiminnot kolmena painikkeena;
+   puhelimessa valikko nousee alhaalta Lisää-painikkeen kohdalta, leveällä näytöllä se on yhä vasemman reunan paneeli */
+body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; padding: 16px 14px 14px; }
+.sidebar > * { flex: none; }
+.sidebar .menu-head { order: 0; margin: 0; padding: 0 0 12px; }
+.sidebar .menu-acts { order: 1; }
+.sidebar .menu-tabs { order: 2; }
+.sidebar .menu-pane { order: 3; margin: 0 !important; }
+.sidebar .menu-foot { order: 5; margin-top: auto; }
+.menu-grab { display: none; }
+.menu-pane { display: flex; flex-direction: column; min-height: 0; flex: 0 1 auto !important; }
+.menu-pane[hidden] { display: none; }
+.menu-tabs { display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: var(--chip); }
+.menu-tabs button { flex: 1; min-width: 0; padding: 7px 6px; border: 0; border-radius: 9px; background: none; color: var(--muted); font: inherit;
+  font-size: 13.5px; font-weight: 700; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.menu-tabs button[aria-selected="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, .14); }
+.menu-tabs button:focus-visible, .menu-act:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.menu-tabs .mt-n { font-weight: 600; }
+.sidebar .word-list { border: 1px solid var(--border); border-radius: 13px; overflow-y: auto; min-height: 0; }
+.sidebar .word-list li + li { border-top: 1px solid var(--border); }
+.sidebar .word-list li a { display: flex; align-items: baseline; gap: 10px; padding: 9px 12px; border-radius: 0; font-size: 15px; }
+.wl-w { flex: 0 1 auto; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.wl-tr { flex: 1 1 0; min-width: 0; text-align: right; color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
+.sidebar .word-list .empty { padding: 12px; text-align: center; }
+.sidebar .history-actions { margin-top: 2px; }
+.sidebar .history-actions .link-btn { padding: 8px 2px; }
+.sidebar .history-actions .more { margin-left: auto; color: var(--accent); font-weight: 600; }
+.menu-acts { flex-direction: row !important; gap: 7px; margin: 0 !important; padding: 0 !important; border: 0 !important; }
+.menu-links > .menu-act { flex: 1 1 0; width: auto; min-width: max-content; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 4px 8px;
+  border-radius: 13px; background: var(--chip); font-size: 12.5px; font-weight: 700; text-align: center; line-height: 1.2; }
+.menu-links > .menu-act:hover { background: color-mix(in srgb, var(--accent) 12%, var(--chip)); }
+.menu-act svg { width: 21px; height: 21px; flex: none; }
+.menu-act span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-links > .menu-act.pri { background: var(--select); color: var(--accent); }
+.menu-foot { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.menu-foot .menu-author { padding: 4px 2px; font-size: 12.5px; }
+.menu-foot #menu-version { font-size: 12px; }
+@media (max-width: 700px) {
+  body.drawer-layout .sidebar { top: auto; left: 0; right: 0; bottom: var(--nav-h); width: auto; max-height: calc(100% - var(--nav-h) - 56px);
+    padding: 6px 14px 10px; border: 0; border-radius: 20px 20px 0 0; box-shadow: 0 -6px 24px rgba(0, 0, 0, .3); transform: translateY(105%); }
+  body.sidebar-open .bottom-nav { z-index: 47; }
+  .menu-grab { display: block; order: 0; width: 40px; height: 4px; margin: 2px auto 0; border-radius: 2px; background: var(--border); }
+  .sidebar .menu-head { display: none; }
+  .sidebar .menu-tabs { order: 1; }
+  .sidebar .menu-pane { order: 2; }
+  .sidebar .menu-acts { order: 4; }
+  .sidebar .menu-foot { margin-top: 0; justify-content: center; }
+}
+
+/* Valikon alarivi: tekijä ja selvästi linkiltä näyttävä Tietoa ja lisenssit (avaa Tietoa-ikkunan, jossa lisenssit) */
+.menu-foot .menu-author { display: inline-flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.menu-author .ma-link { color: var(--accent); font-weight: 600; }
+.menu-author:hover .ma-link { text-decoration: underline; }
+@media (max-width: 700px) {
+  body.drawer-layout .sidebar { overscroll-behavior: contain; touch-action: pan-y; }
+  .sidebar .word-list { overscroll-behavior: contain; }
+  .menu-grab { width: 44px; height: 5px; margin: 4px auto 2px; }
+  .menu-foot { column-gap: 14px; row-gap: 0; }
+}
+
+/* Matala näkymä (puhelin vaakatasossa, matala ikkuna): historia- ja suosikkilista kutistui flex-asettelussa nollaan
+   korkeuteen, joten valikossa ei näkynyt yhtään sanaa (yötesti 2026-11-16, Samsung vaaka 880 × 315). Lista saa
+   luonnollisen korkeutensa, ja koko valikko vierii. */
+@media (max-height: 520px) {
+  .sidebar .menu-pane { flex: none !important; }
+  .sidebar .menu-pane .word-list { overflow: visible; }
+  body.drawer-layout .sidebar { overflow-y: auto; overscroll-behavior: contain; }
+}
+.lause-pop select.lp-form { width: 100%; margin: 4px 0 2px; }
+
+/* Jokerihaku: ehdotusrivi ja hitaan haun tilarivi hakukentän alla (kenttää voi muokata haun aikana) */
+.suggestions li.sugg-wild .trans { color: var(--muted); font-size: 13px; }
+.search-busy {
+  position: relative; display: flex; align-items: center; gap: 8px; margin: 0 20px 6px; padding: 6px 10px 8px;
+  max-width: 520px; font-size: 14px; color: var(--muted); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+}
+.search-busy[hidden] { display: none; }
+.search-busy-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.search-busy .link-btn { flex: none; }
+.search-busy-bar {
+  position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--accent); transition: width .15s linear;
+}
+
+/* Lause kuvasta (Poimi lause): sanat siruina, käännös alla, sanan korjaus alapaneelissa */
+.sent-view { position: fixed; inset: 0 0 var(--nav-h, 0px) 0; z-index: 46; background: var(--bg); display: flex; flex-direction: column; }
+.sent-view[hidden] { display: none; }
+/* Kuvan sanan korjaus ilman lausenäkymää: pelkkä paneeli kuvan päällä alhaalla */
+.sent-view.solo { background: transparent; pointer-events: none; }
+.sent-view.solo .sent-head, .sent-view.solo .sent-body { display: none; }
+.sent-view.solo .sent-sheet { pointer-events: auto; margin-top: auto; max-height: 70%; max-width: 560px; width: 100%; margin-inline: auto; box-sizing: border-box;
+  border-top: 0; border-radius: 22px 22px 0 0; padding: 6px 16px max(14px, env(safe-area-inset-bottom)); box-shadow: 0 -12px 30px rgba(0, 0, 0, .4); }
+.sent-type[hidden] { display: none; }
+.sent-q { margin: 6px 0 0; font-size: 16px; font-weight: 600; }
+.sent-cards { flex-direction: column; flex-wrap: nowrap; }
+.sent-cards .sent-opt { width: 100%; padding: 10px 14px; border-radius: 14px; font-size: 16px; }
+.sent-cards .sent-opt i { font-size: 14px; }
+.sent-acts { margin-top: 12px; }
+.sent-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px 6px; }
+.sent-head h2 { margin: 0; font-size: 18px; }
+.sent-body { flex: 1 1 auto; overflow-y: auto; padding: 4px 14px 16px; }
+.sent-lab { font-size: 13px; color: var(--muted); margin: 10px 0 6px; }
+.sent-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sent-chip { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 5px 9px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font: inherit; text-align: left; cursor: pointer; max-width: 100%; }
+.sent-chip b { font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+.sent-chip b img { display: block; height: 26px; border-radius: 3px; max-width: 100%; }
+.sent-chip span { font-size: 12.5px; color: var(--accent); overflow-wrap: anywhere; }
+.sent-chip.name span { color: var(--muted); }
+.sent-chip.unk { border-style: dashed; border-color: color-mix(in srgb, #d97706 70%, transparent); background: color-mix(in srgb, #d97706 10%, var(--surface)); }
+.sent-chip.unk span { color: #b45309; }
+.sent-chip.on { outline: 2px solid var(--accent); outline-offset: 1px; }
+.sent-tr { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+.sent-tr-head { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); }
+.sent-tr p { margin: 6px 0 0; font-size: 17px; line-height: 1.5; }
+.sent-tr small { display: block; margin-top: 8px; color: var(--muted); font-size: 12px; }
+.sent-sheet { flex: none; max-height: 50%; overflow-y: auto; border-top: 1px solid var(--border); background: var(--surface); padding: 0 12px 10px;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, .2); }
+.sent-sheet[hidden] { display: none; }
+.sent-sh-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 6px; padding: 8px 0 6px; background: var(--surface); }
+.sent-sh-head > :first-child { flex: 1 1 auto; max-width: 60%; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sent-sh-head .chip-btn { flex: none; }
+.sent-sh-head > p.sent-lab { white-space: normal; text-overflow: clip; overflow-wrap: anywhere; min-width: 5.5em; line-height: 1.3; }
+.sent-sh-head .chip-btn { padding-inline: 10px; }
+/* Kuvan leike nimettynä ("Kuvassa:"), oman levyisenä: venytettynä valkoisella taustalla se näytti tekstikentältä */
+.sent-cut-box { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.sent-cut-lab { flex: none; font-size: .8rem; color: var(--muted); }
+.sent-cut { display: block; flex: 0 1 auto; width: auto; min-width: 0; max-width: 100%; height: 34px; object-fit: contain; object-position: left; border-radius: 6px; border: 1px solid var(--border); }
+.sent-what { display: block; margin: 2px 0 4px; }
+.sent-sheet input { width: 100%; padding: 7px 10px; font-size: 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+.sent-in-row { display: flex; gap: 6px; align-items: center; }
+.sent-in-row input { flex: 1 1 auto; min-width: 0; }
+.sent-split-btn { flex: none; }
+.sent-split-btn.on { background: var(--accent); color: #fff; }
+.sent-split .sent-lab { margin: 8px 0 2px; }
+.sent-split-w { display: flex; flex-wrap: wrap; align-items: stretch; font-size: 22px; font-weight: 600; line-height: 1.5; padding: 2px 0; }
+.sent-split-w .sl { padding: 0 1px; }
+.sent-split-w .sg { position: relative; width: 6px; padding: 0; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.sent-split-w .sg::before { content: ""; position: absolute; top: 0; bottom: 0; left: -8px; right: -8px; z-index: 1; }
+.sent-split-w .sg::after { content: ""; position: absolute; left: 2px; top: 25%; bottom: 25%; width: 2px; border-radius: 1px; background: var(--border); }
+.sent-split-w .sg.cut { width: 14px; }
+.sent-split-w .sg.cut::after { left: 5px; top: 0; bottom: 0; width: 4px; background: var(--accent); }
+.sent-split-res { margin-top: 6px; font-size: 14px; color: var(--muted); }
+.sent-split-res b { color: var(--text); font-weight: 600; }
+.sent-split-tr { margin-top: 4px; font-size: 16px; font-weight: 600; color: var(--accent); }
+.sent-opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.sent-opt { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px; max-width: 100%; padding: 5px 10px; border: 1px solid var(--border);
+  border-radius: 10px; background: none; color: var(--text); font: inherit; font-size: 15px; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.sent-opt i { font-style: normal; color: var(--muted); font-size: 12.5px; font-weight: 400; }
+.sent-opt.sel { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 600; }
+
+/* --- Kuunteluharjoitus (harjoitus.js): avauspainike, asetukset alhaalta, harjoituskortti keskellä --- */
+.hj-open { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 44px; padding: 8px 14px;
+  border-radius: 999px; border: 1px solid color-mix(in srgb, var(--flag-green) 45%, var(--border));
+  background: color-mix(in srgb, var(--flag-green) 12%, var(--surface)); color: var(--text); font: inherit; font-weight: 600;
+  cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.hj-open svg { width: 20px; height: 20px; color: var(--btn-green); flex: none; }
+.hj-open:active { transform: scale(.985); }
+.hj-open:focus-visible { outline: 2px solid var(--btn-green); outline-offset: 2px; }
+/* flex: none: #sanasto-body on vierittyvä flex-sarake, jossa laatta kutistui 44 px:iin ja kaksirivinen alateksti valui
+   reunan yli (yötesti 2026-11-20, Samsung: WebView ja Firefox) */
+.hj-open { flex: none; }
+.hj-tile { justify-content: flex-start; border-radius: 14px; padding: 10px 14px; text-align: left; margin-bottom: 4px; }
+.hj-tile svg { width: 26px; height: 26px; }
+.hj-tt { display: flex; flex-direction: column; min-width: 0; }
+.hj-tt small { font-weight: 400; font-size: 12.5px; color: var(--muted); }
+.harj { position: absolute; inset: 0; z-index: 5; background: rgba(2, 6, 23, .55); display: flex; align-items: flex-end; justify-content: center; }
+.harj[hidden] { display: none; }
+.harj[data-mode="run"] { align-items: center; padding: 14px; background: rgba(2, 6, 23, .7); }
+/* Asetusikkuna */
+.hj-sheet { position: relative; width: 100%; max-width: 560px; max-height: 94%; overflow-y: auto; overscroll-behavior: contain;
+  background: var(--surface); color: var(--text); border-radius: 22px 22px 0 0; padding: 6px 16px 0; animation: hj-up .22s ease-out;
+  box-shadow: 0 -8px 30px rgba(2, 6, 23, .25); }
+@keyframes hj-up { from { transform: translateY(24%); opacity: .4; } }
+.hj-grab { width: 38px; height: 4px; border-radius: 4px; margin: 4px auto 10px; background: var(--border); }
+.hj-top { display: flex; align-items: flex-start; gap: 12px; }
+.hj-tt2 { flex: 1; min-width: 0; }
+.hj-tt2 h3 { display: flex; align-items: center; gap: 8px; margin: 2px 0 2px; font-size: 17px; line-height: 1.2; }
+.hj-tt2 h3 svg { width: 21px; height: 21px; flex: none; color: var(--btn-green); }
+.hj-tt2 p { margin: 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
+.hj-x { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--surface-alt); color: var(--muted);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.hj-x svg { width: 18px; height: 18px; }
+.hj-sec { display: flex; align-items: baseline; justify-content: space-between; margin: 12px 0 4px; font-size: 13px; font-weight: 700; }
+.hj-link { border: 0; background: none; padding: 6px 2px; color: var(--accent); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.hj-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.hj-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 4px 12px 4px 5px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--surface-alt); color: var(--text); font: inherit; font-size: 14px; cursor: pointer;
+  transition: background .15s, border-color .15s; -webkit-tap-highlight-color: transparent; }
+.hj-ci { flex: none; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--tc) 14%, var(--surface)); color: var(--tb); }
+.hj-ci svg { width: 14px; height: 14px; }
+.hj-chip[aria-pressed="true"] { border-color: var(--tb); background: color-mix(in srgb, var(--tc) 14%, var(--surface)); font-weight: 600; }
+.hj-chip[aria-pressed="true"] .hj-ci { background: var(--tb); color: var(--surface); }
+.hj-chip:active { transform: scale(.96); }
+.hj-chip:focus-visible { outline: 2px solid var(--tb); outline-offset: 1px; }
+.hj-opts { margin-top: 14px; padding: 2px 12px; border-radius: 16px; background: var(--surface-alt); border: 1px solid var(--border); }
+.hj-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 10px; padding: 7px 0; }
+.hj-row + .hj-row { border-top: 1px solid var(--border); }
+.hj-row[hidden] { display: none; }
+.hj-row[hidden] + .hj-row { border-top: 0; }
+.hj-rl { font-size: 13.5px; font-weight: 600; }
+.hj-seg { display: inline-flex; flex-wrap: wrap; padding: 3px; gap: 2px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); }
+.hj-seg button { min-height: 30px; padding: 3px 10px; border: 0; border-radius: 999px; background: none; color: var(--muted); font: inherit; font-size: 13.5px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.hj-seg button[aria-pressed="true"] { background: var(--btn-green); color: var(--on-green); font-weight: 700; }
+.hj-seg button:focus-visible { outline: 2px solid var(--btn-green); outline-offset: 1px; }
+.hj-foot { position: sticky; bottom: 0; margin: 12px -16px 0; padding: 8px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--surface); border-top: 1px solid var(--border); }
+.hj-err { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--flag-red); text-align: center; }
+.hj-start { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 46px; border: 0; border-radius: 999px;
+  background: var(--btn-green); color: var(--on-green); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+.hj-start svg { width: 20px; height: 20px; }
+.hj-start.off { background: var(--surface-alt); color: var(--muted); }
+.hj-start:active { transform: scale(.985); }
+.hj-note { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 8px 0 0; font-size: 12px; line-height: 1.35; color: var(--muted); text-align: center; }
+.hj-note svg { flex: none; width: 14px; height: 14px; }
+/* Harjoituskortti */
+.hj-card { width: 100%; max-width: 420px; max-height: 100%; overflow-y: auto; background: var(--surface); color: var(--text); border-radius: 24px;
+  padding: 14px 16px 16px; text-align: center; box-shadow: 0 12px 40px rgba(2, 6, 23, .35); }
+.hj-card.hj-new { animation: hj-pop .2s ease-out; }
+@keyframes hj-pop { from { transform: scale(.95); opacity: .4; } }
+.hj-head { display: flex; align-items: center; gap: 8px; text-align: left; }
+.hj-li { flex: none; width: 28px; height: 28px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--tc) 15%, var(--surface)); color: var(--tb); }
+.hj-li svg { width: 16px; height: 16px; }
+.hj-ln { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hj-round { flex: none; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; color: var(--muted); background: var(--surface-alt); }
+.hj-round[hidden] { display: none; }
+.hj-pos { flex: none; font-size: 13px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hj-prog { height: 4px; margin: 10px 0 0; border-radius: 4px; background: var(--surface-alt); overflow: hidden; }
+.hj-prog span { display: block; height: 100%; width: 0; border-radius: 4px; background: var(--tb); transition: width .4s ease; }
+.hj-say { display: inline-flex; align-items: center; gap: 6px; margin-top: 18px; padding: 4px 11px 4px 8px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 600; color: var(--muted); background: var(--surface-alt); }
+.hj-say svg { width: 16px; height: 16px; }
+.hj-say.sme { color: var(--btn-green); background: color-mix(in srgb, var(--flag-green) 12%, var(--surface)); }
+.hj-say .w1, .hj-say .w2 { opacity: .25; }
+.hj-say.on .w1 { animation: hj-wave 1s ease-in-out infinite; }
+.hj-say.on .w2 { animation: hj-wave 1s .2s ease-in-out infinite; }
+@keyframes hj-wave { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+.hj-q { margin-top: 8px; font-size: clamp(28px, 8.5vw, 36px); font-weight: 800; line-height: 1.12; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.hj-digit { display: block; margin-bottom: 2px; font-size: 15px; font-weight: 700; color: var(--muted); }
+.hj-digit[hidden] { display: none; }
+.hj-ring { position: relative; width: 92px; height: 92px; margin: 16px auto 10px; }
+.hj-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.hj-ring circle { fill: none; stroke-width: 6; stroke: var(--surface-alt); }
+.hj-ring .hj-arc { stroke: var(--btn-green); stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 100; }
+.hj-ring.run .hj-arc { animation: hj-fill var(--think) linear forwards; }
+.hj-ring.done .hj-arc { stroke-dashoffset: 0; transition: stroke-dashoffset .25s; }
+@keyframes hj-fill { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+.hj-count { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 34px; font-weight: 800;
+  color: var(--muted); font-variant-numeric: tabular-nums; }
+.hj-ring.run .hj-count { color: var(--text); }
+.hj-ring.done .hj-count { color: var(--btn-green); }
+.hj-card.paused .hj-ring .hj-arc { animation-play-state: paused; }
+.hj-a { display: flex; align-items: center; justify-content: center; min-height: 64px; margin: 0 auto; padding: 8px 14px; border-radius: 16px;
+  border: 1.5px dashed var(--border); max-width: 100%; }
+.hj-a.shown { border: 1.5px solid color-mix(in srgb, var(--flag-green) 40%, var(--border)); background: color-mix(in srgb, var(--flag-green) 9%, var(--surface)); }
+.hj-at { font-size: clamp(26px, 8vw, 34px); font-weight: 800; line-height: 1.12; color: var(--btn-green); overflow-wrap: anywhere; }
+.hj-at:empty { display: none; }
+.hj-ask { font-size: 14px; color: var(--muted); }
+.hj-ask:empty { display: none; }
+.hj-a.rise .hj-at { animation: hj-rise .28s ease-out; }
+@keyframes hj-rise { from { transform: translateY(6px) scale(.96); opacity: 0; } }
+.hj-ctl { display: flex; justify-content: center; align-items: center; gap: 22px; margin-top: 18px; }
+.hj-ctl button { width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface-alt); color: var(--text);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.hj-ctl button svg { width: 20px; height: 20px; }
+.hj-ctl .hj-main { width: 64px; height: 64px; background: var(--btn-green); border-color: var(--btn-green); color: var(--on-green); }
+.hj-ctl .hj-main svg { width: 26px; height: 26px; }
+.hj-ctl button:active { transform: scale(.94); }
+.hj-card .hj-note { margin-top: 14px; }
+/* Näyttö päällä -valinta harjoituskortin alareunassa: pieni kytkin ja teksti */
+/* Virheilmoitus kortin alareunassa (harjoitus.js: harjReport) */
+.hj-report { display: block; margin: 10px auto 0; background: none; border: 0; padding: 6px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+.lcard-report { margin: 8px 0 0; }
+.sent-report, .lause-report { margin: 12px 0 0; }
+.hj-awake { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 12px auto 0; padding: 6px 12px;
+  background: none; border: 0; border-radius: 999px; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
+.hj-awake .hj-sw { position: relative; flex: none; width: 34px; height: 20px; border-radius: 999px; background: var(--border); transition: background .15s; }
+.hj-awake .hj-sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.hj-awake[aria-pressed="true"] { color: var(--text); }
+.hj-awake[aria-pressed="true"] .hj-sw { background: var(--tc, var(--accent)); }
+.hj-awake[aria-pressed="true"] .hj-sw::after { transform: translateX(14px); }
+@media (max-height: 640px) { .hj-say { margin-top: 10px; } .hj-ring { width: 72px; height: 72px; margin: 10px auto 6px; } .hj-count { font-size: 26px; } .hj-ctl { margin-top: 12px; } }
+@media (prefers-reduced-motion: reduce) { .hj-sheet, .hj-card.hj-new, .hj-a.rise .hj-at, .hj-say.on .w1, .hj-say.on .w2 { animation: none; } }
+
+/* Tallennetut ääntämiset (Asetukset → Sanakortti) */
+.set-card.tts-store > * + * { border-top: 0; }
+.tts-store-info { margin: 0 0 10px; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tts-sub { margin: 0 0 6px; font-size: 13px; color: var(--muted); }
+.tts-store .set-note { margin-top: 8px; }
+.tts-clear { margin-top: 10px; }
+.tts-clear:disabled { opacity: .5; cursor: default; }
+/* Vaakasuunta ja muut matalat näytöt: harjoituskortti mahtuu ilman vieritystä (julkaisutesti 2026-11-19: Nothing
+   vaakasuunnassa painikkeet jäivät alareunan alle) */
+@media (max-height: 480px) {
+  .harj[data-mode="run"] { padding: 6px; }
+  .hj-card { padding: 8px 14px 10px; }
+  .hj-prog { margin-top: 6px; }
+  .hj-say { margin-top: 6px; padding: 2px 9px 2px 6px; }
+  .hj-q { margin-top: 2px; font-size: 24px; }
+  .hj-digit { font-size: 12px; }
+  .hj-ring { width: 54px; height: 54px; margin: 6px auto 4px; }
+  .hj-count { font-size: 20px; }
+  .hj-a { min-height: 40px; padding: 4px 12px; }
+  .hj-at { font-size: 22px; }
+  .hj-ctl { margin-top: 6px; gap: 16px; }
+  .hj-ctl button { width: 40px; height: 40px; }
+  .hj-ctl .hj-main { width: 50px; height: 50px; }
+  .hj-card .hj-note { display: none; }
+  /* Pidä näyttö päällä ja Ilmoita virheestä samalle riville (yötesti 2026-11-20: Samsung 880×315, molemmat jäivät
+     kortin alareunan alle 9a03119:n ja 73784b5:n jälkeen) */
+  .hj-card { padding-bottom: 6px; }
+  .hj-awake, .hj-report { display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; margin: 2px 4px 0; padding: 4px 10px; }
+  .hj-awake { gap: 10px; }
+}
+/* Hyvin matala vaakanäyttö (OnePlus Nord 919×311 näkyvää): pienempi rengas, ettei kortti vieritä 11 px (yötesti 2026-11-21) */
+@media (max-height: 340px) {
+  .hj-ring { width: 42px; height: 42px; margin: 3px auto 2px; }
+  .hj-count { font-size: 17px; }
+}
+
+/* Sanakirjahaku: yhdyssanan osat, kun sanaa ei löytynyt (app.js: renderSearchParts) */
+.search-parts { margin: 12px 0 4px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.search-parts[hidden] { display: none; }
+.sp-head { font-size: 13px; color: var(--muted); font-style: italic; margin-bottom: 6px; }
+.sp-whole { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.sp-row { display: flex; align-items: baseline; gap: 12px; padding: 6px 0; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.sp-sme { font-weight: 700; color: var(--text); text-decoration: none; }
+.sp-sme:hover { color: var(--accent); }
+.sp-fi { color: var(--text); }
+/* Alaosa piiloon, jos siinä ei ole linkkejä (virheilmoitus siirtyi otsikkoriville 2026-11-19) */
+.word-foot:not(:has(> .word-links:not([hidden]))) { display: none; }
+/* Kuvan sanan korjauspaneeli (sent-view.solo) kuvan päällä: kuvahaun alapalkki piiloon sen ajaksi */
+body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
+/* test-lahteet: paikannimet haussa ja sukulaissanat Merkitykset-välilehdellä */
+.place-hits { margin: 6px 0 8px; padding: 8px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); font-size: 14px; }
+.place-hits[hidden] { display: none; }
+.place-hits > span { font-size: 12px; color: var(--muted); display: block; margin-bottom: 2px; }
+.place-hit { padding: 2px 0; overflow-wrap: anywhere; }
+.related-sami > div { padding: 1px 0; }
+/* Sanojen valinta kuvasta sormella (Poimi lause: Valitse sanat itse) */
+.ocr-stroke { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; overflow: visible; }
+.ocr-stroke polyline { fill: none; stroke: #facc15; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; opacity: .75; }
+.ocr-photo .ocr-word.chosen { background: color-mix(in srgb, #facc15 45%, transparent) !important; box-shadow: 0 0 0 2px #facc15 !important; border-radius: 4px; }
+.ocr-selbar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px 18px max(14px, env(safe-area-inset-bottom)); background: linear-gradient(rgba(11, 13, 16, 0), rgba(11, 13, 16, .92) 40%); color: #e5e9f0; font-size: 15px; }
+.ocr-selbar[hidden] { display: none; }
+.ocr-selbar .chip-btn { min-height: 44px; padding: 0 18px; }
+.ocr-view.selecting .ocr-bottom { display: none; }
+.sent-head .sent-select { margin-left: auto; font-size: 14px; }

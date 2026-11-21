@@ -9,12 +9,12 @@ OUT="$PWD/src/fst"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/satni-fst-build/fst"
 
 COMMITS="
-giella-core 498955290e169eae2d15d2c41af03df58cad1442
+giella-core 3bb22cc56fc9c921429d3aff8786172ed0c127a3
 shared-mul d45f082f9e8cb5db034e7ee4ad8759bf54a516ea
-shared-smi 6a0960fe69ba688210a6af9c88c3b8f5b24879db
-lang-sma a80760f16bd6d2f3ee7f071db232d80cfc6210cf
-lang-smj 3839e095aaa2a5e47a3c06bca3bd7437ffb6de36
-lang-sme 6b1ae1cb406d7668799e53e2f8e798d680120a87
+shared-smi 27e330060eb324b4433f2632db162dcfddeff2ea
+lang-sma 22b3eddaa3e0d1e312c2f26c6d516d9b23a20dd4
+lang-smj 41e93e7f5879ab538520dd46e64b30edd882680c
+lang-sme f573df7814c9906102eef8de11895b11b2c75f35
 "
 
 rm -rf "$CACHE_DIR"
