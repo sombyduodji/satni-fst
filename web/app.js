@@ -331,7 +331,7 @@ function renderExtraLangs() {
   const row = (l) => `<label class="switch-row"><span class="switch-text"><span>${esc(capitalize(langName(l)))}</span>${src(l)}</span>` +
     `<input type="checkbox" class="switch" role="switch" value="${l}"${settings.extraLangs.includes(l) ? " checked" : ""}></label>` + sub(l);
   const skolt = `<label class="switch-row"><span class="switch-text"><span>${esc(capitalize(langName("sms")))}` +
-    `<span class="unchecked-badge">${esc(t("smsUnchecked"))}</span></span>${src("sms")}</span>` +
+    `<span class="beta-tag">BETA</span></span>${src("sms")}</span>` +
     `<input type="checkbox" class="switch" role="switch" data-skolt="on"${settings.skolt ? " checked" : ""}></label>` +
     (settings.skolt ? `<label class="skolt-sub"><input type="checkbox" data-skolt="via"${settings.skoltViaSme ? " checked" : ""}>` +
       `<span>${esc(t("skoltViaShort"))}</span></label>` : "");
@@ -2928,6 +2928,7 @@ let settingsPage = "main";
 function showSettingsPage(page) {
   settingsPage = page;
   if (page === "card") renderTtsStore();
+  if (page === "langs") { renderExtraLangs(); applyExperimental(); }  // espanjan alakohta tarvitsee ladatun tietokannan
   for (const el of document.querySelectorAll("#settings-view .set-page")) el.hidden = el.dataset.page !== page;
   $("settings-title").textContent = t(page === "main" ? "settings" : SETTINGS_PAGES[page]);
   $("settings-back").setAttribute("aria-label", t("back"));
