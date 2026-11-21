@@ -120,7 +120,8 @@ abstract class PlayAssets extends DefaultTask {
         out.mkdirs()
         sources.files.each { file ->
             def text = edits[file.name](file.getText("UTF-8"))
-            def left = (text =~ /(?i)coffee|kahvi|kaffe|supportNote|supportThanks|ja tue|og støtt/)
+            // kahvi/kaffe kokonaisena sanana: lausekääntäjän esimerkki "saisinko yhden kahvin" ei ole tukilinkki (1.0.0)
+            def left = (text =~ /(?i)coffee|\bkahvi(t)?\b|\bkaffe\b|supportNote|supportThanks|ja tue|og støtt/)
             if (left.find()) throw new GradleException("Play-versioon jäi tukilinkin tekstiä (${file.name}): ${left.group()}")
             new File(out, file.name).setText(text, "UTF-8")
         }
