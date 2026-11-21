@@ -633,9 +633,11 @@ const transMatchParams = (q) => { const e = likeEsc(q); return [0, q, q, `${e},%
 
 // Jokerihaku: * = mitä tahansa kirjaimia (myös ei yhtään), ? = yksi kirjain (á?bmogis -> álbmogis, *ortnega).
 // Vain saamen perusmuodot ja taivutusmuodot; yksi rivi sanaa kohden (perusmuoto, jos se täsmää, muuten yleisin
-// täsmäävä muoto), yleisin sana ensin. Vähintään kaksi kirjainta, ettei pelkkä * luettele koko sanakirjaa.
+// täsmäävä muoto), yleisin sana ensin. Vähintään kaksi kirjainta, ettei pelkkä * luettele koko sanakirjaa; *- tai
+// ?-alkuisessa kuviossa kolme, koska se lukee koko taivutustaulun (yötesti 2026-11-21, OnePlus Nord: *a*a* 7,3 s).
 const WILD_LIMIT = 100;
-const isWildcard = (query) => /[*?]/.test(query) && query.replace(/[*?\s]/g, "").length >= 2;
+const wildMinLetters = (query) => (/^\s*[*?]/.test(query) ? 3 : 2);
+const isWildcard = (query) => /[*?]/.test(query) && query.replace(/[*?\s]/g, "").length >= wildMinLetters(query);
 function wildcardQuery(query) {
   const pat = fold(query.trim()).replace(/[[\]]/g, "");
   const cols = `id, sme_lemma, pos, subtype, freq, ${TRANS_COLS}${hasHumanColumn() ? ", human" : ""}, dial_same`;
@@ -2631,7 +2633,7 @@ function updateSuggestions(withForms = true) {
     activeSuggestion = -1;
     $("suggestions").innerHTML = ok
       ? `<li role="option" data-i="0" class="sugg-wild"><span class="sugg-recent-ico" aria-hidden="true">✱</span><b>${esc(raw)}</b><span class="trans">${esc(t("wildHint"))}</span></li>`
-      : `<li class="sugg-loading" role="status">${esc(t("wildShort"))}</li>`;
+      : `<li class="sugg-loading" role="status">${esc(t("wildShort", wildMinLetters(raw)))}</li>`;
     $("suggestions").hidden = false;
     return;
   }
@@ -4076,7 +4078,10 @@ function layoutOcr(reset) {
   applyOcrLook();
   const { r, words } = ocr;
   if (!r) return;  // kuvaa ei vielä luettu (koon muutos kesken tunnistuksen)
-  const k = Math.min(stage.clientWidth / r.width, stage.clientHeight / r.height);
+  // Kuva alkaa ✕/kielipainikkeen/⋯:n ja tilarivin alta, ettei ylimpiä rivejä peitetä (yötesti 2026-11-21: Samsung ja
+  // Nothing, rivejä ei voinut maalata ennen kuvan siirtämistä). Zoomattuna kuvan yläreunan voi vetää samaan kohtaan.
+  ocr.top = ocrTopInset();
+  const k = Math.min(stage.clientWidth / r.width, (stage.clientHeight - ocr.top) / r.height);
   ocr.base = { w: r.width * k, h: r.height * k };
   photo.style.width = `${ocr.base.w}px`;
   photo.style.height = `${ocr.base.h}px`;
@@ -4273,6 +4278,10 @@ function pickOcrWord(i) {
   };
   const g = w.gloss;
   let big = g.lemma ? g.form || g.trans : g.trans;
+  // Kaksiosainen nimi (Elli-Marja, Biret-Iŋgá): koko nimi ja "nimi" kuten lausenäkymässä, ei loppuosaa "marja – naisen
+  // nimi" (yötesti 2026-11-21, Samsung)
+  const twoPartName = /^\p{Lu}\p{L}*-\p{Lu}\p{L}+$/u.test(w.clean || "") && g.prop && (!g.trans || /\b(nimi|navn|name)\b/i.test(g.trans));
+  if (twoPartName) big = t("sentName");
   // Sanakirjan sana ilman käännöstä (giellavuoigatvuođaid): käännös osista kuten lausenäkymässä (≈ kieli + oikeuksien)
   if (!big && sentCanSplit() && [...w.word].length >= 6) {
     const lang = settings.ocrFrom, parts = isMinor(lang) ? splitMinorCompound(lang, w.word)?.map((x) => x.stem) : splitCompound(w.word);
@@ -4283,10 +4292,10 @@ function pickOcrWord(i) {
   const alt = g.alt ? `<div class="sh-note">${esc(t("ocrAlso"))}: ${esc(g.alt.text)}${g.alt.lemma ? ` (${esc(g.alt.lemma)})` : ""}</div>` : "";
   const via = g.via ? `<div class="sh-note">${esc(viaText(g.via))}</div>` : "";
   bubble.innerHTML = `<div class="sh-handle"></div><div class="sh-body">` +
-    `<div class="sh-head"><div class="sh-title" data-open="1"><div class="sh-word">${esc(w.word)}</div>${base}</div>` +
+    `<div class="sh-head"><div class="sh-title" data-open="1"><div class="sh-word">${esc(twoPartName ? w.clean : w.word)}</div>${twoPartName ? "" : base}</div>` +
     `<button type="button" class="b-speak sh-speak" aria-label="${esc(t("listen"))}" ${g.say ? "" : "hidden"}>${SPEAK_ICON}</button></div>` +
     `<div class="sh-tr" data-open="1">${big ? short(big) : "–"}</div>${alt}${via}</div>` + ocrSheetActions(true);
-  bubble.setAttribute("aria-label", w.word);
+  bubble.setAttribute("aria-label", twoPartName ? w.clean : w.word);
   bubble.hidden = false;
   revealOcrWord();
 }
@@ -5596,12 +5605,21 @@ function openOcrWord(cand = null) {
 }
 
 // Zoomaus 1–8-kertaiseksi; kuva pysyy alueen sisällä (pienempi kuin alue -> keskelle)
+// Yläpalkin korkeus kuvan päällä: painikerivi ja kaksi tilarivin riviä (kiinteä, ettei kuva hypi tilarivin
+// tekstin muuttuessa); matalalla vaakanäytöllä enintään neljännes korkeudesta
+function ocrTopInset() {
+  const stage = $("ocr-stage"), row = document.querySelector(".ocr-top-row");
+  if (!row || $("ocr-view").hidden) return 0;
+  const lh = parseFloat(getComputedStyle($("ocr-status")).lineHeight) || 18;
+  const inset = row.getBoundingClientRect().bottom - stage.getBoundingClientRect().top + 8 + 2 * lh;
+  return Math.max(0, Math.min(Math.round(inset), stage.clientHeight * 0.25));
+}
 function applyOcrView() {
-  const stage = $("ocr-stage"), v = ocr.view;
+  const stage = $("ocr-stage"), v = ocr.view, top = ocr.top || 0;
   v.s = Math.min(8, Math.max(1, v.s));
   const clamp = (pos, size, room) => (size <= room ? (room - size) / 2 : Math.min(0, Math.max(room - size, pos)));
   v.x = clamp(v.x, ocr.base.w * v.s, stage.clientWidth);
-  v.y = clamp(v.y, ocr.base.h * v.s, stage.clientHeight);
+  v.y = top + clamp(v.y - top, ocr.base.h * v.s, stage.clientHeight - top);
   $("ocr-photo").style.transform = `translate(${v.x}px, ${v.y}px) scale(${v.s})`;
 }
 
@@ -5923,6 +5941,14 @@ function bindOcr() {
   for (const [id, deg] of [["ocr-rotate-left", -90], ["ocr-rotate-right", 90]]) {
     $(id).onclick = () => { if (!ocr || !window.SatniOcr.rotate) return; $("ocr-settings").hidden = true; setOcrBusy(t("ocrWorking")); window.SatniOcr.rotate(deg); };
   }
+  // Valintatilassa Androidin reunan Takaisin-ele pois (Ocr.edgeGuard); yksi tarkkailija kattaa kaikki tavat sulkea kuva
+  let edgeGuardOn = false;
+  new MutationObserver(() => {
+    const v = $("ocr-view"), on = !v.hidden && v.classList.contains("selecting");
+    if (on === edgeGuardOn) return;
+    edgeGuardOn = on;
+    try { window.SatniOcr?.edgeGuard?.(on); } catch (e) { /* vanha sovellus ilman siltaa */ }
+  }).observe($("ocr-view"), { attributes: true, attributeFilter: ["hidden", "class"] });
   $("ocr-close").onclick = () => { if (ocr) pickOcrWord(null); $("ocr-settings").hidden = true; $("ocr-view").hidden = true; };
   $("ocr-pick").onclick = (e) => { e.stopPropagation(); pickSentence(); };
   $("ocr-sel-cancel").onclick = () => endWordSelect(false);

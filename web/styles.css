@@ -2175,6 +2175,11 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
   .hj-awake, .hj-report { display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; margin: 2px 4px 0; padding: 4px 10px; }
   .hj-awake { gap: 10px; }
 }
+/* Hyvin matala vaakanäyttö (OnePlus Nord 919×311 näkyvää): pienempi rengas, ettei kortti vieritä 11 px (yötesti 2026-11-21) */
+@media (max-height: 340px) {
+  .hj-ring { width: 42px; height: 42px; margin: 3px auto 2px; }
+  .hj-count { font-size: 17px; }
+}
 
 /* Sanakirjahaku: yhdyssanan osat, kun sanaa ei löytynyt (app.js: renderSearchParts) */
 .search-parts { margin: 12px 0 4px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }

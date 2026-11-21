@@ -40,6 +40,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -175,6 +178,39 @@ final class Ocr {
             }
             recognize(bitmap, false);
         });
+    }
+
+    /** Sanojen valinta sormella (Valitse sanat itse): eleohjauksessa näytön reunasta alkava veto on Androidin
+     *  Takaisin-ele, joka perui valinnan ja sulki kuvan (yötesti 2026-11-21, Samsung). Valintatilan ajaksi reunojen
+     *  keskiosa (Android sallii enintään 200 dp reunaa kohden) suljetaan järjestelmäeleeltä; muualla reunassa ja
+     *  Takaisin-painikkeella paluu toimii. Android 10+ (eleohjaus tuli 10:ssä). */
+    private boolean edgeGuard;
+    private final android.view.View.OnLayoutChangeListener guardLayout = (v, l, t, r, b, ol, ot, or, ob) -> applyEdgeGuard();
+
+    @JavascriptInterface
+    public void edgeGuard(boolean on) {
+        main.post(() -> {
+            if (Build.VERSION.SDK_INT < 29 || on == edgeGuard) return;
+            edgeGuard = on;
+            if (on) web.addOnLayoutChangeListener(guardLayout);
+            else web.removeOnLayoutChangeListener(guardLayout);
+            applyEdgeGuard();
+        });
+    }
+
+    private void applyEdgeGuard() {
+        if (Build.VERSION.SDK_INT < 29) return;
+        if (!edgeGuard) {
+            web.setSystemGestureExclusionRects(Collections.emptyList());
+            return;
+        }
+        int w = web.getWidth(), h = web.getHeight();
+        float dp = web.getResources().getDisplayMetrics().density;
+        int band = Math.min(h, (int) (200 * dp)), edge = (int) (32 * dp), top = (h - band) / 2;
+        List<Rect> rects = new ArrayList<>();
+        rects.add(new Rect(0, top, edge, top + band));
+        rects.add(new Rect(w - edge, top, w, top + band));
+        web.setSystemGestureExclusionRects(rects);
     }
 
     /** Web-näkymän kääntöpainikkeet: viimeisin kuva käännettynä (90 = myötäpäivään) ja uusi tunnistus. */
