@@ -70,6 +70,12 @@ dict-nob-fin and dict-fin-nob (Trond Trosterud and Kirsti Kuosa, UiT, CC BY); vi
 GiellaLT's dictionaries (dict-smn-fin, dict-sma-fin, CC BY 4.0); from English with opus-mt-en-fi (Apache-2.0) and
 FinnWordNet (CC BY 3.0). Result: [`fin_mt.tsv`](fin_mt.tsv).
 
+**Spanish machine translations (experimental):** [`spa_mt.py`](spa_mt.py) adds Spanish for words without it in Ángel Díaz de
+Rada and Kjell Kemi's dictionary, only when at least three of six sources agree: Helsinki-NLP opus-mt-fi-es, opus-mt-no-es
+and opus-mt-en-es (Apache-2.0) from the word's Finnish, Norwegian and English translations; smi-mt from Sámi; Wiktionary and
+WikDict (CC BY-SA, one source); and the Spanish wordnet of the Multilingual Central Repository 3.0 (CC BY 3.0) through
+FinnWordNet. The dictionary itself is not changed. Result: [`spa_mt.tsv`](spa_mt.tsv).
+
 `dict-sme-fin` is included in this repository as an unmodified copy ([dict-sme-fin/SOURCE.md](dict-sme-fin/SOURCE.md));
 the others are downloaded from GiellaLT by [`hae_sanakirjat.sh`](hae_sanakirjat.sh) and are not part
 of this repository.

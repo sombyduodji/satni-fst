@@ -165,6 +165,15 @@ Finnish machine-translated suggestions (experimental, off by default; fin_mt.py,
   dict-smn-fin and dict-sma-fin (CC-BY-4.0.txt),
   https://github.com/giellalt. Only the resulting Finnish words are included.
 
+Spanish machine translations (experimental, off by default; spa_mt.py, spa_mt.tsv)
+  For words with no Spanish in dict-sme-spa, shown only when at least three
+  of six sources give the same Spanish word. Made with Helsinki-NLP
+  opus-mt-fi-es, opus-mt-no-es and opus-mt-en-es (Apache-2.0.txt), smi-mt
+  (as above), Wiktionary and WikDict (CC-BY-SA-4.0.txt) and the Spanish
+  wordnet of the Multilingual Central Repository 3.0 (CC-BY-3.0.txt,
+  http://adimen.si.ehu.es/web/MCR/). Only the resulting Spanish words are
+  included.
+
 Corpus frequencies: SIKOR North Saami lemma frequency
 list 2015-10-10
   © UiT The Arctic University of Norway, Giellatekno and Divvun

@@ -95,6 +95,13 @@ const UI_TEXTS = {
       <p>Testissä sanoilla, joilla englanti on, noin 97 % oli oikein, kun kaikki kolme reittiä olivat samaa mieltä, ja noin
       85–90 %, kun kaksi oli. Ne ovat silti konekäännöksiä. Sanoja voi myös hakea englanniksi sanakirjan omien käännösten jälkeen.</p>`,
     engMtNote: (level) => (level >= 3 ? "konekäännös, 3 lähdettä samaa mieltä" : "konekäännös, 2 lähdettä samaa mieltä"),
+    expSpaMt: "Espanjan konekäännökset", expSpaMtDesc: "Sanoille, joilla ei ole espanjaa sanakirjassa, kun vähintään kolme lähdettä on samaa mieltä.",
+    expSpaMtInfo: `<p>Espanjan sanakirjassa (Ángel Díaz de Rada ja Kjell Kemi) on noin 7 700 pohjoissaamen sanaa. Noin 6 300
+      sanalle tämä näyttää konekäännöksenä tehdyn espanjan sanan, kun vähintään kolme lähdettä antaa saman sanan: käännösmallit
+      sanan suomennoksesta, norjannoksesta ja englannista sekä saamesta, Wiktionary ja espanjan wordnet (MCR).</p>
+      <p>Testissä sanakirjan omia käännöksiä vasten kolmen lähteen sanoista noin 74 % ja neljän tai useamman 85–97 % oli
+      sama tai synonyymi. Ne ovat silti konekäännöksiä. Sanakirjaan ei kosketa, ja sanoja voi hakea espanjaksi sanakirjan
+      omien käännösten jälkeen.</p>`,
     wiktEngNote: "Wiktionary suomen ja norjan kautta, tarkistamaton",
     register: { vulgar: "alatyylinen", derogatory: "halventava", offensive: "loukkaava" },
     registerNote: "Wiktionaryn mukaan sanaa pidetään alatyylisenä, halventavana tai loukkaavana",
@@ -391,6 +398,13 @@ const UI_TEXTS = {
       <p>I en test med ord som har engelsk, var rundt 97 % riktige når alle tre veiene var enige, og rundt 85–90 % når to
       var det. Det er likevel maskinoversettelser. Ordene kan også søkes på engelsk, etter ordbokas egne oversettelser.</p>`,
     engMtNote: (level) => (level >= 3 ? "maskinoversettelse, 3 kilder enige" : "maskinoversettelse, 2 kilder enige"),
+    expSpaMt: "Spanske maskinoversettelser", expSpaMtDesc: "For ord uten spansk i ordboka, når minst tre kilder er enige.",
+    expSpaMtInfo: `<p>Den spanske ordboka (Ángel Díaz de Rada og Kjell Kemi) har rundt 7 700 nordsamiske ord. For rundt 6 300
+      ord viser dette et spansk ord laget med maskinoversettelse når minst tre kilder gir det samme ordet: oversettelsesmodeller
+      fra ordets finske, norske og engelske oversettelse og fra samisk, Wiktionary og den spanske wordneten (MCR).</p>
+      <p>I en test mot ordbokas egne oversettelser var rundt 74 % av ordene med tre kilder og 85–97 % med fire eller flere
+      like eller synonymer. Det er likevel maskinoversettelser. Ordboka endres ikke, og ordene kan søkes på spansk etter
+      ordbokas egne oversettelser.</p>`,
     wiktEngNote: "Wiktionary via finsk og norsk, ikke kontrollert",
     register: { vulgar: "vulgært", derogatory: "nedsettende", offensive: "støtende" },
     registerNote: "Ifølge Wiktionary regnes ordet som vulgært, nedsettende eller støtende",
@@ -681,6 +695,14 @@ UI_TEXTS.en = {
     found by searching in English, after the dictionary's own translations.</p>`,
   engMtNote: (level) => (level >= 3 ? "machine translation, 3 sources agree" : "machine translation, 2 sources agree"),
   pivotFinNote: { smn: "via Inari Sámi, unchecked", nob: "via Norwegian, unchecked" }, derFinNote: "derived", cmpFinNote: "from its parts", cmpPartsMeaning: "meanings of the parts",
+  expSpaMt: "Spanish machine translations", expSpaMtDesc: "For words without Spanish in the dictionary, when at least three sources agree.",
+  expSpaMtInfo: `<p>The Spanish dictionary (Ángel Díaz de Rada and Kjell Kemi) has about 7,700 North Sámi words. For about
+    6,300 more words, this shows a Spanish word made by machine translation when at least three sources give the same word:
+    translation models from the word's Finnish, Norwegian and English translations and from Sámi, Wiktionary and the
+    Spanish wordnet (MCR).</p>
+    <p>In a test against the dictionary's own translations, about 74 % of the words with three sources and 85–97 % with four
+    or more were the same or a synonym. They are still machine translations. The dictionary itself is not changed, and these
+    words can be found by searching in Spanish after the dictionary's own translations.</p>`,
   wiktEngNote: "Wiktionary via Finnish and Norwegian, unchecked",
   register: { vulgar: "vulgar", derogatory: "derogatory", offensive: "offensive" },
   registerNote: "According to Wiktionary, the word is considered vulgar, derogatory or offensive",

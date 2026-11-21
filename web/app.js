@@ -57,7 +57,7 @@ const DEFAULT_SETTINGS = {
   skolt: false, skoltViaSme: false,
   // Kokeelliset ominaisuudet (valikon lopussa), kukin erikseen: ocr = kuvasta haku (Android-sovellus),
   // tableTr = muotojen käännökset taivutustaulukossa, apertium = Apertiumin norjan käännökset, pivotFin = suomennosehdotukset. experimental: vanha yhteinen kytkin (= ocr), siirretään exp.ocr:ään.
-  exp: { ocr: false, lause: false, tableTr: false, apertium: false, pivotFin: false, engMt: false },
+  exp: { ocr: false, lause: false, tableTr: false, apertium: false, pivotFin: false, engMt: false, spaMt: false },
   // Kuvasta haku: suunta ("sme" = saamen teksti, "ui" = käyttöliittymän kielen teksti), merkintätapa ja väri
   ocrFrom: "sme", ocrTo: "", ocrStyle: "frame",
   // Valokuvahaun omat kielet (asetukset → Työkalut → Valokuvahaku): kuvan lisäkielet (inari, koltta) ja käännöskielet
@@ -861,6 +861,12 @@ function queryDatabase(query) {
     )) {
       add({ ...r, extraLang: r.lang }, r.fold === q ? 6.5 : r.fold.startsWith(`${q},`) ? 6.51 : 6.52);
     }
+    // Konekäännetty espanja (kokeellinen): sanakirjan espanjan jälkeen
+    if (extra.includes("spa") && settings.exp.spaMt && hasTable("spa_mt")) {
+      for (const r of all(`SELECT d.${cols.split(", ").join(", d.")}, t.fold FROM trans_search t JOIN dictionary d ON d.id = t.word_id
+         WHERE t.lang = 'spamt' AND (t.fold = ? OR t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\')`,
+        [q, `${likeEsc(q)},%`, `%, ${likeEsc(q)},%`, `%, ${likeEsc(q)}`])) add({ ...r, extraLang: "spa" }, r.fold === q ? 6.6 : 6.62);
+    }
   }
   // 7 = perusmuoto alkaa hakusanalla; monisanaiset ilmaukset (dahkat iežas ...) vain, jos haussa on välilyönti
   const phrases = q.includes(" ") ? "" : "AND instr(lemma_fold, ' ') = 0";
@@ -929,13 +935,20 @@ function finMtOf(id) {
   if (!settings.exp.pivotFin || !hasTable("fin_mt")) return null;
   return all("SELECT fin, level FROM fin_mt WHERE word_id = ?", [id])[0] || null;
 }
-const mtOf = (id, lang) => (lang === "eng" ? engMtOf(id) : lang === "fin" ? finMtOf(id) : null);
+// Konekäännetty espanja (kokeellinen, taulu spa_mt, spa_mt.py): vähintään kolme lähdettä samaa mieltä; vain kun espanja on
+// valittu Muut kielet -kohdassa. Ángelin ja Kjell Kemin sanakirjaan ei kosketa.
+function spaMtOf(id) {
+  if (!settings.exp.spaMt || !hasTable("spa_mt")) return null;
+  return all("SELECT spa, level FROM spa_mt WHERE word_id = ?", [id])[0] || null;
+}
+const mtOf = (id, lang) => (lang === "eng" ? engMtOf(id) : lang === "fin" ? finMtOf(id) : lang === "spa" ? spaMtOf(id) : null);
+const mtText = (mt) => (mt ? mt.eng || mt.fin || mt.spa || "" : "");
 
 // Hakutuloksen tai ehdotuksen käännösteksti: muun kielen osumassa myös sen kielen käännös (koira · Espanjaksi: perro)
 function resultTrans(r, max) {
   const own = translationOf(r, max) || (mtOf(r.id, settings.lang) ? "≈ " + Object.values(mtOf(r.id, settings.lang))[0] : "");
   if (!r.extraLang) return own;
-  const other = `${t("langIn")[r.extraLang]}: ${translationOf(r, max, r.extraLang)}`;
+  const other = `${t("langIn")[r.extraLang]}: ${translationOf(r, max, r.extraLang) || "≈ " + mtText(mtOf(r.id, r.extraLang))}`;
   return own ? `${own} · ${other}` : other;
 }
 
@@ -945,7 +958,8 @@ function resultTransHtml(r, max) {
   const mt = !own ? mtOf(r.id, settings.lang) : null;
   const ownHtml = own ? labelledList(own, settings.lang) : mt ? `≈ ${esc(splitList(mt.eng || mt.fin).slice(0, max).join(", "))}` : "";
   if (!r.extraLang) return ownHtml;
-  const other = `${esc(t("langIn")[r.extraLang])}: ${labelledList(translationOf(r, max, r.extraLang), r.extraLang)}`;
+  const otherTr = translationOf(r, max, r.extraLang);
+  const other = `${esc(t("langIn")[r.extraLang])}: ${otherTr ? labelledList(otherTr, r.extraLang) : "≈ " + esc(mtText(mtOf(r.id, r.extraLang)))}`;
   return ownHtml ? `${ownHtml} · ${other}` : other;
 }
 
@@ -1738,6 +1752,10 @@ function renderExtraTranslations(w, groups) {
         `<span class="muted small">(${esc(t("wiktEngNote"))})</span>`;
       const mt = engMtOf(w.id);
       if (mt) return `<span class="muted">${esc(t("langIn").eng)}:</span> ≈ ${esc(mt.eng)} <span class="muted small">(${esc(t("engMtNote", mt.level))})</span>`;
+    }
+    if (!text && lang === "spa") {
+      const mt = spaMtOf(w.id);
+      if (mt) return `<span class="muted">${esc(t("langIn").spa)}:</span> ≈ ${esc(mt.spa)} <span class="muted small">(${esc(t("engMtNote", mt.level))})</span>`;
     }
     return text && `<span class="muted">${esc(t("langIn")[lang])}:</span> ${labelledList(text, lang)}`;
   }).filter(Boolean);
@@ -2979,7 +2997,8 @@ function renderSettingsSummary() {
   set("sum-card", [t(settings.showGrade ? "sumGradeOn" : "sumGradeOff") + (gradeSum ? ` (${gradeSum})` : ""), settings.voice].join(" · "));
   const langs = [...activeExtraLangs().map((l) => capitalize(langName(l))), ...(settings.skolt ? [capitalize(langName("sms"))] : [])];
   // Kokeelliset käännökset ovat Käännöskielet-sivulla (2026-11-21): päällä olevien määrä yhteenvetoon
-  const expOn = ({ fi: ["tableTr", "pivotFin"], nb: ["tableTr", "apertium"], en: ["engMt"] }[settings.uiLang] || []).filter((k) => settings.exp[k]).length;
+  const expOn = [...({ fi: ["tableTr", "pivotFin"], nb: ["tableTr", "apertium"], en: ["engMt"] }[settings.uiLang] || []),
+    ...(activeExtraLangs().includes("spa") ? ["spaMt"] : [])].filter((k) => settings.exp[k]).length;
   set("sum-langs", (langs.length ? langs.join(", ") : t("sumNone")) + (expOn ? ` · ${t("experimental")}: ${expOn}` : ""));
   const fi = settings.uiLang === "fi";
   const tools = [settings.game ? t("minipeli") : "", t("sanastot"), settings.exp.ocr && window.SatniOcr ? t("expOcr") : "",
@@ -5993,6 +6012,7 @@ function applyExperimental() {
   // konekäännökset näkyvät englanniksi tai kun englanti on Muut kielet -kohdassa
   if ($("exp-tabletr-row")) $("exp-tabletr-row").hidden = !FORM_PHRASES[settings.lang];
   if ($("exp-engmt-row")) $("exp-engmt-row").hidden = !(settings.lang === "eng" || settings.extraLangs.includes("eng"));
+  if ($("exp-spamt-row")) $("exp-spamt-row").hidden = !activeExtraLangs().includes("spa");
   if ($("lause-btn")) {
     const fi = settings.uiLang === "fi";
     $("exp-lause-row").hidden = !fi;
@@ -6013,7 +6033,7 @@ function bindExperimental() {
     if (name === "tableTr" && state.word) renderTable();
     if (name === "apertium" && state.results.length) searchAgainKeepingWord();
     if (name === "pivotFin" && state.results.length) searchAgainKeepingWord();
-    if (name === "engMt" && state.results.length) searchAgainKeepingWord();
+    if ((name === "engMt" || name === "spaMt") && state.results.length) searchAgainKeepingWord();
   };
   // Kokeelliset kytkimet ovat kahdella asetussivulla (Työkalut: valokuvahaku ja lausekääntäjä; Kokeelliset käännökset)
   $("settings-view").addEventListener("change", (e) => {
@@ -6022,7 +6042,7 @@ function bindExperimental() {
     if (!e.target.checked) { set(name, false); return; }
     e.target.checked = false;  // päälle vasta, kun käyttäjä hyväksyy
     pending = name;
-    const key = { ocr: "expOcr", lause: "lauseTitle", tableTr: "expTableTr", apertium: "expApertium", pivotFin: "expPivotFin", engMt: "expEngMt" }[name];
+    const key = { ocr: "expOcr", lause: "lauseTitle", tableTr: "expTableTr", apertium: "expApertium", pivotFin: "expPivotFin", engMt: "expEngMt", spaMt: "expSpaMt" }[name];
     $("exp-dlg-title").textContent = t(key);
     $("exp-dlg-body").innerHTML = t(name === "lause" ? "expLauseInfo" : key + "Info");
     $("exp-dlg").showModal();
@@ -6324,6 +6344,7 @@ function bindEvents() {
     const lang = e.target.value;
     settings.extraLangs = e.target.checked ? [...settings.extraLangs, lang] : settings.extraLangs.filter((l) => l !== lang);
     saveSettings();
+    applyExperimental();  // espanjan konekäännösten kytkin näkyy, kun espanja on valittu
     if (state.results.length) searchAgainKeepingWord();
   };
   $("skolt-ok").onclick = () => {
