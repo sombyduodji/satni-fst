@@ -58,6 +58,30 @@ const PELI_TEXTS = {
     kbdTip: "Med samisk tastatur skriver du samisk i alle apper. På iPhone er det innebygd (Innstillinger → Generelt → Tastatur), til Android finnes gratis Divvun Keyboards.",
     kbdLink: "Slik legger du det til", close: "Lukk",
   },
+  en: {
+    statStreak: "best streak", statModes: "games tried", statGames: "games played", record: "record", rulesBtn: "Rules",
+    unfinished: (n) => `unfinished ${n} p`, restart: "Start the unfinished game again",
+    title: "Mini game", pick: "Choose a game", best: "Best", none: "–", score: (n) => `${n} right`,
+    lead: "Choose the right translation of four. One wrong answer ends the game.",
+    modes: { beginner: ["Beginner", "The most common words"], advanced: ["Advanced", "All words"],
+      ordinals: ["Ordinal numbers", "1st–100th"], time: ["Days, seasons and months", "Biret says the right answer"],
+      colours: ["Colours", "9 colours"], questions: ["Question words", "Biret says the right answer"], animals: ["Animals", "23 animals"] },
+    groups: { words: "Words", cats: "Topics" }, groupSub: { words: "Dictionary words on two levels", cats: "Short topic games" },
+    rules: [["4 options"], ["right", "+1"], ["a wrong answer ends the game"]],
+    rulesWrite: [["right word", "+3"], ["hint", "−1"], ["missing diacritics", "−1"], ["a wrong word ends the game"]],
+    askSme: "What is this in English?", askUi: (l) => `What is it ${l}`, inLang: { sme: "in Sámi", smn: "in Inari Sámi" }, over: "Game over", correctWas: "Right answer:",
+    again: "Play again", menu: "Choose another game", home: "To the start page", top: "Best results",
+    newBest: "New record!", youAnswered: "You answered:", resumeQ: "Continue the unfinished game?", resume: "Continue", fresh: "New game",
+    report: "Report an error", streak: "Streak", mute: "Mute the game sounds", unmute: "Turn the game sounds on",
+    style: "How to play", choose: "choose", write: "write", points: (n) => `${n} ${n === 1 ? "point" : "points"}`,
+    leadWrite: "Write the word in Sámi. A hint costs a point, and so do missing diacritics and a word that only partly fits. A wrong word ends the game.",
+    askWrite: (l) => `Write it ${l}`, allWords: (n) => `All ${n} words`, count: (n) => `${n} words`, samiLang: "Language", experimental: "experimental", check: "Check", inputLabel: "Your answer in Sámi", almost: "Almost!", nearly: "Close!", better: "A better fit here:",
+    youWrote: "You wrote:", letters: (n) => `${n} letters`,
+    hints: ["Hint: number of letters", "Hint: first letter", "Hint: Biret says the word"], listenAgain: "Listen again",
+    keys: "Sámi letters", hideKeys: "Hide Sámi letters", showKeys: "Show Sámi letters",
+    kbdTip: "With a Sámi keyboard you can write Sámi in every app. On iPhone it is built in (Settings → General → Keyboard); for Android there is the free Divvun Keyboards.",
+    kbdLink: "How to add it", close: "Close",
+  },
 };
 const pt = () => PELI_TEXTS[sanastoLang()];
 const PELI_MODES = [
@@ -78,6 +102,13 @@ const peliSamiEnabled = () => !!settings.gameSmn && !!(peli && peli.smn);
 const peliMenuSami = () => (peliSamiEnabled() && peliStore.get("satni-peli-sami", "sme") === "smn" ? "smn" : "sme");
 const peliSamiOf = (run) => (run && run.sami === "smn" ? "smn" : "sme");
 const peliSet = (sami) => (sami === "smn" ? peli.smn : peli);
+// Käyttöliittymän kielen sarake pelin sanoissa: [saame, suomi, norja, ...]; englanniksi norjan paikalle englanti
+// (minipeli.json: en = saamen sana -> englanti), ja sana ilman englantia jää pois
+const peliUi = () => (sanastoLang() === "fi" ? 1 : 2);
+// Aiheissa oma kartta (enCats): sama saamen sana voi olla eri merkityksessä (mii = we pronomineissa, what kysymyksissä)
+const peliEn = (set, w, cat) => (cat && set.enCats && set.enCats[cat] ? set.enCats[cat][w[0]] : set.en && set.en[w[0]]);
+const peliLangWords = (list, set, cat) => (sanastoLang() !== "en" ? list
+  : list.map((w) => { const e = peliEn(set, w, cat); return e ? [w[0], w[1], e, ...w.slice(3)] : null; }).filter(Boolean));
 const peliModesFor = (sami) => PELI_MODES.filter((m) => m.group === "words" || (peliSet(sami).cats[m.id] || []).length);
 
 // Pelitilojen kuvakkeet (sanastojen kuvakkeiden tyyliin): taimi, vuori, luvut, kalenteri, paletti, tassu
@@ -127,10 +158,11 @@ const peliVariants = (sami = "sme") => peliVariantMap[sami] ||
 function peliPool(mode, sami = "sme") {
   const set = peliSet(sami);
   if (mode === "beginner" || mode === "advanced") {
-    return set.words.filter((w) => mode === "advanced" || w[4] === 1).map((w) => [w[0], w[1], w[2], w[3] || "N"]);
+    return peliLangWords(set.words, set).filter((w) => mode === "advanced" || w[4] === 1).map((w) => [w[0], w[1], w[2], w[3] || "N"]);
   }
   // Aika-aiheessa 5. kenttä = järjestysnumero Biretin palauteäänelle (audio/peli/aika-<i>-ok|no.ogg)
-  return (set.cats[mode] || []).map((w, i) => [w[0], w[1], w[2], mode === "time" ? w[3] : mode, i]);
+  // Indeksi ennen englannin suodatusta: Biretin äänitteet ovat alkuperäisen listan järjestyksessä
+  return peliLangWords((set.cats[mode] || []).map((w, i) => [w[0], w[1], w[2], mode === "time" ? w[3] : mode, i]), set, mode);
 }
 const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
@@ -140,13 +172,13 @@ function peliQuestion(run) {
   // Uusi pakka myös, jos tallennettu pakka on eri mittainen kuin sanalista (minipeli.json muuttui päivityksessä)
   if (run.pos >= run.deck.length || run.deck.length !== pool.length) { run.deck = shuffle(pool.map((_, i) => i)); run.pos = 0; }
   const item = pool[run.deck[run.pos++]];
-  const ui = sanastoLang() === "nb" ? 2 : 1;
+  const ui = peliUi();
   if (run.write) {
     // Täysin oikein: sana, jonka käännökset kattavat kaikki kysymyksen merkitykset (ajatella: jurddašit ja smiehttat;
     // tuuli: biegga ja miella). Lähellä (-1 p): sana, jolla on vain osa merkityksistä (mieli, tuuli → biegga).
     const terms = (w) => w[ui].split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
     const itemTerms = terms(item);
-    const all = pool.concat(peliSet(sami).words);
+    const all = pool.concat(peliLangWords(peliSet(sami).words, peliSet(sami)));
     // Kirjoitusasut (sihkkar = sihkar) kelpaavat kuten sana itse (minipeli.json: sanan 6. kenttä)
     const withVariants = (list) => list.flatMap((w) => [w, ...((peliVariants(sami)[w]) || [])]);
     const accept = new Set(withVariants([item[0], ...all.filter((w) => { const t = terms(w); return itemTerms.every((x) => t.includes(x)); }).map((w) => w[0])]));
@@ -310,7 +342,7 @@ function peliPodium(top, isNew) {
 // Oikea vastaus: iso peukalo kasvaa kysymyksen päälle, alla oikea saamen sana ja sen käännös
 function peliSplash(q) {
   const item = peliPool(peliRun.mode, peliSamiOf(peliRun)).find((w) => w[0] === q.sme);
-  const ui = item ? (sanastoLang() === "nb" ? item[2] : item[1]) : "";
+  const ui = item ? item[peliUi()] : "";
   const el = document.createElement("div");
   el.className = "peli-splash";
   el.setAttribute("aria-hidden", "true");
@@ -550,7 +582,7 @@ function peliSubmit() {
   const s = document.querySelector(".peli-score");
   if (s) { s.textContent = peliRun.score; s.classList.remove("pop"); void s.offsetWidth; s.classList.add("pop"); }
   const item = peliPool(peliRun.mode, peliSamiOf(peliRun)).find((w) => w[0] === q.sme);
-  const ui = item ? (sanastoLang() === "nb" ? item[2] : item[1]) : "";
+  const ui = item ? item[peliUi()] : "";
   const el = document.createElement("div");
   const soft = r.almost || r.related;
   el.className = "peli-splash" + (soft ? " almost" : "");
@@ -678,7 +710,7 @@ function peliSendReport() {
     `${L.error}: ${kindText}`,
     `${pt().title}: ${peliLast ? pt().modes[peliLast.mode][0] : ""}${peliLast?.sami === "smn" ? " (" + PELI_SAMI.smn.name + ")" : ""}`,
     word ? `${L.word}: ${word}` : "",
-    item ? `${L.shown}: ${sanastoLang() === "nb" ? item[2] : item[1]}` : "",
+    item ? `${L.shown}: ${sanastoLang() === "en" ? (set.en || {})[item[0]] || "" : item[peliUi()]}` : "",
     q && q.toSme ? `${L.search}: ${q.prompt}` : "",
     `${L.ui}: ${UI_LANGUAGES[settings.uiLang].name}`,
     `${L.version}: ${$("about-version").textContent}`,

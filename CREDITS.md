@@ -55,6 +55,21 @@ lists the North Sámi word. When the Wiktionary explanations of a word's first F
 give the same English, it is shown as an unchecked suggestion. The adapted data is licensed under GPL-3.0 with the rest of
 the app, which CC BY-SA 4.0 allows as a compatible licence.
 
+**English machine translations (experimental):** for words with no English in the dictionaries, [`eng_mt.py`](eng_mt.py)
+translates each word by three routes (from Sámi with smi-mt, the TartuNLP Smugri model, CC BY 4.0, base model NLLB-200
+CC BY-NC 4.0; from the word's Finnish and Norwegian translations with Helsinki-NLP opus-mt-fi-en and opus-mt-gmq-en,
+Apache-2.0, FinnWordNet 2.0, CC BY 3.0 with Princeton WordNet 3.0, Wiktionary, CC BY-SA 4.0, and Apertium
+apertium-fin-eng, GPL-3.0). A word is kept only when at least two routes agree ([`eng_mt.tsv`](eng_mt.tsv)); the app
+shows it only when the setting is on, marked as a machine translation. The test is in
+[docs/englanti-testi-2026-11-21.md](docs/englanti-testi-2026-11-21.md).
+
+**Finnish machine-translated suggestions (experimental):** [`fin_mt.py`](fin_mt.py) uses the same rule for words with no
+Finnish: at least two independent routes must agree, and Voikko must confirm a Finnish base form. Routes: smi-mt from
+Sámi; from the word's Norwegian with Helsinki-NLP opus-mt-no-fi (Apache-2.0), Wiktionary (CC BY-SA 4.0) and GiellaLT
+dict-nob-fin and dict-fin-nob (Trond Trosterud and Kirsti Kuosa, UiT, CC BY); via Inari Sámi and South Sámi with
+GiellaLT's dictionaries (dict-smn-fin, dict-sma-fin, CC BY 4.0); from English with opus-mt-en-fi (Apache-2.0) and
+FinnWordNet (CC BY 3.0). Result: [`fin_mt.tsv`](fin_mt.tsv).
+
 `dict-sme-fin` is included in this repository as an unmodified copy ([dict-sme-fin/SOURCE.md](dict-sme-fin/SOURCE.md));
 the others are downloaded from GiellaLT by [`hae_sanakirjat.sh`](hae_sanakirjat.sh) and are not part
 of this repository.

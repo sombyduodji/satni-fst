@@ -6,6 +6,7 @@
 const UI_LANGUAGES = {
   fi: { name: "Suomi", translationLang: "fin" },
   nb: { name: "Norsk", translationLang: "nob" },
+  en: { name: "English", translationLang: "eng" },
 };
 
 const UI_TEXTS = {
@@ -76,13 +77,24 @@ const UI_TEXTS = {
       <p>Sanasto on tehty konekääntämistä varten, ei sanakirjaksi. Käännös voi olla karkea tai väärä, eikä sitä ole
       tarkistettu. Nämä käännökset eivät vaikuta hakuun.</p>`,
     apertiumNote: "Apertium, tarkistamaton",
-    expPivotFin: "Suomennosehdotukset", expPivotFinDesc: "Muiden kielten kautta sanoille, joilla ei ole suomennosta sanakirjoissa.",
-    expPivotFinInfo: `<p>Kun käännöskielenä on suomi ja sanalta puuttuu suomennos, sanakortissa näytetään ehdotus, joka on
-      muodostettu toisen kielen kautta: inarinsaamen käännöksestä GiellaLT:n inarinsaamen ja suomen sanakirjoilla tai,
-      jos sitä ei ole, suomennoksesta, joka muilla sanoilla on samalle norjan sanalle.</p>
-      <p>Pistokokeissa noin yhdeksän kymmenestä inarin kautta tulleesta ja neljä viidestä norjan kautta tulleesta
-      ehdotuksesta oli oikein. Ehdotuksia ei ole tarkistettu, eivätkä ne vaikuta hakuun.</p>`,
+    expPivotFin: "Suomennosehdotukset", expPivotFinDesc: "Konekäännös ja muiden kielten kautta sanoille, joilla ei ole suomennosta sanakirjoissa.",
+    expPivotFinInfo: `<p>Kun sanalta puuttuu suomennos, sanakortissa näytetään ehdotus. Ensisijaisesti se on konekäännös
+      (noin 2 200 sanaa), joka hyväksytään vain, jos vähintään kaksi toisistaan riippumatonta reittiä antaa saman suomen
+      sanan: saamesta käännösmallilla, sanan norjannoksesta (käännösmalli ja avoimet sanakirjat), inarin- tai
+      eteläsaamen kautta GiellaLT:n sanakirjoilla tai sanan englannista. Voikko tarkistaa, että sana on suomen perusmuoto.
+      Testissä noin 75–80 % oli oikein kahden reitin ja 85–98 % kolmen tai useamman reitin ollessa samaa mieltä.
+      Näitä sanoja voi myös hakea suomeksi sanakirjan omien käännösten jälkeen.</p>
+      <p>Muille sanoille näytetään kuten ennenkin ehdotus inarinsaamen kautta tai suomennos, joka muilla sanoilla on
+      samalle norjan sanalle (pistokokeissa noin neljä viidestä oikein). Ehdotuksia ei ole tarkistettu.</p>`,
     pivotFinNote: { smn: "inarinsaamen kautta, tarkistamaton", nob: "norjan kautta, tarkistamaton" }, derFinNote: "johdettu", cmpFinNote: "osista", cmpPartsMeaning: "osien merkitykset",
+    expEngMt: "Englannin konekäännökset", expEngMtDesc: "Sanoille, joilla ei ole englantia sanakirjoissa, kun kaksi tai kolme käännösreittiä on samaa mieltä.",
+    expEngMtInfo: `<p>Sanakirjoissa englanninkielinen käännös on vain noin 10 000 pohjoissaamen sanalla. Noin 17 000 sanalle
+      tämä näyttää konekäännöksenä tehdyn englannin sanan. Jokainen sana käännettiin kolmea reittiä: saamesta, sanan
+      suomennoksesta ja sen norjannoksesta, kahdella käännösmallilla ja avoimilla sanakirjoilla (WordNet, Wiktionary,
+      Apertium). Sana näytetään vain, jos vähintään kaksi reittiä antaa saman englannin sanan.</p>
+      <p>Testissä sanoilla, joilla englanti on, noin 97 % oli oikein, kun kaikki kolme reittiä olivat samaa mieltä, ja noin
+      85–90 %, kun kaksi oli. Ne ovat silti konekäännöksiä. Sanoja voi myös hakea englanniksi sanakirjan omien käännösten jälkeen.</p>`,
+    engMtNote: (level) => (level >= 3 ? "konekäännös, 3 lähdettä samaa mieltä" : "konekäännös, 2 lähdettä samaa mieltä"),
     wiktEngNote: "Wiktionary suomen ja norjan kautta, tarkistamaton",
     register: { vulgar: "alatyylinen", derogatory: "halventava", offensive: "loukkaava" },
     registerNote: "Wiktionaryn mukaan sanaa pidetään alatyylisenä, halventavana tai loukkaavana",
@@ -371,6 +383,14 @@ const UI_TEXTS = {
       <p>I stikkprøver var omtrent ni av ti forslag via enaresamisk og fire av fem via norsk riktige. Forslagene er
       ikke kontrollert og påvirker ikke søket.</p>`,
     pivotFinNote: { smn: "via enaresamisk, ikke kontrollert", nob: "via norsk, ikke kontrollert" }, derFinNote: "avledet", cmpFinNote: "av delene", cmpPartsMeaning: "delenes betydning",
+    expEngMt: "Engelske maskinoversettelser", expEngMtDesc: "For ord uten engelsk i ordbøkene, når to eller tre oversettelsesveier er enige.",
+    expEngMtInfo: `<p>Bare rundt 10 000 nordsamiske ord har engelsk oversettelse i ordbøkene. For rundt 17 000 flere ord
+      viser dette et engelsk ord laget med maskinoversettelse. Hvert ord ble oversatt på tre veier: fra samisk, fra ordets
+      finske oversettelse og fra den norske, med to oversettelsesmodeller og åpne ordbøker (WordNet, Wiktionary, Apertium).
+      Et ord vises bare når minst to veier gir det samme engelske ordet.</p>
+      <p>I en test med ord som har engelsk, var rundt 97 % riktige når alle tre veiene var enige, og rundt 85–90 % når to
+      var det. Det er likevel maskinoversettelser. Ordene kan også søkes på engelsk, etter ordbokas egne oversettelser.</p>`,
+    engMtNote: (level) => (level >= 3 ? "maskinoversettelse, 3 kilder enige" : "maskinoversettelse, 2 kilder enige"),
     wiktEngNote: "Wiktionary via finsk og norsk, ikke kontrollert",
     register: { vulgar: "vulgært", derogatory: "nedsettende", offensive: "støtende" },
     registerNote: "Ifølge Wiktionary regnes ordet som vulgært, nedsettende eller støtende",
@@ -584,6 +604,293 @@ const UI_TEXTS = {
   },
 };
 
+// Englanti (2026-11-21, kokeellinen kolmas käyttöliittymän kieli). Samat avaimet kuin fi ja nb.
+// Kuunteluharjoitus (suomenkielinen ääni) ja lausekääntäjä (suomi -> saame) eivät ole englanniksi käytössä.
+UI_TEXTS.en = {
+  title: "Sátni FST – North Sámi dictionary and inflector",
+  brandSub: "Open North Sámi dictionary and inflection generator",
+  uiLanguage: "User interface language", language: "Language",
+  sidebar: "History and favourites",
+  theme: "Theme", themeAuto: "Automatic", themeLight: "Light", themeDark: "Dark",
+  about: "About",
+  searchPlaceholder: "Search in Sámi, by translation or by inflected form",
+  searchPlaceholderMid: "Search in Sámi or English", searchPlaceholderShort: "Search",
+  search: "Search",
+  ocrTitle: "Find words in a photo", ocrCamera: "📷 Take a photo", ocrGallery: "🖼️ Choose a photo",
+  ocrIntro: "Take a photo of Sámi text or choose a photo. Change the languages with the language button at the top. The text is recognised on the phone, and the photo never leaves the device.",
+  ocrWorking: "Recognising text…", ocrFinding: "Looking up words…", ocrSecond: "checking uncertain words…",
+  ocrFound: (n) => `${n} dictionary words · tap a word · pinch to zoom`,
+  ocrSami: "Sámi", ocrUiLang: "English", ocrDirTitle: "Photo language and translation",
+  ocrLangs: { sme: "North Sámi", smn: "Inari Sámi", sms: "Skolt Sámi", fin: "Finnish", nob: "Norwegian", eng: "English" }, ocrOffer: { smn: "The photo contains Inari Sámi. Turn on Inari Sámi?", sms: "The photo contains Skolt Sámi. Turn on Skolt Sámi?" }, ocrViaFinShort: "via Finnish, approximate", ocrFromLabel: "Photo language", sentPick: "Pick sentence", sentTitle: "Sentence from photo", sentWords: "Words from the photo · tap to change", sentCopy: "Copy", sentCopied: "Copied", sentGist: "Put together word by word, a rough guide.", sentUnknown: "unrecognised", sentName: "name", sentInPhoto: "In the photo:", sentWhat: "Which word is it?", sentKeep: "Leave untranslated", sentDone: "Done", sentMeaning: "meaning", sentEditWord: "Edit", sentOpen: "Dictionary", sentTapWord: "Tap a word in the sentence", sentSplit: "Split", sentSplitShort: "compound parts yourself", sentSplitHint: "Tap between the letters where the word splits", ocrLangsTitle: "Photo languages", ocrTargetsTitle: "Translation languages", ocrLangsNote: "The Inari and Skolt Sámi word lists are loaded only when the language is selected.", ocrHint: { smn: "The photo may contain Inari Sámi. You can make it a photo language in the settings.", sms: "The photo may contain Skolt Sámi. You can make it a photo language in the settings." }, ocrHintSettings: "Settings", ocrSwap: "Swap direction", ocrViaSmeShort: "via North Sámi, approximate", ocrSmnOffer: "The photo contains Inari Sámi. Turn on Inari Sámi?", ocrNotNow: "Not now", ocrEnable: "Turn on", ocrSkolt: "the photo seems to contain Skolt Sámi, which photo search does not support yet", ocrToLabel: "Translation", ocrViaSme: "Norwegian via North Sámi, approximate",
+  ocrStyle: "Marking style and colour", ocrFrame: "Frame", ocrUnderline: "Underline",
+  ocrNoText: "No text was found in the photo. Try taking the photo closer and straight on.",
+  ocrNoWords: "Text was found, but no dictionary words.",
+  ocrDirSwitched: "direction swapped", ocrAlso: "or", ocrUnknown: "not found", ocrNearest: "not found, nearest:", ocrParts: "not found, compound parts:", ocrNearestOrParts: "not found, nearest or parts:", ocrEdit: "Edit search", ocrRotateLeft: "Rotate photo left", ocrRotateRight: "Rotate photo right",
+  ocrMore: "Photo settings", ocrGalleryShort: "Choose photo", ocrShoot: "Take photo", ocrPhotoSect: "Photo", ocrMarkSect: "Word marking",
+  ocrRotL: "Rotate left", ocrRotR: "Rotate right", ocrBaseForm: "base form", ocrMeant: "Did you mean?",
+  ocrNoMatch: "Not found in the dictionary as it is.", ocrTypeSelf: "Type the word yourself", ocrSplitSelf: "Split it yourself",
+  ocrFix: "Fix", ocrReportShort: "Report", ocrBackToSugs: "Back to suggestions", sentSelect: "Choose words yourself", selHint: "Paint the words with a finger or draw a circle around them · two fingers move the photo", selCount: (n) => `${n} words selected`, ocrTargetAdded: (n) => `${n} added to translation languages`, ocrSourceAdded: (n) => `${n} added to photo languages`, ocrNoSugs: "No suggestions.",
+  experimental: "Experimental translations", experimentalOn: "On", experimentalOff: "Off",
+  experimentalHint: "Machine translations and suggestions for words that have no translation in the dictionaries. They are still being developed and may contain mistakes. Feedback helps!",
+  lauseTitle: "Sentence translator", lauseBadge: "trial", lauseShort: "Sentence", ocrShort: "Photo", expLauseDesc: "A short Finnish sentence into Sámi. Opened from the Sentence button (Finnish user interface only).",
+  expLauseInfo: `<p>The sentence translator turns a short Finnish sentence into North Sámi. It works only in the Finnish user interface.</p>`,
+  lauseHint: "Write a short Finnish sentence. Tap a word to see how it was read or to change the Sámi word.",
+  lausePlaceholder: "saisinko yhden kahvin ja voileivän?", lauseUnknown: "unknown", lauseDidYouMean: "did you mean",
+  lauseSkip: "Skip word", lauseResult: "In Sámi (approximate, check the words)",
+  lauseSearchWord: (w) => `Look up in the dictionary: ${w}`,
+  lauseReading: "Reading", lauseSamiWord: "Sámi word", lauseForm: "Form", lauseSmeForm: "Sámi inflected form", lauseAuto: "automatic",
+  lauseForm_place_Ade: "at a place (where?)", lauseForm_means_Ade: "by means of (with what?)", lauseForm_top_Ade: "on top of",
+  lauseForm_place_Abl: "from a place (from where?)", lauseForm_top_Abl: "off",
+  lauseForm_place_All: "to a place (where to?)", lauseForm_top_All: "onto",
+  sanastot: "Word lists", back: "Back", stop: "Stop", sanastoIntro: (n, w) => `${n} topics, ${w} words with pronunciation`, sanastoIntroSmn: (n, w) => `${n} topics, ${w} words in Inari Sámi (base forms, no pronunciation)`, sanastoGroup_perus: "Basic words", sanastoGroup_aika: "Time", sanastoGroup_ihmiset: "People", sanastoGroup_luonto: "Nature", sanastoHelp: "Tap a word: listen, copy or open the word card.", sanastoHelpSmn: "Tap a word to copy it.", sanastoCard: "Open word card", sanastoListenAll: "Listen to the dialogue", sanastoListenHint: "in Sámi", sanastoCardinal: "Cardinal number", sanastoCardinalEx: "one, two, three", sanastoOrdinal: "Ordinal number", sanastoOrdinalEx: "first, second",
+  ttsStoreHead: "Saved pronunciations", ttsStoreInfo: (n, size, limit) => `${n} words · ${size} / ${limit}`, ttsNone: "No saved pronunciations", ttsLimit: "Maximum size", ttsStoreNote: "Words you listen to are saved on the device, so they also play at once without a network. When the limit is reached, the ones not heard for the longest time are removed.", ttsClear: "Clear saved pronunciations", ttsClearTitle: "Clear saved pronunciations?", ttsClearBody: "The words are fetched from the network again the next time you listen. Recordings for the word lists, practice and game, favourites and history are kept.", ttsCleared: "Saved pronunciations cleared",
+  harjTitle: "Listening practice", harjTileSub: "A word in Finnish, a moment to think, the answer in Sámi", harjHelp: "Hear a word, think of the answer, then hear and see the right one. Continues until you stop.", harjTopics: "Topics", harjRange: "Number range", harjAll: "Select all", harjNone: "Clear", harjStartN: (n) => `Start · ${n} words`, harjHearFi: "in Finnish", harjHearSme: "in Sámi", harjLists: "Lists", harjWords: (n) => `${n} words`, harjDir: "Direction", harjDirFi: "Finnish → Sámi", harjDirSme: "Sámi → Finnish", harjThink: "Thinking time", harjOrder: "Order", harjShuffle: "shuffled", harjInOrder: "list order", harjAwake: "Keep the screen on", harjScreenOff: "You can turn the screen off: the practice continues, and you can stop it from the notification.", harjPickList: "Choose at least one list.", harjStart: "Start", harjAskSme: "What is it in Sámi?", harjAskFi: "What is it in Finnish?", harjRound: (n) => `Round ${n}`, harjPause: "Pause", harjResume: "Resume", harjNext: "Next", harjNotifTitle: "Sátni FST · practice", harjNumbers: "Numbers", harjOrdinals: "Ordinal numbers",
+  lauseClear: "Clear sentence", lauseCheckWord: "Show word details", lauseInSentence: "In this sentence", lauseChoose: "Choose this", lauseFullCard: "Full word card",
+  expOcr: "Photo search", expOcrDesc: "Finds dictionary words in the text of a photo and translates words and sentences. Opened from the Photo button.",
+  expOcrInfo: `<p>A <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg> Photo button appears in the bottom bar (in the top bar on a wide screen). Take a photo of text or choose
+    a photo, and the dictionary words are marked in it. Tap a word to see its translation. With <b>Choose words yourself</b>
+    you can paint or circle the words you want with a finger.</p>
+    <p>Choose the photo language with the language button: North Sámi, and Inari and Skolt Sámi if they are turned on in
+    the settings. In the English user interface, translating a whole sentence is not available.</p>
+    <p>The text is recognised on the phone with Google's ML Kit. Unknown Sámi words are read once more with the National
+    Library of Norway's Sámi text recognition model (Tesseract), also on the phone. The photo never leaves the device,
+    and ML Kit's sending of usage statistics to Google is turned off.</p>`,
+  expTableTr: "Translations of inflected forms", expTableTrDesc: "A machine translation under each form in the inflection table.",
+  positionOn: "on", positionUnder: "under",
+  expTableTrInfo: `<p>A small machine translation appears under the forms of the inflection table. It is available in the
+    Finnish and Norwegian user interfaces.</p>`,
+  tableTrNote: "The translations were made automatically.",
+  expApertium: "Norwegian machine translations", expApertiumDesc: "Apertium: Norwegian for words that have none in the dictionaries.",
+  expApertiumInfo: `<p>When Norwegian is the translation language and a word has no translation, the word card shows a
+    translation from the vocabulary of the Apertium machine translator (apertium-sme-nob).</p>
+    <p>The vocabulary was made for machine translation, not as a dictionary. The translation may be rough or wrong, and
+    it has not been checked. These translations do not affect search.</p>`,
+  apertiumNote: "Apertium, unchecked",
+  expPivotFin: "Finnish suggestions", expPivotFinDesc: "Via other languages, for words with no Finnish translation in the dictionaries.",
+  expPivotFinInfo: `<p>When Finnish is the translation language and a word has no Finnish translation, the word card shows
+    a suggestion made via another language (Inari Sámi or Norwegian). The suggestions have not been checked, and they do
+    not affect search.</p>`,
+  // Konekäännetty englanti (eng_mt.py): vain englanniksi ja Muut kielet -kohdan englannille
+  expEngMt: "English machine translations", expEngMtDesc: "For words without English in the dictionaries, when two or three translation routes agree.",
+  expEngMtInfo: `<p>Only about 10,000 North Sámi words have an English translation in the dictionaries. For about
+    17,000 more words, this shows an English word made by machine translation. Each word was translated by three routes:
+    from Sámi, from the word's Finnish translation and from its Norwegian translation, with two translation models and
+    open dictionaries (WordNet, Wiktionary, Apertium). A word is shown only when at least two routes give the same English word.</p>
+    <p>In a test with words that already have English, about 97 % were right when all three routes agreed and about
+    85–90 % when two agreed. They are still machine translations: check important words. These words can also be
+    found by searching in English, after the dictionary's own translations.</p>`,
+  engMtNote: (level) => (level >= 3 ? "machine translation, 3 sources agree" : "machine translation, 2 sources agree"),
+  pivotFinNote: { smn: "via Inari Sámi, unchecked", nob: "via Norwegian, unchecked" }, derFinNote: "derived", cmpFinNote: "from its parts", cmpPartsMeaning: "meanings of the parts",
+  wiktEngNote: "Wiktionary via Finnish and Norwegian, unchecked",
+  register: { vulgar: "vulgar", derogatory: "derogatory", offensive: "offensive" },
+  registerNote: "According to Wiktionary, the word is considered vulgar, derogatory or offensive",
+  expEnable: "Turn on", cancel: "Cancel", smsVia: "via Finnish, approximate",
+  reportError: "Report an error", reportWhat: "What is wrong?", reportKindTrans: "The translation is wrong or poor",
+  reportKindWord: "The search gave a completely wrong word", reportKindForm: "An inflected form is wrong", reportKindOther: "Other",
+  reportFix: "What would be right? (optional)", reportSend: "Prepare email", reportSubject: "Sátni FST: error report",
+  reportSubjectKind: { trans: "translation", word: "wrong word", form: "inflection", sme: "Sámi word", audio: "recording", inappropriate: "inappropriate", other: "other" },
+  reportKindSme: "The Sámi word or form is wrong", reportKindAudio: "The recording has an error",
+  reportWhichWord: "Which word? (optional)", reportList: "Word list",
+  minipeli: "Mini game", gameButton: "Mini game in the top bar", gameSmn: "Inari Sámi in the mini game and word lists", gameSmnNote: "", reportKindBad: "The word is inappropriate",
+  reportDetails: "Report details",
+  reportLabels: { error: "Error", word: "Word", shown: "Translation shown", search: "Search", ui: "User interface",
+    other: "other languages", version: "Version", link: "Link", place: "View", lang: "Language", base: "Base form",
+    via: "Pivot language", sentence: "Sentence", words: "Words", form: "Form in the sentence", list: "List", voice: "Voice", read: "Photo reading" },
+  reportPlaces: { photo: "Photo search", sent: "Sentence view", lause: "Sentence translator", harj: "Listening practice" },
+  viaSme: (w) => `via North Sámi: ${w}`, viaFin: (w) => `via Finnish: ${w}`,
+  smsUnchecked: "unchecked", skoltDlgTitle: "Turn on Skolt Sámi?",
+  skoltDlgBody: `<p>The Skolt Sámi words come from GiellaLT's Finnish–Skolt Sámi and Norwegian–Skolt Sámi dictionaries.
+    A Skolt Sámi speaker has not yet checked them, so they may be inaccurate. The words appear when you search in Finnish.</p>`,
+  skoltViaLabel: "Also show Skolt Sámi on North Sámi word cards",
+  skoltViaDesc: "Via the Finnish translation, approximate: about one in three may be wrong.",
+  skoltViaShort: "Also for North Sámi words (approximate)",
+  ocrError: "Processing the photo failed.", ocrNoApp: "No camera app was found.",
+  showGrade: "Show consonant gradation",
+  settings: "Settings", otherLanguages: "Other languages",
+  extraLangsHint: "Translations in the selected languages appear on the word card in addition to English, and you can also search with them.",
+  voice: "Voice",
+  setGeneral: "General", setMore: "More", setLook: "Language and appearance", setCard: "Word card and pronunciation",
+  setLangs: "Translation languages", setTools: "Tools", setHistory: "History and favourites", setAbout: "About the app",
+  themeNote: "Automatic follows the device setting.",
+  textSize: "Text size", textSizeSystem: "Device", textSizeNote: "Device: the same text size as in the device's own settings.",
+  previewHouse: "house", previewInHouse: "in the house",
+  showGradeDesc: "Strong and weak grade in colour", voiceHead: "Pronunciation voice",
+  toolsIntro: "The button of a tool that is turned on appears in the bottom bar (in the top bar on a wide screen). Tools marked BETA are still being developed.",
+  toolGameDesc: "Word game: choose the right option or write the word in Sámi.", toolWordlistsDesc: "Word lists by topic with pronunciation.",
+  toolAlways: "Always", toolSmnDesc: "Words also in Inari Sámi; some not yet checked.",
+  langSource: { eng: "Wiktionary and Giellatekno", smn: "Giellatekno", smj: "Giellatekno", sma: "Giellatekno", spa: "dict-sme-spa (UNED)", sms: "via Finnish translations", fin: "Giellatekno and Kotus", nob: "Giellatekno" },
+  historyNote: "Favourites and history appear in the menu and on the start page.",
+  sumGradeOn: "Gradation shown", sumGradeOff: "Gradation hidden", sumNone: "None selected", sumOff: "No buttons",
+  sumExp: (n) => (n ? `${n} on` : "Off"), sumHistory: (n) => `${n} searches in history`,
+  sumTextSystem: "device text size", sumText: (n) => `text size ${n} %`, sumTheme: { auto: "automatic theme", light: "light theme", dark: "dark theme" },
+  gradeStyleHead: "Gradation marking", gradeGdColor: "Strong grade (GD)", gradeHdColor: "Weak grade (HD)",
+  gradeUnderline: "Underline", gradeUnderlineDesc: "Strong grade with a solid line, weak with a dashed line: visible even without colours.",
+  gradeCvd: "Colour-blind friendly: blue and orange", gradeSample: "example",
+  gradeColors: { green: "green", orange: "orange", blue: "blue", purple: "purple", red: "red", brown: "brown", none: "no colour" },
+  sumUnderline: "underline",
+  clearSearch: "Clear search", historyRemoved: (w) => `Removed from history: ${w}`, historyHint: "Long-press to remove a word from history.",
+  navLabel: "Main menu", navSearch: "Search", navGame: "Game", navSentence: "Sentence", navPhoto: "Photo", navMore: "More",
+  sanastoPrev: "previous", sanastoNext: "next", menuFeedback: "Feedback", menuSupport: "Support", menuAbout: "About and licences", historyAll: (n) => `Show all (${n})`, sanastoCount: (n, w) => `${n} topics · ${w} words`,
+  recentHead: "Recent searches", expTools: "New tools", expMore: "More translations",
+  favourites: "★ Favourites", history: "History", searchingForms: "Searching forms…", wildSearching: (q) => `Wildcard search ${q}…`, wildHint: "wildcard search: press Enter or tap", wildShort: (n) => `Wildcard search needs at least ${n} letters`, clearHistory: "Clear history", clearHistoryTitle: "Clear history?",
+  clearHistoryBody: "All search history will be removed. Favourites are kept.", clearHistoryOk: "Clear", historyMore: "More…",
+  supportStory: `<p><strong>Buorre beaivi! I'm Juha Somby.</strong></p>
+    <p>UNESCO classifies all Sámi languages as endangered, and there are fewer than 30,000 speakers in total. For small
+       language communities and Indigenous peoples, accessible digital tools such as spell checkers, morphological
+       analysers (FST), dictionaries and learning tools are important for keeping a language alive in everyday life today.</p>
+    <p>I make free and open-source apps and tools for North Sámi and the other Sámi languages.</p>`,
+  supportHelpTitle: "How you can help",
+  supportCoffeeTitle: "Why support?",
+  supportCoffee: `<p>Developing and maintaining open language technology takes time and needs constant care of data and code.
+       By buying a coffee you support this work directly:</p>
+    <ul class="support-ways">
+      <li>the tools stay free and open for learners, native speakers and researchers</li>
+      <li>modern digital infrastructure is built for endangered languages</li>
+      <li>new tools, analysers and interactive apps are made for the community</li>
+    </ul>`,
+  supportNote: `Support is voluntary and does not unlock any extra features: the app and the dictionary stay free for everyone.
+    Support goes to the developer of the app, not to the authors of the dictionaries. The dictionary data is the work of
+    GiellaLT, Divvun, Giellatekno and other authors.`,
+  supportThanks: "Giitu olu! Thank you for supporting Sámi language technology!",
+  supportWays: `<li><strong>Fix translations and words:</strong> tell me about a wrong translation or a missing word.</li>
+    <li><strong>Report errors:</strong> tell me if something doesn't work or looks odd.</li>
+    <li><strong>Suggest ideas:</strong> new features, themes or changes to the user interface.</li>
+    <li><strong>Accessibility:</strong> tell me what would make the app easier to use, for example with a visual or motor impairment or dyslexia.</li>
+    <li><strong>Take part in development:</strong> the source code is open, and fixes are welcome.</li>`,
+  noFavourites: "No favourites yet", noHistory: "No searches",
+  addFavourite: "Add to favourites", removeFavourite: "Remove from favourites",
+  loadingTitle: "Loading the dictionary…",
+  loadingText: "The first time, about 47 MB is downloaded. After that, the dictionary also works offline.",
+  loadingLocal: "The dictionary is included in the app, so nothing is downloaded. Opening takes a few seconds.",
+  unpacking: "Unpacking…",
+  loadFailed: (status) => `Loading the dictionary failed (${status})`,
+  loadFailedLong: (msg) => `Loading the dictionary failed: ${msg}`,
+  welcomeTitle: "Bures boahtin! – Welcome",
+  welcomeLead: "A North Sámi dictionary with the full inflection of every word. English translations for about 10,000 words " +
+    "(and machine translations for more as an experimental option), Finnish and Norwegian for almost all words.",
+  welcomeTips: `<dt>Search</dt><dd>with a Sámi word (dahkat), an English word (do) or an inflected form (dagan).</dd>
+    <dt>Inflection</dt><dd>all moods for verbs, cases for nominals (sg. and pl.).</dd>
+    <dt>Gradation</dt><dd>strong grade <b class="gd">GD</b> and weak grade <b class="hd">HD</b> in their own colours (selectable in the settings).</dd>
+    <dt>Pronunciation</dt><dd>🔈 next to the word, or tap a form in the table: listen or copy.</dd>
+    <dt>Favourites</dt><dd>★ saves the word to your own list.</dd>
+    <dt>Word lists</dt><dd><svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5.6 4 9 4 12 6c3-2 6.4-2 9-.5V19c-2.6-1.5-6-1.5-9 .5-3-2-6.4-2-9-.5z"/><path d="M12 6v13.5"/><path d="M15.5 5.2v5.3l1.5-1.2 1.5 1.2V4.9"/></svg> in the bottom bar: word lists by topic with pronunciation (numbers, months, family, colours…).</dd>
+    <dt>Mini game</dt><dd><svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 8h11a4 4 0 0 1 3.9 4.9l-.8 3.6a2.3 2.3 0 0 1-4 .9L15 15.5H9l-1.6 1.9a2.3 2.3 0 0 1-4-.9l-.8-3.6A4 4 0 0 1 6.5 8z"/><path d="M8 10.5v3M6.5 12h3"/></svg> word game: choose the right one of four or write the word in Sámi (hints cost points). Beginner, advanced or a topic. The game is in the bottom bar; hide it under More → Tools.</dd>
+    <dt>Photo</dt><dd><svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg> finds and translates the words in a photo (in the Android app). Experimental: turn it on under More → Tools, and the button appears in the bottom bar.</dd>
+    <dt>More</dt><dd>☰ in the bottom bar (at the top on a wide screen): language, settings, tools, favourites and history, other languages and experimental features.</dd>`,
+  menuTip: "Language and settings are in the menu.",
+  tryThese: "Try:", randomWord: "Random word",
+  listen: "Listen", fetching: "Fetching…", listenTo: (text) => `Listen: ${text}`,
+  copy: "Copy", copied: (text) => `Copied: ${text}`,
+  tabTable: "Inflection", tabRaw: "All forms",
+  tabMeanings: (n, examples) => `Meanings (${n})` + (examples ? ` and examples (${examples})` : ""),
+  noHits: (q) => `No results for “${q}”`,
+  noHitsHint: "Try another spelling, the base form or a translation. Use ? for an unclear letter and * for several letters: á?bmogis, *ortnega.",
+  noTranslation: "(no translation)",
+  noTranslationIn: { fin: "(no Finnish translation)", nob: "(no Norwegian translation)", eng: "(no English translation)",
+                     smn: "(no Inari Sámi translation)", smj: "(no Lule Sámi translation)",
+                     sma: "(no South Sámi translation)" },
+  morePrefix: (n, q) => `+${n} more words starting with “${q}”`, fewerPrefix: "Show fewer",
+  moreMeanings: (n) => `+${n} meanings`, otherLangs: "other languages",
+  searchedForm: (q, tags) => `Searched form ${q}: ${tags}`,
+  cliticInfo: (q, stem, parts) => `${q} = ${stem} + ${parts}`,
+  finCliticInfo: (q, stem, c, sme) => `${q} = ${stem} + -${c} (in Sámi ${sme})`,
+  didYouMean: "Did you mean:",
+  cliticMeaning: { go: "question: -ko, -kö (Finnish)", ge: "also; in negative sentences: either", nai: "also", son: "in questions: I wonder", han: "after all, you know" },
+  formIn: (q, forms, lang) => `<b>${q}</b> ≈ ${forms} <span class="muted small">(${lang === "fin" ? "in Finnish" : lang === "nob" ? "in Norwegian" : "in English"}, approximately)</span>`,
+  viaForm: (q, base, sme, tag) => `<b>${q}</b> = ${base}` + (sme ? ` ≈ <b>${sme}</b> <span class="muted small">(${tag}, approximately)</span>` : ` <span class="muted small">(base form)</span>`),
+  gradation: "Gradation", noGradation: "no visible gradation",
+  gradForms: "Strong → weak grade", gradClusters: "Consonants", gradGrades: "Grades", gradGroup: "Gradation group",
+  nomClass: "Nominal class", verbClass: "Verb class",
+  verbClassNames: { I: "I · even-syllable", II: "II · odd-syllable", III: "III · contracted verb" },
+  nomClassNames: { I: "I · even-syllable", II: "II · odd-syllable", III: "III · contracted nominal" },
+  nomClassRules: { I: "<b class=\"gd\">Strong:</b> nominative sg., illative sg., essive · <b class=\"hd\">Weak:</b> other forms",
+                   II: "<b class=\"hd\">Weak:</b> nominative sg., essive · <b class=\"gd\">Strong:</b> other forms",
+                   III: "<b class=\"hd\">Weak:</b> nominative sg., essive · <b class=\"gd\">Strong:</b> other forms" },
+  gradeLegend: `Grade: <b class="gd">GD</b> strong grade &nbsp;&nbsp; <b class="hd">HD</b> weak grade`,
+  noForms: "The FST generator produced no inflected forms for this word.",
+  tapHint: "Tap a form: listen or copy.",
+  noMeanings: "No meaning information.", noExampleTranslation: "(no translation in the source)",
+  usedIn: (place, code) => `used in ${place} (${code})`,
+  dialEast: "east", dialWest: "west", dialCompare: "cf.", dialLegend: "east = eastern, west = western",
+  geo: { N: "Norway", S: "Finland", R: "Sweden" },
+  ttsFailed: (msg) => `Could not get the pronunciation: ${msg}.`,
+  ttsTapAgain: "The sound is ready – tap again to listen.",
+  ttsOffline: "could not connect to the speech service. The first listening needs a network connection",
+  ttsStatus: (status) => `the speech service answered ${status}`,
+  indicative: "Indicative", present: "present", preterite: "preterite", conditional: "Conditional",
+  potential: "Potential", imperative: "Imperative", nonFinite: "Non-finite forms",
+  affirmative: "Affirmative", negative: "Negative", baseForm: "Base form", uninflected: "Uninflected",
+  caseCol: "Case", formCol: "Form", singular: "sg. (singular)", plural: "pl. (plural)",
+  comparison: "Comparison", predicative: "predicative", attributive: "attributive",
+  comparative: "Comparative", superlative: "Superlative",
+  nonFiniteRows: ["Infinitive", "Perfect participle", "Present participle", "Gerund", "Verb genitive",
+                  "Verb abessive", "Supine", "Action (Nom)", "Action (Loc)", "Action (Com)", "Action (Ess)"],
+  pos: {
+    V: "Verb", N: "Noun", A: "Adjective", ADV: "Adverb", PRON: "Pronoun", NUM: "Numeral",
+    CC: "Coordinating conjunction", CS: "Subordinating conjunction", PCLE: "Particle", INTERJ: "Interjection",
+    PO: "Postposition", PR: "Preposition", CMP: "First part of a compound", MWE: "Multi-word expression",
+    PHRASE: "Phrase", ABBR: "Abbreviation",
+  },
+  subtype: {
+    Prop: "Proper noun", NomAg: "Agent noun", Pers: "Personal pronoun", Dem: "Demonstrative pronoun",
+    Indef: "Indefinite pronoun", Interr: "Interrogative pronoun", Refl: "Reflexive pronoun",
+    Rel: "Relative pronoun", Ord: "Ordinal number", Coll: "Collective",
+  },
+  elsewhere: "The word elsewhere",
+  gtTitle: "The word in Giellatekno's Neahttadigisánit dictionary (translations, word history, examples from texts)", satniTitle: "The word in the sátni.org dictionaries",
+  langName: { fin: "Finnish", nob: "Norwegian", eng: "English", smn: "Inari Sámi", smj: "Lule Sámi", sma: "South Sámi", sms: "Skolt Sámi", spa: "Spanish" },
+  smeDef: "Explanation in Sámi", smeDefSyn: "same as",
+  relatedSami: "Related words in other Sámi languages", relatedNote: "Same origin, the meaning may differ. Source: Álgu (Kotus, Institute for the Languages of Finland).",
+  placeName: "Place name", placeSource: "© Kartverket",
+  placeTypes: { by: "town", tettsted: "built-up area", tettbebyggelse: "built-up area", bygdelagBygd: "village", grend: "hamlet", kommune: "municipality",
+    fjell: "mountain", vann: "lake", tjern: "pond", elv: "river", bekk: "stream", fjord: "fjord", "øy": "island", "øyISjø": "island",
+    dal: "valley", nesISjø: "headland", nes: "headland", vikISjø: "bay", vik: "bay", "ås": "ridge", gard: "farm", bruk: "farm",
+    haug: "hill", myr: "bog", li: "slope", foss: "waterfall", sund: "strait", sundISjø: "strait", "halvøy": "peninsula", fylke: "county" },
+  alsoFin: "Also:", alsoFinSource: "Headwords of the Finnish–Sámi dictionary that this word translates",
+  langIn: { fin: "In Finnish", nob: "In Norwegian", eng: "In English", smn: "In Inari Sámi", sms: "In Skolt Sámi", smj: "In Lule Sámi", sma: "In South Sámi", spa: "In Spanish" },
+  // Tietoa-ikkuna. Ääntämisen kuvaus on sovittu Divvunin kanssa (2026-10-29), älä muuta sisältöä.
+  aboutWeb: (v) => (v ? `Version ${v} (web)` : "Web version"), aboutDesktop: (v) => `Version ${v} (desktop)`,
+  aboutAndroid: (v) => `Version ${v} (Android)`,
+  home: "To the start page", madeBy: "Made by:", sendFeedback: "Send feedback", feedbackIntro: "Errors, missing words, translation fixes and ideas are welcome.", feedbackOpenMail: "Open email", feedbackGithub: "Report on GitHub", feedbackSubject: "Sátni FST feedback", support: "Take part and support",
+  aboutBody: `<p class="about-tagline">A North Sámi inflector and dictionary based on open-source software.</p>
+    <h3>Author</h3>
+    <p><strong>Juha Somby</strong><br>
+       <a href="mailto:satni@somby.fi">satni@somby.fi</a> ·
+       <a href="https://github.com/sombyduodji/satni-fst" target="_blank" rel="noopener">GitHub</a></p>
+    <h3>Language data and language technology</h3>
+    <p>The dictionaries are open dictionaries of the GiellaLT community (CC BY 4.0), maintained by Giellatekno and Divvun
+       (UiT The Arctic University of Norway). Their authors include Nils Jernsletten (North Sámi–Norwegian and part of
+       North Sámi–Finnish), the Institute for the Languages of Finland (Finnish–North Sámi and North Sámi–Finnish),
+       Marja-Liisa Olthuis and Taarna Valtonen (Inari Sámi–Finnish), Ángel Díaz de Rada and Kjell Kemi (North Sámi–Spanish),
+       AKU and the Kone Foundation (Skolt Sámi) and members of the language communities.</p>
+    <p>The inflected forms are made with GiellaLT's open language models (North Sámi lang-sme, Finnish lang-fin,
+       Inari Sámi lang-smn and Skolt Sámi lang-sms), Norwegian inflection with Norsk ordbank (Språkbanken).</p>
+    <p>Pronunciation: speech synthesis by Divvun and Giellatekno (UiT The Arctic University of Norway), the voices Biret,
+       Máhtte and Sunná. The sound is fetched from the service api-giellalt.uit.no in the same way as on the sátni.org website.
+       The Finnish voice of the word lists and the listening practice: Chatterbox Finnish (Finnish-NLP, MIT), with the voice
+       of Harri Tapani Ylilammi's LibriVox reading (public domain).</p>
+    <h3>Feedback</h3>
+    <p>If you notice a problem, contact <a href="mailto:satni@somby.fi">satni@somby.fi</a>
+       or report it on GitHub: <a href="https://github.com/sombyduodji/satni-fst/issues" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst/issues</a>.
+       Feedback and suggestions are welcome by email.</p>
+    <details><summary>Sources, licences and privacy</summary>
+    <p>Licences: dictionaries © GiellaLT (CC BY 4.0, combined and extended with inflected forms),
+       inflection GiellaLT lang-sme (GPL-3.0), inflection of the translations GiellaLT lang-fin (GPL-3.0) and Norsk ordbank
+       (Språkbanken / National Library of Norway, CC BY 4.0), Skolt Sámi (experimental) GiellaLT dict-sms-mul, dict-fin-sms and
+       dict-nob-sms (CC BY 4.0 / 3.0), Norwegian translations (experimental) Apertium apertium-sme-nob (GPL-2.0-or-later), Finnish suggestions (experimental) GiellaLT dict-smn-sme, dict-smn-fin and dict-fin-smn (CC BY 4.0), Spanish translations GiellaLT dict-sme-spa and dict-spa-sme (Ángel, CC BY 4.0), some of the English translations Wiktionary (CC BY-SA 4.0, kaikki.org),
+       English machine translations (experimental): smi-mt with the TartuNLP Smugri model (CC BY 4.0; base model NLLB-200, CC BY-NC 4.0), Helsinki-NLP opus-mt-fi-en and opus-mt-gmq-en (Apache-2.0), FinnWordNet (CC BY 3.0) and Apertium apertium-fin-eng (GPL-3.0),
+       sql.js (MIT). Experimental text recognition
+       in the Android app: Google ML Kit (Google's terms). The photo is processed on the phone and never leaves the device,
+       and ML Kit's sending of usage statistics to Google is turned off. Second reading of unknown Sámi words:
+       Tesseract (Apache-2.0) and the National Library of Norway's Sámi model (Nasjonalbiblioteket, CC BY 4.0; Enstad et al. 2025). Inari and Skolt Sámi
+       inflected forms in photos: GiellaLT lang-smn and lang-sms (GPL-3.0). Finnish and Norwegian word pairs in the sentence view
+       for photos: Leipzig Corpora Collection (Wortschatz Leipzig, CC BY; only counts of word pairs and words, no sentences). Related words in other Sámi languages: Álgu (Kotus, Institute for the Languages of Finland, CC BY 4.0). Place names: Kartverket Stedsnavn (© Kartverket, CC BY 4.0). Corpus frequencies: SIKOR (UiT, CC BY 3.0). Sátni FST is free software (GPL-3.0).
+       Gradation groups: Oahpa (Giellatekno). All sources, licences and changes: the Licences button below.
+       Source code: <a href="https://github.com/sombyduodji/satni-fst" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst</a>.</p>
+    </details>`,
+  close: "Close", licenses: "Licences", licensesTitle: "Licences and copyright",
+};
+
 // Liput SVG:nä (emoji-liput eivät näy Windowsissa)
 const FLAGS = {
   fi: `<svg viewBox="0 0 18 11" aria-hidden="true"><rect width="18" height="11" fill="#fff"/>` +
@@ -591,4 +898,8 @@ const FLAGS = {
   nb: `<svg viewBox="0 0 22 16" aria-hidden="true"><rect width="22" height="16" fill="#ba0c2f"/>` +
       `<rect x="6" width="4" height="16" fill="#fff"/><rect y="6" width="22" height="4" fill="#fff"/>` +
       `<rect x="7" width="2" height="16" fill="#00205b"/><rect y="7" width="22" height="2" fill="#00205b"/></svg>`,
+  en: `<svg viewBox="0 0 60 30" aria-hidden="true"><clipPath id="ukc"><path d="M30,15h30v15zv15h-30zh-30v-15zv-15h30z"/></clipPath>` +
+      `<path d="M0,0v30h60v-30z" fill="#012169"/><path d="M0,0 60,30M60,0 0,30" stroke="#fff" stroke-width="6"/>` +
+      `<path d="M0,0 60,30M60,0 0,30" clip-path="url(#ukc)" stroke="#C8102E" stroke-width="4"/>` +
+      `<path d="M30,0v30M0,15h60" stroke="#fff" stroke-width="10"/><path d="M30,0v30M0,15h60" stroke="#C8102E" stroke-width="6"/></svg>`,
 };

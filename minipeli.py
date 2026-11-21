@@ -8,6 +8,7 @@ Sanat ja tasot ovat tiedostossa minipeli_sanat.tsv (koottu ja tarkistettu 2026-1
 
 Aja: python3 minipeli.py   (sanastot.py ja export_web_data.py ensin, koska käännökset tulevat niistä)
 """
+import collections
 import json
 import os
 import re
@@ -25,6 +26,12 @@ ANIMALS = [("boazu", "poro", "rein"), ("beana", "koira", "hund"), ("njoammil", "
            ("gussa", "lehmä", "ku"), ("spiidni", "sika", "gris"), ("rievssat", "riekko", "rype"), ("goahppil", "koppelo", "røy"),
            ("gáranas", "korppi", "ravn"), ("njukča", "joutsen", "svane"), ("goaskin", "kotka", "ørn"),
            ("jievjaskuolfi", "tunturipöllö", "snøugle"), ("beahceloddi", "metso", "storfugl")]
+
+ANIMALS_EN = {"boazu": "reindeer", "beana": "dog", "njoammil": "hare", "guovža": "bear", "gumpe": "wolf", "geatki": "wolverine",
+              "albbas": "lynx", "rieban": "fox", "oarri": "squirrel", "cuoppu": "frog", "sáhpán": "mouse",
+              "beaiveloddi": "butterfly", "gáhttu": "cat", "sávza": "sheep", "gussa": "cow", "spiidni": "pig",
+              "rievssat": "willow grouse", "goahppil": "capercaillie hen", "gáranas": "raven", "njukča": "swan",
+              "goaskin": "eagle", "jievjaskuolfi": "snowy owl", "beahceloddi": "capercaillie"}
 
 # Norjan järjestysluvut 1–100 (bokmål)
 NB_UNITS = ["", "første", "andre", "tredje", "fjerde", "femte", "sjette", "sjuende", "åttende", "niende"]
@@ -54,6 +61,51 @@ def first(text, k=2):
     if len(items) > 1 and len(items[1]) > 22:
         items = items[:1]
     return ", ".join(items)
+
+
+def english(db, data, lists):
+    """Englanninkielinen käyttöliittymä (2026-11-21): saamen sana -> englanti. Sanastojen sanoille sanastojen englanti,
+    muille sanakirjan englanti ja sen puuttuessa konekäännös, jos kaikki kolme reittiä ovat samaa mieltä (eng_mt.tsv,
+    taso 3). Sana ilman englantia jää englanniksi pois pelistä."""
+    import sanastot_en
+    from_lists = {}
+    for l in lists.values():
+        for r in l["rows"]:
+            if r.get("en") and r["en"][0]:
+                from_lists.setdefault(r["sme"][0]["w"][0], first(r["en"][0], 1))
+    mt = {}
+    mt_path = os.path.join(SCRIPT_DIR, "eng_mt.tsv")
+    if os.path.exists(mt_path):
+        for line in open(mt_path, encoding="utf-8"):
+            if not line.startswith("#"):
+                c = line.rstrip("\n").split("\t")
+                if c[3] == "3":
+                    mt.setdefault(c[0], first(c[2], 1))
+
+    def dict_en(sme, pos):
+        row = db.execute("""SELECT eng_translation FROM dictionary WHERE sme_lemma = ? AND COALESCE(eng_translation, '') <> ''
+                            ORDER BY (pos = ?) DESC, freq DESC LIMIT 1""", (sme, pos)).fetchone()
+        if not row:
+            return ""
+        # "to know" -> know; pitkä selitys ("bark at reindeer and drive them ...") ei kelpaa pelin vaihtoehdoksi
+        items = [re.sub(r"^(to|a|an|the) ", "", x.strip()) for x in first(row[0].replace(";", ","), 2).split(",")]
+        return ", ".join(x for x in items if x and len(x.split()) <= 3)
+    en, src = {}, collections.Counter()
+    for w in data["words"]:
+        e = from_lists.get(w[0]) or dict_en(w[0], w[3]) or mt.get(w[0])
+        if e:
+            en[w[0]] = e
+            src["list" if w[0] in from_lists else "dict" if dict_en(w[0], w[3]) else "mt"] += 1
+    # Aiheet omina karttoinaan: sama saamen sana voi olla kahdessa listassa eri merkityksessä (mii = me / mikä)
+    cats = {"ordinals": {o[0]: sanastot_en.en_ord(o[3]) for o in data["cats"]["ordinals"]},
+            "animals": {it[0]: ANIMALS_EN[it[0]] for it in data["cats"]["animals"]}}
+    for k, lids in (("time", ("viikonpaivat", "vuodenajat", "kuukaudet")), ("colours", ("varit",)), ("questions", ("kysymykset",))):
+        own = {r["sme"][0]["w"][0]: first(r["en"][0], 1) for lid in lids for r in lists[lid]["rows"] if r.get("en")}
+        cats[k] = {it[0]: own[it[0]] for it in data["cats"][k] if it[0] in own}
+    data["enCats"] = cats
+    print(f"Englanti: {len(en)} sanaa (sanoista {sum(src.values())} / {len(data['words'])}: sanastot {src['list']}, "
+          f"sanakirja {src['dict']}, konekäännös {src['mt']})")
+    return en
 
 
 def ordinals():
@@ -107,12 +159,15 @@ def inari(db, data):
         print("Inarinsaame: dict-smn-fin puuttuu (hae_sanakirjat.sh), ohitetaan")
         return None
 
+    sme_of = {}  # inarin sana -> pohjoissaamen sana (englanti pohjoissaamen sanan mukaan)
+
     def conv(items, fi_i=1):
         out = []
         for it in items:
             smn, why, piv = picker.pick(it[0], it[fi_i], it[3] if len(it) > 3 and isinstance(it[3], str) else None, it[2])
             if smn:
                 out.append([smn] + list(it[1:]))
+                sme_of.setdefault(smn, it[0])
         return out
     # Sama inarinsaamen sana kahdelle pohjoissaamen sanalle (áddjá, áhčči -> äijih?): vain kerran, aloittelijataso ensin
     words, seen = [], set()
@@ -129,7 +184,10 @@ def inari(db, data):
     lv = [w[4] for w in words]
     print(f"Inarinsaame: {len(words)} sanaa ({lv.count(1)} aloittelija), aiheet {', '.join(f'{k} {len(v)}' for k, v in cats.items())}; "
           + picker.summary())
-    return {"words": words, "cats": cats}
+    en, en_cats = data.get("en", {}), data.get("enCats", {})
+    # Inarin aiheissa sama inarin sana -> pohjoissaamen sana -> aiheen englanti
+    return {"words": words, "cats": cats, "en": {smn: en[sme] for smn, sme in sme_of.items() if sme in en},
+            "enCats": {k: {smn: v[sme] for smn, sme in sme_of.items() if sme in v} for k, v in en_cats.items()}}
 
 
 # Tavutus pitkille sanoille (yli 11 merkkiä), jotta kapealla näytöllä sana katkeaa oikeasta kohdasta tavuviivalla
@@ -276,6 +334,7 @@ def main():
     questions = [[r["sme"][0]["w"][0], r["fi"][0], r["nb"][0]] for r in lists["kysymykset"]["rows"]]
     data = {"words": words, "cats": {"ordinals": ordinals(), "time": time, "colours": colours, "questions": questions,
                                      "animals": [list(a) for a in ANIMALS]}}
+    data["en"] = english(db, data, lists)
     # Inarinsaame (asetuksista valittava, kokeellinen): samat käsitteet, sana kahdesta lähteestä tarkistettuna
     data["smn"] = inari(db, data)
     data["hy"] = hyphenation_map(data)

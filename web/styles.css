@@ -1617,6 +1617,16 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
 .settings-view .voice-list { padding: 0; }
 .settings-view .lang-switch.seg-full { display: flex; width: 100%; }
 .settings-view .lang-switch.seg-full button { flex: 1; justify-content: center; }
+/* Kolme kieltä (suomi, norja, englanti, 2026-11-21): kapealla näytöllä tai isolla tekstillä lippu nimen yläpuolelle,
+   ettei valitsin levennä koko asetussivua (130 %:n tekstikoolla tekstikoon painikkeet jäivät näytön ulkopuolelle) */
+.lang-switch { max-width: 100%; }
+.lang-switch button { min-width: 0; }
+.lang-switch button span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.settings-view .lang-switch.seg-full { container-type: inline-size; }
+@container (max-width: 340px) {
+  .settings-view .lang-switch.seg-full button { flex-direction: column; gap: 3px; padding: 6px 4px; border-radius: 12px; }
+}
+#welcome-lang { flex-wrap: wrap; justify-content: center; }
 .seg-ctl { display: flex; gap: 2px; padding: 3px; border-radius: 11px; background: var(--chip); }
 .seg-ctl button { flex: 1; min-width: 0; padding: 8px 4px; border: 0; border-radius: 9px; background: none; color: var(--muted);
   font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

@@ -492,6 +492,8 @@ def add_inari(L):
 if __name__ == "__main__":
     L = lists()
     add_sections(L)
+    import sanastot_en  # englanti (2026-11-21)
+    sanastot_en.apply(L, problems)
     # Valmiit äänilistat (suomi + saame, Ogg Opus, web/audio/, ks. ~/Git/fi-tts): listan yläreunan kaiutin soittaa
     # <id>.ogg:n; lukutaulukon osioilla omat painikkeet perus- ja järjestysluvuille (luvut-N.ogg, jarjestysluvut-N.ogg)
     audio = lambda name: f"audio/{name}.ogg" if os.path.exists(os.path.join(os.path.dirname(OUT), "..", "audio", name + ".ogg")) else None

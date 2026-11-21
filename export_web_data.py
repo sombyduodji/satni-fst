@@ -42,6 +42,28 @@ BRACKETED = re.compile(r"\s*\([^()]*\)\s*")
 EXTRA_LETTERS = str.maketrans({"đ": "d", "ŋ": "n", "ŧ": "t", "æ": "ae", "ø": "o", "ß": "ss", "ł": "l"})
 
 
+
+def eng_mt_table(src, lang="eng"):
+    """eng_mt.tsv (eng_mt.py) tai fin_mt.tsv (fin_mt.py) -> [(word_id, käännös, taso)] sanoille, joilla ei ole
+    sanakirjan käännöstä kyseisellä kielellä."""
+    path = os.path.join(SCRIPT_DIR, f"{lang}_mt.tsv")
+    if not os.path.exists(path):
+        return []
+    ids = collections.defaultdict(list)
+    for i, lemma, pos in src.execute(
+            "SELECT id, sme_lemma, pos FROM dictionary d WHERE NOT EXISTS "
+            "(SELECT 1 FROM meanings m WHERE m.word_id = d.id AND m.lang = ?)", (lang,)):
+        ids[(lemma, pos)].append(i)
+    out = {}
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            if line.startswith("#"):
+                continue
+            lemma, pos, eng, level, _ = line.rstrip("\n").split("\t")
+            for i in ids.get((lemma, pos), []):
+                out.setdefault(i, (i, eng, int(level)))  # sama sana kahdesti (eri merkitys): ensimmäinen
+    return list(out.values())
+
 def without_letters(text):
     """Hakusana ilman erikoiskirjaimia ja tarkkeita (árbol -> arbol, čáhci -> cahci, vyevdi -> vyevdi). Sama kuin
     app.js:n withoutLetters."""
@@ -337,6 +359,11 @@ def main():
         CREATE TABLE cmp_fin (word_id INTEGER PRIMARY KEY, fin TEXT, parts TEXT) WITHOUT ROWID;
         -- Englanti Wiktionarysta suomen ja norjan kautta, kun molemmat antavat saman (wiktionary_eng.py, tarkistamaton)
         CREATE TABLE wikt_eng (word_id INTEGER PRIMARY KEY, eng TEXT) WITHOUT ROWID;
+        -- Konekäännetty englanti (kokeellinen, eng_mt.py / eng_mt.tsv): sanoille ilman englantia, kun vähintään kaksi
+        -- reittiä (saame, suomi, norja -> englanti) antaa saman sanan; level 3 = kaikki kolme, 2 = kaksi
+        CREATE TABLE eng_mt (word_id INTEGER PRIMARY KEY, eng TEXT, level INTEGER) WITHOUT ROWID;
+        -- Konekäännetyt suomennosehdotukset (kokeellinen, fin_mt.py / fin_mt.tsv), samat säännöt riippumattomin reitein
+        CREATE TABLE fin_mt (word_id INTEGER PRIMARY KEY, fin TEXT, level INTEGER) WITHOUT ROWID;
         -- Lisäsuomennokset käänteisestä dict-fin-sme:stä sanakortin Merkitykset-välilehdelle (fin_also.py)
         CREATE TABLE fin_also (word_id INTEGER PRIMARY KEY, items TEXT) WITHOUT ROWID;
         -- Loukkaavat, halventavat ja alatyyliset käännössanat (Wiktionaryn merkinnät, käyty käsin läpi; wiktionary_eng.py)
@@ -381,6 +408,16 @@ def main():
     search_rows += [(w, "fin", fold(f), -1) for w, f, _, _ in der_fin_rows]
     cmp_fin_rows = cmp_fin.rows(src)
     search_rows += [(w, "fin", fold(f), -1) for w, f, _ in cmp_fin_rows]
+    # Konekäännetty englanti (eng_mt.tsv) hakuun omalla kielikoodillaan engmt: app.js käyttää sitä vain
+    # Kokeelliset-asetuksella ja sanakirjan englannin jälkeen
+    eng_mt_rows = eng_mt_table(src)
+    for w, eng, _ in eng_mt_rows:
+        search_rows.append((w, "engmt", fold(eng), None))
+        plain = without_articles(eng)
+        if plain and fold(plain) != fold(eng):
+            search_rows.append((w, "engmt", fold(plain), None))
+    fin_mt_rows = eng_mt_table(src, "fin")
+    search_rows += [(w, "finmt", fold(fin), None) for w, fin, _ in fin_mt_rows]
     dst.executemany("INSERT INTO trans_search VALUES (?, ?, ?, ?)", search_rows)
     # Hakusanat ilman saamen erikoiskirjaimia (čáhci -> cahci): hakukentän ehdotukset kirjoitettaessa tavallisilla
     # kirjaimilla (cah -> čáhci). Vain sanat, joissa erikoiskirjaimia on (app.js: suggestWords).
@@ -470,6 +507,11 @@ def main():
     wikt_rows = wiktionary_eng.agree_rows(src)
     dst.executemany("INSERT INTO wikt_eng VALUES (?,?)", wikt_rows)
     print(f"Wiktionaryn englanti suomen ja norjan kautta: {len(wikt_rows)} riviä" if wikt_rows else "Wiktionary: wiktionary/ puuttuu (python3 wiktionary_eng.py --hae)")
+
+    dst.executemany("INSERT INTO eng_mt VALUES (?,?,?)", eng_mt_rows)
+    dst.executemany("INSERT INTO fin_mt VALUES (?,?,?)", fin_mt_rows)
+    print(f"Konekäännetyt suomennosehdotukset (kokeellinen): {len(fin_mt_rows)} sanaa" if fin_mt_rows else "fin_mt.tsv puuttuu")
+    print(f"Konekäännetty englanti (kokeellinen): {len(eng_mt_rows)} sanaa" if eng_mt_rows else "eng_mt.tsv puuttuu")
 
     register_rows = wiktionary_eng.register_rows(src)
     dst.executemany("INSERT INTO register VALUES (?,?,?)", register_rows)

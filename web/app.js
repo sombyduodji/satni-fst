@@ -57,7 +57,7 @@ const DEFAULT_SETTINGS = {
   skolt: false, skoltViaSme: false,
   // Kokeelliset ominaisuudet (valikon lopussa), kukin erikseen: ocr = kuvasta haku (Android-sovellus),
   // tableTr = muotojen käännökset taivutustaulukossa, apertium = Apertiumin norjan käännökset, pivotFin = suomennosehdotukset. experimental: vanha yhteinen kytkin (= ocr), siirretään exp.ocr:ään.
-  exp: { ocr: false, lause: false, tableTr: false, apertium: false, pivotFin: false },
+  exp: { ocr: false, lause: false, tableTr: false, apertium: false, pivotFin: false, engMt: false },
   // Kuvasta haku: suunta ("sme" = saamen teksti, "ui" = käyttöliittymän kielen teksti), merkintätapa ja väri
   ocrFrom: "sme", ocrTo: "", ocrStyle: "frame",
   // Valokuvahaun omat kielet (asetukset → Työkalut → Valokuvahaku): kuvan lisäkielet (inari, koltta) ja käännöskielet
@@ -315,6 +315,11 @@ function onPopState(e) {
 // Muut kielet valikossa: valittujen kielten käännökset näytetään sanakortissa (renderExtraTranslations)
 // Koltansaame eteläsaamen jälkeen omana kytkimenään: merkintä "tarkistamaton", ja päällä ollessa sen alla valinta
 // pohjoissaamen sanakorteille (suomennoksen kautta)
+// Muut kielet nykyisellä käyttöliittymän kielellä: suomeksi ja norjaksi muut kuin pääkielet, englanniksi myös suomi
+// ja norja (englanti on käännöskieli). Tallennettu valinta säilyy, vaikka kieli ei juuri nyt ole valittavissa.
+const extraLangOk = (l) => !!LANGUAGES[l] && l !== settings.lang && (!LANGUAGES[l].main || settings.lang === "eng");
+const activeExtraLangs = () => settings.extraLangs.filter(extraLangOk);
+
 function renderExtraLangs() {
   // Kielen nimen alla käännösten lähde (Asetukset → Käännöskielet)
   const src = (l) => (t("langSource") || {})[l] ? `<span class="muted small">${esc(t("langSource")[l])}</span>` : "";
@@ -325,7 +330,7 @@ function renderExtraLangs() {
     `<input type="checkbox" class="switch" role="switch" data-skolt="on"${settings.skolt ? " checked" : ""}></label>` +
     (settings.skolt ? `<label class="skolt-sub"><input type="checkbox" data-skolt="via"${settings.skoltViaSme ? " checked" : ""}>` +
       `<span>${esc(t("skoltViaShort"))}</span></label>` : "");
-  const langs = Object.keys(LANGUAGES).filter((l) => !LANGUAGES[l].main);
+  const langs = Object.keys(LANGUAGES).filter(extraLangOk);
   const at = langs.includes("sma") ? langs.indexOf("sma") + 1 : langs.length;
   $("extra-langs").innerHTML = [...langs.slice(0, at).map(row), skolt, ...langs.slice(at).map(row)].join("");
 }
@@ -340,7 +345,7 @@ const PUBLIC_APP_URL = "https://sombyduodji.github.io/satni-fst/app/";
 function reportLanguages() {
   const w = state.word;
   const out = [[settings.lang, $("translation").textContent.trim()]];
-  for (const l of settings.extraLangs) {
+  for (const l of activeExtraLangs()) {
     const text = LANGUAGES[l] && w[LANGUAGES[l].col];
     if (text) out.push([l, text]);
   }
@@ -372,7 +377,7 @@ function sendReport() {
   const kindText = { trans: t("reportKindTrans"), word: t("reportKindWord"), form: t("reportKindForm"), other: t("reportKindOther") }[kind];
   const lemma = shownLemma(w);
   const subject = `${t("reportSubject")} – ${lemma} (${t("reportSubjectKind")[kind]}${kind === "trans" ? ", " + langName(lang) : ""})`;
-  const others = [...settings.extraLangs.filter((l) => LANGUAGES[l]), ...(settings.skolt ? ["sms"] : [])].map(langName);
+  const others = [...activeExtraLangs(), ...(settings.skolt ? ["sms"] : [])].map(langName);
   const link = `${PUBLIC_APP_URL}#/sana/${encodeURIComponent(state.query)}${state.index ? "/" + state.index : ""}`;
   const body = [
     $("report-text").value.trim().slice(0, 1200), "",
@@ -730,6 +735,36 @@ async function wildcardSearch(query, index, pushHistory, run) {
   if (typed !== query) { $("search").value = typed; syncSearchClear(); }
 }
 
+// Englannin taivutusmuodon mahdolliset perusmuodot haussa (dogs -> dog, cities -> city, running -> run, went -> go).
+// Väärät ehdokkaat eivät haittaa: niillä ei ole osumia, ja osumat tulevat suorien osumien jälkeen.
+const ENG_IRREGULAR = { went: "go", gone: "go", was: "be", were: "be", been: "be", is: "be", are: "be", am: "be", did: "do", done: "do",
+  had: "have", has: "have", saw: "see", seen: "see", ate: "eat", eaten: "eat", took: "take", taken: "take", gave: "give", given: "give",
+  came: "come", made: "make", said: "say", got: "get", knew: "know", known: "know", thought: "think", found: "find", told: "tell",
+  bought: "buy", brought: "bring", ran: "run", sat: "sit", stood: "stand", wrote: "write", written: "write", spoke: "speak",
+  drank: "drink", swam: "swim", sang: "sing", slept: "sleep", left: "leave", felt: "feel", kept: "keep", met: "meet", paid: "pay",
+  sold: "sell", taught: "teach", caught: "catch", fell: "fall", flew: "fly", froze: "freeze", frozen: "freeze", grew: "grow",
+  hid: "hide", held: "hold", lost: "lose", rode: "ride", rose: "rise", shook: "shake", threw: "throw", woke: "wake", wore: "wear",
+  won: "win", began: "begin", begun: "begin", broke: "break", broken: "break", chose: "choose", drove: "drive", fought: "fight",
+  forgot: "forget", heard: "hear", led: "lead", meant: "mean", sent: "send", spent: "spend", understood: "understand",
+  children: "child", men: "man", women: "woman", feet: "foot", teeth: "tooth", mice: "mouse", geese: "goose", people: "person",
+  better: "good", best: "good", worse: "bad", worst: "bad", leaves: "leaf", wolves: "wolf", knives: "knife", wives: "wife",
+  lives: "life", halves: "half", calves: "calf", shelves: "shelf", loaves: "loaf" };
+function engBasesOf(q) {
+  if (!q || q.includes(" ")) return [];
+  const out = new Set();
+  if (ENG_IRREGULAR[q]) out.add(ENG_IRREGULAR[q]);
+  const cut = (suf, add = "") => { if (q.length > suf.length + 2 && q.endsWith(suf)) out.add(q.slice(0, -suf.length) + add); };
+  cut("ies", "y"); cut("es"); cut("s"); cut("ied", "y"); cut("ed"); cut("ed", "e"); cut("ing"); cut("ing", "e");
+  cut("er"); cut("est"); cut("ier", "y"); cut("iest", "y"); cut("ly");
+  // Kaksinkertainen loppukonsonantti (running -> run, stopped -> stop, bigger -> big)
+  for (const suf of ["ing", "ed", "er", "est"]) {
+    const m = q.endsWith(suf) && q.slice(0, -suf.length).match(/^(.*[aeiou])([bdgklmnprt])\2$/);
+    if (m) out.add(m[1] + m[2]);
+  }
+  out.delete(q);
+  return [...out].filter((b) => b.length >= 2);
+}
+
 function queryDatabase(query) {
   if (isWildcard(query)) return wildcardQuery(query);
   const q = fold(query.trim());
@@ -761,6 +796,21 @@ function queryDatabase(query) {
     // nr -1 = johdettu suomennos (der_fin.py: váralašvuohta ≈ vaarallisuus): sanakirjan omien käännösten jälkeen
     add(r, r.nr === -1 ? 4.2 : r.nr !== null ? (r.fold === q ? 1.5 + Math.min(r.nr, 9) / 100 : 4)
       : r.fold === q ? 2 : r.fold.startsWith(`${q},`) ? 3 : 4);
+  }
+  // Englanti (2026-11-21): taivutettu hakusana perusmuotoon (dogs -> dog, went -> go) sanakirjan englannista, ja
+  // konekäännetty englanti (kokeellinen, trans_search lang = engmt) vasta sanakirjan omien käännösten jälkeen
+  const mtSel = `SELECT d.${cols.split(", ").join(", d.")}, t.fold FROM trans_search t JOIN dictionary d ON d.id = t.word_id
+       WHERE t.lang = ? AND ${TRANS_MATCH} ORDER BY t.rowid`;
+  if (searchLang === "eng") {
+    const bases = engBasesOf(q);
+    for (const b of bases) for (const r of all(mtSel, ["eng", ...transMatchParams(b)])) add(r, r.fold === b ? 4.5 : 4.55);
+    if (settings.exp.engMt && hasTable("eng_mt")) {
+      for (const b of [q, ...bases]) for (const r of all(mtSel, ["engmt", ...transMatchParams(b)])) add(r, (r.fold === b ? 4.6 : 4.65) + (b === q ? 0 : 0.02));
+    }
+  }
+  // Suomennosehdotukset hakuun (kokeellinen, fin_mt): sanakirjan omien suomennosten jälkeen
+  if (searchLang === "fin" && settings.exp.pivotFin && hasTable("fin_mt")) {
+    for (const r of all(mtSel, ["finmt", ...transMatchParams(q)])) add(r, r.fold === q ? 4.6 : 4.65);
   }
   // 5 = taivutusmuoto (manan -> mannat); hyvin yleisen sanan muoto 1.2 eli käännösten edelle
   // (lei = leahkit eikä norjan "lei", mus = mun eikä norjan "mus")
@@ -864,12 +914,26 @@ function queryDatabase(query) {
 let skipExtraSearch = false;
 function extraSearchLangs() {
   if (skipExtraSearch) return [];
-  return settings.extraLangs.filter((l) => LANGUAGES[l] && !LANGUAGES[l].main && l !== settings.lang);
+  return activeExtraLangs();
 }
+
+// Konekäännetty englanti (kokeellinen, taulu eng_mt, eng_mt.py): sanoille ilman sanakirjan englantia, kun asetus on päällä
+// ja englanti on käännöskieli tai Muut kielet -kohdassa. level 3 = kolme käännösreittiä samaa mieltä, 2 = kaksi.
+function engMtOf(id) {
+  if (!settings.exp.engMt || !hasTable("eng_mt")) return null;
+  return all("SELECT eng, level FROM eng_mt WHERE word_id = ?", [id])[0] || null;
+}
+// Konekäännetty suomennosehdotus (Suomennosehdotukset-asetus, taulu fin_mt, fin_mt.py): kaksi tai useampi riippumaton
+// reitti samaa mieltä. Ennen vanhoja yhden reitin ehdotuksia (pivot_fin).
+function finMtOf(id) {
+  if (!settings.exp.pivotFin || !hasTable("fin_mt")) return null;
+  return all("SELECT fin, level FROM fin_mt WHERE word_id = ?", [id])[0] || null;
+}
+const mtOf = (id, lang) => (lang === "eng" ? engMtOf(id) : lang === "fin" ? finMtOf(id) : null);
 
 // Hakutuloksen tai ehdotuksen käännösteksti: muun kielen osumassa myös sen kielen käännös (koira · Espanjaksi: perro)
 function resultTrans(r, max) {
-  const own = translationOf(r, max);
+  const own = translationOf(r, max) || (mtOf(r.id, settings.lang) ? "≈ " + Object.values(mtOf(r.id, settings.lang))[0] : "");
   if (!r.extraLang) return own;
   const other = `${t("langIn")[r.extraLang]}: ${translationOf(r, max, r.extraLang)}`;
   return own ? `${own} · ${other}` : other;
@@ -878,7 +942,8 @@ function resultTrans(r, max) {
 // Sama HTML:nä tyylimerkintöineen (tuloslista ja hakuehdotukset): "pylly, perse (alatyylinen)"
 function resultTransHtml(r, max) {
   const own = translationOf(r, max);
-  const ownHtml = own ? labelledList(own, settings.lang) : "";
+  const mt = !own ? mtOf(r.id, settings.lang) : null;
+  const ownHtml = own ? labelledList(own, settings.lang) : mt ? `≈ ${esc(splitList(mt.eng || mt.fin).slice(0, max).join(", "))}` : "";
   if (!r.extraLang) return ownHtml;
   const other = `${esc(t("langIn")[r.extraLang])}: ${labelledList(translationOf(r, max, r.extraLang), r.extraLang)}`;
   return ownHtml ? `${ownHtml} · ${other}` : other;
@@ -1477,7 +1542,7 @@ function selectResult(i, pushHistory = true) {
 
   // Merkitykset vain käyttöliittymän kielellä ja Muut kielet -asetuksessa valituilla kielillä; muita kieliä
   // ei näytetä missään (sanakortti, Merkitykset-välilehti), ennen kuin ne valitaan valikosta.
-  const meanings = data.meanings.filter((m) => m.lang === settings.lang || settings.extraLangs.includes(m.lang));
+  const meanings = data.meanings.filter((m) => m.lang === settings.lang || activeExtraLangs().includes(m.lang));
   // Ensimmäinen merkitys käyttörajoituksineen (esim. hyppiä – paksussa lumessa, porosta) käyttöliittymän
   // kielellä; jos sitä ei ole, "(ei suomennosta)" ja valittujen muiden kielten käännökset sen alla
   const groups = meaningsByLanguage(meanings);
@@ -1491,6 +1556,7 @@ function selectResult(i, pushHistory = true) {
   if (trans) $("translation").innerHTML = labelledList(trans, settings.lang);
   else $("translation").textContent = t("noTranslationIn")[settings.lang] + note;
   renderApertium(w, trans);
+  renderEngMt(w, trans);
   renderPivotFin(w, trans);
   renderDerFin(w, trans);
   renderExtraTranslations(w, groups);
@@ -1590,6 +1656,19 @@ function renderApertium(w, trans) {
   line.hidden = false;
 }
 
+// Konekäännetty englanti sanakortissa (kokeellinen): vain englanninkielisessä käyttöliittymässä ja vain, jos sanalla ei
+// ole sanakirjan englantia. Merkitään konekäännökseksi ja lähteiden määrällä.
+function renderEngMt(w, trans) {
+  const line = $("eng-mt-line");
+  if (!line) return;
+  line.hidden = true;
+  if (trans || settings.lang !== "eng") return;
+  const mt = engMtOf(w.id);
+  if (!mt) return;
+  line.innerHTML = `≈ ${esc(mt.eng)} <span class="muted small">(${esc(t("engMtNote", mt.level))})</span>`;
+  line.hidden = false;
+}
+
 // Suomennosehdotus (kokeellinen, tietokannan taulu pivot_fin, pivot_fin.py): inarinsaamen tai norjan kautta
 // muodostettu suomennos, vain jos sanalla ei ole suomennosta. Ei vaikuta hakuun, ja rivi merkitään tarkistamattomaksi.
 // Johdokset (der_fin.py): pohjasanat (der_base) ja johdettu suomennos (der_fin). Vanhassa tietokannassa tauluja ei ole.
@@ -1630,6 +1709,12 @@ function renderPivotFin(w, trans) {
   const line = $("pivot-fin-line");
   line.hidden = true;
   if (trans || !settings.exp.pivotFin || settings.lang !== "fin") return;
+  const mt = finMtOf(w.id);
+  if (mt) {
+    line.innerHTML = `≈ ${esc(mt.fin)} <span class="muted small">(${esc(t("engMtNote", mt.level))})</span>`;
+    line.hidden = false;
+    return;
+  }
   let rows = [];
   try {
     rows = all("SELECT fin, via FROM pivot_fin WHERE word_id = ?", [w.id]);
@@ -1642,7 +1727,7 @@ function renderPivotFin(w, trans) {
 }
 
 function renderExtraTranslations(w, groups) {
-  const lines = settings.extraLangs.filter((l) => LANGUAGES[l]).map((lang) => {
+  const lines = activeExtraLangs().map((lang) => {
     const own = (groups.find(([l]) => l === lang) || [lang, []])[1][0];
     const text = own ? splitList(own.translations || own.explanations).slice(0, 4).join(", ") : translationOf(w, 3, lang);
     if (!text && lang === "eng") {
@@ -1651,6 +1736,8 @@ function renderExtraTranslations(w, groups) {
       try { row = all("SELECT eng FROM wikt_eng WHERE word_id = ?", [w.id])[0]; } catch (e) { /* vanha tietokanta */ }
       if (row) return `<span class="muted">${esc(t("langIn").eng)}:</span> ${labelledList(splitList(row.eng).slice(0, 3).join(", "), "eng")} ` +
         `<span class="muted small">(${esc(t("wiktEngNote"))})</span>`;
+      const mt = engMtOf(w.id);
+      if (mt) return `<span class="muted">${esc(t("langIn").eng)}:</span> ≈ ${esc(mt.eng)} <span class="muted small">(${esc(t("engMtNote", mt.level))})</span>`;
     }
     return text && `<span class="muted">${esc(t("langIn")[lang])}:</span> ${labelledList(text, lang)}`;
   }).filter(Boolean);
@@ -2472,8 +2559,8 @@ async function ttsStoreApplyLimit() {
 // URIError-virheen, jolloin käynnistys jäi Puretaan…-tilaan (julkaisutesti 2026-11-19)
 const safeDecode = (s) => { try { return decodeURIComponent(s); } catch (e) { return s; } };
 const fmtBytes = (b) => {
-  const nb = settings.uiLang === "nb", loc = nb ? "nb-NO" : "fi-FI";
-  const [v, u] = b >= 1073741824 ? [b / 1073741824, nb ? "GB" : "Gt"] : b >= 1048576 ? [b / 1048576, nb ? "MB" : "Mt"] : [b / 1024, nb ? "kB" : "kt"];
+  const fi = settings.uiLang === "fi", loc = { nb: "nb-NO", en: "en-GB" }[settings.uiLang] || "fi-FI";
+  const [v, u] = b >= 1073741824 ? [b / 1073741824, fi ? "Gt" : "GB"] : b >= 1048576 ? [b / 1048576, fi ? "Mt" : "MB"] : [b / 1024, fi ? "kt" : "kB"];
   return `${v.toLocaleString(loc, { maximumFractionDigits: v < 10 ? 1 : 0 })} ${u}`;
 };
 
@@ -2890,13 +2977,14 @@ function renderSettingsSummary() {
   const gradeSum = settings.showGrade ? `${colors[settings.gradeGd]}/${colors[settings.gradeHd]}` +
     (settings.gradeUnderline ? `, ${t("sumUnderline")}` : "") : "";
   set("sum-card", [t(settings.showGrade ? "sumGradeOn" : "sumGradeOff") + (gradeSum ? ` (${gradeSum})` : ""), settings.voice].join(" · "));
-  const langs = [...settings.extraLangs.map((l) => capitalize(langName(l))), ...(settings.skolt ? [capitalize(langName("sms"))] : [])];
+  const langs = [...activeExtraLangs().map((l) => capitalize(langName(l))), ...(settings.skolt ? [capitalize(langName("sms"))] : [])];
   set("sum-langs", langs.length ? langs.join(", ") : t("sumNone"));
   const fi = settings.uiLang === "fi";
   const tools = [settings.game ? t("minipeli") : "", t("sanastot"), settings.exp.ocr && window.SatniOcr ? t("expOcr") : "",
     settings.exp.lause && fi ? t("lauseTitle") : "", settings.gameSmn ? capitalize(langName("smn")) : ""].filter(Boolean);
   set("sum-tools", tools.join(", "));
-  set("sum-exp", t("sumExp", ["tableTr", fi ? "pivotFin" : "apertium"].filter((k) => settings.exp[k]).length));
+  const expKeys = { fi: ["tableTr", "pivotFin"], nb: ["tableTr", "apertium"], en: ["engMt"] }[settings.uiLang] || [];
+  set("sum-exp", t("sumExp", expKeys.filter((k) => settings.exp[k]).length));
   set("sum-history", t("sumHistory", settings.history.length));
   set("sum-clear", t("sumHistory", settings.history.length));
   set("sum-about", $("about-version").textContent);
@@ -3714,7 +3802,7 @@ function ocrGloss(word, original = "") {
     if (form && (row.freq || 0) < form.freq * 0.05) row = form;
   }
   const lemma = fold(row.sme_lemma) !== fold(word) ? row.sme_lemma : "";
-  const gloss = { lemma, form: lemma && tl === settings.lang ? ocrFormTranslation(row, word) : "", trans: translationOf(row, 2, tl), say: word, query, id: row.id,
+  const gloss = { lemma, form: lemma && tl === settings.lang ? ocrFormTranslation(row, word) : "", trans: translationOf(row, 2, tl) || (mtOf(row.id, tl) ? "≈ " + splitList(Object.values(mtOf(row.id, tl))[0]).slice(0, 2).join(", ") : ""), say: word, query, id: row.id,
     prop: row.subtype === "Prop" };
   // Ei suomennosta: johdettu (der_fin.py, váralašvuohta ≈ vaarallisuus), merkitty ≈:llä
   if (!gloss.trans && tl === "fin" && !window.NO_DER_BASES) { const d = derFinOf(row.id) || cmpFinOf(row.id); if (d) gloss.trans = "≈ " + d.fin; }
@@ -4162,6 +4250,7 @@ async function swapOcrLangs() {
     }
     return setOcrLangs("smn", "sme");
   }
+  if (settings.lang === "eng" && from === "sme") return to === "smn" ? setOcrLangs("smn", "sme") : undefined;
   if (from === "sme") return to === "smn" ? setOcrLangs("smn", "sme") : setOcrLangs("ui", "sme");
   if (from === "ui") return setOcrLangs("sme", settings.lang);
   return to === "sme" ? setOcrLangs("sme", from === "smn" ? "smn" : settings.lang) : setOcrLangs("ui", "sme");
@@ -4193,10 +4282,12 @@ function openOcrSettings() {
 // (settings.ocrTargets; käyttöliittymän kieli aina mukana)
 const minorOn = (lang) => hasMinor(lang) && settings.ocrLangs.includes(lang);
 const smnOn = () => minorOn("smn");
-const ocrSources = () => ["sme", ...MINOR.filter(minorOn), "ui"];
+// Englanniksi (2026-11-21): ei englanninkielisen kuvan hakua eikä lauseen kääntämistä (sanaparit ovat vain suomeksi ja
+// norjaksi); pohjoissaamen kuvan sanat käännetään englanniksi
+const ocrSources = () => ["sme", ...MINOR.filter(minorOn), ...(settings.lang === "eng" ? [] : ["ui"])];
 const targetOn = (c) => c === settings.lang || settings.ocrTargets.includes(c);
 function ocrTargets(from) {
-  const all = from === "sme" ? ["fin", "nob", "smn"] : from === "smn" ? ["fin", "sme", "nob"] : from === "sms" ? ["fin", "nob", "sme"] : ["sme"];
+  const all = from === "sme" ? [...(settings.lang === "eng" ? ["eng"] : []), "fin", "nob", "smn"] : from === "smn" ? ["fin", "sme", "nob"] : from === "sms" ? ["fin", "nob", "sme"] : ["sme"];
   const ts = all.filter(targetOn).sort((a, b) => (b === settings.lang) - (a === settings.lang));
   return ts.length ? ts : [all[0]];
 }
@@ -4209,6 +4300,8 @@ const ocrLangName = (code) => (code === "ui" ? t("ocrLangs")[settings.lang] : t(
 function applyOcrLook() {
   // Inari poistettu käytöstä asetuksista: kuvan kieli takaisin pohjoissaameksi (vain kun tietokanta on ladattu)
   if (db && isMinor(settings.ocrFrom) && !minorOn(settings.ocrFrom)) { settings.ocrFrom = "sme"; saveSettings(); }
+  if (settings.lang === "eng" && settings.ocrFrom === "ui") { settings.ocrFrom = "sme"; saveSettings(); }
+  $("ocr-pick").style.visibility = settings.lang === "eng" ? "hidden" : "";
   // Yläreunan kielipainike: Pohjoissaame → Suomi ▾ (avaa ⋯-paneelin)
   const arrow = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`;
   const chev = `<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
@@ -5569,6 +5662,7 @@ function applyOcrFix(idx, tok) {
 }
 // Poimi lause -painike: valitun sanan lause; ilman valintaa seuraava napautettu sana valitsee lauseen
 function pickSentence() {
+  if (settings.lang === "eng") return;  // lauseen kääntäminen vain suomeksi ja norjaksi
   if (!ocr?.words?.length) return;
   if (ocr.picked == null) { ocr.pickMode = true; $("ocr-status").textContent = t("sentTapWord"); return; }
   const w = ocr.words[ocr.picked], i = ocr.r.words.findIndex((r) => r.cx === w.cx && r.cy === w.cy);
@@ -5893,12 +5987,16 @@ function applyExperimental() {
   if (!settings.exp.ocr) $("ocr-view").hidden = true;
   // Lausekääntäjä (lauseet.js): painike yläpalkkiin kameran ja sanastojen viereen. Toimii vain suomeksi, joten
   // norjankielisessä käyttöliittymässä se piilotetaan kokonaan (asetus säilyy, palaa suomeksi vaihdettaessa).
+  // Englanniksi (2026-11-21): taivutusmuotojen käännöksiä ei ole (FORM_PHRASES vain suomi ja norja); englannin
+  // konekäännökset näkyvät englanniksi tai kun englanti on Muut kielet -kohdassa
+  if ($("exp-tabletr-row")) $("exp-tabletr-row").hidden = !FORM_PHRASES[settings.lang];
+  if ($("exp-engmt-row")) $("exp-engmt-row").hidden = !(settings.lang === "eng" || settings.extraLangs.includes("eng"));
   if ($("lause-btn")) {
     const fi = settings.uiLang === "fi";
     $("exp-lause-row").hidden = !fi;
     // Suomennosehdotukset vain suomeksi ja Apertiumin norjannokset vain norjaksi (muuten ne eivät vaikuta mihinkään)
     $("exp-pivotfin-row").hidden = !fi;
-    $("exp-apertium-row").hidden = fi;
+    $("exp-apertium-row").hidden = settings.uiLang !== "nb";
     $("lause-btn").hidden = !(fi && settings.exp.lause);
     if (!(fi && settings.exp.lause) && !$("lause-view").hidden) { $("lause-view").hidden = true; overlayClosed(); }
   }
@@ -5913,6 +6011,7 @@ function bindExperimental() {
     if (name === "tableTr" && state.word) renderTable();
     if (name === "apertium" && state.results.length) searchAgainKeepingWord();
     if (name === "pivotFin" && state.results.length) searchAgainKeepingWord();
+    if (name === "engMt" && state.results.length) searchAgainKeepingWord();
   };
   // Kokeelliset kytkimet ovat kahdella asetussivulla (Työkalut: valokuvahaku ja lausekääntäjä; Kokeelliset käännökset)
   $("settings-view").addEventListener("change", (e) => {
@@ -5921,7 +6020,7 @@ function bindExperimental() {
     if (!e.target.checked) { set(name, false); return; }
     e.target.checked = false;  // päälle vasta, kun käyttäjä hyväksyy
     pending = name;
-    const key = { ocr: "expOcr", lause: "lauseTitle", tableTr: "expTableTr", apertium: "expApertium", pivotFin: "expPivotFin" }[name];
+    const key = { ocr: "expOcr", lause: "lauseTitle", tableTr: "expTableTr", apertium: "expApertium", pivotFin: "expPivotFin", engMt: "expEngMt" }[name];
     $("exp-dlg-title").textContent = t(key);
     $("exp-dlg-body").innerHTML = t(name === "lause" ? "expLauseInfo" : key + "Info");
     $("exp-dlg").showModal();
@@ -6388,8 +6487,8 @@ async function main() {
     const { sms, ...rest } = settings.exp;
     settings.exp = rest;
   }
-  settings.extraLangs = (settings.extraLangs || []).filter((l) => LANGUAGES[l] && !LANGUAGES[l].main);
-  if (LANGUAGES[settings.lang] && !LANGUAGES[settings.lang].main && !settings.extraLangs.includes(settings.lang)) {
+  settings.extraLangs = (settings.extraLangs || []).filter((l) => LANGUAGES[l]);
+  if (LANGUAGES[settings.lang] && !LANGUAGES[settings.lang].main && settings.uiLang !== "en" && !settings.extraLangs.includes(settings.lang)) {
     settings.extraLangs.push(settings.lang);
   }
   settings.lang = UI_LANGUAGES[settings.uiLang].translationLang;

@@ -150,6 +150,7 @@
         <p id="sme-def" class="sme-def" lang="se" hidden></p>
         <p id="apertium-line" class="translation" hidden></p>
         <p id="pivot-fin-line" class="translation" hidden></p>
+        <p id="eng-mt-line" class="translation" hidden></p>
         <!-- Johdettu suomennos (der_fin.py): váralašvuohta ≈ vaarallisuus, kun sanakirjassa ei ole suomennosta -->
         <p id="der-fin-line" class="translation" hidden></p>
         <p id="form-translation" class="form-translation" hidden></p>
@@ -189,7 +190,7 @@
   <!-- Ensimmäinen käynnistys: käyttöliittymän kieli (app.js: showFirstRun) -->
   <dialog id="first-run" class="first-run">
     <h2>Sátni FST</h2>
-    <p>Valitse kieli · Velg språk</p>
+    <p>Valitse kieli · Velg språk · Choose language</p>
     <div id="first-run-lang" class="first-run-lang"></div>
   </dialog>
 
@@ -462,7 +463,7 @@
         <section id="experimental-section" class="experimental">
           <div class="set-card">
           <div class="toggle-list">
-            <label class="switch-row">
+            <label class="switch-row" id="exp-tabletr-row">
               <span class="switch-text"><span data-i18n="expTableTr">Taivutusmuotojen käännökset</span>
                 <span class="muted small" data-i18n="expTableTrDesc"></span></span>
               <input type="checkbox" class="switch" role="switch" data-exp="tableTr">
@@ -476,6 +477,11 @@
               <span class="switch-text"><span data-i18n="expPivotFin">Suomennosehdotukset</span>
                 <span class="muted small" data-i18n="expPivotFinDesc"></span></span>
               <input type="checkbox" class="switch" role="switch" data-exp="pivotFin">
+            </label>
+            <label class="switch-row" id="exp-engmt-row" hidden>
+              <span class="switch-text"><span data-i18n="expEngMt">English machine translations</span>
+                <span class="muted small" data-i18n="expEngMtDesc"></span></span>
+              <input type="checkbox" class="switch" role="switch" data-exp="engMt">
             </label>
           </div>
           </div>
