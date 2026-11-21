@@ -4280,7 +4280,7 @@ function pickOcrWord(i) {
   let big = g.lemma ? g.form || g.trans : g.trans;
   // Kaksiosainen nimi (Elli-Marja, Biret-Iŋgá): koko nimi ja "nimi" kuten lausenäkymässä, ei loppuosaa "marja – naisen
   // nimi" (yötesti 2026-11-21, Samsung)
-  const twoPartName = /^\p{Lu}\p{L}*-\p{Lu}\p{L}+$/u.test(w.clean || "") && g.prop && (!g.trans || /\b(nimi|navn|name)\b/i.test(g.trans));
+  const twoPartName = /^\p{Lu}\p{L}*-\p{Lu}\p{L}+$/u.test(w.clean || "") && g.prop && (!g.trans || /(nimi|navn|name)\b/i.test(g.trans));
   if (twoPartName) big = t("sentName");
   // Sanakirjan sana ilman käännöstä (giellavuoigatvuođaid): käännös osista kuten lausenäkymässä (≈ kieli + oikeuksien)
   if (!big && sentCanSplit() && [...w.word].length >= 6) {
@@ -4616,7 +4616,8 @@ function sentTokens(raw) {
       const g = n === 0 && SME_PRON[(w.word || "").toLowerCase()] && settings.ocrFrom === "sme" ? ocrGloss(w.word.toLowerCase())
         : w.gloss || (w.gloss = ocrGloss(w.word, ocrOrig(w)));
       // Henkilön nimi sellaisenaan (Máhte = "miehen nimi"); paikannimi käännetään (Ohcejoga = Utsjoen, Romssa = Tromssan)
-      const personName = g.prop && (!g.trans || /\b(nimi|navn|name)\b/i.test(g.trans));
+      // (nimi|navn|name) myös yhdyssanan lopussa: norjan mannsnavn / kvinnenavn (ennen "Ánte ja Sárá" -> "Mannsnavn og kvinnenavn"; 2026-11-21)
+      const personName = g.prop && (!g.trans || /(nimi|navn|name)\b/i.test(g.trans));
       if (personName) tok.name = true;
       else if (!g.trans) { tok.unknown = true; tok.capKeep = cap || allCaps; }
       const strip = (x) => x.replace(/\s*\([^)]*\)/g, "").trim();
