@@ -2223,3 +2223,4 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 
 /* Kokeelliset käännökset Käännöskielet-sivun alaosassa: erotin kieliluettelosta */
 .set-h.set-h-sep { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--border); }
+.extra-langs .switch-row.lang-sub { padding-left: 34px; background: var(--chip); border-top: 0; }
