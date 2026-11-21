@@ -276,7 +276,9 @@ const UI_TEXTS = {
       <p>Taivutusmuodot on laskettu GiellaLT:n avoimilla kielimalleilla (pohjoissaame lang-sme, suomi lang-fin,
          inarinsaame lang-smn ja koltansaame lang-sms), norjan taivutus Norsk ordbankista (Språkbanken).</p>
       <p>Ääntäminen: Divvunin ja Giellateknon puhesynteesi (UiT Norjan arktinen yliopisto), äänet Biret,
-         Máhtte ja Sunná. Äänet haetaan palvelusta api-giellalt.uit.no samaan tapaan kuin sátni.org-sivustolla.</p>
+         Máhtte ja Sunná. Äänet haetaan palvelusta api-giellalt.uit.no samaan tapaan kuin sátni.org-sivustolla.
+         Sanastojen ja kuunteluharjoituksen suomenkielinen ääni: Chatterbox Finnish (Finnish-NLP, MIT), äänenä
+         Harri Tapani Ylilammin LibriVox-luenta (public domain).</p>
       <h3>Palaute</h3>
       <p>Jos huomaat ongelman, ota yhteyttä sähköpostitse <a href="mailto:satni@somby.fi">satni@somby.fi</a>
          tai tee ilmoitus GitHubissa: <a href="https://github.com/sombyduodji/satni-fst/issues" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst/issues</a>.
@@ -558,7 +560,9 @@ const UI_TEXTS = {
       <p>Bøyingsformene er laget med GiellaLTs åpne språkmodeller (nordsamisk lang-sme, finsk lang-fin,
          enaresamisk lang-smn og skoltesamisk lang-sms), norsk bøying med Norsk ordbank (Språkbanken).</p>
       <p>Uttale: talesyntese fra Divvun og Giellatekno (UiT Norges arktiske universitet), stemmene Biret,
-         Máhtte og Sunná. Lyden hentes fra tjenesten api-giellalt.uit.no på samme måte som på nettstedet sátni.org.</p>
+         Máhtte og Sunná. Lyden hentes fra tjenesten api-giellalt.uit.no på samme måte som på nettstedet sátni.org.
+         Den finske stemmen i ordlistene og lytteøvelsen: Chatterbox Finnish (Finnish-NLP, MIT), med stemmen fra
+         Harri Tapani Ylilammis LibriVox-opplesning (public domain).</p>
       <h3>Tilbakemelding</h3>
       <p>Hvis du finner et problem, ta kontakt på e-post <a href="mailto:satni@somby.fi">satni@somby.fi</a>
          eller meld det på GitHub: <a href="https://github.com/sombyduodji/satni-fst/issues" target="_blank" rel="noopener">github.com/sombyduodji/satni-fst/issues</a>.

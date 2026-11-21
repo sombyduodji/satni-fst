@@ -13,7 +13,7 @@ combines their work into one offline app.
 | North Sámi (monolingual) | North Sámi definitions on the word card and in Meanings | [giellalt/dict-sme](https://github.com/giellalt/dict-sme) |
 | North Sámi → Finnish | Finnish translations, meanings and examples | [giellalt/dict-sme-fin](https://github.com/giellalt/dict-sme-fin) |
 | North Sámi → Norwegian | Norwegian translations, meanings and examples | [giellalt/dict-sme-nob](https://github.com/giellalt/dict-sme-nob) |
-| North Sámi → English | English translations | [giellalt/dict-sme-eng](https://github.com/giellalt/dict-sme-eng) |
+| North Sámi → English | English translations (partly based on Konrad Nielsen's *Lappisk ordbok*) | [giellalt/dict-sme-eng](https://github.com/giellalt/dict-sme-eng) |
 | North Sámi → Inari Sámi | Inari Sámi translations | [giellalt/dict-sme-smn](https://github.com/giellalt/dict-sme-smn) |
 | North Sámi → Lule Sámi | Lule Sámi translations | [giellalt/dict-sme-smj](https://github.com/giellalt/dict-sme-smj) |
 | North Sámi → Southern Sámi | Southern Sámi translations | [giellalt/dict-sme-sma](https://github.com/giellalt/dict-sme-sma) |
