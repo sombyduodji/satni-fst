@@ -327,7 +327,7 @@ function peliMark(btn, ok) {
 // muuten samalla kohdalla avautuvaan Pelaa uudelleen -painikkeeseen, ja uusi peli alkoi ennen kuin tuloksen ehti nähdä
 // (OnePlus Nord, testi 2026-11-21)
 let peliOverAt = 0;
-const PELI_OVER_GUARD = 600;
+const PELI_OVER_GUARD = 1000;  // OnePlus Nord: kaksi nopeaa napautusta tuli 700 ms:n välein
 function renderPeliOver(chosen) {
   peliOverAt = performance.now();
   const T = pt(), run = peliRun, q = run.q, score = run.score, write = !!run.write;
