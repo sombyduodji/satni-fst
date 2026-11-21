@@ -323,7 +323,13 @@ function peliMark(btn, ok) {
   btn.querySelector(".po-mark").innerHTML = ok ? PELI_OK : PELI_NO;
 }
 
+// Loppuikkunan painikkeet eivät reagoi heti: väärän vastauksen tuplanapautus (tai kaksi Enteriä kirjoituspelissä) osui
+// muuten samalla kohdalla avautuvaan Pelaa uudelleen -painikkeeseen, ja uusi peli alkoi ennen kuin tuloksen ehti nähdä
+// (OnePlus Nord, testi 2026-11-21)
+let peliOverAt = 0;
+const PELI_OVER_GUARD = 600;
 function renderPeliOver(chosen) {
+  peliOverAt = performance.now();
   const T = pt(), run = peliRun, q = run.q, score = run.score, write = !!run.write;
   const prevBest = peliTop(run.mode, write, peliSamiOf(run))[0]?.score ?? 0;
   const top = peliAddTop(run.mode, score, write, peliSamiOf(run));
@@ -719,6 +725,7 @@ function bindPeli() {
     if (opt && !opt.disabled) return peliAnswer(opt);
     if (e.target.closest(".peli-report-link")) { e.preventDefault(); return peliReport(); }
     const act = e.target.closest("[data-act]")?.dataset.act;
+    if (e.target.closest(".peli-sheet") && performance.now() - peliOverAt < PELI_OVER_GUARD) return;
     if (act === "resume") renderPeliQuestion();
     else if (act === "fresh") { peliRun = null; peliSave(); renderPeliMenu(); }
     else if (act === "again") peliStart(e.target.closest("[data-act]").dataset.mode);
