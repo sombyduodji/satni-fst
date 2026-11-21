@@ -381,7 +381,17 @@ final class Ocr {
             int id = req.optInt("serial", -1);
             Bitmap image = last;
             JSONArray words = req.optJSONArray("words");
-            if (id != serial || image == null || words == null || tessFailed || !modelReady()) {
+            if (id != serial || image == null || words == null) {
+                return;
+            }
+            if (tessFailed || !modelReady()) {
+                // Malli ei käytettävissä (kopiointi tai alustus epäonnistui): tyhjä tulos, jotta sivun tilarivin
+                // "toinen luku" -merkintä poistuu eikä jää näkyviin (julkaisukatselmointi 1.0.0)
+                try {
+                    send(new JSONObject().put("serial", id).put("lang", req.optString("lang")).put("words", new JSONArray()).toString(), "ocrSecondResult");
+                } catch (JSONException e) {
+                    // ei tulosta
+                }
                 return;
             }
             int n = Math.min(words.length(), SECOND_MAX);
