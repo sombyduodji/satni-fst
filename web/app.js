@@ -335,9 +335,9 @@ function renderExtraLangs() {
     `<input type="checkbox" class="switch" role="switch" data-skolt="on"${settings.skolt ? " checked" : ""}></label>` +
     (settings.skolt ? `<label class="skolt-sub"><input type="checkbox" data-skolt="via"${settings.skoltViaSme ? " checked" : ""}>` +
       `<span>${esc(t("skoltViaShort"))}</span></label>` : "");
-  const langs = Object.keys(LANGUAGES).filter(extraLangOk);
-  const at = langs.includes("sma") ? langs.indexOf("sma") + 1 : langs.length;
-  $("extra-langs").innerHTML = [...langs.slice(0, at).map(row), skolt, ...langs.slice(at).map(row)].join("");
+  // Koltansaame kokeellisten (BETA) joukossa sivun alaosassa (käyttäjä 2026-11-21), muut kielet ylhäällä
+  $("extra-langs").innerHTML = Object.keys(LANGUAGES).filter(extraLangOk).map(row).join("");
+  if ($("skolt-exp")) $("skolt-exp").innerHTML = skolt;
 }
 
 // --- Virheilmoitus sanakortista ---
@@ -6340,13 +6340,15 @@ function bindEvents() {
     const b = e.target.closest("[data-lang]");
     if (b) setUiLanguage(b.dataset.lang);
   });
-  $("extra-langs").onchange = (e) => {
-    if (e.target.dataset.exp) return;  // espanjan konekäännökset: bindExperimental (hyväksyntäikkuna)
+  $("skolt-exp").onchange = (e) => {
     if (e.target.dataset.skolt === "on") {
       if (e.target.checked) { e.target.checked = false; openSkoltDialog(); } else setSkolt(false, false);
       return;
     }
-    if (e.target.dataset.skolt === "via") { setSkolt(true, e.target.checked); return; }
+    if (e.target.dataset.skolt === "via") setSkolt(true, e.target.checked);
+  };
+  $("extra-langs").onchange = (e) => {
+    if (e.target.dataset.exp) return;  // espanjan konekäännökset: bindExperimental (hyväksyntäikkuna)
     const lang = e.target.value;
     settings.extraLangs = e.target.checked ? [...settings.extraLangs, lang] : settings.extraLangs.filter((l) => l !== lang);
     saveSettings();
