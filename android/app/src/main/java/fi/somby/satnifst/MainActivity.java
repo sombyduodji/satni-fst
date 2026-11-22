@@ -414,6 +414,24 @@ public class MainActivity extends Activity {
             DrillService.control(MainActivity.this, cmd);
         }
 
+        /** Suosikit ja historia JSONina (app.js: saveSettings): julkaistu sovellus tarjoaa ne BETA:lle (ShareProvider). */
+        @android.webkit.JavascriptInterface
+        public void shareSave(String json) {
+            getSharedPreferences(ShareProvider.PREFS, MODE_PRIVATE).edit().putString(ShareProvider.KEY, json).apply();
+        }
+
+        /** Vain BETA: suosikit ja historia Play-versiosta (tyhjä, jos sitä ei ole tai se on vanha versio ilman tukea). */
+        @android.webkit.JavascriptInterface
+        public String importFromMain() {
+            if (!ShareProvider.BETA.equals(getPackageName())) return "";
+            try (android.database.Cursor c = getContentResolver().query(
+                    android.net.Uri.parse("content://" + ShareProvider.STABLE + ".share/data"), null, null, null, null)) {
+                return c != null && c.moveToFirst() ? c.getString(0) : "";
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
         @android.webkit.JavascriptInterface
         public void setTextZoom(int percent) {
             int value = percent < 0 ? -1 : Math.max(50, Math.min(300, percent));

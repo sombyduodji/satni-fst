@@ -83,6 +83,22 @@ function loadSettings() {
 }
 function saveSettings() {
   try { localStorage.setItem("satni-settings", JSON.stringify(settings)); } catch (e) { /* yksityinen tila */ }
+  // Android: suosikit ja historia talteen, jotta BETA voi tuoda ne (ShareProvider; vain julkaistu sovellus tarjoaa)
+  try { window.SatniApp?.shareSave?.(JSON.stringify({ favourites: settings.favourites, history: settings.history })); } catch (e) { /* vanha sovellus */ }
+}
+
+// BETA: suosikit ja historia Play-versiosta, vain yhteen suuntaan (käyttäjä 2026-11-22). Mitään ei poisteta:
+// Play-version sanat lisätään BETA:n omien perään.
+function importFromMain() {
+  let data = null;
+  try { data = JSON.parse(window.SatniApp?.importFromMain?.() || "null"); } catch (e) { data = null; }
+  if (!data || !Array.isArray(data.favourites)) { toast(t("importMainNone"), 6000); return; }
+  const fav0 = settings.favourites.length, hist0 = settings.history.length;
+  settings.favourites = [...settings.favourites, ...data.favourites.filter((w) => typeof w === "string" && !settings.favourites.includes(w))];
+  settings.history = [...settings.history, ...(data.history || []).filter((w) => typeof w === "string" && !settings.history.includes(w))].slice(0, 30);
+  saveSettings();
+  renderSidebar();
+  toast(t("importMainDone", settings.favourites.length - fav0, Math.max(0, settings.history.length - hist0)), 5000);
 }
 
 // --- Käyttöliittymän kieli (i18n.js) ---
@@ -139,6 +155,11 @@ function applyStaticTexts() {
   }
   if (tag && !document.title.endsWith(" " + tag)) document.title = document.title.replace("Sátni FST", "Sátni FST " + tag);
   // Puhelimessa yläpalkki on piilossa: kapea merkkinauha saamen värijuovan yläpuolelle (käyttäjä 2026-11-22)
+  // Vain BETA: suosikkien ja historian tuonti Play-versiosta (Asetukset → Historia ja suosikit)
+  if ($("import-main")) {
+    $("import-main").hidden = !(tag === "BETA" && window.SatniApp?.importFromMain);
+    $("import-main").onclick = importFromMain;
+  }
   if (tag && !document.querySelector(".channel-strip")) {
     const strip = document.createElement("div");
     strip.className = "channel-strip" + (tag === "BETA" ? " beta" : "");
@@ -784,6 +805,40 @@ function engBasesOf(q) {
 // Koltan sana ilman erikoismerkkejä (export_web_data.py: sms_plain): haku koltaksi tavallisella näppäimistöllä
 const SMS_PLAIN = { "õ": "o", "ǩ": "k", "ǥ": "g", "ʒ": "z", "ǯ": "z", "â": "a", "đ": "d", "š": "s", "č": "c", "ž": "z", "ŋ": "n" };
 const smsPlain = (s) => (s || "").toLowerCase().replace(/[ʹ'’ʼ]/g, "").replace(/[õǩǥʒǯâđščžŋ]/g, (c) => SMS_PLAIN[c]);
+
+// Testiversioiden oletukset (käyttäjä 2026-11-22), kerran per versiokanava ja oletussarja (satni-channel-defaults):
+// DEV: kaikki kokeelliset päälle. BETA: uudet ominaisuudet päälle ja kerran ilmoitus; testaaja voi kytkeä ne pois,
+// eikä niitä kytketä uudelleen. Julkaistussa versiossa ei mitään.
+const CHANNEL_DEFAULTS = "v1";
+function applyChannelDefaults() {
+  const tag = (/-(DEV|BETA)$/.exec(window.SATNI_VERSION || "") || [])[1];
+  if (!tag) return false;
+  let done = null;
+  try { done = localStorage.getItem("satni-channel-defaults"); } catch (e) { return false; }
+  if (done === tag + "-" + CHANNEL_DEFAULTS) return false;
+  const addLang = (l) => { if (!settings.extraLangs.includes(l)) settings.extraLangs = [...settings.extraLangs, l]; };
+  if (tag === "DEV") {
+    settings.exp = { ...settings.exp, ocr: true, lause: true, tableTr: true, apertium: true, pivotFin: true, engMt: true, spaMt: true };
+    ["eng", "smn", "smj", "sma", "spa"].forEach(addLang);
+    settings.skolt = true; settings.skoltViaSme = true; settings.gameSmn = true;
+  } else {
+    settings.exp = { ...settings.exp, pivotFin: true, engMt: true, spaMt: true };
+    addLang("eng"); addLang("spa");
+    settings.skolt = true; settings.skoltViaSme = true;
+  }
+  try { localStorage.setItem("satni-channel-defaults", tag + "-" + CHANNEL_DEFAULTS); } catch (e) { /* yksityinen tila */ }
+  saveSettings();
+  return tag === "BETA";
+}
+function showChannelNotice() {
+  $("exp-dlg-title").textContent = t("betaOnTitle");
+  $("exp-dlg-body").innerHTML = t("betaOnBody");
+  $("exp-cancel").hidden = true;
+  const ok = $("exp-ok"), label = ok.textContent;
+  ok.textContent = t("betaOnOk");
+  $("exp-dlg").addEventListener("close", () => { $("exp-cancel").hidden = false; ok.textContent = label; }, { once: true });
+  $("exp-dlg").showModal();
+}
 
 function queryDatabase(query) {
   if (isWildcard(query)) return wildcardQuery(query);
@@ -6574,12 +6629,17 @@ async function main() {
     if (r) search(r.sme_lemma);
   };
   ex.appendChild(rnd);
+  const channelNotice = applyChannelDefaults();
   applyStaticTexts();
   bindEvents();
   bindExperimental();
   bindOcr();
   renderSidebar();
   if (FIRST_RUN) showFirstRun();
+  if (channelNotice) {  // BETA: kerran ilmoitus päälle kytketyistä; ensikäynnistyksellä kielen valinnan jälkeen
+    if ($("first-run").open) $("first-run").addEventListener("close", showChannelNotice, { once: true });
+    else setTimeout(showChannelNotice, 600);
+  }
 
   // Service worker vain verkkosivuna (PWA); työpöytä- ja Android-sovellus lukevat tiedostot omasta paketistaan
   if ("serviceWorker" in navigator && location.protocol.startsWith("http") && !IS_ANDROID) {

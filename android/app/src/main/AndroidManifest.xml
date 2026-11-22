@@ -3,6 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Ääntäminen haetaan Divvunin puhepalvelusta -->
+    <!-- Suosikit ja historia Play-versiosta BETA:an (ShareProvider): vain saman avaimen sovellukset -->
+    <permission android:name="fi.somby.satnifst.permission.READ_SHARE" android:protectionLevel="signature" />
+    <uses-permission android:name="fi.somby.satnifst.permission.READ_SHARE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Sanastojen kuunteluharjoitus jatkuu näytön sammuttua (DrillService): etualan mediapalvelu ja
          herätyslukko miettimistaukojen ajaksi. Mediaistunnon ilmoitus ei tarvitse POST_NOTIFICATIONS-lupaa. -->
@@ -50,6 +53,11 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/ocr_paths" />
         </provider>
+        <provider
+            android:name=".ShareProvider"
+            android:authorities="${applicationId}.share"
+            android:exported="true"
+            android:readPermission="fi.somby.satnifst.permission.READ_SHARE" />
         <!-- Ei käyttötilastoja Googlelle (verkkoyhteystarkistus, docs/verkkoyhteydet-2026-11-18.md):
              1) WebView ei lähetä omia tilastojaan, vaikka laitteen diagnostiikkatietojen jako olisi päällä.
              2) ML Kit (tekstintunnistus) tallentaa jokaisesta tunnistuksesta tapahtumia (pysyvä tunniste, laite, kesto,
@@ -70,6 +78,8 @@
 
     <!-- Android 11+: kamerasovelluksen löytäminen (pakettien näkyvyys) -->
     <queries>
+        <!-- BETA: julkaistun sovelluksen suosikit ja historia (ShareProvider) -->
+        <package android:name="fi.somby.satnifst" />
         <intent>
             <action android:name="android.media.action.IMAGE_CAPTURE" />
         </intent>

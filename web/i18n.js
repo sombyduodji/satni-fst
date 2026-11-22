@@ -189,6 +189,14 @@ const UI_TEXTS = {
       <li><strong>Ehdota ideoita:</strong> uusia ominaisuuksia, teemoja tai käyttöliittymän muutoksia.</li>
       <li><strong>Saavutettavuus:</strong> kerro, mikä helpottaisi käyttöä, jos sinulla on esimerkiksi näkö- tai liikuntavamma tai lukivaikeus.</li>
       <li><strong>Osallistu kehitykseen:</strong> lähdekoodi on avointa, ja korjaukset ovat tervetulleita.</li>`,
+    importMain: "Tuo suosikit ja historia Play-versiosta", importMainDesc: "Lisää Play-version sanat tämän BETA-version omien perään. Mitään ei poisteta, eikä Play-versioon kirjoiteta.",
+    importMainDone: (f, h) => `Tuotu ${f} ${f === 1 ? "suosikki" : "suosikkia"} ja ${h} ${h === 1 ? "haku" : "hakua"}`, importMainNone: "Play-versiosta ei saatu tietoja. Päivitä Play-versio uusimpaan ja avaa se kerran.",
+    betaOnTitle: "Tämä on testiversio (BETA)", betaOnOk: "Selvä",
+    betaOnBody: `<p>Tässä BETA-versiossa uudet ominaisuudet ovat valmiiksi päällä, jotta voit testata ne:</p>
+      <ul><li>englannin ja espanjan konekäännökset (englanti ja espanja käännöskielinä)</li><li>suomennosehdotukset</li>
+      <li>koltansaame sanakorteilla ja haussa</li></ul>
+      <p>Ne ovat konekäännöksiä ja voivat olla vääriä. Voit kytkeä ne pois kohdasta Asetukset → Käännöskielet, niin näet
+      sovelluksen kuten tavallinen käyttäjä. Palaute auttaa!</p>`,
     noFavourites: "Ei vielä suosikkeja", noHistory: "Ei hakuja",
     addFavourite: "Lisää suosikkeihin", removeFavourite: "Poista suosikeista",
     loadingTitle: "Ladataan sanakirjaa…",
@@ -496,6 +504,14 @@ const UI_TEXTS = {
       <li><strong>Foreslå ideer:</strong> nye funksjoner, temaer eller endringer i brukergrensesnittet.</li>
       <li><strong>Tilgjengelighet:</strong> si fra om hva som ville gjøre appen enklere å bruke, for eksempel hvis du har syns- eller bevegelseshemming eller dysleksi.</li>
       <li><strong>Bidra til utviklingen:</strong> kildekoden er åpen, og rettelser er velkomne.</li>`,
+    importMain: "Hent favoritter og historikk fra Play-versjonen", importMainDesc: "Legger Play-versjonens ord til etter denne BETA-versjonens egne. Ingenting slettes, og ingenting skrives til Play-versjonen.",
+    importMainDone: (f, h) => `Hentet ${f} ${f === 1 ? "favoritt" : "favoritter"} og ${h} søk`, importMainNone: "Fikk ingen data fra Play-versjonen. Oppdater Play-versjonen og åpne den én gang.",
+    betaOnTitle: "Dette er en testversjon (BETA)", betaOnOk: "Greit",
+    betaOnBody: `<p>I denne BETA-versjonen er de nye funksjonene slått på, så du kan teste dem:</p>
+      <ul><li>engelske og spanske maskinoversettelser (engelsk og spansk som oversettelsesspråk)</li><li>finske forslag</li>
+      <li>skoltesamisk på ordkort og i søk</li></ul>
+      <p>Det er maskinoversettelser og kan være feil. Du kan slå dem av under Innstillinger → Oversettelsesspråk for å se
+      appen slik en vanlig bruker ser den. Tilbakemeldinger hjelper!</p>`,
     noFavourites: "Ingen favoritter ennå", noHistory: "Ingen søk",
     addFavourite: "Legg til i favoritter", removeFavourite: "Fjern fra favoritter",
     loadingTitle: "Laster ordboken…",
@@ -797,6 +813,14 @@ UI_TEXTS.en = {
     <li><strong>Suggest ideas:</strong> new features, themes or changes to the user interface.</li>
     <li><strong>Accessibility:</strong> tell me what would make the app easier to use, for example with a visual or motor impairment or dyslexia.</li>
     <li><strong>Take part in development:</strong> the source code is open, and fixes are welcome.</li>`,
+  importMain: "Import favourites and history from the Play version", importMainDesc: "Adds the Play version's words after this BETA version's own. Nothing is deleted, and nothing is written to the Play version.",
+  importMainDone: (f, h) => `Imported ${f} ${f === 1 ? "favourite" : "favourites"} and ${h} ${h === 1 ? "search" : "searches"}`, importMainNone: "No data from the Play version. Update the Play version and open it once.",
+  betaOnTitle: "This is a test version (BETA)", betaOnOk: "Got it",
+  betaOnBody: `<p>In this BETA version the new features are already on, so you can test them:</p>
+    <ul><li>English and Spanish machine translations (English and Spanish as translation languages)</li><li>Finnish suggestions</li>
+    <li>Skolt Sámi on word cards and in search</li></ul>
+    <p>They are machine translations and may be wrong. You can turn them off under Settings → Translation languages to see
+    the app as a regular user does. Feedback helps!</p>`,
   noFavourites: "No favourites yet", noHistory: "No searches",
   addFavourite: "Add to favourites", removeFavourite: "Remove from favourites",
   loadingTitle: "Loading the dictionary…",
