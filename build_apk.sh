@@ -34,7 +34,8 @@ fi
 VERSION=$(python3 -c "import version; print(version.VERSION)") || exit 1
 VERSION_CODE=$(python3 -c "import version; print(version.VERSION_CODE)") || exit 1
 [ "$1" = "--debug" ] && VERSION="$(python3 release.py dev)"
-[ "$1" = "--beta" ] && VERSION="$(python3 release.py dev | sed 's/-DEV$/-BETA/')"
+# BETA_VERSION=1.1.0-beta.1 ./build_apk.sh --beta: GitHubin pre-releasen nimi (sama kuin tagi ilman v:tä)
+[ "$1" = "--beta" ] && VERSION="${BETA_VERSION:-$(python3 release.py dev | sed 's/-DEV$/-BETA/')}"
 
 # Väliaikaiset tiedostot (Gradle, käännös, debug-avain) välimuistikansioon, ei projektikansioon. Debug-avain on
 # $CACHE_DIR/home/.android/debug.keystore: ANDROID_USER_HOME osoittaa siihen, koska root-käyttäjänä (WSL)

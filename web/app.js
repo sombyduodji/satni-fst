@@ -149,7 +149,7 @@ function applyStaticTexts() {
   $("menu-version").textContent = $("about-version").textContent;
   // Kehitysversio (build_apk.sh --debug: versio päättyy -DEV): nimeen "DEV", ettei sitä sekoita julkaistuun
   // Testiversio (build_apk.sh --beta: versio päättyy -BETA, GitHubin pre-release): nimeen "BETA" samaan tapaan
-  const tag = (/-(DEV|BETA)$/.exec(version || "") || [])[1];
+  const tag = channelTag(version);
   for (const el of document.querySelectorAll(".brand-name, .menu-name")) {
     el.innerHTML = `Sátni FST${tag ? ` <span class="dev-tag${tag === "BETA" ? " beta" : ""}">${tag}</span>` : ""}`;
   }
@@ -811,7 +811,7 @@ const smsPlain = (s) => (s || "").toLowerCase().replace(/[ʹ'’ʼ]/g, "").repla
 // eikä niitä kytketä uudelleen. Julkaistussa versiossa ei mitään.
 const CHANNEL_DEFAULTS = "v1";
 function applyChannelDefaults() {
-  const tag = (/-(DEV|BETA)$/.exec(window.SATNI_VERSION || "") || [])[1];
+  const tag = channelTag(window.SATNI_VERSION);
   if (!tag) return false;
   let done = null;
   try { done = localStorage.getItem("satni-channel-defaults"); } catch (e) { return false; }
@@ -839,6 +839,9 @@ function showChannelNotice() {
   $("exp-dlg").addEventListener("close", () => { $("exp-cancel").hidden = false; ok.textContent = label; }, { once: true });
   $("exp-dlg").showModal();
 }
+
+// Versiokanava versionimestä: 1.0.0.1-DEV, 1.0.0.1-BETA tai GitHubin pre-release 1.1.0-beta.1 (build_apk.sh --beta)
+const channelTag = (v) => { const m = /-(dev|beta)(?:\.\d+)?$/i.exec(v || ""); return m ? m[1].toUpperCase() : null; };
 
 function queryDatabase(query) {
   if (isWildcard(query)) return wildcardQuery(query);
