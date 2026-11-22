@@ -333,8 +333,10 @@ function renderExtraLangs() {
   const skolt = `<label class="switch-row"><span class="switch-text"><span>${esc(capitalize(langName("sms")))}` +
     `<span class="beta-tag">BETA</span></span>${src("sms")}</span>` +
     `<input type="checkbox" class="switch" role="switch" data-skolt="on"${settings.skolt ? " checked" : ""}></label>` +
-    (settings.skolt ? `<label class="skolt-sub"><input type="checkbox" data-skolt="via"${settings.skoltViaSme ? " checked" : ""}>` +
-      `<span>${esc(t("skoltViaShort"))}</span></label>` : "");
+    // Alakohta samaan tapaan kuin espanjan konekäännökset (käyttäjä 2026-11-22: yhtenäinen ulkoasu)
+    (settings.skolt ? `<label class="switch-row lang-sub"><span class="switch-text"><span>${esc(t("skoltViaShort"))}</span>` +
+      `<span class="muted small">${esc(t("skoltViaDesc"))}</span></span>` +
+      `<input type="checkbox" class="switch" role="switch" data-skolt="via"${settings.skoltViaSme ? " checked" : ""}></label>` : "");
   // Koltansaame kokeellisten (BETA) joukossa sivun alaosassa (käyttäjä 2026-11-21), muut kielet ylhäällä
   $("extra-langs").innerHTML = Object.keys(LANGUAGES).filter(extraLangOk).map(row).join("");
   if ($("skolt-exp")) $("skolt-exp").innerHTML = skolt;
@@ -455,7 +457,6 @@ function setSkolt(on, viaSme) {
 
 // Päälle vasta, kun käyttäjä hyväksyy varoituksen; valinta pohjoissaamen sanakorteille alkaa tyhjänä
 function openSkoltDialog() {
-  $("skolt-via").checked = false;
   $("skolt-dlg").showModal();
 }
 
@@ -6358,7 +6359,7 @@ function bindEvents() {
   };
   $("skolt-ok").onclick = () => {
     $("skolt-dlg").close();
-    setSkolt(true, $("skolt-via").checked);
+    setSkolt(true, false);  // pohjoissaamen sanakortit omasta alakohdastaan
   };
   $("report-btn").onclick = (e) => { e.preventDefault(); openReport(); };
   $("report-cancel").onclick = () => $("report-dlg").close();
