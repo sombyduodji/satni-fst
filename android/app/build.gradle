@@ -65,6 +65,9 @@ android {
             applicationIdSuffix ".beta"
             manifestPlaceholders = [appLabel: "Sátni FST BETA"]
             matchingFallbacks = ["release"]
+            if (signingProps?.exists()) {
+                signingConfig signingConfigs.release
+            }
         }
         release {
             // R8: pienempi APK (ML Kit, androidx). JS-sillan keep-säännöt: proguard-rules.pro. Testattava puhelimella

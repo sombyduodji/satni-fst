@@ -138,6 +138,13 @@ function applyStaticTexts() {
     el.innerHTML = `Sátni FST${tag ? ` <span class="dev-tag${tag === "BETA" ? " beta" : ""}">${tag}</span>` : ""}`;
   }
   if (tag && !document.title.endsWith(" " + tag)) document.title = document.title.replace("Sátni FST", "Sátni FST " + tag);
+  // Puhelimessa yläpalkki on piilossa: kapea merkkinauha saamen värijuovan yläpuolelle (käyttäjä 2026-11-22)
+  if (tag && !document.querySelector(".channel-strip")) {
+    const strip = document.createElement("div");
+    strip.className = "channel-strip" + (tag === "BETA" ? " beta" : "");
+    strip.textContent = tag;
+    document.querySelector("body > .stripe")?.before(strip);
+  }
   // Sähköpostin aiheessa versio, jotta palautteesta näkee, mitä versiota se koskee
   $("feedback-mail").href = "mailto:satni@somby.fi?subject=" +
     encodeURIComponent(`${t("feedbackSubject")} (${$("about-version").textContent})`);
