@@ -236,7 +236,12 @@ def lists():
             ("keskiyö", "midnatt", "gaskaidja", ["Sg+Loc"]), ("tänään", "i dag", "odne", []), ("huomenna", "i morgen", "ihttin", []),
             ("eilen", "i går", "ikte", []), ("nyt", "nå", "dál", []), ("viikko", "uke", "vahkku", []),
             ("kello, tunti", "klokke, time", "diibmu", []), ("minuutti", "minutt", "minuhtta", []),
-            ("monelta?", "hva tid?", "galles", [])]
+            ("monelta?", "hva tid?", "galles", []),
+            # Lisäsanat 2026-11-22 (käyttäjä): kaikki sanakirjassa, SIKOR-yleisyys suluissa
+            ("vuorokausi", "døgn", "jándor", []), ("sekunti", "sekund", "sekunda", []),  # 1072, 397
+            ("puoli tuntia", "halvtime", "diibmobealli", []), ("vartti", "kvarter", "kvárta", []),  # 223, 109
+            ("aikaisin", "tidlig", "árrat", []), ("myöhään", "sent", "maŋŋit", []),  # 1334, 384
+            ("kohta, pian", "snart", "fargga", []), ("äsken, vasta", "nettopp", "easkka", [])]  # 2471, 931
     L.append({"id": "aika", "icon": "clock", "title": {"fi": "Vuorokausi", "nb": "Døgnet"},
               "rows": [row([fi] + ([fin_form(fi, "Sg+Ade")] if tags and fin_form(fi, "Sg+Ade") and fi not in ("keskipäivä", "keskiyö") else []),
                            [nb] + ([NB_WHEN[nb]] if nb in NB_WHEN else []), [sme(s, None, tags, fi=fi, nb=nb)]) for fi, nb, s, tags in time]})
@@ -371,8 +376,9 @@ SECTIONS = {
     "vuodenajat": [("Kevät", "Vår", ["giđđadálvi", "giđđa"]), ("Kesä", "Sommer", ["giđđageassi", "geassi"]),
                    ("Syksy", "Høst", ["čakčageassi", "čakča"]), ("Talvi", "Vinter", ["čakčadálvi", "dálvi"])],
     "aika": [("Vuorokauden ajat", "Tider på døgnet", ["iđit", "beaivi", "gaskabeaivi", "maŋŋelgaskabeaivi", "eahket", "idja", "gaskaidja"]),
-             ("Päivät", "Dager", ["odne", "ihttin", "ikte", "dál"]),
-             ("Kello ja aika", "Klokke og tid", ["vahkku", "diibmu", "minuhtta", "galles"])],
+             ("Päivät", "Dager", ["odne", "ihttin", "ikte", "dál", "fargga", "easkka"]),
+             ("Aikaisin ja myöhään", "Tidlig og sent", ["árrat", "maŋŋit"]),
+             ("Kello ja aika", "Klokke og tid", ["jándor", "vahkku", "diibmu", "diibmobealli", "kvárta", "minuhtta", "sekunda", "galles"])],
     # Lähiperhe pareittain rinnakkain: äiti | isä, sisar | veli, pikkusisko | pikkuveli, tytär | poika, lapsi
     "suku": [("Lähiperhe", "Nærmeste familie", ["eadni", "áhčči", "oabbá", "viellja", "oappáš", "vieljaš", "nieida", "bárdni", "mánná"]),
              # Suku pareittain: isoäiti | isoisä, äidin sisaret (vanhempi | nuorempi), isän sisar | äidin veli,

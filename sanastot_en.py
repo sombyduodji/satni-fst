@@ -18,7 +18,7 @@ HINTS = {"viikonpaivat": "vuossárga = Monday · vuossárgga = on Monday",
 
 SECTIONS = {
     "vuodenajat": ["Spring", "Summer", "Autumn", "Winter"],
-    "aika": ["Times of the day", "Days", "Clock and time"],
+    "aika": ["Times of the day", "Days", "Early and late", "Clock and time"],
     "suku": ["Close family", "Relatives"],
     "porot": ["Reindeer and herd", "Bulls, does and calves"],
     "saa": ["Weather", "Snow and ice"],
@@ -47,7 +47,11 @@ ROWS = {
              "maŋŋelgaskabeaivi": ["afternoon", "in the afternoon"], "eahket": ["evening", "in the evening"],
              "idja": ["night", "at night"], "gaskaidja": ["midnight"], "odne": ["today"], "ihttin": ["tomorrow"],
              "ikte": ["yesterday"], "dál": ["now"], "vahkku": ["week"], "diibmu": ["clock, hour"], "minuhtta": ["minute"],
-             "galles": ["at what time?"]},
+             "galles": ["at what time?"],
+             # 2026-11-22: sanakirjan englanti (sekunda, árrat, maŋŋit, fargga) tai suomen ja norjan mukaan
+             "jándor": ["day (24 hours)"], "sekunda": ["second"], "diibmobealli": ["half an hour"],
+             "kvárta": ["quarter of an hour"], "árrat": ["early"], "maŋŋit": ["late"], "fargga": ["soon"],
+             "easkka": ["just now, only just"]},
     "suunnat": {"davvi": ["north", "in the north", "northwards"], "lulli": ["south", "in the south", "southwards"],
                 "nuorta": ["east", "in the east", "eastwards"], "oarji": ["west", "in the west", "westwards"]},
     "suku": {"eadni": ["mother"], "áhčči": ["father"], "áhkku": ["grandmother"], "áddjá": ["grandfather"], "mánná": ["child"],

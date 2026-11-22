@@ -2247,3 +2247,4 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .hj-seg.multi button { border: 1px solid var(--border); background: var(--surface); }
 .hj-seg.multi button[aria-pressed="true"] { border-color: var(--btn-green); background: var(--btn-green); color: var(--on-green); }
 .hj-seg.multi button[aria-pressed="true"]::before { content: "✓ "; font-weight: 800; }
+.timeline.tl-near { margin-top: 8px; }

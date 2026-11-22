@@ -531,15 +531,23 @@ function renderSanasto(listId) {
           const r = by[lemma];
           return r ? `<div class="tl-step ${cls}"><span class="tl-fi">${esc(uiOf(r)[0] || "")}</span><span class="tl-sme">${tapX(r.sme[0], r.sme[0].w[0], true)}</span></div>` : "";
         };
-        const now = by["dál"];
+        // Toinen aikajana (2026-11-22): äsken → nyt (korostettu) → kohta; ilman lisäsanoja "nyt" omana sirunaan kuten ennen
+        const now = by["dál"], near = by["easkka"] && by["fargga"];
         return `<section class="sl-sec">${sec[lang] ? `<h3>${esc(sec[lang])}</h3>` : ""}<div class="timeline">${step("ikte", "past")}<span class="tl-arrow" aria-hidden="true">→</span>` +
           `${step("odne", "today")}<span class="tl-arrow" aria-hidden="true">→</span>${step("ihttin", "next")}</div>` +
-          (now ? `<div class="tl-now"><span class="tl-dot" aria-hidden="true"></span><span class="tl-sme">${tapX(now.sme[0], now.sme[0].w[0], true)}</span><span class="tl-fi">${esc(uiOf(now)[0] || "")}</span></div>` : "") + `</section>`;
+          (near ? `<div class="timeline tl-near">${step("easkka", "past")}<span class="tl-arrow" aria-hidden="true">→</span>${step("dál", "today")}` +
+            `<span class="tl-arrow" aria-hidden="true">→</span>${step("fargga", "next")}</div>`
+            : now ? `<div class="tl-now"><span class="tl-dot" aria-hidden="true"></span><span class="tl-sme">${tapX(now.sme[0], now.sme[0].w[0], true)}</span><span class="tl-fi">${esc(uiOf(now)[0] || "")}</span></div>` : "") + `</section>`;
       }
-      // Kello ja aika: kuvakkeelliset tiilet (viikko, tunti, minuutti, monelta?)
-      if (l.id === "aika" && i === 2) {
+      // Kello ja aika: kuvakkeelliset tiilet (vuorokausi, viikko, tunti, puoli tuntia, vartti, minuutti, sekunti, monelta?);
+      // osio tunnistetaan sanoista, ei järjestysnumerosta (Aikaisin ja myöhään -osio lisättiin väliin 2026-11-22)
+      if (l.id === "aika" && rows.some((r) => sanastoKey(r.sme[0]) === "diibmu")) {
         const ICON = {
+          jándor: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22"/><path d="M5 19a9.5 9.5 0 0 0 14 0" stroke-dasharray="2 2"/>',
           vahkku: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+          diibmobealli: '<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none" opacity=".35"/><path d="M12 7v5"/>',
+          kvárta: '<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 9 9h-9z" fill="currentColor" stroke="none" opacity=".35"/><path d="M12 7v5"/>',
+          sekunda: '<circle cx="12" cy="13" r="8"/><path d="M12 13l4-4M10 2h4"/>',
           diibmu: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
           minuhtta: '<circle cx="12" cy="13" r="8"/><path d="M12 13V9M10 2h4M19 6l1.5-1.5"/>',
           galles: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.4M12 17h.01"/>',
