@@ -582,6 +582,12 @@ def main():
         CREATE INDEX idx_lemma_fold ON dictionary(lemma_fold);
         CREATE INDEX idx_sme_lemma ON dictionary(sme_lemma);
         CREATE INDEX idx_trans_search_word ON trans_search(word_id);
+        -- Yötesti 23.11.: saksan ja koltan haku (app.js queryDatabase: t.lang = 'deumt'/'smsvia'/'smsplain' AND
+        -- t.fold = ?) luki koko taulun joka haulla: OnePlus Nord N10 ~700 ms jokaiseen hakuun, indeksien kanssa ~16 ms.
+        -- Osittaiset indeksit vain näille kielille: tietokanta +1,6 Mt, pakattu +0,6 Mt.
+        CREATE INDEX idx_ts_deumt ON trans_search(fold) WHERE lang = 'deumt';
+        CREATE INDEX idx_ts_smsvia ON trans_search(fold) WHERE lang = 'smsvia';
+        CREATE INDEX idx_ts_smsplain ON trans_search(fold) WHERE lang = 'smsplain';
         CREATE INDEX idx_variant_fold ON dictionary(variant_fold);
         CREATE INDEX idx_paradigms_surface ON paradigms(surface);
         CREATE INDEX idx_meanings_word ON meanings(word_id);
