@@ -332,10 +332,15 @@ function renderExtraLangs() {
   // Kielen nimen alla käännösten lähde (Asetukset → Käännöskielet)
   const src = (l) => (t("langSource") || {})[l] ? `<span class="muted small">${esc(t("langSource")[l])}</span>` : "";
   // Espanjan konekäännökset (kokeellinen) alakohtana espanjan alla, vain kun espanja on valittu (käyttäjä 2026-11-21)
-  const sub = (l) => l === "spa" && settings.extraLangs.includes("spa") && hasTable("spa_mt")
-    ? `<label class="switch-row lang-sub"><span class="switch-text"><span class="set-title"><span>${esc(t("expSpaMtShort"))}</span>` +
-      `<span class="beta-tag">BETA</span></span><span class="muted small">${esc(t("expSpaMtSub"))}</span></span>` +
-      `<input type="checkbox" class="switch" role="switch" data-exp="spaMt"${settings.exp.spaMt ? " checked" : ""}></label>` : "";
+  // Englannin konekäännökset samoin englannin alla (suomeksi ja norjaksi; englanniksi kytkin on BETA-kytkinten joukossa)
+  const MT_SUB = { spa: ["spaMt", "spa_mt", "expSpaMtShort", "expSpaMtSub"], eng: ["engMt", "eng_mt", "expEngMtShort", "expEngMtSub"] };
+  const sub = (l) => {
+    const m = MT_SUB[l];
+    if (!m || !settings.extraLangs.includes(l) || !hasTable(m[1])) return "";
+    return `<label class="switch-row lang-sub"><span class="switch-text"><span class="set-title"><span>${esc(t(m[2]))}</span>` +
+      `<span class="beta-tag">BETA</span></span><span class="muted small">${esc(t(m[3]))}</span></span>` +
+      `<input type="checkbox" class="switch" role="switch" data-exp="${m[0]}"${settings.exp[m[0]] ? " checked" : ""}></label>`;
+  };
   const row = (l) => `<label class="switch-row"><span class="switch-text"><span>${esc(capitalize(langName(l)))}</span>${src(l)}</span>` +
     `<input type="checkbox" class="switch" role="switch" value="${l}"${settings.extraLangs.includes(l) ? " checked" : ""}></label>` + sub(l);
   const skolt = `<label class="switch-row"><span class="switch-text"><span>${esc(capitalize(langName("sms")))}` +
@@ -6043,7 +6048,7 @@ function applyExperimental() {
   // Englanniksi (2026-11-21): taivutusmuotojen käännöksiä ei ole (FORM_PHRASES vain suomi ja norja); englannin
   // konekäännökset näkyvät englanniksi tai kun englanti on Muut kielet -kohdassa
   if ($("exp-tabletr-row")) $("exp-tabletr-row").hidden = !FORM_PHRASES[settings.lang];
-  if ($("exp-engmt-row")) $("exp-engmt-row").hidden = !(settings.lang === "eng" || settings.extraLangs.includes("eng"));
+  if ($("exp-engmt-row")) $("exp-engmt-row").hidden = settings.lang !== "eng";  // muuten alakohtana englannin alla
   if ($("lause-btn")) {
     const fi = settings.uiLang === "fi";
     $("exp-lause-row").hidden = !fi;

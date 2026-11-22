@@ -56,6 +56,11 @@ android {
         debug {
             applicationIdSuffix ".dev"
             manifestPlaceholders = [appLabel: "Sátni FST DEV"]
+            // Julkaisuavaimella (käyttäjä 2026-11-22): debug-avaimella allekirjoitetun asennus hidastui Play Protectin
+            // tarkistukseen. Vianetsintä (WebView DevTools) pysyy päällä. Kuvakkeessa DEV-merkki: src/debug/.
+            if (signingProps?.exists()) {
+                signingConfig signingConfigs.release
+            }
         }
         // Testiversio GitHubin pre-releaseen (build_apk.sh --beta, käyttäjä 2026-11-22): julkaisuavaimella, mutta oma
         // sovellustunnus ja nimi, joten se asentuu Playn / julkaistun version rinnalle eikä korvaa sitä. Kuvake ja

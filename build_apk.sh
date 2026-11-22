@@ -5,7 +5,7 @@
 # commit commitilta, joten päivitys asentuu vanhan päälle).
 # APK allekirjoitetaan julkaisuavaimella ($SATNI_SIGNING_DIR, oletus ~/.config/satni-fst-signing; luodaan
 # kerran: packaging/android/luo_allekirjoitusavain.sh). Saman avaimen päivitykset asentuvat vanhan päälle.
-# --debug: kehitysversio debug-avaimella (WebView-vianetsintä päällä) emulaattorin dev-laitteelle ja omaan puhelimeen
+# --debug: kehitysversio julkaisuavaimella (WebView-vianetsintä päällä) emulaattorin dev-laitteelle ja omaan puhelimeen
 #          (x86_64 ja arm64). Oma sovellustunnus fi.somby.satnifst.dev ja nimi "Sátni FST DEV", joten se asentuu
 #          julkaistun version rinnalle. Versio: seuraavan korjausjulkaisun numero + -DEV (release.py dev: 0.9.3 -> 0.9.3.1-DEV).
 # --beta: testiversio GitHubin pre-releaseen: julkaisuavain, oma tunnus fi.somby.satnifst.beta ja nimi "Sátni FST BETA",
@@ -17,12 +17,12 @@ cd "$(dirname "$0")" || exit 1
 SIGNING_DIR="${SATNI_SIGNING_DIR:-$HOME/.config/satni-fst-signing}"
 mkdir -p "$SIGNING_DIR" && chmod 700 "$SIGNING_DIR" || exit 1  # muuten Docker loisi sen root-käyttäjänä
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/satni-fst-build/android"
+[ -f "$SIGNING_DIR/keystore.properties" ] && [ -f "$SIGNING_DIR/satni-fst-release.jks" ] || {
+    echo "Julkaisuavainta ei löydy kansiosta $SIGNING_DIR (luo: packaging/android/luo_allekirjoitusavain.sh)"; exit 1; }
 if [ "$1" = "--debug" ]; then
     TASK=assembleDebug; APK=debug/app-debug.apk; OUT=dist/satni-fst-debug.apk
     ABIS=x86_64,arm64-v8a  # emulaattori ja 64-bittinen puhelin (tekstintunnistuksen natiivikirjasto)
 else
-    [ -f "$SIGNING_DIR/keystore.properties" ] && [ -f "$SIGNING_DIR/satni-fst-release.jks" ] || {
-        echo "Julkaisuavainta ei löydy kansiosta $SIGNING_DIR (luo: packaging/android/luo_allekirjoitusavain.sh)"; exit 1; }
     TASK=assembleRelease; APK=release/app-release.apk; OUT=dist/satni-fst.apk
     [ "$1" = "--testi" ] && OUT="$CACHE_DIR/satni-fst-testi.apk"
     # --beta: GitHubin pre-release (oma tunnus fi.somby.satnifst.beta, julkaisuavain), ks. android/app/build.gradle
@@ -57,16 +57,7 @@ docker run --rm \
     gradle --quiet --no-daemon --project-cache-dir /work/project-cache \
         -PsatniVersionName="$VERSION" -PsatniVersionCode="$VERSION_CODE" ${ABIS:+-PsatniAbis=$ABIS} "$TASK" || exit 1
 
-# DEV-version allekirjoitus tarkistetaan tallennettua debug-avainta vastaan: eri avaimella allekirjoitettu päivitys ei
-# asennu puhelimeen vanhan DEV-version päälle (näin kävi Windows-koneen buildeille 2026-11-13)
-if [ "$1" = "--debug" ]; then
-    docker run --rm -v "$CACHE_DIR":/work satni-fst-android-build sh -c '
-        want=$(keytool -list -v -keystore /work/home/.android/debug.keystore -storepass android 2>/dev/null | sed -n "s/.*SHA256: //p" | head -1 | tr -d ":" | tr A-F a-f)
-        got=$(/opt/android-sdk/build-tools/*/apksigner verify --print-certs /work/build/app/outputs/apk/debug/app-debug.apk 2>/dev/null | sed -n "s/.*certificate SHA-256 digest: //p" | head -1)
-        echo "debug-avain $want, APK $got"; [ -n "$want" ] && [ "$want" = "$got" ]' || {
-        echo "VIRHE: DEV-APK on allekirjoitettu eri avaimella kuin $CACHE_DIR/home/.android/debug.keystore"; exit 1; }
-fi
-
+# DEV ja BETA allekirjoitetaan julkaisuavaimella (2026-11-22): tarkistetaan, ettei APK jäänyt allekirjoittamatta
 mkdir -p "$(dirname "$OUT")"
 cp "$CACHE_DIR/build/app/outputs/apk/$APK" "$OUT" || exit 1
 echo "$OUT: versio $VERSION ($VERSION_CODE)"

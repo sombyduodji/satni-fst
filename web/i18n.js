@@ -95,6 +95,7 @@ const UI_TEXTS = {
       <p>Testissä sanoilla, joilla englanti on, noin 97 % oli oikein, kun kaikki kolme reittiä olivat samaa mieltä, ja noin
       85–90 %, kun kaksi oli. Ne ovat silti konekäännöksiä. Sanoja voi myös hakea englanniksi sanakirjan omien käännösten jälkeen.</p>`,
     engMtNote: (level) => (level >= 3 ? "konekäännös, 3 lähdettä samaa mieltä" : "konekäännös, 2 lähdettä samaa mieltä"),
+    expEngMtShort: "+ konekäännökset", expEngMtSub: "Noin 17 000 sanaa lisää, kun vähintään 2 lähdettä on samaa mieltä",
     expSpaMtShort: "+ konekäännökset", expSpaMtSub: "Noin 6 300 sanaa lisää, kun vähintään 3 lähdettä on samaa mieltä",
     expSpaMt: "Espanjan konekäännökset", expSpaMtDesc: "Sanoille, joilla ei ole espanjaa sanakirjassa, kun vähintään kolme lähdettä on samaa mieltä.",
     expSpaMtInfo: `<p>Espanjan sanakirjassa (Ángel Díaz de Rada ja Kjell Kemi) on noin 7 700 pohjoissaamen sanaa. Noin 6 300
@@ -403,6 +404,7 @@ const UI_TEXTS = {
       <p>I en test med ord som har engelsk, var rundt 97 % riktige når alle tre veiene var enige, og rundt 85–90 % når to
       var det. Det er likevel maskinoversettelser. Ordene kan også søkes på engelsk, etter ordbokas egne oversettelser.</p>`,
     engMtNote: (level) => (level >= 3 ? "maskinoversettelse, 3 kilder enige" : "maskinoversettelse, 2 kilder enige"),
+    expEngMtShort: "+ maskinoversettelser", expEngMtSub: "Rundt 17 000 ord til, når minst 2 kilder er enige",
     expSpaMtShort: "+ maskinoversettelser", expSpaMtSub: "Rundt 6 300 ord til, når minst 3 kilder er enige",
     expSpaMt: "Spanske maskinoversettelser", expSpaMtDesc: "For ord uten spansk i ordboka, når minst tre kilder er enige.",
     expSpaMtInfo: `<p>Den spanske ordboka (Ángel Díaz de Rada og Kjell Kemi) har rundt 7 700 nordsamiske ord. For rundt 6 300
@@ -705,6 +707,7 @@ UI_TEXTS.en = {
     found by searching in English, after the dictionary's own translations.</p>`,
   engMtNote: (level) => (level >= 3 ? "machine translation, 3 sources agree" : "machine translation, 2 sources agree"),
   pivotFinNote: { smn: "via Inari Sámi, unchecked", nob: "via Norwegian, unchecked" }, derFinNote: "derived", cmpFinNote: "from its parts", cmpPartsMeaning: "meanings of the parts",
+  expEngMtShort: "+ machine translations", expEngMtSub: "About 17,000 more words, when at least 2 sources agree",
   expSpaMtShort: "+ machine translations", expSpaMtSub: "About 6,300 more words, when at least 3 sources agree",
   expSpaMt: "Spanish machine translations", expSpaMtDesc: "For words without Spanish in the dictionary, when at least three sources agree.",
   expSpaMtInfo: `<p>The Spanish dictionary (Ángel Díaz de Rada and Kjell Kemi) has about 7,700 North Sámi words. For about
