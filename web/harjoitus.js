@@ -87,7 +87,8 @@ function harjGroup(id) {
   return SANASTO_GROUPS.find((g) => g.lists.includes(key)) || SANASTO_GROUPS[SANASTO_GROUPS.length - 1];
 }
 function harjIcon(id) {
-  if (id === "kello") return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg>';
+  // Oma kuvake (herätyskello): sanastojen Vuorokausi ja kello -listan kellosta erottuva (käyttäjä 2026-11-22)
+  if (id === "kello") return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="7.5"/><path d="M12 9.2V13l2.6 1.8"/><path d="M4.2 6.2l3-2.4M19.8 6.2l-3-2.4M7.3 19.2l-1.6 1.9M16.7 19.2l1.6 1.9"/></svg>';
   const l = sanastot && sanastot.find((x) => x.id === (id === "jarjestysluvut" ? "luvut" : id));
   return l ? sanastoSvg(l.icon) : HARJ_ICON;
 }
@@ -104,7 +105,7 @@ function harjRenderSetup(o) {
   // Aiheet pieninä valintanappeina Sanastojen järjestyksessä, kuvake ryhmän värillä; useita voi valita
   const order = SANASTO_GROUPS.flatMap((g) => ids.filter((id) => harjGroup(id) === g));
   const chip = (id) => { const c = harjGroup(id).color;
-    return `<button type="button" class="hj-chip" data-g="list" data-v="${esc(id)}" aria-pressed="${o.lists.includes(id)}" title="${esc(t("harjWords", count[id]))}" style="--tc: var(--flag-${c}); --tb: var(--btn-${c})">` +
+    return `<button type="button" class="hj-chip" data-g="list" data-v="${esc(id)}" aria-pressed="${o.lists.includes(id)}" title="${esc(id === "kello" ? t("harjTimes", count[id]) : t("harjWords", count[id]))}" style="--tc: var(--flag-${c}); --tb: var(--btn-${c})">` +
       `<span class="hj-ci">${harjIcon(id)}</span>${esc(harjTitle(id))}</button>`; };
   const seg = (group, opts, label) => `<div class="hj-row"><span class="hj-rl" id="hj-l-${group}">${esc(label)}</span><div class="hj-seg" role="group" aria-labelledby="hj-l-${group}">` +
     opts.map(([v, txt]) => `<button type="button" data-g="${group}" data-v="${esc(String(v))}" aria-pressed="false">${esc(txt)}</button>`).join("") + `</div></div>`;
@@ -114,9 +115,9 @@ function harjRenderSetup(o) {
     `<div class="hj-sec"><span>${esc(t("harjTopics"))}</span><button type="button" class="hj-link" data-act="all"></button></div>` +
     `<div class="hj-chips">${order.map(chip).join("")}</div>` +
     `<div class="hj-opts">` +
-    `<div class="hj-row hj-numrow"><span class="hj-rl" id="hj-l-nr">${esc(t("harjRange"))}</span><div class="hj-seg" role="group" aria-labelledby="hj-l-nr">` +
+    `<div class="hj-row hj-numrow"><span class="hj-rl" id="hj-l-nr">${esc(t("harjRange"))}</span><div class="hj-seg multi" role="group" aria-labelledby="hj-l-nr">` +
       HARJ_RANGES.map(([a, b], i) => `<button type="button" data-g="nr" data-v="${i}" aria-pressed="false">${a}–${b}</button>`).join("") + `</div></div>` +
-    `<div class="hj-row hj-clockrow"><span class="hj-rl" id="hj-l-cl">${esc(t("harjClockLv"))}</span><div class="hj-seg" role="group" aria-labelledby="hj-l-cl">` +
+    `<div class="hj-row hj-clockrow"><span class="hj-rl" id="hj-l-cl">${esc(t("harjClockLv"))}</span><div class="hj-seg multi" role="group" aria-labelledby="hj-l-cl">` +
       t("harjClockLvs").map((txt, i) => `<button type="button" data-g="cl" data-v="${i}" aria-pressed="false">${esc(txt)}</button>`).join("") + `</div></div>` +
     seg("dir", [["fi", t("harjDirFi")], ["sme", t("harjDirSme")]], t("harjDir")) +
     seg("think", [2, 3, 4, 5, 7].map((x) => [x, `${x} s`]), t("harjThink")) +
@@ -172,10 +173,11 @@ function harjSyncSetup(o) {
       : g === "nr" ? o.ranges.includes(Number(v)) : g === "cl" ? o.clock.includes(Number(v)) : o.shuffle === (v === "1");
     if (b.getAttribute("aria-pressed") !== String(on)) b.setAttribute("aria-pressed", String(on));
   }
-  const words = harjIndex.lists.filter((l) => o.lists.includes(l.id)).reduce((n, l) => n + harjRows(l, o).length, 0);
+  const words = harjIndex.lists.filter((l) => o.lists.includes(l.id) && l.id !== "kello").reduce((n, l) => n + harjRows(l, o).length, 0);
+  const times = o.lists.includes("kello") ? harjRows(harjIndex.lists.find((l) => l.id === "kello"), o).length : 0;
   el.querySelector(".hj-numrow").hidden = !o.lists.some((id) => HARJ_NUMERIC.includes(id));
   el.querySelector(".hj-clockrow").hidden = !o.lists.includes("kello");
-  el.querySelector(".hj-start span").textContent = o.lists.length ? t("harjStartN", words) : t("harjStart");
+  el.querySelector(".hj-start span").textContent = !o.lists.length ? t("harjStart") : times ? t("harjStartMix", words, times) : t("harjStartN", words);
   el.querySelector(".hj-start").classList.toggle("off", !o.lists.length);
   el.querySelector(".hj-link").textContent = o.lists.length === harjIndex.lists.length ? t("harjNone") : t("harjAll");
   if (o.lists.length) el.querySelector(".hj-err").hidden = true;

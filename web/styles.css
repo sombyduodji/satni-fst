@@ -2242,3 +2242,8 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .hj-clock { display: grid; place-items: center; margin: 4px 0 6px; }
 .hj-clock .kello { width: min(40vw, 150px); height: auto; }
 .hj-clock[hidden] { display: none; }
+/* Monivalintarivit (lukualueet, kellonajat): erilliset napit ja ✓, jotta valinnat erottuvat myös kaikki päällä (2026-11-22) */
+.hj-seg.multi { gap: 4px; background: none; border: 0; padding: 0; }
+.hj-seg.multi button { border: 1px solid var(--border); background: var(--surface); }
+.hj-seg.multi button[aria-pressed="true"] { border-color: var(--btn-green); background: var(--btn-green); color: var(--on-green); }
+.hj-seg.multi button[aria-pressed="true"]::before { content: "✓ "; font-weight: 800; }
