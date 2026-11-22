@@ -14,6 +14,18 @@ Sátni FST combines the open dictionaries and morphology of [GiellaLT](https://g
 
 **Home page and web version:** <https://sombyduodji.github.io/satni-fst/> — try the dictionary in your browser, nothing to install.
 
+## Download
+
+- **Android:** Google Play, or `satni-fst.apk` from the [latest GitHub release](https://github.com/sombyduodji/satni-fst/releases/latest).
+  Both are the same app (same package and signing key), so you can switch between them without losing your data.
+- **Linux and Windows:** `Satni_FST-x86_64.AppImage` and `satni-fst-windows.zip` from the latest release.
+- **BETA (test versions):** GitHub *pre-releases* with `satni-fst-beta-….apk`. The BETA is a separate app,
+  *Sátni FST BETA* (`fi.somby.satnifst.beta`), that installs alongside the normal app and never replaces it.
+
+**Obtainium:** for the normal app, keep *Include prereleases* **off** and set *Filter APKs by regular expression* to
+`^satni-fst\.apk$`. To follow the BETA as well, add the repository again as a second app with *Include prereleases*
+**on** and the APK filter `beta`.
+
 ## Features
 
 - About 80 000 North Sámi words, about 74 000 of them with full inflection tables
@@ -107,7 +119,7 @@ because Android won't install an app signed with a different key over the old on
 
 | Device | Signing key | Install |
 |---|---|---|
-| `dev` | debug key | `./build_apk.sh --debug`, then `./emulaattori.sh asenna dev` |
+| `dev` | release key (since 2026-11-22; an older debug-key DEV must be uninstalled once) | `./build_apk.sh --debug`, then `./emulaattori.sh asenna dev` |
 | `main` | release key | `./emulaattori.sh asenna main` (the published `dist/satni-fst.apk`); to test the update, `./build_apk.sh --testi` and `./emulaattori.sh asenna main testi` |
 
 ```bash
