@@ -24,14 +24,15 @@ import sys
 import xml.etree.ElementTree as ET
 
 import os
-C = "/home/user/.cache/satni-fst-build/decal/"
+HOME = os.path.expanduser("~")
+C = os.path.join(HOME, ".cache/satni-fst-build/decal/")
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 M = json.load(open(C + "maps.json"))
 R = json.load(open(C + "recs.json"))
 SMI = json.load(open(C + "mt_sme_de.json"))
 OP = json.load(open(C + "mt_opus_de.json"))
-ALGU = json.load(open("/home/user/.cache/satni-fst-build/fincal/algu_sme_deu.json"))
-root = ET.parse("/home/user/Git/sami-data-candidates/german/deWordNet.xml").getroot()
+ALGU = json.load(open(os.path.join(HOME, ".cache/satni-fst-build/fincal/algu_sme_deu.json")))
+root = ET.parse(os.path.join(HOME, "Git/sami-data-candidates/german/deWordNet.xml")).getroot()
 SYN, CASE, DEPOS = collections.defaultdict(set), {}, collections.defaultdict(set)
 for le in root.iter("LexicalEntry"):
     lem = le.find("Lemma")
