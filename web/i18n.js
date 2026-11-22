@@ -94,7 +94,7 @@ const UI_TEXTS = {
       Apertium). Sana näytetään vain, jos vähintään kaksi reittiä antaa saman englannin sanan.</p>
       <p>Testissä sanoilla, joilla englanti on, noin 97 % oli oikein, kun kaikki kolme reittiä olivat samaa mieltä, ja noin
       85–90 %, kun kaksi oli. Ne ovat silti konekäännöksiä. Sanoja voi myös hakea englanniksi sanakirjan omien käännösten jälkeen.</p>`,
-    engMtNote: (level) => (level >= 3 ? "konekäännös, 3 lähdettä samaa mieltä" : "konekäännös, 2 lähdettä samaa mieltä"),
+    engMtNote: (level) => `konekäännös, ${Math.max(2, level || 2)} lähdettä samaa mieltä`,
     expEngMtShort: "+ konekäännökset", expEngMtSub: "Noin 17 000 sanaa lisää, kun vähintään 2 lähdettä on samaa mieltä",
     expSpaMtShort: "+ konekäännökset", expSpaMtSub: "Noin 6 300 sanaa lisää, kun vähintään 3 lähdettä on samaa mieltä",
     expSpaMt: "Espanjan konekäännökset", expSpaMtDesc: "Sanoille, joilla ei ole espanjaa sanakirjassa, kun vähintään kolme lähdettä on samaa mieltä.",
@@ -194,9 +194,17 @@ const UI_TEXTS = {
     betaOnTitle: "Tämä on testiversio (BETA)", betaOnOk: "Selvä",
     betaOnBody: `<p>Tässä BETA-versiossa uudet ominaisuudet ovat valmiiksi päällä, jotta voit testata ne:</p>
       <ul><li>englannin ja espanjan konekäännökset (englanti ja espanja käännöskielinä)</li><li>suomennosehdotukset</li>
-      <li>koltansaame sanakorteilla ja haussa</li></ul>
+      <li>koltansaame sanakorteilla ja haussa</li><li>saksa (konekäännös, BETA)</li></ul>
       <p>Ne ovat konekäännöksiä ja voivat olla vääriä. Voit kytkeä ne pois kohdasta Asetukset → Käännöskielet, niin näet
       sovelluksen kuten tavallinen käyttäjä. Palaute auttaa!</p>`,
+    expDeuMt: "Saksa", expDeuMtDesc: "Konekäännös noin 5 500 sanalle, kun vähintään 3 lähdettä on samaa mieltä. Ei sanakirjaa.",
+    expDeuMtInfo: `<p>Pohjoissaamen ja saksan välillä ei ole avointa sanakirjaa, joten kaikki saksan sanat ovat konekäännöksiä.
+      Sana näytetään vain, jos vähintään kolme viidestä toisistaan riippumattomasta lähteestä antaa saman saksan sanan:
+      käännösmalli saamesta, sanan suomennoksesta, norjannoksesta ja sanakirjan englannista sekä Wiktionary. Noin 5 500 sanaa,
+      enimmäkseen yleisiä sanoja.</p>
+      <p>Testissä Wiktionaryn saame–saksa-sanoja vasten noin 82 % kolmen lähteen ja noin 92 % neljän tai viiden lähteen sanoista
+      oli sama tai synonyymi. Testisanoja oli vain noin 800, joten luku on suuntaa antava. Sanakortissa näkyy saksa (≈) ja
+      lähteiden määrä, ja saksan sanalla voi hakea.</p>`,
     noFavourites: "Ei vielä suosikkeja", noHistory: "Ei hakuja",
     addFavourite: "Lisää suosikkeihin", removeFavourite: "Poista suosikeista",
     loadingTitle: "Ladataan sanakirjaa…",
@@ -281,7 +289,7 @@ const UI_TEXTS = {
     },
     elsewhere: "Sanasta muualla",
     gtTitle: "Sana Giellateknon Neahttadigisánit-sanakirjassa (käännökset, sanahistoria, esimerkit teksteistä)", satniTitle: "Sana sátni.org-sanakirjoissa",
-    langName: { fin: "suomi", nob: "norja", eng: "englanti", smn: "inarinsaame", smj: "luulajansaame", sma: "eteläsaame", sms: "koltansaame", spa: "espanja" },
+    langName: { deu: "saksa", fin: "suomi", nob: "norja", eng: "englanti", smn: "inarinsaame", smj: "luulajansaame", sma: "eteläsaame", sms: "koltansaame", spa: "espanja" },
     smeDef: "Selitys saameksi", smeDefSyn: "sama kuin",
     relatedSami: "Sukulaissanat muissa saamen kielissä", relatedNote: "Sama alkuperä, merkitys voi poiketa. Lähde: Álgu (Kotimaisten kielten keskus).",
     placeName: "Paikannimi", placeSource: "© Kartverket",
@@ -290,7 +298,7 @@ const UI_TEXTS = {
       dal: "laakso", nesISjø: "niemi", nes: "niemi", vikISjø: "lahti", vik: "lahti", "ås": "harju", gard: "talo", bruk: "tila",
       haug: "kumpu", myr: "suo", li: "rinne", foss: "koski", sund: "salmi", sundISjø: "salmi", "halvøy": "niemimaa", fylke: "lääni" },
     alsoFin: "Myös:", alsoFinSource: "Suomi–saame-sanakirjan hakusanat, joiden saamennos tämä sana on",
-    langIn: { fin: "Suomeksi", nob: "Norjaksi", eng: "Englanniksi", smn: "Inarinsaameksi", sms: "Koltansaameksi", smj: "Luulajansaameksi", sma: "Eteläsaameksi", spa: "Espanjaksi" },
+    langIn: { deu: "Saksaksi", fin: "Suomeksi", nob: "Norjaksi", eng: "Englanniksi", smn: "Inarinsaameksi", sms: "Koltansaameksi", smj: "Luulajansaameksi", sma: "Eteläsaameksi", spa: "Espanjaksi" },
     // Tietoa-ikkuna. Ääntämisen kuvaus on sovittu Divvunin kanssa (2026-10-29), älä muuta sisältöä.
     aboutWeb: (v) => (v ? `Versio ${v} (web)` : "Web-versio"), aboutDesktop: (v) => `Versio ${v} (työpöytä)`,
     aboutAndroid: (v) => `Versio ${v} (Android)`,
@@ -411,7 +419,7 @@ const UI_TEXTS = {
       Et ord vises bare når minst to veier gir det samme engelske ordet.</p>
       <p>I en test med ord som har engelsk, var rundt 97 % riktige når alle tre veiene var enige, og rundt 85–90 % når to
       var det. Det er likevel maskinoversettelser. Ordene kan også søkes på engelsk, etter ordbokas egne oversettelser.</p>`,
-    engMtNote: (level) => (level >= 3 ? "maskinoversettelse, 3 kilder enige" : "maskinoversettelse, 2 kilder enige"),
+    engMtNote: (level) => `maskinoversettelse, ${Math.max(2, level || 2)} kilder enige`,
     expEngMtShort: "+ maskinoversettelser", expEngMtSub: "Rundt 17 000 ord til, når minst 2 kilder er enige",
     expSpaMtShort: "+ maskinoversettelser", expSpaMtSub: "Rundt 6 300 ord til, når minst 3 kilder er enige",
     expSpaMt: "Spanske maskinoversettelser", expSpaMtDesc: "For ord uten spansk i ordboka, når minst tre kilder er enige.",
@@ -509,9 +517,16 @@ const UI_TEXTS = {
     betaOnTitle: "Dette er en testversjon (BETA)", betaOnOk: "Greit",
     betaOnBody: `<p>I denne BETA-versjonen er de nye funksjonene slått på, så du kan teste dem:</p>
       <ul><li>engelske og spanske maskinoversettelser (engelsk og spansk som oversettelsesspråk)</li><li>finske forslag</li>
-      <li>skoltesamisk på ordkort og i søk</li></ul>
+      <li>skoltesamisk på ordkort og i søk</li><li>tysk (maskinoversettelse, BETA)</li></ul>
       <p>Det er maskinoversettelser og kan være feil. Du kan slå dem av under Innstillinger → Oversettelsesspråk for å se
       appen slik en vanlig bruker ser den. Tilbakemeldinger hjelper!</p>`,
+    expDeuMt: "Tysk", expDeuMtDesc: "Maskinoversettelse for rundt 5 500 ord, når minst 3 kilder er enige. Ingen ordbok.",
+    expDeuMtInfo: `<p>Det finnes ingen åpen ordbok mellom nordsamisk og tysk, så alle tyske ord er maskinoversettelser. Et ord
+      vises bare når minst tre av fem uavhengige kilder gir det samme tyske ordet: oversettelsesmodeller fra samisk, fra ordets
+      finske og norske oversettelse og fra ordbokas engelske, og Wiktionary. Rundt 5 500 ord, mest vanlige ord.</p>
+      <p>I en test mot Wiktionarys samisk–tyske ord var rundt 82 % av ordene med tre kilder og rundt 92 % med fire eller fem
+      like eller synonymer. Testen hadde bare rundt 800 ord, så tallet er omtrentlig. Ordkortet viser tysk (≈) og antall
+      kilder, og du kan søke med det tyske ordet.</p>`,
     noFavourites: "Ingen favoritter ennå", noHistory: "Ingen søk",
     addFavourite: "Legg til i favoritter", removeFavourite: "Fjern fra favoritter",
     loadingTitle: "Laster ordboken…",
@@ -594,7 +609,7 @@ const UI_TEXTS = {
     },
     elsewhere: "Ordet andre steder",
     gtTitle: "Ordet i Giellateknos ordbok Neahttadigisánit (oversettelser, ordhistorie, eksempler fra tekster)", satniTitle: "Ordet i ordbøkene på sátni.org",
-    langName: { fin: "finsk", nob: "norsk", eng: "engelsk", smn: "enaresamisk", smj: "lulesamisk", sma: "sørsamisk", sms: "skoltesamisk", spa: "spansk" },
+    langName: { deu: "tysk", fin: "finsk", nob: "norsk", eng: "engelsk", smn: "enaresamisk", smj: "lulesamisk", sma: "sørsamisk", sms: "skoltesamisk", spa: "spansk" },
     smeDef: "Forklaring på samisk", smeDefSyn: "samme som",
     relatedSami: "Beslektede ord i andre samiske språk", relatedNote: "Samme opphav, betydningen kan avvike. Kilde: Álgu (Kotus, Institute for the Languages of Finland).",
     placeName: "Stedsnavn", placeSource: "© Kartverket",
@@ -603,7 +618,7 @@ const UI_TEXTS = {
       dal: "dal", nesISjø: "nes", nes: "nes", vikISjø: "vik", vik: "vik", "ås": "ås", gard: "gard", bruk: "bruk",
       haug: "haug", myr: "myr", li: "li", foss: "foss", sund: "sund", sundISjø: "sund", "halvøy": "halvøy", fylke: "fylke" },
     alsoFin: "Også:", alsoFinSource: "Oppslagsord i den finsk–samiske ordboka som har dette ordet som oversettelse",
-    langIn: { fin: "På finsk", nob: "På norsk", eng: "På engelsk", smn: "På enaresamisk", sms: "På skoltesamisk", smj: "På lulesamisk", sma: "På sørsamisk", spa: "På spansk" },
+    langIn: { deu: "På tysk", fin: "På finsk", nob: "På norsk", eng: "På engelsk", smn: "På enaresamisk", sms: "På skoltesamisk", smj: "På lulesamisk", sma: "På sørsamisk", spa: "På spansk" },
     // Oversettelse av den finske teksten som er avtalt med Divvun (2026-10-29)
     aboutWeb: (v) => (v ? `Versjon ${v} (nett)` : "Nettversjon"), aboutDesktop: (v) => `Versjon ${v} (skrivebord)`,
     aboutAndroid: (v) => `Versjon ${v} (Android)`,
@@ -721,7 +736,7 @@ UI_TEXTS.en = {
     <p>In a test with words that already have English, about 97 % were right when all three routes agreed and about
     85–90 % when two agreed. They are still machine translations: check important words. These words can also be
     found by searching in English, after the dictionary's own translations.</p>`,
-  engMtNote: (level) => (level >= 3 ? "machine translation, 3 sources agree" : "machine translation, 2 sources agree"),
+  engMtNote: (level) => `machine translation, ${Math.max(2, level || 2)} sources agree`,
   pivotFinNote: { smn: "via Inari Sámi, unchecked", nob: "via Norwegian, unchecked" }, derFinNote: "derived", cmpFinNote: "from its parts", cmpPartsMeaning: "meanings of the parts",
   expEngMtShort: "+ machine translations", expEngMtSub: "About 17,000 more words, when at least 2 sources agree",
   expSpaMtShort: "+ machine translations", expSpaMtSub: "About 6,300 more words, when at least 3 sources agree",
@@ -818,9 +833,17 @@ UI_TEXTS.en = {
   betaOnTitle: "This is a test version (BETA)", betaOnOk: "Got it",
   betaOnBody: `<p>In this BETA version the new features are already on, so you can test them:</p>
     <ul><li>English and Spanish machine translations (English and Spanish as translation languages)</li><li>Finnish suggestions</li>
-    <li>Skolt Sámi on word cards and in search</li></ul>
+    <li>Skolt Sámi on word cards and in search</li><li>German (machine translation, BETA)</li></ul>
     <p>They are machine translations and may be wrong. You can turn them off under Settings → Translation languages to see
     the app as a regular user does. Feedback helps!</p>`,
+  expDeuMt: "German", expDeuMtDesc: "Machine translation for about 5,500 words, when at least 3 sources agree. No dictionary.",
+  expDeuMtInfo: `<p>There is no open dictionary between North Sámi and German, so every German word is a machine translation.
+    A word is shown only when at least three of five independent sources give the same German word: translation models from
+    Sámi, from the word's Finnish and Norwegian translations and from the dictionary's English, and Wiktionary. About 5,500
+    words, mostly common ones.</p>
+    <p>In a test against Wiktionary's Sámi–German words, about 82 % of the words with three sources and about 92 % with four
+    or five were the same or a synonym. The test had only about 800 words, so the figure is approximate. The word card shows
+    German (≈) and the number of sources, and you can search with the German word.</p>`,
   noFavourites: "No favourites yet", noHistory: "No searches",
   addFavourite: "Add to favourites", removeFavourite: "Remove from favourites",
   loadingTitle: "Loading the dictionary…",
@@ -902,7 +925,7 @@ UI_TEXTS.en = {
   },
   elsewhere: "The word elsewhere",
   gtTitle: "The word in Giellatekno's Neahttadigisánit dictionary (translations, word history, examples from texts)", satniTitle: "The word in the sátni.org dictionaries",
-  langName: { fin: "Finnish", nob: "Norwegian", eng: "English", smn: "Inari Sámi", smj: "Lule Sámi", sma: "South Sámi", sms: "Skolt Sámi", spa: "Spanish" },
+  langName: { deu: "German", fin: "Finnish", nob: "Norwegian", eng: "English", smn: "Inari Sámi", smj: "Lule Sámi", sma: "South Sámi", sms: "Skolt Sámi", spa: "Spanish" },
   smeDef: "Explanation in Sámi", smeDefSyn: "same as",
   relatedSami: "Related words in other Sámi languages", relatedNote: "Same origin, the meaning may differ. Source: Álgu (Kotus, Institute for the Languages of Finland).",
   placeName: "Place name", placeSource: "© Kartverket",
@@ -911,7 +934,7 @@ UI_TEXTS.en = {
     dal: "valley", nesISjø: "headland", nes: "headland", vikISjø: "bay", vik: "bay", "ås": "ridge", gard: "farm", bruk: "farm",
     haug: "hill", myr: "bog", li: "slope", foss: "waterfall", sund: "strait", sundISjø: "strait", "halvøy": "peninsula", fylke: "county" },
   alsoFin: "Also:", alsoFinSource: "Headwords of the Finnish–Sámi dictionary that this word translates",
-  langIn: { fin: "In Finnish", nob: "In Norwegian", eng: "In English", smn: "In Inari Sámi", sms: "In Skolt Sámi", smj: "In Lule Sámi", sma: "In South Sámi", spa: "In Spanish" },
+  langIn: { deu: "In German", fin: "In Finnish", nob: "In Norwegian", eng: "In English", smn: "In Inari Sámi", sms: "In Skolt Sámi", smj: "In Lule Sámi", sma: "In South Sámi", spa: "In Spanish" },
   // Tietoa-ikkuna. Ääntämisen kuvaus on sovittu Divvunin kanssa (2026-10-29), älä muuta sisältöä.
   aboutWeb: (v) => (v ? `Version ${v} (web)` : "Web version"), aboutDesktop: (v) => `Version ${v} (desktop)`,
   aboutAndroid: (v) => `Version ${v} (Android)`,
@@ -943,6 +966,7 @@ UI_TEXTS.en = {
        (Språkbanken / National Library of Norway, CC BY 4.0), Skolt Sámi (experimental) GiellaLT dict-sms-mul, dict-fin-sms and
        dict-nob-sms (CC BY 4.0 / 3.0), Norwegian translations (experimental) Apertium apertium-sme-nob (GPL-2.0-or-later), Finnish suggestions (experimental) GiellaLT dict-smn-sme, dict-smn-fin and dict-fin-smn (CC BY 4.0), Spanish translations GiellaLT dict-sme-spa and dict-spa-sme (Ángel, CC BY 4.0), some of the English translations Wiktionary (CC BY-SA 4.0, kaikki.org),
        English machine translations (experimental): smi-mt with the TartuNLP Smugri model (CC BY 4.0; base model NLLB-200, CC BY-NC 4.0), Helsinki-NLP opus-mt-fi-en and opus-mt-gmq-en (Apache-2.0), FinnWordNet (CC BY 3.0) and Apertium apertium-fin-eng (GPL-3.0),
+       German machine translations (BETA): smi-mt, Helsinki-NLP opus-mt-fi-de and opus-mt-no-de (Apache-2.0), opus-mt-en-de (CC BY 4.0), OdeNet (CC BY-SA 4.0) and Wiktionary (CC BY-SA 4.0),
        sql.js (MIT). Experimental text recognition
        in the Android app: Google ML Kit (Google's terms). The photo is processed on the phone and never leaves the device,
        and ML Kit's sending of usage statistics to Google is turned off. Second reading of unknown Sámi words:

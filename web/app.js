@@ -57,7 +57,7 @@ const DEFAULT_SETTINGS = {
   skolt: false, skoltViaSme: false,
   // Kokeelliset ominaisuudet (valikon lopussa), kukin erikseen: ocr = kuvasta haku (Android-sovellus),
   // tableTr = muotojen käännökset taivutustaulukossa, apertium = Apertiumin norjan käännökset, pivotFin = suomennosehdotukset. experimental: vanha yhteinen kytkin (= ocr), siirretään exp.ocr:ään.
-  exp: { ocr: false, lause: false, tableTr: false, apertium: false, pivotFin: false, engMt: false, spaMt: false },
+  exp: { ocr: false, lause: false, tableTr: false, apertium: false, pivotFin: false, engMt: false, spaMt: false, deuMt: false },
   // Kuvasta haku: suunta ("sme" = saamen teksti, "ui" = käyttöliittymän kielen teksti), merkintätapa ja väri
   ocrFrom: "sme", ocrTo: "", ocrStyle: "frame",
   // Valokuvahaun omat kielet (asetukset → Työkalut → Valokuvahaku): kuvan lisäkielet (inari, koltta) ja käännöskielet
@@ -574,6 +574,7 @@ function toast(text, ms = 3500) {
 
 // Vain valitun kielen käännös (muut kielet näkyvät Merkitykset-välilehdellä omina ryhminään)
 function translationOf(row, max, lang = settings.lang) {
+  if (!LANGUAGES[lang]) return "";  // saksa: vain konekäännös (deu_mt), ei sanakirjan saraketta
   return splitList(row[LANGUAGES[lang].col]).slice(0, max).join(", ");
 }
 
@@ -810,12 +811,24 @@ const smsPlain = (s) => (s || "").toLowerCase().replace(/[ʹ'’ʼ]/g, "").repla
 // DEV: kaikki kokeelliset päälle. BETA: uudet ominaisuudet päälle ja kerran ilmoitus; testaaja voi kytkeä ne pois,
 // eikä niitä kytketä uudelleen. Julkaistussa versiossa ei mitään.
 const CHANNEL_DEFAULTS = "v1";
+// Myöhemmin lisätyt ominaisuudet: kytketään päälle kerran myös testaajille, joilla v1 on jo käytetty (satni-channel-features)
+const CHANNEL_FEATURES = { deuMt: ["DEV", "BETA"] };
+function applyChannelFeatures(tag) {
+  let seen = [];
+  try { seen = JSON.parse(localStorage.getItem("satni-channel-features") || "[]"); } catch (e) { return false; }
+  const add = Object.keys(CHANNEL_FEATURES).filter((f) => CHANNEL_FEATURES[f].includes(tag) && !seen.includes(f));
+  if (!add.length) return false;
+  for (const f of add) settings.exp = { ...settings.exp, [f]: true };
+  try { localStorage.setItem("satni-channel-features", JSON.stringify([...seen, ...add])); } catch (e) { /* yksityinen tila */ }
+  saveSettings();
+  return tag === "BETA";
+}
 function applyChannelDefaults() {
   const tag = channelTag(window.SATNI_VERSION);
   if (!tag) return false;
   let done = null;
   try { done = localStorage.getItem("satni-channel-defaults"); } catch (e) { return false; }
-  if (done === tag + "-" + CHANNEL_DEFAULTS) return false;
+  if (done === tag + "-" + CHANNEL_DEFAULTS) return applyChannelFeatures(tag);
   const addLang = (l) => { if (!settings.extraLangs.includes(l)) settings.extraLangs = [...settings.extraLangs, l]; };
   if (tag === "DEV") {
     settings.exp = { ...settings.exp, ocr: true, lause: true, tableTr: true, apertium: true, pivotFin: true, engMt: true, spaMt: true };
@@ -828,6 +841,7 @@ function applyChannelDefaults() {
   }
   try { localStorage.setItem("satni-channel-defaults", tag + "-" + CHANNEL_DEFAULTS); } catch (e) { /* yksityinen tila */ }
   saveSettings();
+  applyChannelFeatures(tag);
   return tag === "BETA";
 }
 function showChannelNotice() {
@@ -946,6 +960,11 @@ function queryDatabase(query) {
         [q, `${likeEsc(q)},%`, `%, ${likeEsc(q)},%`, `%, ${likeEsc(q)}`])) add({ ...r, extraLang: "spa" }, r.fold === q ? 6.6 : 6.62);
     }
   }
+  // Haku saksaksi (BETA-kieli, konekäännös): kaikkien muiden osumien jälkeen
+  if (settings.exp.deuMt && hasTable("deu_mt")) {
+    for (const r of all(`SELECT d.${cols.split(", ").join(", d.")}, t.fold FROM trans_search t JOIN dictionary d ON d.id = t.word_id
+       WHERE t.lang = 'deumt' AND t.fold = ?`, [q])) add({ ...r, extraLang: "deu" }, 6.8);
+  }
   // Haku koltansaameksi (BETA): koltan sana suomen tai norjan sanan kautta (export_web_data.py: trans_search smsvia)
   if (settings.skolt) {
     for (const r of all(`SELECT d.${cols.split(", ").join(", d.")}, t.fold FROM trans_search t JOIN dictionary d ON d.id = t.word_id
@@ -1030,8 +1049,14 @@ function spaMtOf(id) {
   if (!settings.exp.spaMt || !hasTable("spa_mt")) return null;
   return all("SELECT spa, level FROM spa_mt WHERE word_id = ?", [id])[0] || null;
 }
-const mtOf = (id, lang) => (lang === "eng" ? engMtOf(id) : lang === "fin" ? finMtOf(id) : lang === "spa" ? spaMtOf(id) : null);
-const mtText = (mt) => (mt ? mt.eng || mt.fin || mt.spa || "" : "");
+// Konekäännetty saksa (BETA-kieli, taulu deu_mt, deu_mt.py): saksalle ei ole sanakirjaa, joten kaikki on konekäännöstä
+function deuMtOf(id) {
+  if (!settings.exp.deuMt || !hasTable("deu_mt")) return null;
+  return all("SELECT deu, level FROM deu_mt WHERE word_id = ?", [id])[0] || null;
+}
+const mtOf = (id, lang) => (lang === "eng" ? engMtOf(id) : lang === "fin" ? finMtOf(id) : lang === "spa" ? spaMtOf(id)
+  : lang === "deu" ? deuMtOf(id) : null);
+const mtText = (mt) => (mt ? mt.eng || mt.fin || mt.spa || mt.deu || "" : "");
 
 // Hakutuloksen tai ehdotuksen käännösteksti: muun kielen osumassa myös sen kielen käännös (koira · Espanjaksi: perro)
 function resultTrans(r, max) {
@@ -1853,6 +1878,8 @@ function renderExtraTranslations(w, groups) {
     }
     return text && `<span class="muted">${esc(t("langIn")[lang])}:</span> ${labelledList(text, lang)}`;
   }).filter(Boolean);
+  const deu = deuMtOf(w.id);
+  if (deu) lines.push(`<span class="muted">${esc(t("langIn").deu)}:</span> ≈ ${esc(deu.deu)} <span class="muted small">(${esc(t("engMtNote", deu.level))})</span>`);
   const sms = skoltFor(w);
   if (sms) lines.push(`<span class="muted">${esc(t("langIn").sms)}${sms.via ? ` (${esc(t("smsVia"))})` : ""}:</span> ${esc(sms.text)}` +
     ` <span class="unchecked-badge">${esc(t("smsUnchecked"))}</span>`);
@@ -3093,7 +3120,7 @@ function renderSettingsSummary() {
   const langs = [...activeExtraLangs().map((l) => capitalize(langName(l))), ...(settings.skolt ? [capitalize(langName("sms"))] : [])];
   // Kokeelliset käännökset ovat Käännöskielet-sivulla (2026-11-21): päällä olevien määrä yhteenvetoon
   const expOn = [...({ fi: ["tableTr", "pivotFin"], nb: ["tableTr", "apertium"], en: ["engMt"] }[settings.uiLang] || []),
-    ...(activeExtraLangs().includes("spa") ? ["spaMt"] : [])].filter((k) => settings.exp[k]).length;
+    ...(activeExtraLangs().includes("spa") ? ["spaMt"] : []), "deuMt"].filter((k) => settings.exp[k]).length;
   set("sum-langs", (langs.length ? langs.join(", ") : t("sumNone")) + (expOn ? ` · ${t("experimental")}: ${expOn}` : ""));
   const fi = settings.uiLang === "fi";
   const tools = [settings.game ? t("minipeli") : "", t("sanastot"), settings.exp.ocr && window.SatniOcr ? t("expOcr") : "",
@@ -6127,7 +6154,7 @@ function bindExperimental() {
     if (name === "tableTr" && state.word) renderTable();
     if (name === "apertium" && state.results.length) searchAgainKeepingWord();
     if (name === "pivotFin" && state.results.length) searchAgainKeepingWord();
-    if ((name === "engMt" || name === "spaMt") && state.results.length) searchAgainKeepingWord();
+    if (["engMt", "spaMt", "deuMt"].includes(name) && state.results.length) searchAgainKeepingWord();
   };
   // Kokeelliset kytkimet ovat kahdella asetussivulla (Työkalut: valokuvahaku ja lausekääntäjä; Kokeelliset käännökset)
   $("settings-view").addEventListener("change", (e) => {
@@ -6136,7 +6163,7 @@ function bindExperimental() {
     if (!e.target.checked) { set(name, false); return; }
     e.target.checked = false;  // päälle vasta, kun käyttäjä hyväksyy
     pending = name;
-    const key = { ocr: "expOcr", lause: "lauseTitle", tableTr: "expTableTr", apertium: "expApertium", pivotFin: "expPivotFin", engMt: "expEngMt", spaMt: "expSpaMt" }[name];
+    const key = { ocr: "expOcr", lause: "lauseTitle", tableTr: "expTableTr", apertium: "expApertium", pivotFin: "expPivotFin", engMt: "expEngMt", spaMt: "expSpaMt", deuMt: "expDeuMt" }[name];
     $("exp-dlg-title").textContent = t(key);
     $("exp-dlg-body").innerHTML = t(name === "lause" ? "expLauseInfo" : key + "Info");
     $("exp-dlg").showModal();

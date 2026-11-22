@@ -372,6 +372,8 @@ def main():
         CREATE TABLE fin_mt (word_id INTEGER PRIMARY KEY, fin TEXT, level INTEGER) WITHOUT ROWID;
         -- Konekäännetty espanja (kokeellinen, spa_mt.py / spa_mt.tsv): vähintään kolme lähdettä samaa mieltä
         CREATE TABLE spa_mt (word_id INTEGER PRIMARY KEY, spa TEXT, level INTEGER) WITHOUT ROWID;
+        -- Konekäännetty saksa (kokeellinen BETA-kieli, deu_mt.py / deu_mt.tsv): ei sanakirjaa, vähintään 3/5 lähdettä
+        CREATE TABLE deu_mt (word_id INTEGER PRIMARY KEY, deu TEXT, level INTEGER) WITHOUT ROWID;
         -- Lisäsuomennokset käänteisestä dict-fin-sme:stä sanakortin Merkitykset-välilehdelle (fin_also.py)
         CREATE TABLE fin_also (word_id INTEGER PRIMARY KEY, items TEXT) WITHOUT ROWID;
         -- Loukkaavat, halventavat ja alatyyliset käännössanat (Wiktionaryn merkinnät, käyty käsin läpi; wiktionary_eng.py)
@@ -428,6 +430,8 @@ def main():
     search_rows += [(w, "finmt", fold(fin), None) for w, fin, _ in fin_mt_rows]
     spa_mt_rows = eng_mt_table(src, "spa")
     search_rows += [(w, "spamt", fold(spa), None) for w, spa, _ in spa_mt_rows]
+    deu_mt_rows = eng_mt_table(src, "deu")
+    search_rows += [(w, "deumt", fold(x.strip()), None) for w, deu, _ in deu_mt_rows for x in deu.split(",") if x.strip()]
     dst.executemany("INSERT INTO trans_search VALUES (?, ?, ?, ?)", search_rows)
     # Hakusanat ilman saamen erikoiskirjaimia (čáhci -> cahci): hakukentän ehdotukset kirjoitettaessa tavallisilla
     # kirjaimilla (cah -> čáhci). Vain sanat, joissa erikoiskirjaimia on (app.js: suggestWords).
@@ -542,6 +546,8 @@ def main():
     dst.executemany("INSERT INTO eng_mt VALUES (?,?,?)", eng_mt_rows)
     dst.executemany("INSERT INTO fin_mt VALUES (?,?,?)", fin_mt_rows)
     dst.executemany("INSERT INTO spa_mt VALUES (?,?,?)", spa_mt_rows)
+    dst.executemany("INSERT INTO deu_mt VALUES (?,?,?)", deu_mt_rows)
+    print(f"Konekäännetty saksa (kokeellinen): {len(deu_mt_rows)} sanaa" if deu_mt_rows else "deu_mt.tsv puuttuu")
     print(f"Konekäännetty espanja (kokeellinen): {len(spa_mt_rows)} sanaa" if spa_mt_rows else "spa_mt.tsv puuttuu")
     print(f"Konekäännetyt suomennosehdotukset (kokeellinen): {len(fin_mt_rows)} sanaa" if fin_mt_rows else "fin_mt.tsv puuttuu")
     print(f"Konekäännetty englanti (kokeellinen): {len(eng_mt_rows)} sanaa" if eng_mt_rows else "eng_mt.tsv puuttuu")
