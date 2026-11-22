@@ -96,6 +96,22 @@ const SANASTO_GROUPS = [
   { id: "ihmiset", color: "red", lists: ["suku", "pronominit", "tervehdykset"] },
   { id: "luonto", color: "green", lists: ["suunnat", "saa", "porot"] },
 ];
+// Analoginen kello (kellopeli ja kuunteluharjoitus, 2026-11-22): SVG, värit teeman muuttujista, numerot 1–12.
+// Tuntiosoitin liikkuu minuuttien mukana (puoli neljä: osoitin kolmen ja neljän puolivälissä), kuten oikeassa kellossa.
+function kelloSvg(h, m, cls = "kello") {
+  const hand = (deg, len, w, c) => { const r = (deg - 90) * Math.PI / 180;
+    return `<line x1="50" y1="50" x2="${(50 + len * Math.cos(r)).toFixed(1)}" y2="${(50 + len * Math.sin(r)).toFixed(1)}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`; };
+  let marks = "";
+  for (let i = 0; i < 60; i++) {
+    const r = (i * 6 - 90) * Math.PI / 180, big = i % 5 === 0, r0 = big ? 40 : 42.5;
+    marks += `<line x1="${(50 + r0 * Math.cos(r)).toFixed(1)}" y1="${(50 + r0 * Math.sin(r)).toFixed(1)}" x2="${(50 + 45 * Math.cos(r)).toFixed(1)}" y2="${(50 + 45 * Math.sin(r)).toFixed(1)}" stroke="var(--muted)" stroke-width="${big ? 1.6 : .6}"/>`;
+    if (big) { const n = i / 5 || 12, rn = 33; marks += `<text x="${(50 + rn * Math.cos(r)).toFixed(1)}" y="${(50 + rn * Math.sin(r) + 3.3).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--text)">${n}</text>`; }
+  }
+  return `<svg class="${cls}" viewBox="0 0 100 100" role="img" aria-label="${h}:${String(m).padStart(2, "0")}">` +
+    `<circle cx="50" cy="50" r="47.5" fill="var(--surface)" stroke="var(--tc, var(--accent))" stroke-width="2.5"/>${marks}` +
+    hand(((h % 12) + m / 60) * 30, 21, 4.2, "var(--text)") + hand(m * 6, 34, 2.6, "var(--tb, var(--accent))") +
+    `<circle cx="50" cy="50" r="2.8" fill="var(--text)"/></svg>`;
+}
 const sanastoPreview = (l) => l.rows.slice(0, 3).map((r) => (l.kind === "numbers" ? r.card : r.sme[0].w[0])).join(", ");
 
 // Kielivalinta yleisnäkymässä, kun inarinsaame on otettu käyttöön asetuksista (sama ulkoasu kuin minipelissä)

@@ -1,13 +1,16 @@
 /* Service worker: sovellus ja sanakirja toimivat ilman verkkoyhteyttä ensimmäisen käynnin jälkeen.
    Kun tiedostoja päivitetään, kasvata VERSION, jolloin selaimet hakevat uudet tiedostot. */
-const VERSION = "satni-v273";
+const VERSION = "satni-v274";
 // Sanastojen äänet: tervehdysten keskustelu saameksi; sanat ja lauseet kolmella äänellä hakemistosta (audio/s/index.json)
 const AUDIO = ["audio/tervehdykset-sme.ogg"];
 // Minipelin palauteäänet (Biret): viikonpäivät, vuodenajat ja kuukaudet, oikein ja väärin
 for (let i = 0; i < 27; i++) AUDIO.push(`audio/peli/aika-${i}-ok.ogg`, `audio/peli/aika-${i}-no.ogg`);
 for (let i = 0; i < 11; i++) AUDIO.push(`audio/peli/kysy-${i}-ok.ogg`, `audio/peli/kysy-${i}-no.ogg`);
+// Kello (kello.py): 144 aikaa, pelin palaute ja kuunteluharjoitus (Biret ja Harri), Biretin kysymys
+AUDIO.push("audio/peli/kello-q.ogg");
+for (let i = 0; i < 144; i++) AUDIO.push(`audio/peli/kello-${i}-ok.ogg`, `audio/peli/kello-${i}-no.ogg`, `audio/w/kello-${i}-fi.ogg`, `audio/w/kello-${i}-sme.ogg`);
 const APP_SHELL = [
-  "./", "index.html", "boot.js", "styles.css", "i18n.js", "app.js", "lauseet.js", "sanastot.js", "harjoitus.js", "audio/w/harjoitus.json", "audio/s/index.json", "data/sanastot.json", "minipeli.js", "data/minipeli.json", "manifest.webmanifest",
+  "./", "index.html", "boot.js", "styles.css", "i18n.js", "app.js", "lauseet.js", "sanastot.js", "harjoitus.js", "audio/w/harjoitus.json", "audio/s/index.json", "data/sanastot.json", "minipeli.js", "data/minipeli.json", "data/kello.json", "manifest.webmanifest",
   "vendor/sql-wasm.js", "vendor/sql-wasm.wasm",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/coffee.svg",
   "voices/biret.wav", "voices/mahtte.wav", "voices/sunna.wav",  // äänivalinnan näytteet

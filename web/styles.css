@@ -2227,3 +2227,18 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .dev-tag.beta { background: #7c3aed; color: #fff; }
 .channel-strip { text-align: center; font-size: 11px; font-weight: 700; letter-spacing: .12em; line-height: 16px; background: var(--hd-bg); color: var(--hd); }
 .channel-strip.beta { background: #7c3aed; color: #fff; }
+/* Kellopeli (2026-11-22): iso kello kysymyksessä, pienet kellot vaihtoehtoina kuuntelukysymyksessä */
+.peli-clock { display: grid; place-items: center; margin: 6px 0 2px; }
+.peli-clock .kello { width: min(56vw, 230px); height: auto; }
+.peli-stage.compact .peli-clock .kello { width: min(44vw, 170px); }
+.peli-q small { display: block; font-size: 12.5px; font-weight: 500; color: var(--muted); margin-top: 2px; }
+.peli-clock-say { font-size: clamp(22px, 6.5vw, 30px); }
+.peli-clock-again { margin-top: 8px; }
+.peli-opts.clocks .peli-opt { justify-content: center; min-height: 0; padding: 8px; }
+.po-clock { display: grid; place-items: center; flex: 1; }
+.po-clock .kello { width: min(30vw, 120px); height: auto; }
+.peli-opt.right .kello circle:first-child { stroke: var(--gd); }
+.peli-opt.wrong .kello circle:first-child { stroke: var(--gt); }
+.hj-clock { display: grid; place-items: center; margin: 4px 0 6px; }
+.hj-clock .kello { width: min(40vw, 150px); height: auto; }
+.hj-clock[hidden] { display: none; }

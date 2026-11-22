@@ -605,6 +605,8 @@ def main():
     print(f"web/data/satni-web.db.gz: {packed / 1e6:.1f} Mt (purettuna {raw / 1e6:.1f} Mt)")
     # Sanastot (aihekohtaiset sanalistat) samasta tietokannasta: web/data/sanastot.json (gitignore, kuten tietokanta)
     subprocess.run(["python3", os.path.join(SCRIPT_DIR, "sanastot.py")], check=False)
+    # Kellonajat (kello.py, tallennettu kello.json): kellopeli ja kuunteluharjoitus
+    shutil.copyfile(os.path.join(SCRIPT_DIR, "kello.json"), os.path.join(SCRIPT_DIR, "web", "data", "kello.json"))
     # Minipelin sanat ja kategoriat sanastoista ja sanakirjasta: web/data/minipeli.json
     subprocess.run(["python3", os.path.join(SCRIPT_DIR, "minipeli.py")], check=False)
 

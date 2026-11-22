@@ -12,12 +12,15 @@
 let harjIndex = null;          // harjoitus.json
 let harjRun = null;            // käynnissä oleva harjoitus: { deck, pos, phase, opts, timer, audio, paused }
 const HARJ_STORE = "satni-harj";
-const HARJ_DEFAULT = { lists: ["kysymykset", "viikonpaivat"], dir: "fi", think: 3, shuffle: true, ranges: [0, 1, 2, 3, 4] };
+const HARJ_DEFAULT = { lists: ["kysymykset", "viikonpaivat"], dir: "fi", think: 3, shuffle: true, ranges: [0, 1, 2, 3, 4], clock: [0, 1, 2] };
+// Kello (data/kello.json, 2026-11-22): tasot 0 tasatunnit, 1 puolet, 2 vartit, 3 muut viiden minuutin ajat
+const HARJ_CLOCK_LV = 4;
 // Luvut ja järjestysluvut: lukualueet kuten listan hyppypainikkeissa; harjoitukseen vain valitut alueet
 const HARJ_RANGES = [[1, 10], [11, 20], [21, 29], [30, 100], [101, 120]];
 const HARJ_NUMERIC = ["luvut", "jarjestysluvut"];
 const harjInRanges = (row, o) => row.n == null || o.ranges.some((i) => row.n >= HARJ_RANGES[i][0] && row.n <= HARJ_RANGES[i][1]);
-const harjRows = (l, o) => (HARJ_NUMERIC.includes(l.id) ? l.rows.filter((r) => harjInRanges(r, o)) : l.rows);
+const harjRowOk = (l, r, o) => (l.id === "kello" ? o.clock.includes(r.level) : !HARJ_NUMERIC.includes(l.id) || harjInRanges(r, o));
+const harjRows = (l, o) => l.rows.filter((r) => harjRowOk(l, r, o));
 const HARJ_GAP = 1500;         // vastauksen jälkeen ennen seuraavaa sanaa (ms)
 const HARJ_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
   '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4.5" height="6.5" rx="1.5"/><rect x="16.5" y="14" width="4.5" height="6.5" rx="1.5"/></svg>';
@@ -38,6 +41,7 @@ function harjOpts() {
   try { o = JSON.parse(localStorage.getItem(HARJ_STORE) || "{}") || {}; } catch { /* yksityinen tila */ }
   const r = { ...HARJ_DEFAULT, ...o };
   if (!Array.isArray(r.ranges) || !r.ranges.length) r.ranges = HARJ_DEFAULT.ranges.slice();
+  if (!Array.isArray(r.clock) || !r.clock.length) r.clock = HARJ_DEFAULT.clock.slice();
   return r;
 }
 function harjSave(o) { try { localStorage.setItem(HARJ_STORE, JSON.stringify(o)); } catch { /* ei tallennusta */ } }
@@ -47,6 +51,11 @@ async function harjLoad() {
   const r = await fetch("audio/w/harjoitus.json");
   if (!r.ok) throw new Error(r.status);
   harjIndex = await r.json();
+  // Kellonajat omasta tiedostostaan: Harri sanoo ajan suomeksi, Biret saameksi (audio/w/kello-<i>-fi|sme.ogg)
+  try {
+    const k = await fetch("data/kello.json");
+    if (k.ok) harjIndex.lists.push({ id: "kello", rows: (await k.json()).rows.map((x) => ({ fi: x.fi, sme: x.smeFull, d: x.d || [2, 2], level: x.level, h: x.h, m: x.m })) });
+  } catch (e) { /* ei kelloharjoitusta */ }
   return harjIndex;
 }
 
@@ -54,6 +63,7 @@ async function harjLoad() {
 function harjTitle(id) {
   if (id === "luvut") return t("harjNumbers");
   if (id === "jarjestysluvut") return t("harjOrdinals");
+  if (id === "kello") return t("harjClock");
   const l = sanastot && sanastot.find((x) => x.id === id);
   return l ? l.title.fi : id;
 }
@@ -73,10 +83,11 @@ function openHarj(listId) {
 
 // Aiheen ryhmä (Sanastojen värit ja kuvakkeet): järjestysluvut kulkevat lukujen kanssa
 function harjGroup(id) {
-  const key = id === "jarjestysluvut" ? "luvut" : id;
+  const key = id === "jarjestysluvut" ? "luvut" : id === "kello" ? "aika" : id;
   return SANASTO_GROUPS.find((g) => g.lists.includes(key)) || SANASTO_GROUPS[SANASTO_GROUPS.length - 1];
 }
 function harjIcon(id) {
+  if (id === "kello") return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg>';
   const l = sanastot && sanastot.find((x) => x.id === (id === "jarjestysluvut" ? "luvut" : id));
   return l ? sanastoSvg(l.icon) : HARJ_ICON;
 }
@@ -105,6 +116,8 @@ function harjRenderSetup(o) {
     `<div class="hj-opts">` +
     `<div class="hj-row hj-numrow"><span class="hj-rl" id="hj-l-nr">${esc(t("harjRange"))}</span><div class="hj-seg" role="group" aria-labelledby="hj-l-nr">` +
       HARJ_RANGES.map(([a, b], i) => `<button type="button" data-g="nr" data-v="${i}" aria-pressed="false">${a}–${b}</button>`).join("") + `</div></div>` +
+    `<div class="hj-row hj-clockrow"><span class="hj-rl" id="hj-l-cl">${esc(t("harjClockLv"))}</span><div class="hj-seg" role="group" aria-labelledby="hj-l-cl">` +
+      t("harjClockLvs").map((txt, i) => `<button type="button" data-g="cl" data-v="${i}" aria-pressed="false">${esc(txt)}</button>`).join("") + `</div></div>` +
     seg("dir", [["fi", t("harjDirFi")], ["sme", t("harjDirSme")]], t("harjDir")) +
     seg("think", [2, 3, 4, 5, 7].map((x) => [x, `${x} s`]), t("harjThink")) +
     seg("shuffle", [[1, t("harjShuffle")], [0, t("harjInOrder")]], t("harjOrder")) + `</div>` +
@@ -136,6 +149,11 @@ function harjSetupClick(e) {
   else if (g === "dir") o.dir = v;
   else if (g === "think") o.think = Number(v);
   else if (g === "shuffle") o.shuffle = v === "1";
+  else if (g === "cl") {
+    const i = Number(v);
+    if (!o.clock.includes(i)) o.clock = [...o.clock, i].sort((a, b) => a - b);
+    else if (o.clock.length > 1) o.clock = o.clock.filter((x) => x !== i);  // vähintään yksi taso
+  }
   else if (g === "nr") {
     const i = Number(v);
     if (!o.ranges.includes(i)) o.ranges = [...o.ranges, i].sort((a, b) => a - b);
@@ -151,11 +169,12 @@ function harjSyncSetup(o) {
   for (const b of el.querySelectorAll("[data-g]")) {
     const g = b.dataset.g, v = b.dataset.v;
     const on = g === "list" ? o.lists.includes(v) : g === "dir" ? o.dir === v : g === "think" ? o.think === Number(v)
-      : g === "nr" ? o.ranges.includes(Number(v)) : o.shuffle === (v === "1");
+      : g === "nr" ? o.ranges.includes(Number(v)) : g === "cl" ? o.clock.includes(Number(v)) : o.shuffle === (v === "1");
     if (b.getAttribute("aria-pressed") !== String(on)) b.setAttribute("aria-pressed", String(on));
   }
   const words = harjIndex.lists.filter((l) => o.lists.includes(l.id)).reduce((n, l) => n + harjRows(l, o).length, 0);
   el.querySelector(".hj-numrow").hidden = !o.lists.some((id) => HARJ_NUMERIC.includes(id));
+  el.querySelector(".hj-clockrow").hidden = !o.lists.includes("kello");
   el.querySelector(".hj-start span").textContent = o.lists.length ? t("harjStartN", words) : t("harjStart");
   el.querySelector(".hj-start").classList.toggle("off", !o.lists.length);
   el.querySelector(".hj-link").textContent = o.lists.length === harjIndex.lists.length ? t("harjNone") : t("harjAll");
@@ -169,7 +188,7 @@ function harjShuffle(a) {
 }
 function harjDeck(o) {
   const deck = [];
-  for (const l of harjIndex.lists) if (o.lists.includes(l.id)) l.rows.forEach((r, k) => { if (!HARJ_NUMERIC.includes(l.id) || harjInRanges(r, o)) deck.push({ ...r, list: l.id, k }); });
+  for (const l of harjIndex.lists) if (o.lists.includes(l.id)) l.rows.forEach((r, k) => { if (harjRowOk(l, r, o)) deck.push({ ...r, list: l.id, k }); });
   return o.shuffle ? harjShuffle(deck) : deck;
 }
 // Kysymys- ja vastauspuoli valitun suunnan mukaan
@@ -212,6 +231,7 @@ function harjRenderRun() {
       `<div class="hj-head"><span class="hj-li"></span><span class="hj-ln"></span><span class="hj-round"></span><span class="hj-pos"></span></div>` +
       `<div class="hj-prog"><span></span></div>` +
       `<div class="hj-say">${HJ_SPEAK}<span></span></div>` +
+      `<div class="hj-clock" hidden></div>` +
       `<div class="hj-q"><span class="hj-digit"></span><span class="hj-qt"></span></div>` +
       `<div class="hj-ring" style="--think: ${r.opts.think}s">` +
       `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" pathLength="100"/><circle class="hj-arc" cx="50" cy="50" r="44" pathLength="100"/></svg>` +
@@ -250,6 +270,9 @@ function harjRenderRun() {
   const digit = set(".hj-digit", it.n && r.opts.dir === "fi" ? String(it.n) : "");
   digit.hidden = !digit.textContent;
   set(".hj-qt", q.text);
+  // Kellonaika: analoginen kello kysymyksen yläpuolella
+  const ck = card.querySelector(".hj-clock"), ckKey = it.list === "kello" ? `${it.h}:${it.m}` : "";
+  if (ck.dataset.k !== ckKey) { ck.innerHTML = ckKey ? kelloSvg(it.h, it.m) : ""; ck.hidden = !ckKey; ck.dataset.k = ckKey; }
   const ring = card.querySelector(".hj-ring");
   // Kehän täyttö alkaa alusta vain laskennan alkaessa (uusi sana tai jatko tauolta)
   const key = think ? `${r.pos}:${r.paused}` : "";

@@ -228,6 +228,13 @@ OpenSubtitles 2018 frequency lists, content CC BY-SA 4.0); the lists themselves 
 are the same as in the Máhtte learning game. The spoken feedback for weekdays, seasons, months and question words is
 Divvun's speech synthesis, voice Biret, with Divvun's permission.
 
+The clock game and the clock times in listening practice ([`kello.py`](kello.py), `web/data/kello.json`) use the North
+Sámi time expressions of GiellaLT's clock transducer in lang-sme (`transcriptor-clock-digit2text`, GPL-3.0): *beal
+njeallje*, *kvárta váile njeallje*, *logi váile beal njeallje*. The question *Ollugo diibmu lea?* is from GiellaLT's
+dict-spa-sme. The Finnish times are made by rules in `kello.py` and checked with Voikko. The North Sámi audio is Divvun's
+speech synthesis, voice Biret, and the Finnish is Chatterbox Finnish (Harri), as above; each clip was checked with
+speech recognition (Aalto wav2vec2 XLS-R North Sámi, Apache-2.0; Whisper large v3 Finnish, Apache-2.0).
+
 ## Other links
 
 The "Neahttadigisánit" button opens the word in Giellatekno's online dictionary
