@@ -9,6 +9,11 @@ let sanastoReturnHash = null; // listasta avatun sanakortin osoite: takaisin-ele
 let sanastoCardHash = null;   // sanakortti, jolta palattiin listaan: näkymän sulkeminen vie aloitussivulle, ei kortille
 
 const SANASTO_ICON = {
+  // Apusanat (2026-11-22): osoittava käsi, paikkamerkki, tiimalasi, ketju
+  pointer: '<path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10"/><path d="M12 10V8.5a1.5 1.5 0 0 1 3 0V11"/><path d="M15 11v-.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-.5a6 6 0 0 1-4.7-2.3L4.5 15.6a1.6 1.6 0 0 1 2.4-2.1L9 15.5V11"/>',
+  place: '<path d="M12 21s-6.5-6.1-6.5-11a6.5 6.5 0 0 1 13 0c0 4.9-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+  hourglass: '<path d="M6.5 3h11M6.5 21h11M7.5 3c0 4.5 4.5 6 4.5 9s-4.5 4.5-4.5 9M16.5 3c0 4.5-4.5 6-4.5 9s4.5 4.5 4.5 9"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7L11.5 6.8"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.5-1.5"/>',
   numbers: '<path d="M4 9l2-2v10M10 8.5c.5-1 1.5-1.5 2.5-1.5 1.5 0 2.5 1 2.5 2.3 0 2.2-5 3.7-5 7.7h5M17.5 7h3l-2 3.5c1.5 0 2.5 1 2.5 2.3S20 15 18.7 15c-.7 0-1.4-.3-1.9-.8"/>',
   week: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M7 14h2M11 14h2M15 14h2"/>',
   month: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M10 14h4v4h-4z"/>',
@@ -72,8 +77,9 @@ function closeSanastot() {
   return true;
 }
 
-// Näkymä kiinni. Jos listaan palattiin sanakortilta (Androidin takaisin-ele ei muuta osoitetta), kortti korvataan
-// aloitussivulla, jottei sulkeminen näytä vanhaa korttia.
+// Näkymä kiinni. Jos listaan palattiin sanakortilta (Androidin takaisin-ele ei muuta osoitetta), palataan historiassa
+// listasta avatun kortin taakse: näkyviin kortti, jolta sanastot avattiin, tai aloitussivu, kuten verkkoversiossa
+// (käyttäjä 2026-11-22; ennen kortti korvattiin aina aloitussivulla).
 function hideSanastot() {
   sanastoStopAudio();
   const was = !$("sanasto-view").hidden;
@@ -82,19 +88,20 @@ function hideSanastot() {
   const card = sanastoCardHash;
   sanastoCardHash = null;
   if (card && location.hash === card) {
-    history.replaceState(null, "", location.pathname + location.search);
-    routeFromHash();
+    if (history.length > 1) history.back();  // popstate/hashchange näyttää edellisen kortin (routeFromHash)
+    else { history.replaceState(null, "", location.pathname + location.search); routeFromHash(); }
     window.scrollTo(0, 0);
   }
 }
 
 // Yleisnäkymä: listat neljässä ryhmässä saamen lipun väreillä (sama kuin yläpalkin raita). Kortissa ikoni, nimi,
 // muutama saamen sana esimakuna ja sanojen määrä.
+const APU_LISTS = ["tamajase", "taallajatuolla", "aikasanat", "sidesanat"];
 const SANASTO_GROUPS = [
-  { id: "perus", color: "yellow", lists: ["luvut", "varit", "kysymykset"] },
-  { id: "aika", color: "blue", lists: ["viikonpaivat", "kuukaudet", "vuodenajat", "aika"] },
+  { id: "perus", color: "yellow", lists: ["luvut", "varit", "kysymykset", "tamajase", "sidesanat"] },
+  { id: "aika", color: "blue", lists: ["viikonpaivat", "kuukaudet", "vuodenajat", "aika", "aikasanat"] },
   { id: "ihmiset", color: "red", lists: ["suku", "pronominit", "tervehdykset"] },
-  { id: "luonto", color: "green", lists: ["suunnat", "saa", "porot"] },
+  { id: "luonto", color: "green", lists: ["suunnat", "taallajatuolla", "saa", "porot"] },
 ];
 // Analoginen kello (kellopeli ja kuunteluharjoitus, 2026-11-22): SVG, värit teeman muuttujista, numerot 1–12.
 // Tuntiosoitin liikkuu minuuttien mukana (puoli neljä: osoitin kolmen ja neljän puolivälissä), kuten oikeassa kellossa.
@@ -470,9 +477,13 @@ function renderSanasto(listId) {
     if (l.id === "kysymykset") {
       const secs = l.sections || [{}];
       html += secs.map((sec, i) => `<section class="sl-sec">${sec[lang] ? `<h3>${esc(sec[lang])}</h3>` : ""}<div class="q-list">` +
-        l.rows.filter((r) => (r.sec || 0) === i).map((r) => `<div class="q-card"><div class="q-word"><span class="q-sme">${tapX(r.sme[0], r.sme[0].w[0], true)}</span>` +
-          `<span class="q-fi">${esc(uiOf(r)[0] || "")}</span></div>` + (r.ex ? `<div class="q-ex"><span class="sw" data-say="${esc(r.ex.sme)}">${esc(r.ex.sme)}</span>` +
-          `<span class="q-ex-fi">${esc(r.ex[lang] || r.ex.fi)}</span></div>` : "") + `</div>`).join("") + `</div></section>`).join("");
+        l.rows.filter((r) => (r.sec || 0) === i).map((r) => { const lab = (uiOf(r)[0] || "").split(" · ");
+          // Taivutusmuodot (gii · gean · geasa · geas, 2026-11-22): perusmuoto isona, muut pieninä merkityksineen
+          const forms = r.sme[0].w.length > 1 ? `<div class="q-forms">` + r.sme[0].w.slice(1).map((w, k) => `<span class="q-form">${tapX(r.sme[0], w)}` +
+            `<span class="q-form-fi">${esc(lab[k + 1] || "")}</span></span>`).join("") + `</div>` : "";
+          return `<div class="q-card"><div class="q-word"><span class="q-sme">${tapX(r.sme[0], r.sme[0].w[0], true)}</span>` +
+          `<span class="q-fi">${esc(lab[0])}</span></div>` + forms + (r.ex ? `<div class="q-ex"><span class="sw" data-say="${esc(r.ex.sme)}">${esc(r.ex.sme)}</span>` +
+          `<span class="q-ex-fi">${esc(r.ex[lang] || r.ex.fi)}</span></div>` : "") + `</div>`; }).join("") + `</div></section>`).join("");
       return finish();
     }
     // Vuorokausi: päivän kierto taivaan väreinä aamusta yöhön, kulmassa aurinko tai kuu; muut osiot tavallisina
@@ -563,6 +574,19 @@ function renderSanasto(listId) {
           const x = r.sme[0], ui = uiOf(r);
           return `<div class="day d${k}">${DAY_ART[k] ? `<svg class="day-art" viewBox="0 0 80 80" aria-hidden="true">${DAY_ART[k]}</svg>` : ""}<span class="day-fi">${esc(ui[0] || "")}</span><span class="day-sme">${tapX(x, x.w[0], true).replace(/>maŋŋel/, ">maŋŋel<wbr>")}</span>` +
             `<span class="day-form">${x.w.slice(1).map((w) => tapX(x, w)).join(" · ")}${ui[1] ? ` <span class="day-ui">${esc(ui[1])}</span>` : ""}</span></div>`;
+        }).join("") + `</div></section>`;
+      }
+      // Apusanat (2026-11-22): sana ja merkitys, alla sanakirjan esimerkkilause; dat/dát-muodot rinnakkain kuten pronomineissa
+      if (APU_LISTS.includes(l.id)) {
+        return `<section class="sl-sec">${sec[lang] ? `<h3>${esc(sec[lang])}</h3>` : ""}<div class="sl-card apu">` + rows.map((r) => {
+          const x = r.sme[0], ui = (r[lang] || r.fi).filter(Boolean)[0] || "";
+          const head = x.w.length >= 4
+            ? `<div class="sanasto-row ptab" style="--cols:${x.w.length}">` + x.w.map((w, k) => `<span class="pt-cell"><span class="sw${k === 0 ? " main" : ""}" ` +
+              `data-say="${esc(w)}"${x.id ? ` data-id="${x.id}"` : ""}>${esc(w)}</span><span class="pt-fi">${esc(ui.split(" · ")[k] || "")}</span></span>`).join("") + `</div>`
+            : `<div class="apu-head">${sanastoWord(x.w[0], x.id, true)}<span class="apu-fi">${esc(ui)}</span></div>`;
+          const ex = r.ex ? `<div class="apu-ex"><span class="sw" data-say="${esc(r.ex.sme)}">${esc(r.ex.sme)}</span>` +
+            `<span class="apu-ex-fi">${esc(r.ex[lang] || r.ex.fi)}</span></div>` : "";
+          return `<div class="apu-row">${head}${ex}</div>`;
         }).join("") + `</div></section>`;
       }
       return `<section class="sl-sec">${sec[lang] ? `<h3>${esc(sec[lang])}</h3>` : ""}<div class="sl-card${numbered ? " numbered" : ""}">${rows.map((r, k) => rowHtml(r, wide[k])).join("")}</div></section>`;

@@ -351,6 +351,14 @@ def lists():
             r["ex"] = {"sme": e[0], "fi": e[1], "nb": e[2]}
         if r["sme"][0]["w"][0] == "galles" and not r["nb"][0]:
             r["nb"] = ["hva tid"]
+    # Taivutusmuodot kuten Pronominit-listassa (käyttäjä 2026-11-22; GiellaLT lang-sme: gii Gen/Ill/Loc, mii Acc/Ill/Loc)
+    QFORMS = {"gii": (["gii", "gean", "geasa", "geas"], "kuka · kenen · kenelle · keneltä, kenellä",
+                      "hvem · hvem sin · til hvem · hos hvem, fra hvem"),
+              "mii": (["mii", "maid", "masa", "mas"], "mikä · mitä · mihin · mistä, missä", "hva · hva (objekt) · til hva · i hva, fra hva")}
+    for r in qrows:
+        f = QFORMS.get(r["sme"][0]["w"][0])
+        if f:
+            r["sme"][0]["w"], r["fi"], r["nb"] = f[0], [f[1]], [f[2]]
     L.append({"id": "kysymykset", "icon": "question", "title": {"fi": "Kysymyssanat", "nb": "Spørreord"}, "rows": qrows})
 
     greet = [("Bures!", "hei, terve", "hei"), ("Buorre iđit", "hyvää huomenta", "god morgen"), ("Buorre beaivi", "hyvää päivää", "god dag"),
@@ -367,6 +375,21 @@ def lists():
         e = db.execute("SELECT id FROM dictionary WHERE lower(sme_lemma) = ?", (lemma,)).fetchone()
         grows.append(row([fi], [nb], [{"w": [s], "id": e[0] if e else None, "fi": fi, "nb": nb}]))
     L.append({"id": "tervehdykset", "icon": "greet", "title": {"fi": "Tervehdykset", "nb": "Hilsener"}, "rows": grows})
+    # Apusanat (apusanat.py, käyttäjä 2026-11-22): neljä listaa, esimerkit sanakirjoista
+    import apusanat
+    for spec in apusanat.LISTS:
+        rows = []
+        for _sec, words in spec["sections"]:
+            for lemma, pos, forms, fi, nb, _en, ex in words:
+                e = entry(lemma, pos)
+                r = row([fi], [nb], [{"w": forms or [lemma], "id": e[0] if e else None, "fi": fi, "nb": nb}])
+                if ex:
+                    r["ex"] = {"sme": ex[0], "fi": ex[1], "nb": ex[2]}
+                rows.append(r)
+        lst = {"id": spec["id"], "icon": spec["icon"], "title": {"fi": spec["title"][0], "nb": spec["title"][1]}, "rows": rows}
+        if spec.get("hint"):
+            lst["hint"] = {"fi": spec["hint"][0], "nb": spec["hint"][1]}
+        L.append(lst)
     return L
 
 
@@ -400,6 +423,11 @@ SECTIONS = {
                      ("Hyvästit", "Avskjed", ["Báze dearvan", "Mana dearvan", "Oaidnaleapmái", "Dearvvuođat"]),
                      ("Juhlapäivä", "Merkedag", ["Lihkku beivviin!"])],
 }
+
+# Apusanojen osiot samasta tiedostosta (apusanat.py)
+import apusanat as _apu
+for _spec in _apu.LISTS:
+    SECTIONS[_spec["id"]] = [(t[0], t[1], [w[0] for w in ws]) for t, ws in _spec["sections"]]
 
 
 def add_sections(L):

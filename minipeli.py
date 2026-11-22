@@ -331,7 +331,9 @@ def main():
             time.append([r["sme"][0]["w"][0], first(r["fi"][0], 1), first(r["nb"][0], 1), sub])
     colours = [[r["sme"][0]["w"][0], r["fi"][0], r["nb"][0]] for r in lists["varit"]["rows"]]
     # galles = "hva tid", goas = "når": norjassa eri vastaukset (ei tarkennetta sulkeissa)
-    questions = [[r["sme"][0]["w"][0], r["fi"][0], r["nb"][0]] for r in lists["kysymykset"]["rows"]]
+    # Vain perusmuoto ja sen käännös: Kysymyssanat-listan rivillä voi olla taivutusmuotoja (kuka · kenen · kenelle …)
+    base = lambda t: t.split(" · ")[0]
+    questions = [[r["sme"][0]["w"][0], base(r["fi"][0]), base(r["nb"][0])] for r in lists["kysymykset"]["rows"]]
     data = {"words": words, "cats": {"ordinals": ordinals(), "time": time, "colours": colours, "questions": questions,
                                      "animals": [list(a) for a in ANIMALS]}}
     data["en"] = english(db, data, lists)

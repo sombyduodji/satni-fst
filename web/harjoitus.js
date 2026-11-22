@@ -19,7 +19,10 @@ const HARJ_CLOCK_LV = 4;
 const HARJ_RANGES = [[1, 10], [11, 20], [21, 29], [30, 100], [101, 120]];
 const HARJ_NUMERIC = ["luvut", "jarjestysluvut"];
 const harjInRanges = (row, o) => row.n == null || o.ranges.some((i) => row.n >= HARJ_RANGES[i][0] && row.n <= HARJ_RANGES[i][1]);
-const harjRowOk = (l, r, o) => (l.id === "kello" ? o.clock.includes(r.level) : !HARJ_NUMERIC.includes(l.id) || harjInRanges(r, o));
+// Apusanalistat (2026-11-22): osiot valittavissa (o.secs[lista] = osioiden numerot; puuttuva = kaikki)
+const harjSecOk = (l, r, o) => !(o.secs && Array.isArray(o.secs[l.id])) || r.sec == null || o.secs[l.id].includes(r.sec);
+const harjRowOk = (l, r, o) => (l.id === "kello" ? o.clock.includes(r.level)
+  : (!HARJ_NUMERIC.includes(l.id) || harjInRanges(r, o)) && harjSecOk(l, r, o));
 const harjRows = (l, o) => l.rows.filter((r) => harjRowOk(l, r, o));
 const HARJ_GAP = 1500;         // vastauksen jälkeen ennen seuraavaa sanaa (ms)
 const HARJ_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -42,6 +45,7 @@ function harjOpts() {
   const r = { ...HARJ_DEFAULT, ...o };
   if (!Array.isArray(r.ranges) || !r.ranges.length) r.ranges = HARJ_DEFAULT.ranges.slice();
   if (!Array.isArray(r.clock) || !r.clock.length) r.clock = HARJ_DEFAULT.clock.slice();
+  if (!r.secs || typeof r.secs !== "object") r.secs = {};
   return r;
 }
 function harjSave(o) { try { localStorage.setItem(HARJ_STORE, JSON.stringify(o)); } catch { /* ei tallennusta */ } }
@@ -56,6 +60,18 @@ async function harjLoad() {
     const k = await fetch("data/kello.json");
     if (k.ok) harjIndex.lists.push({ id: "kello", rows: (await k.json()).rows.map((x) => ({ fi: x.fi, sme: x.smeFull, d: x.d || [2, 2], level: x.level, h: x.h, m: x.m })) });
   } catch (e) { /* ei kelloharjoitusta */ }
+  // Apusanalistojen osiot sanastoista (sana -> osion numero) ja osioiden nimet
+  try {
+    await loadSanastot();
+    for (const l of harjIndex.lists) {
+      if (!APU_LISTS.includes(l.id)) continue;
+      const src = sanastot.find((x) => x.id === l.id);
+      if (!src) continue;
+      const sec = Object.fromEntries(src.rows.map((r) => [r.sme[0].w[0], r.sec]));
+      for (const r of l.rows) r.sec = sec[r.sme.split(" / ")[0]];
+      l.sections = src.sections || [];
+    }
+  } catch (e) { /* ilman osioita koko lista */ }
   return harjIndex;
 }
 
@@ -117,6 +133,7 @@ function harjRenderSetup(o) {
     `<div class="hj-opts">` +
     `<div class="hj-row hj-numrow"><span class="hj-rl" id="hj-l-nr">${esc(t("harjRange"))}</span><div class="hj-seg multi" role="group" aria-labelledby="hj-l-nr">` +
       HARJ_RANGES.map(([a, b], i) => `<button type="button" data-g="nr" data-v="${i}" aria-pressed="false">${a}–${b}</button>`).join("") + `</div></div>` +
+    `<div class="hj-secrows"></div>` +
     `<div class="hj-row hj-clockrow"><span class="hj-rl" id="hj-l-cl">${esc(t("harjClockLv"))}</span><div class="hj-seg multi" role="group" aria-labelledby="hj-l-cl">` +
       t("harjClockLvs").map((txt, i) => `<button type="button" data-g="cl" data-v="${i}" aria-pressed="false">${esc(txt)}</button>`).join("") + `</div></div>` +
     seg("dir", [["fi", t("harjDirFi")], ["sme", t("harjDirSme")]], t("harjDir")) +
@@ -155,6 +172,12 @@ function harjSetupClick(e) {
     if (!o.clock.includes(i)) o.clock = [...o.clock, i].sort((a, b) => a - b);
     else if (o.clock.length > 1) o.clock = o.clock.filter((x) => x !== i);  // vähintään yksi taso
   }
+  else if (g === "sec") {
+    const lid = b.dataset.l, i = Number(v), all = harjIndex.lists.find((l) => l.id === lid).sections.map((_, k) => k);
+    const cur = Array.isArray(o.secs[lid]) ? o.secs[lid] : all;
+    if (!cur.includes(i)) o.secs[lid] = [...cur, i].sort((a, b) => a - b);
+    else if (cur.length > 1) o.secs[lid] = cur.filter((x) => x !== i);  // vähintään yksi osio
+  }
   else if (g === "nr") {
     const i = Number(v);
     if (!o.ranges.includes(i)) o.ranges = [...o.ranges, i].sort((a, b) => a - b);
@@ -169,6 +192,7 @@ function harjSyncSetup(o) {
   const el = $("harj");
   for (const b of el.querySelectorAll("[data-g]")) {
     const g = b.dataset.g, v = b.dataset.v;
+    if (g === "sec") continue;  // osiorivit alempana
     const on = g === "list" ? o.lists.includes(v) : g === "dir" ? o.dir === v : g === "think" ? o.think === Number(v)
       : g === "nr" ? o.ranges.includes(Number(v)) : g === "cl" ? o.clock.includes(Number(v)) : o.shuffle === (v === "1");
     if (b.getAttribute("aria-pressed") !== String(on)) b.setAttribute("aria-pressed", String(on));
@@ -177,6 +201,20 @@ function harjSyncSetup(o) {
   const times = o.lists.includes("kello") ? harjRows(harjIndex.lists.find((l) => l.id === "kello"), o).length : 0;
   el.querySelector(".hj-numrow").hidden = !o.lists.some((id) => HARJ_NUMERIC.includes(id));
   el.querySelector(".hj-clockrow").hidden = !o.lists.includes("kello");
+  // Osiorivit valituille apusanalistoille (piirretään uudelleen vain, kun valitut listat muuttuvat)
+  const apu = harjIndex.lists.filter((l) => o.lists.includes(l.id) && l.sections && l.sections.length > 1);
+  const box = el.querySelector(".hj-secrows"), key = apu.map((l) => l.id).join(",");
+  if (box.dataset.k !== key) {
+    const lang = sanastoLang();
+    box.innerHTML = apu.map((l) => `<div class="hj-row"><span class="hj-rl" id="hj-l-s-${l.id}">${esc(harjTitle(l.id))}</span>` +
+      `<div class="hj-seg multi" role="group" aria-labelledby="hj-l-s-${l.id}">` + l.sections.map((sec, k) =>
+        `<button type="button" data-g="sec" data-l="${l.id}" data-v="${k}" aria-pressed="false">${esc(sec[lang] || sec.fi)}</button>`).join("") + `</div></div>`).join("");
+    box.dataset.k = key;
+  }
+  for (const b of box.querySelectorAll("[data-g=sec]")) {
+    const sel = o.secs[b.dataset.l], on = !Array.isArray(sel) || sel.includes(Number(b.dataset.v));
+    if (b.getAttribute("aria-pressed") !== String(on)) b.setAttribute("aria-pressed", String(on));
+  }
   el.querySelector(".hj-start span").textContent = !o.lists.length ? t("harjStart") : times ? t("harjStartMix", words, times) : t("harjStartN", words);
   el.querySelector(".hj-start").classList.toggle("off", !o.lists.length);
   el.querySelector(".hj-link").textContent = o.lists.length === harjIndex.lists.length ? t("harjNone") : t("harjAll");

@@ -2248,3 +2248,18 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .hj-seg.multi button[aria-pressed="true"] { border-color: var(--btn-green); background: var(--btn-green); color: var(--on-green); }
 .hj-seg.multi button[aria-pressed="true"]::before { content: "✓ "; font-weight: 800; }
 .timeline.tl-near { margin-top: 8px; }
+/* Apusanat (2026-11-22): sana ja merkitys, alla esimerkki */
+.sl-card.apu { display: flex; flex-direction: column; }
+.apu-row { padding: 9px 12px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.apu-row:first-child { border-top: 0; }
+.apu-row .sanasto-row.ptab { padding: 0; border: 0; }
+.apu-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.apu-head .sw { font-size: 17px; font-weight: 700; }
+.apu-fi { color: var(--muted); font-size: 14px; }
+.apu-ex { display: flex; flex-direction: column; padding-left: 10px; border-left: 2px solid color-mix(in srgb, var(--tc, var(--accent)) 45%, transparent); }
+.apu-ex .sw { font-size: 14.5px; font-weight: 600; }
+.apu-ex-fi { font-size: 12.5px; color: var(--muted); }
+.q-forms { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.q-form { display: inline-flex; flex-direction: column; }
+.q-form .sw { font-size: 14.5px; font-weight: 600; }
+.q-form-fi { font-size: 11.5px; color: var(--muted); }

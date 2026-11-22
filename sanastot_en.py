@@ -77,7 +77,7 @@ ROWS = {
                    "soai": ["they two · their (two) · to them two · with them two"],
                    "mii": ["we · our · to us · with us"], "dii": ["you (all) · your · to you · with you"],
                    "sii": ["they · their · to them · with them"]},
-    "kysymykset": {"gii": ["who"], "mii": ["what"], "gos": ["where, from where"], "gosa": ["where to"], "goas": ["when"],
+    "kysymykset": {"gii": ["who · whose · to whom · from whom"], "mii": ["what · what (object) · to what · from what, in what"], "gos": ["where, from where"], "gosa": ["where to"], "goas": ["when"],
                    "manne": ["why"], "mo": ["how"], "galle": ["how many"], "galles": ["at what time"],
                    "goabbá": ["which (of two)"], "makkár": ["what kind of"]},
     "tervehdykset": {"Bures!": ["hi, hello"], "Buorre iđit": ["good morning"], "Buorre beaivi": ["good day"],
@@ -158,3 +158,17 @@ def apply(L, problems):
                     r["ex"]["en"] = ex
                 else:
                     problems.append(f"en: esimerkki puuttuu {r['ex']['sme']}")
+
+
+# Apusanat (apusanat.py, 2026-11-22): otsikot, ohjeet, osiot, rivit ja esimerkit samasta tiedostosta
+import apusanat as _apu
+for _spec in _apu.LISTS:
+    TITLES[_spec["id"]] = _spec["title"][2]
+    if _spec.get("hint"):
+        HINTS[_spec["id"]] = _spec["hint"][2]
+    SECTIONS[_spec["id"]] = [t[2] for t, _ws in _spec["sections"]]
+    ROWS[_spec["id"]] = {w[0]: [w[5]] for _t, ws in _spec["sections"] for w in ws}
+    for _t, ws in _spec["sections"]:
+        for w in ws:
+            if w[6]:
+                EXAMPLES[w[6][0]] = w[6][3]
