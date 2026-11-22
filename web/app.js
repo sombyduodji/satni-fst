@@ -855,7 +855,8 @@ function showChannelNotice() {
 }
 
 // Versiokanava versionimestä: 1.1.0-dev.42 (DEV), 1.1.0-beta.3 (BETA, GitHubin pre-release); vanhat 1.0.0.1-DEV ja -BETA myös
-const channelTag = (v) => { const m = /-(dev|beta)(?:\.\d+)?$/i.exec(v || ""); return m ? m[1].toUpperCase() : null; };
+// Androidin DEV lisää perään koontinumeron ("1.1.0-dev.20 · 2026112215"), joten kanava voi olla myös ennen " · "
+const channelTag = (v) => { const m = /-(dev|beta)(?:\.\d+)?(?=\s|$)/i.exec(v || ""); return m ? m[1].toUpperCase() : null; };
 
 function queryDatabase(query) {
   if (isWildcard(query)) return wildcardQuery(query);
