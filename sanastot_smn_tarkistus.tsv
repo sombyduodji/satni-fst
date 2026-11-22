@@ -2,10 +2,10 @@
 # Viimeinen sarake: inarinsaamen sana = käyttöön, '-' = ei käyttöön (tarkistettu), tyhjä = vielä tarkistamatta.
 # pivot = dict-sme-smn:n käännös pohjoissaamen sanalle; suora = dict-fin-smn/dict-smn-fin suomennoksen perusteella.
 pohjoissaame	suomi	norja	pivot	suora sanakirja	inarinsaame (tarkistettu)
+kvárta					varttâ
+sekunda					seekunt
 giđđageassi	alkukesä	forsommer			
 maŋŋelgaskabeaivi	iltapäivä	ettermiddag		eehidpeivi, ehidispeivi	
-kvárta	vartti	kvarter	varttâ		
-sekunda	sekunti	sekund		seekunt, sekunt	
 galles	monelta?	hva tid?			
 oappáš	pikkusisko	lillesøster			
 vieljaš	pikkuveli	lillebror			
