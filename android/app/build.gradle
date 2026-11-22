@@ -57,6 +57,15 @@ android {
             applicationIdSuffix ".dev"
             manifestPlaceholders = [appLabel: "Sátni FST DEV"]
         }
+        // Testiversio GitHubin pre-releaseen (build_apk.sh --beta, käyttäjä 2026-11-22): julkaisuavaimella, mutta oma
+        // sovellustunnus ja nimi, joten se asentuu Playn / julkaistun version rinnalle eikä korvaa sitä. Kuvake ja
+        // resurssit: src/beta/ (BETA-merkki kuvakkeessa).
+        beta {
+            initWith release
+            applicationIdSuffix ".beta"
+            manifestPlaceholders = [appLabel: "Sátni FST BETA"]
+            matchingFallbacks = ["release"]
+        }
         release {
             // R8: pienempi APK (ML Kit, androidx). JS-sillan keep-säännöt: proguard-rules.pro. Testattava puhelimella
             // tekstintunnistus (SatniOcr) ennen julkaisua: virheet näkyvät vasta ajossa.

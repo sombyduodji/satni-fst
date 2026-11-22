@@ -236,6 +236,12 @@ def export_minor(src, lang, cols):
     print(f"{lang}: {n} muotoa -> web/data/satni-{lang}.db.gz {packed / 1e6:.1f} Mt (purettuna {raw / 1e6:.1f} Mt)")
 
 
+
+def sms_plain(word):
+    """Koltan sana ilman erikoismerkkejä (sama kuin app.js smsPlain): pehmennysmerkki ja heittomerkit pois, õ ǩ ǥ ʒ ǯ â đ š č ž -> perusmerkit."""
+    w = re.sub(r"[ʹ'’ʼ]", "", word.lower())
+    return w.translate(str.maketrans("õǩǥʒǯâđščžŋ", "okgzzadsczn"))
+
 def fold(text):
     return text.lower().translate(SEARCH_FOLD) if isinstance(text, str) else text
 
@@ -499,6 +505,27 @@ def main():
     sms_rows = {(lang, fold(word), pos): words for lang, word, pos, words in skolt_data.rows(SCRIPT_DIR)}
     dst.executemany("INSERT INTO sms VALUES (?,?,?,?)", ((*k, v) for k, v in sms_rows.items()))
     print(f"Koltansaame: {len(sms_rows)} riviä" if sms_rows else "Koltansaame: sanakirjoja ei löytynyt (hae_sanakirjat.sh)")
+    # Haku koltansaameksi (BETA, 2026-11-22): koltan sana -> sen suomen/norjan sana (GiellaLT dict-fin-sms, dict-nob-sms)
+    # -> pohjoissaamen sanat, joiden ensimmäisen merkityksen kaksi ensimmäistä käännöstä on se sana (sama sanaluokka).
+    # Likimääräinen kuten koltta pohjoissaamen sanakorteilla; app.js hakee näitä vain koltansaame päällä.
+    first_items = collections.defaultdict(set)
+    for wid, lang, tr, pos in src.execute(
+            "SELECT m.word_id, m.lang, m.translations, d.pos FROM meanings m JOIN dictionary d ON d.id = m.word_id "
+            "WHERE m.lang IN ('fin', 'nob') AND m.nr = (SELECT MIN(nr) FROM meanings x WHERE x.word_id = m.word_id AND x.lang = m.lang)"):
+        for item in [x.strip() for x in re.split(r"[,;]", re.sub(r"\([^)]*\)", "", tr or "")) if x.strip()][:2]:
+            first_items[(lang, fold(item), pos)].add(wid)
+    sms_search = set()
+    for (lang, key, pos), words in sms_rows.items():
+        for wid in first_items.get((lang, key, pos), ()):
+            for sw in (x.strip() for x in words.split(",")):
+                if sw:
+                    sms_search.add((wid, "smsvia", fold(sw), None))
+                    # Kirjoitusasu ilman koltan erikoismerkkejä (kueʹll -> kuell, piânnai -> piannai): app.js smsPlain
+                    plain = sms_plain(sw)
+                    if plain != fold(sw):
+                        sms_search.add((wid, "smsplain", plain, None))
+    dst.executemany("INSERT INTO trans_search VALUES (?, ?, ?, ?)", sorted(sms_search))
+    print(f"Haku koltansaameksi (BETA): {len(sms_search)} riviä")
 
     apertium_rows = apertium_data.rows(src)
     dst.executemany("INSERT INTO apertium VALUES (?,?)", apertium_rows)

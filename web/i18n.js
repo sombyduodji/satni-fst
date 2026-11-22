@@ -126,7 +126,11 @@ const UI_TEXTS = {
     viaSme: (w) => `pohjoissaamen kautta: ${w}`, viaFin: (w) => `suomen kautta: ${w}`,
     smsUnchecked: "tarkistamaton", skoltDlgTitle: "Otetaanko koltansaame käyttöön?",
     skoltDlgBody: `<p>Koltansaamen sanat tulevat GiellaLT:n suomi–koltansaame- ja norja–koltansaame-sanakirjoista.
-      Koltansaamen puhuja ei ole vielä tarkistanut niitä, joten ne voivat olla epätarkkoja. Sanat näkyvät, kun haet suomeksi.</p>`,
+      Pohjoissaamen ja koltansaamen välillä ei ole sanakirjaa, joten yhteys kulkee suomen (tai norjan) kautta.</p>
+      <p>Päällä ollessa:</p><ul><li>sanakortti näyttää koltansaamen sanan, myös saameksi haetuille sanoille (sanan
+      suomennoksen kautta)</li><li>voit hakea koltansaamen sanalla: põrtt → talo → dállu</li></ul>
+      <p>Koltansaamen puhuja ei ole vielä tarkistanut sanoja, ja suomen kautta kulkeva yhteys on likimääräinen: noin
+      joka kolmas voi olla väärä. Siksi ominaisuus on kokeellinen (BETA).</p>`,
     skoltViaLabel: "Näytä koltansaame myös pohjoissaamen sanakortissa",
     skoltViaDesc: "Suomennoksen kautta, likimääräinen: noin joka kolmas voi olla väärä.",
     skoltViaShort: "+ myös pohjoissaamen sanakorteille",
@@ -427,8 +431,12 @@ const UI_TEXTS = {
     reportPlaces: { photo: "Bildesøk", sent: "Setningsvisning", lause: "Setningsoversetter", harj: "Lytteøving" },
     viaSme: (w) => `via nordsamisk: ${w}`, viaFin: (w) => `via finsk: ${w}`,
     smsUnchecked: "ikke kontrollert", skoltDlgTitle: "Slå på skoltesamisk?",
-    skoltDlgBody: `<p>De skoltesamiske ordene kommer fra GiellaLTs finsk–skoltesamisk- og norsk–skoltesamisk-ordbøker.
-      De er ennå ikke kontrollert av noen som snakker skoltesamisk, så de kan være unøyaktige. Ordene vises når du søker på norsk.</p>`,
+    skoltDlgBody: `<p>De skoltesamiske ordene kommer fra GiellaLTs finsk–skoltesamisk og norsk–skoltesamisk ordbøker.
+      Det finnes ingen ordbok mellom nordsamisk og skoltesamisk, så forbindelsen går via finsk (eller norsk).</p>
+      <p>Når det er slått på:</p><ul><li>ordkortet viser det skoltesamiske ordet, også for ord du har søkt på
+      samisk (via den finske oversettelsen)</li><li>du kan søke med et skoltesamisk ord: põrtt → talo → dállu</li></ul>
+      <p>En skoltesamisk språkbruker har ikke kontrollert ordene ennå, og forbindelsen via finsk er omtrentlig: rundt
+      ett av tre kan være feil. Derfor er funksjonen eksperimentell (BETA).</p>`,
     skoltViaLabel: "Vis skoltesamisk også på nordsamiske ordkort",
     skoltViaDesc: "Via den finske oversettelsen, omtrentlig: omtrent hvert tredje ord kan være feil.",
     skoltViaShort: "+ også på nordsamiske ordkort",
@@ -725,7 +733,11 @@ UI_TEXTS.en = {
   viaSme: (w) => `via North Sámi: ${w}`, viaFin: (w) => `via Finnish: ${w}`,
   smsUnchecked: "unchecked", skoltDlgTitle: "Turn on Skolt Sámi?",
   skoltDlgBody: `<p>The Skolt Sámi words come from GiellaLT's Finnish–Skolt Sámi and Norwegian–Skolt Sámi dictionaries.
-    A Skolt Sámi speaker has not yet checked them, so they may be inaccurate. The words appear when you search in Finnish.</p>`,
+    There is no dictionary between North Sámi and Skolt Sámi, so the link goes via Finnish (or Norwegian).</p>
+    <p>When it is on:</p><ul><li>the word card shows the Skolt Sámi word, also for words you searched in Sámi (via
+    the Finnish translation)</li><li>you can search with a Skolt Sámi word: põrtt → talo → dállu</li></ul>
+    <p>A Skolt Sámi speaker has not yet checked the words, and the link via Finnish is approximate: about one in three
+    may be wrong. That's why the feature is experimental (BETA).</p>`,
   skoltViaLabel: "Also show Skolt Sámi on North Sámi word cards",
   skoltViaDesc: "Via the Finnish translation, approximate: about one in three may be wrong.",
   skoltViaShort: "+ also on North Sámi word cards",

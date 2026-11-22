@@ -132,11 +132,12 @@ function applyStaticTexts() {
     : window.SATNI_PLATFORM === "android" ? t("aboutAndroid", version) : t("aboutDesktop", version);
   $("menu-version").textContent = $("about-version").textContent;
   // Kehitysversio (build_apk.sh --debug: versio päättyy -DEV): nimeen "DEV", ettei sitä sekoita julkaistuun
-  const dev = /-DEV$/.test(version || "");
+  // Testiversio (build_apk.sh --beta: versio päättyy -BETA, GitHubin pre-release): nimeen "BETA" samaan tapaan
+  const tag = (/-(DEV|BETA)$/.exec(version || "") || [])[1];
   for (const el of document.querySelectorAll(".brand-name, .menu-name")) {
-    el.innerHTML = `Sátni FST${dev ? ' <span class="dev-tag">DEV</span>' : ""}`;
+    el.innerHTML = `Sátni FST${tag ? ` <span class="dev-tag${tag === "BETA" ? " beta" : ""}">${tag}</span>` : ""}`;
   }
-  if (dev && !document.title.endsWith(" DEV")) document.title = document.title.replace("Sátni FST", "Sátni FST DEV");
+  if (tag && !document.title.endsWith(" " + tag)) document.title = document.title.replace("Sátni FST", "Sátni FST " + tag);
   // Sähköpostin aiheessa versio, jotta palautteesta näkee, mitä versiota se koskee
   $("feedback-mail").href = "mailto:satni@somby.fi?subject=" +
     encodeURIComponent(`${t("feedbackSubject")} (${$("about-version").textContent})`);
@@ -333,10 +334,7 @@ function renderExtraLangs() {
   const skolt = `<label class="switch-row"><span class="switch-text"><span>${esc(capitalize(langName("sms")))}` +
     `<span class="beta-tag">BETA</span></span>${src("sms")}</span>` +
     `<input type="checkbox" class="switch" role="switch" data-skolt="on"${settings.skolt ? " checked" : ""}></label>` +
-    // Alakohta samaan tapaan kuin espanjan konekäännökset (käyttäjä 2026-11-22: yhtenäinen ulkoasu)
-    (settings.skolt ? `<label class="switch-row lang-sub"><span class="switch-text"><span>${esc(t("skoltViaShort"))}</span>` +
-      `<span class="muted small">${esc(t("skoltViaDesc"))}</span></span>` +
-      `<input type="checkbox" class="switch" role="switch" data-skolt="via"${settings.skoltViaSme ? " checked" : ""}></label>` : "");
+    "";  // Yksi BETA-kytkin (käyttäjä 2026-11-22): päällä = sanakorteilla aina (myös suomen kautta) ja haku koltaksi
   // Koltansaame kokeellisten (BETA) joukossa sivun alaosassa (käyttäjä 2026-11-21), muut kielet ylhäällä
   $("extra-langs").innerHTML = Object.keys(LANGUAGES).filter(extraLangOk).map(row).join("");
   if ($("skolt-exp")) $("skolt-exp").innerHTML = skolt;
@@ -449,7 +447,7 @@ const reportLinkHtml = (cls) => `<p class="report-line ${cls}"><a href="#" class
 
 function setSkolt(on, viaSme) {
   settings.skolt = on;
-  settings.skoltViaSme = on && viaSme;  // pois kytkettäessä molemmat pois
+  settings.skoltViaSme = on;  // vanha erillinen valinta: nyt sama kuin koltansaame päällä
   saveSettings();
   renderExtraLangs();
   if (state.results.length) searchAgainKeepingWord();
@@ -771,6 +769,10 @@ function engBasesOf(q) {
   return [...out].filter((b) => b.length >= 2);
 }
 
+// Koltan sana ilman erikoismerkkejä (export_web_data.py: sms_plain): haku koltaksi tavallisella näppäimistöllä
+const SMS_PLAIN = { "õ": "o", "ǩ": "k", "ǥ": "g", "ʒ": "z", "ǯ": "z", "â": "a", "đ": "d", "š": "s", "č": "c", "ž": "z", "ŋ": "n" };
+const smsPlain = (s) => (s || "").toLowerCase().replace(/[ʹ'’ʼ]/g, "").replace(/[õǩǥʒǯâđščžŋ]/g, (c) => SMS_PLAIN[c]);
+
 function queryDatabase(query) {
   if (isWildcard(query)) return wildcardQuery(query);
   const q = fold(query.trim());
@@ -874,6 +876,17 @@ function queryDatabase(query) {
         [q, `${likeEsc(q)},%`, `%, ${likeEsc(q)},%`, `%, ${likeEsc(q)}`])) add({ ...r, extraLang: "spa" }, r.fold === q ? 6.6 : 6.62);
     }
   }
+  // Haku koltansaameksi (BETA): koltan sana suomen tai norjan sanan kautta (export_web_data.py: trans_search smsvia)
+  if (settings.skolt) {
+    for (const r of all(`SELECT d.${cols.split(", ").join(", d.")}, t.fold FROM trans_search t JOIN dictionary d ON d.id = t.word_id
+       WHERE t.lang = 'smsvia' AND t.fold = ?`, [q])) add({ ...r, extraLang: "sms", smsWord: r.fold }, 6.7);
+    // Ilman koltan erikoismerkkejä kirjoitettu (kue'll, kuell, piannai): näytetään oikea kirjoitusasu
+    const sp = smsPlain(q);
+    for (const r of all(`SELECT d.${cols.split(", ").join(", d.")}, v.fold FROM trans_search t JOIN trans_search v ON v.word_id = t.word_id
+       AND v.lang = 'smsvia' JOIN dictionary d ON d.id = t.word_id WHERE t.lang = 'smsplain' AND t.fold = ?`, [sp])) {
+      if (smsPlain(r.fold) === sp) add({ ...r, extraLang: "sms", smsWord: r.fold }, 6.75);
+    }
+  }
   // 7 = perusmuoto alkaa hakusanalla; monisanaiset ilmaukset (dahkat iežas ...) vain, jos haussa on välilyönti
   const phrases = q.includes(" ") ? "" : "AND instr(lemma_fold, ' ') = 0";
   for (const r of all(`SELECT ${cols} FROM dictionary WHERE lemma_fold >= ? AND lemma_fold < ? ${phrases} LIMIT 60`, [q, q + "￿"])) add(r, 7);
@@ -954,7 +967,8 @@ const mtText = (mt) => (mt ? mt.eng || mt.fin || mt.spa || "" : "");
 function resultTrans(r, max) {
   const own = translationOf(r, max) || (mtOf(r.id, settings.lang) ? "≈ " + Object.values(mtOf(r.id, settings.lang))[0] : "");
   if (!r.extraLang) return own;
-  const other = `${t("langIn")[r.extraLang]}: ${translationOf(r, max, r.extraLang) || "≈ " + mtText(mtOf(r.id, r.extraLang))}`;
+  const other = r.extraLang === "sms" ? `${t("langIn").sms}: ≈ ${r.smsWord} (${t("smsVia")})`
+    : `${t("langIn")[r.extraLang]}: ${translationOf(r, max, r.extraLang) || "≈ " + mtText(mtOf(r.id, r.extraLang))}`;
   return own ? `${own} · ${other}` : other;
 }
 
@@ -964,6 +978,10 @@ function resultTransHtml(r, max) {
   const mt = !own ? mtOf(r.id, settings.lang) : null;
   const ownHtml = own ? labelledList(own, settings.lang) : mt ? `≈ ${esc(splitList(mt.eng || mt.fin).slice(0, max).join(", "))}` : "";
   if (!r.extraLang) return ownHtml;
+  if (r.extraLang === "sms") {
+    const o = `${esc(t("langIn").sms)}: ≈ ${esc(r.smsWord)} <span class="muted small">(${esc(t("smsVia"))})</span>`;
+    return ownHtml ? `${ownHtml} · ${o}` : o;
+  }
   const otherTr = translationOf(r, max, r.extraLang);
   const other = `${esc(t("langIn")[r.extraLang])}: ${otherTr ? labelledList(otherTr, r.extraLang) : "≈ " + esc(mtText(mtOf(r.id, r.extraLang)))}`;
   return ownHtml ? `${ownHtml} · ${other}` : other;
@@ -1789,7 +1807,7 @@ function skoltFor(w) {
     const own = lookup(settings.lang, state.transWord);
     if (own.length) return { text: own.join(", ") };
   }
-  if (!settings.skoltViaSme) return null;
+  if (!settings.skolt) return null;
   // Ensimmäinen suomennos, jolle löytyy koltan sana (pääkäännös; muut suomennokset toisi muita merkityksiä:
   // oabbá = sisar, sisko -> vain sisar = vuäʹbb, ei "sisko"-tätisanoja)
   for (const f of splitList(w.finnish_translation).slice(0, 3)) {

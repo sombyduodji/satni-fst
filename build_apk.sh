@@ -8,6 +8,8 @@
 # --debug: kehitysversio debug-avaimella (WebView-vianetsintä päällä) emulaattorin dev-laitteelle ja omaan puhelimeen
 #          (x86_64 ja arm64). Oma sovellustunnus fi.somby.satnifst.dev ja nimi "Sátni FST DEV", joten se asentuu
 #          julkaistun version rinnalle. Versio: seuraavan korjausjulkaisun numero + -DEV (release.py dev: 0.9.3 -> 0.9.3.1-DEV).
+# --beta: testiversio GitHubin pre-releaseen: julkaisuavain, oma tunnus fi.somby.satnifst.beta ja nimi "Sátni FST BETA",
+#         joten se asentuu Playn ja julkaistun version rinnalle. Versio: release.py dev + -BETA (dist/satni-fst-beta.apk).
 # --testi: julkaisuavaimella allekirjoitettu testiversio välimuistikansioon (ei dist-kansioon, jossa on julkaistu
 #          versio): emulaattorin main-laitteella voi kokeilla päivitystä käyttäjien version päälle.
 cd "$(dirname "$0")" || exit 1
@@ -23,6 +25,8 @@ else
         echo "Julkaisuavainta ei löydy kansiosta $SIGNING_DIR (luo: packaging/android/luo_allekirjoitusavain.sh)"; exit 1; }
     TASK=assembleRelease; APK=release/app-release.apk; OUT=dist/satni-fst.apk
     [ "$1" = "--testi" ] && OUT="$CACHE_DIR/satni-fst-testi.apk"
+    # --beta: GitHubin pre-release (oma tunnus fi.somby.satnifst.beta, julkaisuavain), ks. android/app/build.gradle
+    [ "$1" = "--beta" ] && { TASK=assembleBeta; APK=beta/app-beta.apk; OUT=dist/satni-fst-beta.apk; }
 fi
 
 [ -f web/data/satni-web.db.gz ] || python3 export_web_data.py || exit 1
@@ -30,6 +34,7 @@ fi
 VERSION=$(python3 -c "import version; print(version.VERSION)") || exit 1
 VERSION_CODE=$(python3 -c "import version; print(version.VERSION_CODE)") || exit 1
 [ "$1" = "--debug" ] && VERSION="$(python3 release.py dev)"
+[ "$1" = "--beta" ] && VERSION="$(python3 release.py dev | sed 's/-DEV$/-BETA/')"
 
 # Väliaikaiset tiedostot (Gradle, käännös, debug-avain) välimuistikansioon, ei projektikansioon. Debug-avain on
 # $CACHE_DIR/home/.android/debug.keystore: ANDROID_USER_HOME osoittaa siihen, koska root-käyttäjänä (WSL)
