@@ -237,7 +237,7 @@ def lists():
             ("eilen", "i går", "ikte", []), ("nyt", "nå", "dál", []), ("viikko", "uke", "vahkku", []),
             ("kello, tunti", "klokke, time", "diibmu", []), ("minuutti", "minutt", "minuhtta", []),
             ("monelta?", "hva tid?", "galles", [])]
-    L.append({"id": "aika", "icon": "clock", "title": {"fi": "Vuorokausi ja kello", "nb": "Døgnet og klokka"},
+    L.append({"id": "aika", "icon": "clock", "title": {"fi": "Vuorokausi", "nb": "Døgnet"},
               "rows": [row([fi] + ([fin_form(fi, "Sg+Ade")] if tags and fin_form(fi, "Sg+Ade") and fi not in ("keskipäivä", "keskiyö") else []),
                            [nb] + ([NB_WHEN[nb]] if nb in NB_WHEN else []), [sme(s, None, tags, fi=fi, nb=nb)]) for fi, nb, s, tags in time]})
 

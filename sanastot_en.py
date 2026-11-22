@@ -6,7 +6,7 @@ lopussa ongelmana. Käännökset on kirjoitettu käsin sanakirjan suomen- ja nor
 """
 
 TITLES = {"luvut": "Numbers and ordinals", "viikonpaivat": "Days of the week", "kuukaudet": "Months",
-          "vuodenajat": "Seasons (8)", "aika": "Day and time", "suunnat": "Points of the compass", "suku": "Family and relatives",
+          "vuodenajat": "Seasons (8)", "aika": "Times of day", "suunnat": "Points of the compass", "suku": "Family and relatives",
           "varit": "Colours", "porot": "Reindeer", "saa": "Weather and snow", "pronominit": "Pronouns",
           "kysymykset": "Question words", "tervehdykset": "Greetings"}
 

@@ -87,7 +87,7 @@ function harjGroup(id) {
   return SANASTO_GROUPS.find((g) => g.lists.includes(key)) || SANASTO_GROUPS[SANASTO_GROUPS.length - 1];
 }
 function harjIcon(id) {
-  // Oma kuvake (herätyskello): sanastojen Vuorokausi ja kello -listan kellosta erottuva (käyttäjä 2026-11-22)
+  // Oma kuvake (herätyskello): sanastojen Vuorokausi-listan kellosta erottuva (käyttäjä 2026-11-22)
   if (id === "kello") return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="7.5"/><path d="M12 9.2V13l2.6 1.8"/><path d="M4.2 6.2l3-2.4M19.8 6.2l-3-2.4M7.3 19.2l-1.6 1.9M16.7 19.2l1.6 1.9"/></svg>';
   const l = sanastot && sanastot.find((x) => x.id === (id === "jarjestysluvut" ? "luvut" : id));
   return l ? sanastoSvg(l.icon) : HARJ_ICON;
