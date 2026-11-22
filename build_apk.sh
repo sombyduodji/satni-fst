@@ -7,9 +7,9 @@
 # kerran: packaging/android/luo_allekirjoitusavain.sh). Saman avaimen päivitykset asentuvat vanhan päälle.
 # --debug: kehitysversio julkaisuavaimella (WebView-vianetsintä päällä) emulaattorin dev-laitteelle ja omaan puhelimeen
 #          (x86_64 ja arm64). Oma sovellustunnus fi.somby.satnifst.dev ja nimi "Sátni FST DEV", joten se asentuu
-#          julkaistun version rinnalle. Versio: seuraavan korjausjulkaisun numero + -DEV (release.py dev: 0.9.3 -> 0.9.3.1-DEV).
+#          julkaistun version rinnalle. Versio: seuraava sisältöjulkaisu + -dev.N (release.py dev: 1.0.0 -> 1.1.0-dev.42).
 # --beta: testiversio GitHubin pre-releaseen: julkaisuavain, oma tunnus fi.somby.satnifst.beta ja nimi "Sátni FST BETA",
-#         joten se asentuu Playn ja julkaistun version rinnalle. Versio: release.py dev + -BETA (dist/satni-fst-beta.apk).
+#         joten se asentuu Playn ja julkaistun version rinnalle. Versio: release.py beta (1.1.0-beta.3) tai BETA_VERSION (dist/satni-fst-beta.apk).
 # --testi: julkaisuavaimella allekirjoitettu testiversio välimuistikansioon (ei dist-kansioon, jossa on julkaistu
 #          versio): emulaattorin main-laitteella voi kokeilla päivitystä käyttäjien version päälle.
 cd "$(dirname "$0")" || exit 1
@@ -35,7 +35,7 @@ VERSION=$(python3 -c "import version; print(version.VERSION)") || exit 1
 VERSION_CODE=$(python3 -c "import version; print(version.VERSION_CODE)") || exit 1
 [ "$1" = "--debug" ] && VERSION="$(python3 release.py dev)"
 # BETA_VERSION=1.1.0-beta.1 ./build_apk.sh --beta: GitHubin pre-releasen nimi (sama kuin tagi ilman v:tä)
-[ "$1" = "--beta" ] && VERSION="${BETA_VERSION:-$(python3 release.py dev | sed 's/-DEV$/-BETA/')}"
+[ "$1" = "--beta" ] && VERSION="${BETA_VERSION:-$(python3 release.py beta)}"
 
 # Väliaikaiset tiedostot (Gradle, käännös, debug-avain) välimuistikansioon, ei projektikansioon. Debug-avain on
 # $CACHE_DIR/home/.android/debug.keystore: ANDROID_USER_HOME osoittaa siihen, koska root-käyttäjänä (WSL)

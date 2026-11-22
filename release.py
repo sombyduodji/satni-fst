@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
-"""Julkaisun numero (tiedosto RELEASE_VERSION) ja sen kasvattaminen (käyttäjän sääntö 2026-11-13).
+"""Julkaisun numero (tiedosto RELEASE_VERSION), sen kasvattaminen ja kanavien versiot.
 
-Kaksi julkaisutyyppiä:
-- uutta sisältöä (iso päivitys): kolmas numero kasvaa 0.9.3 -> 0.9.4 ... 0.9.9 -> 1.0.0 (aina yhdeksään asti,
-  sitten seuraava ylempi numero); mahdollinen korjausnumero putoaa pois (0.9.3.2 -> 0.9.4)
-- korjaukset ja käännökset: neljäs numero 0.9.3 -> 0.9.3.1 ... 0.9.3.9; yhdeksännen jälkeen seuraava korjaus on
-  seuraava sisältöjulkaisu (0.9.3.9 -> 0.9.4)
-
-Kehitysversio (debug-APK, DEV-AppImage) näyttää seuraavan korjausjulkaisun numeron ja -DEV:
-0.9.3 -> 0.9.3.1-DEV, 0.9.3.4 -> 0.9.3.5-DEV, 0.9.3.9 -> 0.9.4-DEV.
+Versiot ja kanavat (käyttäjä 2026-11-22, korvaa 2026-11-13 säännön):
+- main (Play ja GitHubin vakaa): julkaistu versio X.Y.Z
+- uutta sisältöä: toinen numero kasvaa 1.0.0 -> 1.1.0 ... 1.9.x -> 2.0.0 (yhdeksään asti, sitten seuraava ylempi)
+- korjaukset ja käännökset: kolmas numero 1.0.0 -> 1.0.1 ... 1.0.9; yhdeksännen jälkeen seuraava korjaus on
+  seuraava sisältöjulkaisu (1.0.9 -> 1.1.0)
+- DEV (dev-haara, debug-APK, DEV-AppImage): seuraava sisältöjulkaisu + -dev.N, N = commitit edellisestä
+  julkaisutagista (1.0.0 -> 1.1.0-dev.42)
+- BETA (GitHubin pre-release, tagi dev-haarassa): seuraava sisältöjulkaisu + -beta.N, N = seuraava vapaa numero
+  (v1.1.0-beta.2 on jo -> 1.1.0-beta.3)
+Järjestys: 1.0.1 < 1.1.0-beta.N < 1.1.0-dev.N < 1.1.0. Korjaus vakaaseen tehdään mainiin ja main yhdistetään deviin.
+Vanhat nelinumeroiset (0.9.3.2) luetaan edelleen; neljäs numero jää pois kasvatettaessa.
 
 Käyttö:
   python3 release.py            nykyinen julkaisu
-  python3 release.py dev        kehitysversion nimi
+  python3 release.py dev        DEV-version nimi
+  python3 release.py beta       seuraavan BETA-version nimi
   python3 release.py sisalto    kasvattaa: uutta sisältöä (myös: feature)
   python3 release.py korjaus    kasvattaa: korjaukset ja käännökset (myös: fix)
   lisää --kokeile (tai --dry-run), niin RELEASE_VERSION ei muutu
@@ -35,25 +39,35 @@ def fmt(parts):
 
 
 def next_feature(version):
-    major, minor, patch = parse(version)[:3]
-    patch += 1
-    if patch > 9:
-        patch, minor = 0, minor + 1
+    major, minor = parse(version)[:2]
+    minor += 1
     if minor > 9:
         minor, major = 0, major + 1
-    return fmt([major, minor, patch])
+    return fmt([major, minor, 0])
 
 
 def next_fix(version):
-    parts = parse(version)
-    fix = (parts[3] if len(parts) == 4 else 0) + 1
-    if fix > 9:
+    major, minor, patch = parse(version)[:3]
+    if patch + 1 > 9:
         return next_feature(version)
-    return fmt(parts[:3] + [fix])
+    return fmt([major, minor, patch + 1])
+
+
+def _git(*args):
+    import subprocess
+    r = subprocess.run(["git", "-C", os.path.dirname(RELEASE_FILE), *args], capture_output=True, text=True)
+    return r.stdout.strip() if r.returncode == 0 else ""
 
 
 def dev_version(version):
-    return next_fix(version) + "-DEV"
+    n = _git("rev-list", "--count", f"v{version}..HEAD") or "0"
+    return f"{next_feature(version)}-dev.{n}"
+
+
+def beta_version(version):
+    nxt = next_feature(version)
+    used = [t.rsplit(".", 1)[-1] for t in _git("tag", "--list", f"v{nxt}-beta.*").split()]
+    return f"{nxt}-beta.{max([int(u) for u in used if u.isdigit()] + [0]) + 1}"
 
 
 def current():
@@ -70,6 +84,8 @@ def main(argv):
         print(version)
     elif cmd == "dev":
         print(dev_version(version))
+    elif cmd == "beta":
+        print(beta_version(version))
     elif cmd in ("sisalto", "sisältö", "feature", "korjaus", "fix"):
         new = next_feature(version) if cmd in ("sisalto", "sisältö", "feature") else next_fix(version)
         if not dry:

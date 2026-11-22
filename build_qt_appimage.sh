@@ -2,7 +2,7 @@
 # Rakentaa Qt-työpöytäsovelluksen (satni_desktop.py) AppImagen. Ohjelma käännetään Debian 11
 # -kontissa (packaging/qt/Dockerfile), jotta se toimii myös vanhemmissa Linux-jakeluissa. Vaatii Dockerin.
 # --dev: kehitysversio (dev-haara) omalla nimellään dist/Satni_FST-DEV-x86_64.AppImage, ei korvaa julkaistua
-#        AppImagea. Versio kuten debug-APK:ssa: release.py dev (0.9.3 -> 0.9.3.1-DEV).
+#        AppImagea. Versio kuten debug-APK:ssa: release.py dev (1.0.0 -> 1.1.0-dev.42).
 cd "$(dirname "$0")" || exit 1
 
 APPIMAGETOOL_URL="https://github.com/AppImage/appimagetool/releases/download/1.9.0/appimagetool-x86_64.AppImage"

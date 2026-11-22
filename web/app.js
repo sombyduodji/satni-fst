@@ -147,8 +147,8 @@ function applyStaticTexts() {
   $("about-version").textContent = !version ? t("aboutWeb", webVersion)
     : window.SATNI_PLATFORM === "android" ? t("aboutAndroid", version) : t("aboutDesktop", version);
   $("menu-version").textContent = $("about-version").textContent;
-  // Kehitysversio (build_apk.sh --debug: versio päättyy -DEV): nimeen "DEV", ettei sitä sekoita julkaistuun
-  // Testiversio (build_apk.sh --beta: versio päättyy -BETA, GitHubin pre-release): nimeen "BETA" samaan tapaan
+  // Kehitysversio (build_apk.sh --debug: versio päättyy -dev.N): nimeen "DEV", ettei sitä sekoita julkaistuun
+  // Testiversio (build_apk.sh --beta: versio päättyy -beta.N, GitHubin pre-release): nimeen "BETA" samaan tapaan
   const tag = channelTag(version);
   for (const el of document.querySelectorAll(".brand-name, .menu-name")) {
     el.innerHTML = `Sátni FST${tag ? ` <span class="dev-tag${tag === "BETA" ? " beta" : ""}">${tag}</span>` : ""}`;
@@ -854,7 +854,7 @@ function showChannelNotice() {
   $("exp-dlg").showModal();
 }
 
-// Versiokanava versionimestä: 1.0.0.1-DEV, 1.0.0.1-BETA tai GitHubin pre-release 1.1.0-beta.1 (build_apk.sh --beta)
+// Versiokanava versionimestä: 1.1.0-dev.42 (DEV), 1.1.0-beta.3 (BETA, GitHubin pre-release); vanhat 1.0.0.1-DEV ja -BETA myös
 const channelTag = (v) => { const m = /-(dev|beta)(?:\.\d+)?$/i.exec(v || ""); return m ? m[1].toUpperCase() : null; };
 
 function queryDatabase(query) {
