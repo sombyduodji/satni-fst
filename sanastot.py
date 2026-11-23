@@ -386,7 +386,7 @@ def lists():
               "hint": {"fi": "beal njeallje = puoli neljä · 20–40 yli lasketaan puolesta tunnista: logi váile beal njeallje = kello 3.20",
                        "nb": "beal njeallje = halv fire · fra 20 til 40 over teller man fra halv: logi váile beal njeallje = 3.20"},
               "rows": [dict(row([c["fiShort"]], [f'{c["h"]}.{c["m"]:02d}'], [{"w": [c["sme"]], "id": None, "fi": c["fiShort"], "nb": ""}]),
-                            clock=[c["h"], c["m"]], ci=i, sec=c["level"]) for i, c in enumerate(clock)],
+                            clock=[c["h"], c["m"]], ci=i, sec=c["level"], d=c.get("d", [0, 0])[1]) for i, c in enumerate(clock)],
               "sections": [{"fi": "Tasan", "nb": "Hel time"}, {"fi": "Puoli", "nb": "Halv"}, {"fi": "Vartit", "nb": "Kvarter"},
                            {"fi": "Viiden minuutin välein", "nb": "Hvert femte minutt"}]})
     # Apusanat (apusanat.py, käyttäjä 2026-11-22): neljä listaa, esimerkit sanakirjoista

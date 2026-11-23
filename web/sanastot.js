@@ -108,7 +108,7 @@ const SANASTO_GROUPS = [
 ];
 // Analoginen kello (kellopeli ja kuunteluharjoitus, 2026-11-22): SVG, värit teeman muuttujista, numerot 1–12.
 // Tuntiosoitin liikkuu minuuttien mukana (puoli neljä: osoitin kolmen ja neljän puolivälissä), kuten oikeassa kellossa.
-function kelloSvg(h, m, cls = "kello") {
+function kelloSvg(h, m, cls = "kello", anim = false) {
   const hand = (deg, len, w, c) => { const r = (deg - 90) * Math.PI / 180;
     return `<line x1="50" y1="50" x2="${(50 + len * Math.cos(r)).toFixed(1)}" y2="${(50 + len * Math.sin(r)).toFixed(1)}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`; };
   let marks = "";
@@ -119,7 +119,12 @@ function kelloSvg(h, m, cls = "kello") {
   }
   return `<svg class="${cls}" viewBox="0 0 100 100" role="img" aria-label="${h}:${String(m).padStart(2, "0")}">` +
     `<circle cx="50" cy="50" r="47.5" fill="var(--surface)" stroke="var(--tc, var(--accent))" stroke-width="2.5"/>${marks}` +
-    hand(((h % 12) + m / 60) * 30, 21, 4.2, "var(--text)") + hand(m * 6, 34, 2.6, "var(--tb, var(--accent))") +
+    (anim
+      // Animoitavat osoittimet (Kellonajat-lista, 2026-11-23): kiertyvät 12:sta aikaan, kun Biret sanoo ajan
+      ? `<g class="kh" style="--deg:${((h % 12) + m / 60) * 30}deg">${hand(0, 21, 4.2, "var(--text)")}</g>` +
+        `<g class="km" style="--deg:${m * 6}deg">${hand(0, 34, 2.6, "var(--tb, var(--accent))")}</g>` +
+        `<circle class="krim" cx="50" cy="50" r="47.5" pathLength="100"/>`
+      : hand(((h % 12) + m / 60) * 30, 21, 4.2, "var(--text)") + hand(m * 6, 34, 2.6, "var(--tb, var(--accent))")) +
     `<circle cx="50" cy="50" r="2.8" fill="var(--text)"/></svg>`;
 }
 const sanastoPreview = (l) => l.rows.slice(0, 3).map((r) => (l.kind === "numbers" ? r.card : r.sme[0].w[0])).join(", ");
@@ -481,7 +486,7 @@ function renderSanasto(listId) {
       const secs = l.sections || [{}];
       html += secs.map((sec, i) => `<section class="sl-sec">${sec[lang] ? `<h3>${esc(sec[lang])}</h3>` : ""}<div class="clock-grid">` +
         l.rows.filter((r) => (r.sec || 0) === i).map((r) => `<button type="button" class="clock-card" data-clock="${r.ci}" aria-label="${esc(r.sme[0].w[0])}">` +
-          `${kelloSvg(r.clock[0], r.clock[1], "kello small")}<span class="cc-sme" lang="se">${esc(r.sme[0].w[0]).replace(/nuppe/g, "\u00adnuppe\u00ad")}</span>` +
+          `${kelloSvg(r.clock[0], r.clock[1], "kello small", true)}<span class="cc-sme" lang="se">${esc(r.sme[0].w[0]).replace(/nuppe/g, "\u00adnuppe\u00ad")}</span>` +
           `<span class="cc-ui">${esc(uiOf(r)[0] || "")}</span></button>`).join("") + `</div></section>`).join("");
       return finish();
     }
@@ -762,12 +767,37 @@ function sanastoOpenCard(id, word) {
   sanastoReturnHash = location.hash;
 }
 
+// Kellonaika: Biret sanoo ajan, osoittimet kiertyvät 12:sta aikaan ja kehä täyttyy puheen ajan; toinen napautus
+// pysäyttää (2026-11-23; ei yleistä soitinkehää, joka peitti kellon)
+let sanastoClockAudio = null, sanastoClockCard = null;
+function sanastoClockStop() {
+  if (sanastoClockAudio) { sanastoClockAudio.pause(); sanastoClockAudio = null; }
+  if (sanastoClockCard) { sanastoClockCard.classList.remove("playing"); sanastoClockCard = null; }
+}
+function sanastoClockPlay(card) {
+  const same = sanastoClockCard === card;
+  sanastoStopAudio();
+  sanastoClockStop();
+  if (same) return;
+  const dur = Math.max(0.8, (sanastot.find((l) => l.id === "kellonajat")?.rows[+card.dataset.clock]?.d || 1.6));
+  card.style.setProperty("--kdur", `${dur}s`);
+  void card.offsetWidth;  // animaatio alkaa alusta myös toisella napautuksella
+  card.classList.add("playing");
+  sanastoClockCard = card;
+  if (typeof canOpus === "undefined" || !canOpus) { setTimeout(() => sanastoClockCard === card && sanastoClockStop(), dur * 1000 + 600); return; }
+  const a = new Audio(`audio/w/kello-${card.dataset.clock}-sme.ogg`);
+  sanastoClockAudio = a;
+  a.addEventListener("loadedmetadata", () => { if (isFinite(a.duration) && a.duration > 0) card.style.setProperty("--kdur", `${a.duration}s`); });
+  a.addEventListener("ended", () => setTimeout(() => { if (sanastoClockCard === card) sanastoClockStop(); }, 500));
+  a.play().catch(() => setTimeout(() => { if (sanastoClockCard === card) sanastoClockStop(); }, dur * 1000));
+}
+
 function bindSanastot() {
   if (!$("sanasto-view")) return;
   // Kellonaika soittaa Biretin lauseen; Pelaa avaa listan pelitilan (2026-11-23)
   $("sanasto-body").addEventListener("click", (e) => {
     const c = e.target.closest("[data-clock]");
-    if (c) { sanastoStopAudio(); if (typeof canOpus !== "undefined" && canOpus) sanastoPlayAudio(`audio/w/kello-${c.dataset.clock}-sme.ogg`, c); return; }
+    if (c) { sanastoClockPlay(c); return; }
     const g = e.target.closest("[data-peli]");
     if (g && typeof peliOpenMode === "function") { sanastoStopAudio(); peliOpenMode(g.dataset.peli); }
   });
