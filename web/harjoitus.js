@@ -136,6 +136,7 @@ function harjRenderSetup(o) {
     `<div class="hj-secrows"></div>` +
     `<div class="hj-row hj-clockrow"><span class="hj-rl" id="hj-l-cl">${esc(t("harjClockLv"))}</span><div class="hj-seg multi" role="group" aria-labelledby="hj-l-cl">` +
       t("harjClockLvs").map((txt, i) => `<button type="button" data-g="cl" data-v="${i}" aria-pressed="false">${esc(txt)}</button>`).join("") + `</div></div>` +
+    `<p class="hj-cltip" hidden>${esc(t("harjClockTip"))}</p>` +
     seg("dir", [["fi", t("harjDirFi")], ["sme", t("harjDirSme")]], t("harjDir")) +
     seg("think", [2, 3, 4, 5, 7].map((x) => [x, `${x} s`]), t("harjThink")) +
     seg("shuffle", [[1, t("harjShuffle")], [0, t("harjInOrder")]], t("harjOrder")) + `</div>` +
@@ -201,6 +202,8 @@ function harjSyncSetup(o) {
   const times = o.lists.includes("kello") ? harjRows(harjIndex.lists.find((l) => l.id === "kello"), o).length : 0;
   el.querySelector(".hj-numrow").hidden = !o.lists.some((id) => HARJ_NUMERIC.includes(id));
   el.querySelector(".hj-clockrow").hidden = !o.lists.includes("kello");
+  // Vihje puolesta tunnista laskemisesta, kun 5 minuutin ajat ovat mukana (käyttäjä 2026-11-23)
+  el.querySelector(".hj-cltip").hidden = !(o.lists.includes("kello") && o.clock.includes(3));
   // Osiorivit valituille apusanalistoille (piirretään uudelleen vain, kun valitut listat muuttuvat)
   const apu = harjIndex.lists.filter((l) => o.lists.includes(l.id) && l.sections && l.sections.length > 1);
   const box = el.querySelector(".hj-secrows"), key = apu.map((l) => l.id).join(",");

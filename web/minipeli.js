@@ -448,6 +448,8 @@ function renderPeliOver(chosen) {
     `<div class="peli-ring"><b>${score}</b><span>${esc((write ? T.points : T.score)(score).replace(/^\d+\s*/, ""))}</span></div>` +
     `<h3>${esc(T.over)}${isNew ? ` <span class="peli-new">${PELI_CUP}${esc(T.newBest)}</span>` : ""}</h3>` +
     `<p class="peli-correct">${esc(write ? T.youWrote : T.youAnswered)} <s${q.toSme ? ' lang="se"' : ""}>${esc(peliClockText(q, chosen))}</s> · ${esc(T.correctWas)} <b${q.toSme ? ' lang="se"' : ""}>${esc(peliClockText(q, q.answer))}</b></p>` +
+    // Minuutit 20-40 saameksi puolesta tunnista: vihje, jos virhe osui sellaiseen aikaan (käyttäjä 2026-11-23)
+    (q.clock && [20, 25, 35, 40].includes(q.clock[1]) ? `<p class="peli-cltip">${esc(t("harjClockTip"))}</p>` : "") +
     `<div class="peli-tops"><h4>${esc(T.top)}</h4>${peliPodium(top, isNew)}</div>` +
     `<div class="peli-actions"><button type="button" class="peli-primary" data-act="again" data-mode="${mode}">${esc(T.again)}</button>` +
     `<div class="peli-row"><button type="button" class="peli-secondary" data-act="menu">${esc(T.menu)}</button>` +

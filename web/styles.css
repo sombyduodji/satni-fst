@@ -1450,6 +1450,7 @@ body.drawer-layout .topbar > #sidebar-toggle { margin-right: 4px; }
   font-size: 13px; font-weight: 700; vertical-align: 3px; background: color-mix(in srgb, var(--flag-yellow) 30%, var(--surface)); }
 .peli-new svg { width: 14px; height: 14px; color: var(--flag-yellow); }
 .peli-correct { margin: 4px 0 0; color: var(--muted); }
+.peli-cltip { margin: 8px 0 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
 .peli-correct b { color: var(--text); }
 .peli-correct s { color: var(--flag-red); text-decoration-thickness: 2px; }
 .peli-tops { margin: 16px auto 0; max-width: 320px; text-align: left; }
@@ -2085,6 +2086,7 @@ body.drawer-layout .sidebar { display: flex; flex-direction: column; gap: 10px; 
 .hj-start:active { transform: scale(.985); }
 .hj-note { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 8px 0 0; font-size: 12px; line-height: 1.35; color: var(--muted); text-align: center; }
 .hj-note svg { flex: none; width: 14px; height: 14px; }
+.hj-cltip { margin: 0 0 6px; font-size: 12.5px; line-height: 1.4; color: var(--muted); }
 /* Harjoituskortti */
 .hj-card { width: 100%; max-width: 420px; max-height: 100%; overflow-y: auto; background: var(--surface); color: var(--text); border-radius: 24px;
   padding: 14px 16px 16px; text-align: center; box-shadow: 0 12px 40px rgba(2, 6, 23, .35); }

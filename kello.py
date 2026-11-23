@@ -4,7 +4,7 @@
   - Saame: GiellaLT lang-sme transcriptor-clock-digit2text (GPL-3.0): 3.30 -> beal njeallje, 3.20 -> logi váile beal
     njeallje. Lause "Diibmu lea …" (sanakirjojen esimerkit: Diibmu lea beal golbma). Kysymys "Ollugo diibmu lea?"
     (dict-spa-sme: ¿qué hora es?). Kirjoituspeli hyväksyy myös vartin sanalla njealjádas.
-  - Suomi: säännöillä (yli: viisi, kymmenen, varttia, kaksikymmentä, kaksikymmentäviisi; vaille partitiivilla:
+  - Suomi: minuutit 20, 25, 35 ja 40 puolesta tunnista kuten saamessa (kymmentä vaille puoli viisi); muuten säännöillä (yli: viisi, kymmenen, varttia, kaksikymmentä, kaksikymmentäviisi; vaille partitiivilla:
     kahtakymmentäviittä, kahtakymmentä, varttia, kymmentä, viittä), Voikko tarkistaa jokaisen sanan.
   - Äänet: Biret (Divvunin puhesynteesi, lupa koota valmiiksi) ja Harri (fi-tts). Raaka-äänet
     ~/.cache/satni-fst-build/clock/{biret,harri}; tämä skripti tekee niistä Ogg Opus -tiedostot:
@@ -24,6 +24,9 @@ T = os.path.expanduser("~/.cache/satni-fst-build/fst/lang-sme/src/fst/transcript
 FI = ["", "yksi", "kaksi", "kolme", "neljä", "viisi", "kuusi", "seitsemän", "kahdeksan", "yhdeksän", "kymmenen", "yksitoista", "kaksitoista"]
 YLI = {5: "viisi", 10: "kymmenen", 15: "varttia", 20: "kaksikymmentä", 25: "kaksikymmentäviisi"}
 VAILLE = {35: "kahtakymmentäviittä", 40: "kahtakymmentä", 45: "varttia", 50: "kymmentä", 55: "viittä"}
+# Minuutit 20-40 saamen tapaan puolesta tunnista (käyttäjä 2026-11-23: kuuntelussa "kahtakymmentä vaille viisi" vs.
+# "logi badjel beal vihtta" hämäsi). Luontevaa puhuttua suomea: kymmentä vaille puoli viisi = 4.20.
+PUOLI = {20: "kymmentä vaille", 25: "viittä vaille", 35: "viisi yli", 40: "kymmenen yli"}
 
 
 def texts():
@@ -40,7 +43,7 @@ def texts():
     rows = []
     for h, m in times:
         n = h % 12 + 1
-        fi = FI[h] if m == 0 else f"puoli {FI[n]}" if m == 30 else f"{YLI[m]} yli {FI[h]}" if m < 30 else f"{VAILLE[m]} vaille {FI[n]}"
+        fi = FI[h] if m == 0 else f"puoli {FI[n]}" if m == 30 else f"{PUOLI[m]} puoli {FI[n]}" if m in PUOLI else f"{YLI[m]} yli {FI[h]}" if m < 30 else f"{VAILLE[m]} vaille {FI[n]}"
         bad = [w for w in fi.split() if not v.spell(w)]
         assert not bad, (h, m, bad)
         s = sme[f"{h}.{m:02d}"]
