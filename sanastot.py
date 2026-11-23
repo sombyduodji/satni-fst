@@ -383,7 +383,7 @@ def lists():
     # digitaalinen aika. Napautus soittaa Biretin lauseen (audio/w/kello-<i>-sme.ogg)
     clock = json.load(open(os.path.join(SCRIPT_DIR, "kello.json"), encoding="utf-8"))["rows"]
     L.append({"id": "kellonajat", "icon": "alarm", "kind": "clock", "title": {"fi": "Kellonajat", "nb": "Klokkeslett"},
-              "hint": {"fi": "beal njeallje = puoli neljä · 20–40 yli lasketaan puolesta tunnista: logi váile beal njeallje = kello 3.20",
+              "hint": {"fi": "beal njeallje = puoli neljä · minuutit 20–40 lasketaan puolesta tunnista: logi váile beal njeallje = kymmentä vaille puoli neljä (3.20)",
                        "nb": "beal njeallje = halv fire · fra 20 til 40 over teller man fra halv: logi váile beal njeallje = 3.20"},
               "rows": [dict(row([c["fiShort"]], [f'{c["h"]}.{c["m"]:02d}'], [{"w": [c["sme"]], "id": None, "fi": c["fiShort"], "nb": ""}]),
                             clock=[c["h"], c["m"]], ci=i, sec=c["level"], d=c.get("d", [0, 0])[1]) for i, c in enumerate(clock)],
