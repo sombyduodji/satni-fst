@@ -58,11 +58,12 @@ def audio(rows):
     ns = {}
     exec(src.split("def first(")[0].replace('OUT = os.path.expanduser("~/Git/satni-fst/web/audio/w/")', "OUT = ''"), ns)
     load, trim, norm, SR, LEVEL = ns["load"], ns["trim"], ns["norm"], ns["SR"], ns["LEVEL"]
+    trim_fi = ns.get("trim_fi", trim)  # Harrin loppu siihen, kun ääni on hiipunut (ei loppupursketta)
 
-    def write(parts, out):
+    def write(parts, out, fi=False):
         seq = [np.zeros(int(SR * .05))]
         for k, p in enumerate(parts):
-            seq += ([np.zeros(int(SR * .35))] if k else []) + [norm(trim(load(p)))]
+            seq += ([np.zeros(int(SR * .35))] if k else []) + [norm((trim_fi if fi else trim)(load(p)))]
         x = np.concatenate(seq + [np.zeros(int(SR * .1))]).clip(-1, 1)
         sf.write(out, x, SR, format="OGG", subtype="OPUS", compression_level=LEVEL)
         return round(len(x) / SR, 2)
@@ -72,7 +73,7 @@ def audio(rows):
     for i, r in enumerate(rows):
         key = f'{r["h"]}-{r["m"]:02d}'
         fi_wav = harri_file(r["fi"].rstrip("."))
-        r["d"] = [write([fi_wav], f"{W}kello-{i}-fi.ogg"), write([B + f"biret/{key}.wav"], f"{W}kello-{i}-sme.ogg")]
+        r["d"] = [write([fi_wav], f"{W}kello-{i}-fi.ogg", fi=True), write([B + f"biret/{key}.wav"], f"{W}kello-{i}-sme.ogg")]
         write([B + "biret/ok.wav", B + f"biret/{key}.wav"], f"{P}kello-{i}-ok.ogg")
         write([B + "biret/no.wav", B + f"biret/{key}.wav"], f"{P}kello-{i}-no.ogg")
 
