@@ -792,12 +792,77 @@ function sanastoClockPlay(card) {
   a.play().catch(() => setTimeout(() => { if (sanastoClockCard === card) sanastoClockStop(); }, dur * 1000));
 }
 
+// Kellonaika isona (käyttäjä 2026-11-23): kortti tulee nopeasti eteen, osoittimet kiertyvät 12:sta aikaan ja Biret
+// sanoo ajan, sitten kello palaa korttiin itsestään. Uudelleen kuuleminen = uusi napautus. Napautus kesken sulkee.
+// <dialog>: Takaisin-ele ja verkkoversion Takaisin sulkevat sen kuten muutkin ikkunat.
+const CZ_MOVE = 180;  // ms eteen ja takaisin
+function sanastoClockZoom(card) {
+  sanastoStopAudio();
+  sanastoClockStop();
+  const l = sanastot.find((x) => x.id === "kellonajat"), r = l && l.rows[+card.dataset.clock];
+  if (!r) return;
+  let dlg = $("clock-zoom");
+  if (!dlg) {
+    dlg = document.createElement("dialog");
+    dlg.id = "clock-zoom";
+    dlg.className = "clock-zoom";
+    dlg.innerHTML = `<div class="cz-in"><div class="cz-clock"></div><p class="cz-sme" lang="se"></p><p class="cz-ui"></p></div>`;
+    document.body.appendChild(dlg);
+    dlg.addEventListener("click", () => dlg.close());
+    dlg.addEventListener("close", () => { clearTimeout(dlg._t); sanastoClockStop(); dlg.className = "clock-zoom"; });
+  }
+  clearTimeout(dlg._t);
+  dlg.querySelector(".cz-clock").innerHTML = kelloSvg(r.clock[0], r.clock[1], "kello big", true);
+  dlg.querySelector(".cz-sme").textContent = `Diibmu lea ${r.sme[0].w[0]}.`;
+  dlg.querySelector(".cz-ui").textContent = ((r[sanastoLang()] || r.fi || [])[0]) || "";
+  const dur = Math.max(0.8, r.d || 1.6);
+  dlg.style.setProperty("--kdur", `${dur}s`);
+  dlg.className = "clock-zoom pre";  // osoittimet 12:ssa eteen tullessa
+  if (!dlg.open) dlg.showModal();
+  const box = dlg.querySelector(".cz-in"), reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const fly = (toCard) => {  // FLIP: kortin kellon paikka <-> keskellä
+    const from = card.querySelector("svg").getBoundingClientRect(), big = dlg.querySelector(".cz-clock").getBoundingClientRect();
+    box.style.transition = "none";
+    const at = `translate(${from.left + from.width / 2 - (big.left + big.width / 2)}px, ${from.top + from.height / 2 - (big.top + big.height / 2)}px) scale(${from.width / big.width})`;
+    if (!toCard) { box.style.transform = at; box.style.opacity = "0.4"; void box.offsetWidth; }
+    box.style.transition = `transform ${CZ_MOVE}ms cubic-bezier(.2, .8, .2, 1), opacity ${CZ_MOVE}ms`;
+    box.style.transform = toCard ? at : "";
+    box.style.opacity = toCard ? "0" : "1";
+  };
+  const start = () => {
+    if (!dlg.open) return;
+    dlg.className = "clock-zoom playing";
+    let done = false;
+    const finish = () => {
+      if (done || !dlg.open) return;
+      done = true;
+      dlg._t = setTimeout(() => {
+        if (!dlg.open) return;
+        if (reduce) return dlg.close();
+        dlg.classList.add("leaving");
+        fly(true);
+        dlg._t = setTimeout(() => dlg.open && dlg.close(), CZ_MOVE);
+      }, 250);
+    };
+    if (typeof canOpus !== "undefined" && canOpus) {
+      const a = new Audio(`audio/w/kello-${card.dataset.clock}-sme.ogg`);
+      sanastoClockAudio = a;
+      a.addEventListener("ended", finish);
+      a.play().catch(() => {});
+    }
+    dlg._t = setTimeout(finish, (dur + 0.6) * 1000);  // varmistus (ei ääntä tai ended ei tule)
+  };
+  if (reduce) return start();
+  fly(false);
+  dlg._t = setTimeout(start, CZ_MOVE);
+}
+
 function bindSanastot() {
   if (!$("sanasto-view")) return;
   // Kellonaika soittaa Biretin lauseen; Pelaa avaa listan pelitilan (2026-11-23)
   $("sanasto-body").addEventListener("click", (e) => {
     const c = e.target.closest("[data-clock]");
-    if (c) { sanastoClockPlay(c); return; }
+    if (c) { sanastoClockZoom(c); return; }
     const g = e.target.closest("[data-peli]");
     if (g && typeof peliOpenMode === "function") { sanastoStopAudio(); peliOpenMode(g.dataset.peli); }
   });
