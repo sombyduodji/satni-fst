@@ -1,6 +1,6 @@
 /* Service worker: sovellus ja sanakirja toimivat ilman verkkoyhteyttä ensimmäisen käynnin jälkeen.
    Kun tiedostoja päivitetään, kasvata VERSION, jolloin selaimet hakevat uudet tiedostot. */
-const VERSION = "satni-v289";  // v289: kuunnellen valitut äänet (Biret 24, Sunná 31, Máhtte 80, harjoitus 19); v288: Valitse itse kuvanäkymän alariviin; v287: Kellonajat-sanaston suomi samoin; v286: kellon suomi puolesta tunnista (20, 25, 35, 40)
+const VERSION = "satni-v290";  // v290: Máhtten 6 sanaa kierrokselta 2; v289: kuunnellen valitut äänet (Biret 24, Sunná 31, Máhtte 80, harjoitus 19); v288: Valitse itse kuvanäkymän alariviin; v287: Kellonajat-sanaston suomi samoin; v286: kellon suomi puolesta tunnista (20, 25, 35, 40)
 // Sanastojen äänet: tervehdysten keskustelu saameksi; sanat ja lauseet kolmella äänellä hakemistosta (audio/s/index.json)
 const AUDIO = ["audio/tervehdykset-sme.ogg"];
 // Minipelin palauteäänet (Biret): viikonpäivät, vuodenajat ja kuukaudet, oikein ja väärin
