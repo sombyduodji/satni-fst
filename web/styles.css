@@ -2267,3 +2267,22 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .peli-clock-tools:empty { display: none; }
 .peli-clock-tools .peli-clock-again { margin-top: 0; }
 .peli-clock-say.masked { color: var(--muted); letter-spacing: .2em; }
+/* Sanastojen yläpainikkeet ja Kellonajat-lista (2026-11-23) */
+.sanasto-actions { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; margin-bottom: 10px; }
+.sanasto-actions .hj-open { flex: 1 1 auto; margin: 0; }
+.sanasto-play { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border-radius: 14px;
+  border: 1.5px solid color-mix(in srgb, var(--tc, var(--accent)) 45%, var(--border)); background: var(--surface); color: var(--text);
+  font: inherit; font-weight: 700; cursor: pointer; }
+.sanasto-play svg { width: 20px; height: 20px; color: var(--tb, var(--accent)); }
+.clock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.clock-card { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 6px; border-radius: 14px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; text-align: center; }
+.clock-card .kello.small { width: 64px; height: 64px; }
+.cc-sme { font-weight: 700; font-size: 13.5px; line-height: 1.2; }
+.cc-ui { font-size: 12px; color: var(--muted); line-height: 1.2; }
+.clock-card.playing { border-color: var(--tb, var(--accent)); }
+.peli-list-link { text-align: center; margin: 6px 0 0; }
+.sanasto-actions { flex-wrap: nowrap; }
+.sanasto-actions .hj-open { width: auto; min-width: 0; flex: 1 1 0; }
+.sanasto-actions .sanasto-play { flex: 0 0 auto; }
+.cc-sme { hyphens: manual; overflow-wrap: break-word; max-width: 100%; }  /* okta-nuppe-lohkái pehmein tavuviivoin */

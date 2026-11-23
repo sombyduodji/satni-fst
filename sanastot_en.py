@@ -131,6 +131,14 @@ def apply(L, problems):
                 lst["hint"]["en"] = HINTS[lid]
             else:
                 problems.append(f"en: ohje puuttuu listalta {lid}")
+        if lst.get("kind") == "clock":  # Kellonajat: englanniksi digitaalinen aika (3:30)
+            for k, sec in enumerate(lst.get("sections", [])):
+                sec["en"] = ["O'clock", "Half past", "Quarters", "Every five minutes"][k]
+            for r in lst["rows"]:
+                r["en"] = [f"{r['clock'][0]}:{r['clock'][1]:02d}"]
+                for x in r["sme"]:
+                    x["en"] = r["en"][0]
+            continue
         if lst.get("kind") == "numbers":
             for r in lst["rows"]:
                 r["en_ord"] = en_ord(r["n"])
@@ -172,3 +180,12 @@ for _spec in _apu.LISTS:
         for w in ws:
             if w[6]:
                 EXAMPLES[w[6][0]] = w[6][3]
+
+
+# Eläimet ja kellonajat (2026-11-23)
+import elaimet as _ela
+TITLES["elaimet"] = "Animals"
+SECTIONS["elaimet"] = [t[2] for t in _ela.SECTIONS]
+ROWS["elaimet"] = {a[0]: [_ela.ANIMALS_EN[a[0]]] for a in _ela.ANIMALS}
+TITLES["kellonajat"] = "Clock times"
+HINTS["kellonajat"] = "beal njeallje = half past three · from 20 to 40 past you count from the half hour: logi váile beal njeallje = 3:20"

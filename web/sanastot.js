@@ -9,6 +9,9 @@ let sanastoReturnHash = null; // listasta avatun sanakortin osoite: takaisin-ele
 let sanastoCardHash = null;   // sanakortti, jolta palattiin listaan: näkymän sulkeminen vie aloitussivulle, ei kortille
 
 const SANASTO_ICON = {
+  // Kellonajat ja eläimet (2026-11-23): herätyskello (sama kuin harjoituksessa ja pelissä), tassu
+  alarm: '<circle cx="12" cy="13" r="7.5"/><path d="M12 9.2V13l2.6 1.8"/><path d="M4.2 6.2l3-2.4M19.8 6.2l-3-2.4M7.3 19.2l-1.6 1.9M16.7 19.2l1.6 1.9"/>',
+  paw: '<circle cx="7.5" cy="9" r="1.8"/><circle cx="12" cy="6.5" r="1.8"/><circle cx="16.5" cy="9" r="1.8"/><path d="M12 11.5c-3 0-5.5 3.5-5.5 5.6 0 1.6 1.3 2.4 2.7 2.4 1.1 0 1.8-.6 2.8-.6s1.7.6 2.8.6c1.4 0 2.7-.8 2.7-2.4 0-2.1-2.5-5.6-5.5-5.6z"/>',
   // Apusanat (2026-11-22): osoittava käsi, paikkamerkki, tiimalasi, ketju
   pointer: '<path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10"/><path d="M12 10V8.5a1.5 1.5 0 0 1 3 0V11"/><path d="M15 11v-.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-.5a6 6 0 0 1-4.7-2.3L4.5 15.6a1.6 1.6 0 0 1 2.4-2.1L9 15.5V11"/>',
   place: '<path d="M12 21s-6.5-6.1-6.5-11a6.5 6.5 0 0 1 13 0c0 4.9-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
@@ -99,9 +102,9 @@ function hideSanastot() {
 const APU_LISTS = ["tamajase", "taallajatuolla", "aikasanat", "sidesanat"];
 const SANASTO_GROUPS = [
   { id: "perus", color: "yellow", lists: ["luvut", "varit", "kysymykset", "tamajase", "sidesanat"] },
-  { id: "aika", color: "blue", lists: ["viikonpaivat", "kuukaudet", "vuodenajat", "aika", "aikasanat"] },
+  { id: "aika", color: "blue", lists: ["viikonpaivat", "kuukaudet", "vuodenajat", "aika", "kellonajat", "aikasanat"] },
   { id: "ihmiset", color: "red", lists: ["suku", "pronominit", "tervehdykset"] },
-  { id: "luonto", color: "green", lists: ["suunnat", "taallajatuolla", "saa", "porot"] },
+  { id: "luonto", color: "green", lists: ["suunnat", "taallajatuolla", "saa", "porot", "elaimet"] },
 ];
 // Analoginen kello (kellopeli ja kuunteluharjoitus, 2026-11-22): SVG, värit teeman muuttujista, numerot 1–12.
 // Tuntiosoitin liikkuu minuuttien mukana (puoli neljä: osoitin kolmen ja neljän puolivälissä), kuten oikeassa kellossa.
@@ -149,7 +152,7 @@ function renderSanastoGrid() {
   const groups = SANASTO_GROUPS.map((g) => ({ ...g, lists: g.lists.filter((id) => byId[id]) }));
   const rest = all.filter((l) => !listed.has(l.id)).map((l) => l.id);  // uusi lista ilman ryhmää: viimeiseen
   if (rest.length) groups[groups.length - 1].lists.push(...rest);
-  const words = all.reduce((n, l) => n + l.rows.length, 0);
+  const words = all.reduce((n, l) => n + (l.kind === "clock" ? 0 : l.rows.length), 0);  // kellonajat eivät ole sanoja
   const tile = (l, color) => `<button type="button" class="sanasto-tile" data-list="${esc(l.id)}" style="--tc: var(--flag-${color}); --tb: var(--btn-${color})">` +
     `<span class="st-ico">${sanastoSvg(l.icon)}</span><span class="st-txt"><span class="st-title">${esc(l.title[lang])}</span>` +
     `<span class="st-prev" lang="${sanastoSami() === "smn" ? "smn" : "se"}">${esc(sanastoPreview(l))}</span></span><span class="st-n">${l.rows.length}${sanastoHasAudio(l) ? SANASTO_AUDIO_MARK : ""}</span></button>`;
@@ -275,7 +278,7 @@ function renderSanasto(listId) {
   // Ohjelaatikko: valmiin äänilistan painike (suomi + saame) ja esimerkit samassa laatikossa
   const band = l.audio && canOpus ? `<div class="list-band">${playBtn(l.audio, t("sanastoListenAll"))}<span>${esc(t("sanastoListenHint"))}</span></div>` : "";
   // Kuunteluharjoitus (harjoitus.js): painike ohjelaatikon yläpuolelle
-  let html = (typeof harjListButton === "function" ? harjListButton(listId) : "") + (l.hint || band ? `<div class="sanasto-hint">${band}${l.hint ? l.hint[lang].split(" · ").map(hintLine).join("") : ""}</div>` : "");
+  let html = sanastoActions(listId) + (l.hint || band ? `<div class="sanasto-hint">${band}${l.hint ? l.hint[lang].split(" · ").map(hintLine).join("") : ""}</div>` : "");
   if (l.kind === "numbers") {
     // Taulukko: numero | perusluku | järjestysluku; solussa sana ja sen alla kaiutin ja sanakortti, joten jokainen rivi on
     // samanmuotoinen. Suomen järjestyslukua ei toisteta riveillä: esimerkki on sarakeotsikossa (järjestysluku (ensimmäinen))
@@ -471,6 +474,15 @@ function renderSanasto(listId) {
         `<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.5L12 6l2.5-1.5M9.5 19.5L12 18l2.5 1.5"/></svg>${esc(secs[1][lang] || "")}</h3>` +
         `<div class="snow-grid">${l.rows.filter((r) => r.sec === 1).map((r) => `<div class="snow-w"><span class="it-sme">${tapX(r.sme[0], r.sme[0].w[0], true)}</span>` +
           `<span class="it-fi">${esc(uiOf(r)[0] || "")}</span></div>`).join("")}</div></section>`;
+      return finish();
+    }
+    // Kellonajat (2026-11-23): kellot ruudukkona osioittain; napautus soittaa Biretin lauseen "Diibmu lea …"
+    if (l.kind === "clock") {
+      const secs = l.sections || [{}];
+      html += secs.map((sec, i) => `<section class="sl-sec">${sec[lang] ? `<h3>${esc(sec[lang])}</h3>` : ""}<div class="clock-grid">` +
+        l.rows.filter((r) => (r.sec || 0) === i).map((r) => `<button type="button" class="clock-card" data-clock="${r.ci}" aria-label="${esc(r.sme[0].w[0])}">` +
+          `${kelloSvg(r.clock[0], r.clock[1], "kello small")}<span class="cc-sme" lang="se">${esc(r.sme[0].w[0]).replace(/nuppe/g, "\u00adnuppe\u00ad")}</span>` +
+          `<span class="cc-ui">${esc(uiOf(r)[0] || "")}</span></button>`).join("") + `</div></section>`).join("");
       return finish();
     }
     // Kysymyssanat: kortti, jossa kysymyssana isona ja esimerkkikysymys käännöksineen
@@ -729,6 +741,17 @@ function sanastoSpeakAll() {
   sanastoPlayTts(words.join(", "), $("sanasto-speak"));
 }
 
+// Listan yläreunan painikkeet (2026-11-23): Harjoittele kuunnellen ja Pelaa (jos listalle on pelitila)
+const SANASTO_GAME = { varit: "colours", kysymykset: "questions", viikonpaivat: "time", kuukaudet: "time", vuodenajat: "time",
+  luvut: "ordinals", elaimet: "animals", kellonajat: "clock" };
+function sanastoActions(listId) {
+  const harj = typeof harjListButton === "function" ? harjListButton(listId === "kellonajat" ? "kello" : listId) : "";
+  const mode = SANASTO_GAME[listId];
+  const play = mode && (sanastoSami() === "sme" || !["clock"].includes(mode)) && typeof peliOpenMode === "function"
+    ? `<button type="button" class="sanasto-play" data-peli="${mode}">${typeof PELI_ICON !== "undefined" ? PELI_ICON : ""}<span>${esc(t("sanastoPlay"))}</span></button>` : "";
+  return harj || play ? `<div class="sanasto-actions">${harj}${play}</div>` : "";
+}
+
 function sanastoOpenCard(id, word) {
   sanastoStopAudio();
   closeFormPop();
@@ -741,6 +764,13 @@ function sanastoOpenCard(id, word) {
 
 function bindSanastot() {
   if (!$("sanasto-view")) return;
+  // Kellonaika soittaa Biretin lauseen; Pelaa avaa listan pelitilan (2026-11-23)
+  $("sanasto-body").addEventListener("click", (e) => {
+    const c = e.target.closest("[data-clock]");
+    if (c) { sanastoStopAudio(); if (typeof canOpus !== "undefined" && canOpus) sanastoPlayAudio(`audio/w/kello-${c.dataset.clock}-sme.ogg`, c); return; }
+    const g = e.target.closest("[data-peli]");
+    if (g && typeof peliOpenMode === "function") { sanastoStopAudio(); peliOpenMode(g.dataset.peli); }
+  });
   $("sanasto-btn").onclick = openSanastot;
   $("sanasto-close").onclick = () => { sanastoStopAudio(); closeFormPop(); hideSanastot(); };
   $("sanasto-back").onclick = () => { sanastoStopAudio(); sanastoAuki = null; renderSanastoGrid(); };

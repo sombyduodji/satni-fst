@@ -375,6 +375,20 @@ def lists():
         e = db.execute("SELECT id FROM dictionary WHERE lower(sme_lemma) = ?", (lemma,)).fetchone()
         grows.append(row([fi], [nb], [{"w": [s], "id": e[0] if e else None, "fi": fi, "nb": nb}]))
     L.append({"id": "tervehdykset", "icon": "greet", "title": {"fi": "Tervehdykset", "nb": "Hilsener"}, "rows": grows})
+    # Eläimet (elaimet.py, käyttäjä 2026-11-23): samat sanat kuin minipelissä, nyt myös sanastona
+    import elaimet
+    L.append({"id": "elaimet", "icon": "paw", "title": {"fi": "Eläimet", "nb": "Dyr"},
+              "rows": [row([fi], [nb], [sme(s_, "N", [], fi=fi, nb=nb)]) for s_, fi, nb in elaimet.ANIMALS]})
+    # Kellonajat (kello.py ja kello.json, käyttäjä 2026-11-23): kello, saame ja suomi; norjaksi ja englanniksi
+    # digitaalinen aika. Napautus soittaa Biretin lauseen (audio/w/kello-<i>-sme.ogg)
+    clock = json.load(open(os.path.join(SCRIPT_DIR, "kello.json"), encoding="utf-8"))["rows"]
+    L.append({"id": "kellonajat", "icon": "alarm", "kind": "clock", "title": {"fi": "Kellonajat", "nb": "Klokkeslett"},
+              "hint": {"fi": "beal njeallje = puoli neljä · 20–40 yli lasketaan puolesta tunnista: logi váile beal njeallje = kello 3.20",
+                       "nb": "beal njeallje = halv fire · fra 20 til 40 over teller man fra halv: logi váile beal njeallje = 3.20"},
+              "rows": [dict(row([c["fiShort"]], [f'{c["h"]}.{c["m"]:02d}'], [{"w": [c["sme"]], "id": None, "fi": c["fiShort"], "nb": ""}]),
+                            clock=[c["h"], c["m"]], ci=i, sec=c["level"]) for i, c in enumerate(clock)],
+              "sections": [{"fi": "Tasan", "nb": "Hel time"}, {"fi": "Puoli", "nb": "Halv"}, {"fi": "Vartit", "nb": "Kvarter"},
+                           {"fi": "Viiden minuutin välein", "nb": "Hvert femte minutt"}]})
     # Apusanat (apusanat.py, käyttäjä 2026-11-22): neljä listaa, esimerkit sanakirjoista
     import apusanat
     for spec in apusanat.LISTS:
@@ -424,6 +438,9 @@ SECTIONS = {
                      ("Juhlapäivä", "Merkedag", ["Lihkku beivviin!"])],
 }
 
+# Eläinten osiot (elaimet.py)
+import elaimet as _ela
+SECTIONS["elaimet"] = [(t[0], t[1], t[3]) for t in _ela.SECTIONS]
 # Apusanojen osiot samasta tiedostosta (apusanat.py)
 import apusanat as _apu
 for _spec in _apu.LISTS:
@@ -496,7 +513,7 @@ def add_inari(L):
         return
     total = 0
     for lst in L:
-        if lst.get("kind") == "numbers":
+        if lst.get("kind") in ("numbers", "clock"):
             continue
         got = {}
         for r in lst["rows"]:

@@ -19,7 +19,7 @@ const PELI_TEXTS = {
       ordinals: ["Järjestysluvut", "1.–100."], time: ["Viikonpäivät, vuodenajat ja kuukaudet", "Biret sanoo oikean vastauksen"],
       colours: ["Värit", "9 väriä"], questions: ["Kysymyssanat", "Biret sanoo oikean vastauksen"], animals: ["Eläimet", "23 eläintä"],
       clock: ["Kellonajat", "Tasan, puoli ja vartit"], clockAll: ["Kellonajat: kaikki", "Viiden minuutin välein, 144 aikaa"] },
-    clockListen: "Kuuntele ja valitse kello", clockAsk: "Paljonko kello on?", clockAgain: "Kuuntele uudelleen", clockText: "Näytä teksti",
+    clockListen: "Kuuntele ja valitse kello", clockAsk: "Paljonko kello on?", clockAgain: "Kuuntele uudelleen", clockText: "Näytä teksti", seeList: "Katso sanasto",
     groups: { words: "Sanat", cats: "Aiheet" }, groupSub: { words: "Sanakirjan sanoja kahdella tasolla", cats: "Lyhyitä teemapelejä" },
     rules: [["4 vaihtoehtoa"], ["oikein", "+1"], ["väärä vastaus päättää pelin"]],
     rulesWrite: [["oikea sana", "+3"], ["vihje", "−1"], ["tarkkeet puuttuvat", "−1"], ["väärä sana päättää pelin"]],
@@ -45,7 +45,7 @@ const PELI_TEXTS = {
       ordinals: ["Ordenstall", "1.–100."], time: ["Ukedager, årstider og måneder", "Biret sier riktig svar"],
       colours: ["Farger", "9 farger"], questions: ["Spørreord", "Biret sier riktig svar"], animals: ["Dyr", "23 dyr"],
       clock: ["Klokkeslett", "Hel, halv og kvarter"], clockAll: ["Klokkeslett: alle", "Hvert femte minutt, 144 tider"] },
-    clockListen: "Lytt og velg klokka", clockAsk: "Hva er klokka?", clockAgain: "Lytt igjen", clockText: "Vis teksten",
+    clockListen: "Lytt og velg klokka", clockAsk: "Hva er klokka?", clockAgain: "Lytt igjen", clockText: "Vis teksten", seeList: "Se ordlisten",
     groups: { words: "Ord", cats: "Emner" }, groupSub: { words: "Ord fra ordboka på to nivåer", cats: "Korte temaspill" },
     rules: [["4 alternativer"], ["riktig", "+1"], ["feil svar avslutter spillet"]],
     rulesWrite: [["riktig ord", "+3"], ["hint", "−1"], ["manglende tegn", "−1"], ["feil ord avslutter spillet"]],
@@ -71,7 +71,7 @@ const PELI_TEXTS = {
       ordinals: ["Ordinal numbers", "1st–100th"], time: ["Days, seasons and months", "Biret says the right answer"],
       colours: ["Colours", "9 colours"], questions: ["Question words", "Biret says the right answer"], animals: ["Animals", "23 animals"],
       clock: ["Clock times", "O'clock, half and quarters"], clockAll: ["Clock times: all", "Every five minutes, 144 times"] },
-    clockListen: "Listen and pick the clock", clockAsk: "What time is it?", clockAgain: "Listen again", clockText: "Show text",
+    clockListen: "Listen and pick the clock", clockAsk: "What time is it?", clockAgain: "Listen again", clockText: "Show text", seeList: "See the word list",
     groups: { words: "Words", cats: "Topics" }, groupSub: { words: "Dictionary words on two levels", cats: "Short topic games" },
     rules: [["4 options"], ["right", "+1"], ["a wrong answer ends the game"]],
     rulesWrite: [["right word", "+3"], ["hint", "−1"], ["missing diacritics", "−1"], ["a wrong word ends the game"]],
@@ -452,6 +452,7 @@ function renderPeliOver(chosen) {
     `<div class="peli-actions"><button type="button" class="peli-primary" data-act="again" data-mode="${mode}">${esc(T.again)}</button>` +
     `<div class="peli-row"><button type="button" class="peli-secondary" data-act="menu">${esc(T.menu)}</button>` +
     `<button type="button" class="peli-secondary" data-act="home">${esc(T.home)}</button></div></div>` +
+    (PELI_LIST[mode] ? `<p class="peli-list-link"><button type="button" class="link-btn" data-act="open-list" data-list="${PELI_LIST[mode]}">📖 ${esc(T.seeList)}</button></p>` : "") +
     `<p class="peli-report"><a href="#" class="report-link peli-report-link"><span aria-hidden="true">⚑</span> ${esc(T.report)}</a></p></div>`;
   $("peli-body").querySelector(":scope > .peli-report")?.remove();
   document.querySelector(".pw-in")?.blur();  // näppäimistö alas, tulokset näkyviin
@@ -724,6 +725,15 @@ function peliOrientation() {
   try { if (on) screen.orientation?.lock?.("portrait").catch(() => {}); else screen.orientation?.unlock?.(); } catch (e) { /* ei tukea */ }
 }
 if ($("peli-view")) new MutationObserver(peliOrientation).observe($("peli-view"), { attributes: true, attributeFilter: ["hidden"] });
+// Sanastojen Pelaa-painike (2026-11-23): peli auki suoraan listan tilaan (valittu pelitapa); jos tila ei ole käytössä
+// valitulla saamen kielellä (kello inariksi), näkyy valikko
+function peliOpenMode(mode) {
+  openPeli();
+  loadPeli().then(() => { if (peliModesFor(peliMenuSami()).some((m) => m.id === mode)) peliStart(mode); }).catch(() => {});
+}
+// Pelitilan sanasto (tulossivun linkki): pelitila -> Sanastojen lista
+const PELI_LIST = { colours: "varit", questions: "kysymykset", time: "viikonpaivat", ordinals: "luvut", animals: "elaimet",
+  clock: "kellonajat", clockAll: "kellonajat" };
 function hidePeli() { peliStopAudio(); const was = !$("peli-view").hidden; $("peli-view").hidden = true; if (was) overlayClosed(); }
 // Takaisin-ele: ensin pelistä valikkoon (peli jää jatkettavaksi), sitten näkymä kiinni
 function closePeli() {
@@ -837,6 +847,11 @@ function bindPeli() {
     else if (act === "again") peliStart(e.target.closest("[data-act]").dataset.mode);
     else if (act === "menu") renderPeliMenu();
     else if (act === "clock-again") peliClockSay(peliRun?.q);
+    else if (act === "open-list") {
+      const id = e.target.closest("[data-act]").dataset.list;
+      hidePeli();
+      if (typeof openSanastot === "function") { sanastoAuki = id; openSanastot(); }
+    }
     else if (act === "clock-text" && peliRun?.q?.listen) {
       peliRun.q.showText = true;
       peliSave();
