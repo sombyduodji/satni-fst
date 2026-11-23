@@ -3121,7 +3121,9 @@ function renderSettingsSummary() {
   const langs = [...activeExtraLangs().map((l) => capitalize(langName(l))), ...(settings.skolt ? [capitalize(langName("sms"))] : [])];
   // Kokeelliset käännökset ovat Käännöskielet-sivulla (2026-11-21): päällä olevien määrä yhteenvetoon
   const expOn = [...({ fi: ["tableTr", "pivotFin"], nb: ["tableTr", "apertium"], en: ["engMt"] }[settings.uiLang] || []),
-    ...(activeExtraLangs().includes("spa") ? ["spaMt"] : []), "deuMt"].filter((k) => settings.exp[k]).length;
+    ...(activeExtraLangs().includes("spa") ? ["spaMt"] : []), "deuMt",
+    // Englannin konekäännökset näkyvät ja vaikuttavat myös, kun englanti on muissa kielissä (exp-engmt-row)
+    ...(settings.uiLang !== "en" && activeExtraLangs().includes("eng") ? ["engMt"] : [])].filter((k) => settings.exp[k]).length;
   set("sum-langs", (langs.length ? langs.join(", ") : t("sumNone")) + (expOn ? ` · ${t("experimental")}: ${expOn}` : ""));
   const fi = settings.uiLang === "fi";
   const tools = [settings.game ? t("minipeli") : "", t("sanastot"), settings.exp.ocr && window.SatniOcr ? t("expOcr") : "",

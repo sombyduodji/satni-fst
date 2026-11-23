@@ -26,11 +26,12 @@ import sqlite3
 import os
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DB = sqlite3.connect(os.path.join(SCRIPT_DIR, "satni.db"))
-OLD = json.load(open("/home/user/.cache/satni-fst-build/espanja/mt/all_results.json"))
-C = "/home/user/.cache/satni-fst-build/escal/"
+HOME = os.path.expanduser("~")
+OLD = json.load(open(HOME + "/.cache/satni-fst-build/espanja/mt/all_results.json"))
+C = HOME + "/.cache/satni-fst-build/escal/"
 SME = json.load(open(C + "mt_sme_es.json"))
 MTEN = json.load(open(C + "mt_en_es.json"))
-E = "/home/user/Git/sami-data-candidates/"
+E = HOME + "/Git/sami-data-candidates/"
 ART = re.compile(r"^(el|la|los|las|un|una|lo|a)\s+")
 
 

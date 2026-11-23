@@ -2263,3 +2263,7 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .q-form { display: inline-flex; flex-direction: column; }
 .q-form .sw { font-size: 14.5px; font-weight: 600; }
 .q-form-fi { font-size: 11.5px; color: var(--muted); }
+.peli-clock-tools { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+.peli-clock-tools:empty { display: none; }
+.peli-clock-tools .peli-clock-again { margin-top: 0; }
+.peli-clock-say.masked { color: var(--muted); letter-spacing: .2em; }

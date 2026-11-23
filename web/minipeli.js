@@ -19,7 +19,7 @@ const PELI_TEXTS = {
       ordinals: ["Järjestysluvut", "1.–100."], time: ["Viikonpäivät, vuodenajat ja kuukaudet", "Biret sanoo oikean vastauksen"],
       colours: ["Värit", "9 väriä"], questions: ["Kysymyssanat", "Biret sanoo oikean vastauksen"], animals: ["Eläimet", "23 eläintä"],
       clock: ["Kellonajat", "Tasan, puoli ja vartit"], clockAll: ["Kellonajat: kaikki", "Viiden minuutin välein, 144 aikaa"] },
-    clockListen: "Kuuntele ja valitse kello", clockAsk: "Paljonko kello on?", clockAgain: "Kuuntele uudelleen",
+    clockListen: "Kuuntele ja valitse kello", clockAsk: "Paljonko kello on?", clockAgain: "Kuuntele uudelleen", clockText: "Näytä teksti",
     groups: { words: "Sanat", cats: "Aiheet" }, groupSub: { words: "Sanakirjan sanoja kahdella tasolla", cats: "Lyhyitä teemapelejä" },
     rules: [["4 vaihtoehtoa"], ["oikein", "+1"], ["väärä vastaus päättää pelin"]],
     rulesWrite: [["oikea sana", "+3"], ["vihje", "−1"], ["tarkkeet puuttuvat", "−1"], ["väärä sana päättää pelin"]],
@@ -45,7 +45,7 @@ const PELI_TEXTS = {
       ordinals: ["Ordenstall", "1.–100."], time: ["Ukedager, årstider og måneder", "Biret sier riktig svar"],
       colours: ["Farger", "9 farger"], questions: ["Spørreord", "Biret sier riktig svar"], animals: ["Dyr", "23 dyr"],
       clock: ["Klokkeslett", "Hel, halv og kvarter"], clockAll: ["Klokkeslett: alle", "Hvert femte minutt, 144 tider"] },
-    clockListen: "Lytt og velg klokka", clockAsk: "Hva er klokka?", clockAgain: "Lytt igjen",
+    clockListen: "Lytt og velg klokka", clockAsk: "Hva er klokka?", clockAgain: "Lytt igjen", clockText: "Vis teksten",
     groups: { words: "Ord", cats: "Emner" }, groupSub: { words: "Ord fra ordboka på to nivåer", cats: "Korte temaspill" },
     rules: [["4 alternativer"], ["riktig", "+1"], ["feil svar avslutter spillet"]],
     rulesWrite: [["riktig ord", "+3"], ["hint", "−1"], ["manglende tegn", "−1"], ["feil ord avslutter spillet"]],
@@ -71,7 +71,7 @@ const PELI_TEXTS = {
       ordinals: ["Ordinal numbers", "1st–100th"], time: ["Days, seasons and months", "Biret says the right answer"],
       colours: ["Colours", "9 colours"], questions: ["Question words", "Biret says the right answer"], animals: ["Animals", "23 animals"],
       clock: ["Clock times", "O'clock, half and quarters"], clockAll: ["Clock times: all", "Every five minutes, 144 times"] },
-    clockListen: "Listen and pick the clock", clockAsk: "What time is it?", clockAgain: "Listen again",
+    clockListen: "Listen and pick the clock", clockAsk: "What time is it?", clockAgain: "Listen again", clockText: "Show text",
     groups: { words: "Words", cats: "Topics" }, groupSub: { words: "Dictionary words on two levels", cats: "Short topic games" },
     rules: [["4 options"], ["right", "+1"], ["a wrong answer ends the game"]],
     rulesWrite: [["right word", "+3"], ["hint", "−1"], ["missing diacritics", "−1"], ["a wrong word ends the game"]],
@@ -373,8 +373,14 @@ function renderPeliQuestion() {
 }
 // Kellokysymyksen yläosa: Biretin kysymys saameksi ja kello, tai kuuntelussa ohje, saamen aika ja Kuuntele uudelleen
 function peliClockStage(q, T) {
-  if (q.listen) return `<p class="peli-q">${esc(T.clockListen)}</p><p class="peli-word peli-clock-say" lang="se">${esc(q.prompt)}</p>` +
-    `<button type="button" class="peli-secondary peli-clock-again" data-act="clock-again">🔊 ${esc(T.clockAgain)}</button>`;
+  // Kuuntelu (käyttäjä 2026-11-23): äänet päällä aika on piilossa, kunnes käyttäjä pyytää tekstin (muuten tehtävän voi
+  // ratkaista lukemalla); mykistettynä tai ilman Opus-tukea teksti näkyy heti
+  if (q.listen) {
+    const show = q.showText || settings.gameMute || !canOpus;
+    return `<p class="peli-q">${esc(T.clockListen)}</p><p class="peli-word peli-clock-say${show ? "" : " masked"}" lang="se">${show ? esc(q.prompt) : "• • •"}</p>` +
+      `<div class="peli-clock-tools">${show ? "" : `<button type="button" class="peli-secondary peli-clock-again" data-act="clock-again">🔊 ${esc(T.clockAgain)}</button>`}` +
+      `${show ? "" : `<button type="button" class="peli-secondary peli-clock-text" data-act="clock-text">👁 ${esc(T.clockText)}</button>`}</div>`;
+  }
   return `<p class="peli-q"><span lang="se">Ollugo diibmu lea?</span> <small>${esc(T.clockAsk)}</small></p>` +
     `<div class="peli-clock">${kelloSvg(q.clock[0], q.clock[1])}</div>`;
 }
@@ -709,6 +715,15 @@ function openPeli() {
     renderPeliMenu();
   }).catch(() => { $("peli-body").textContent = t("loadFailed", "minipeli.json"); });
 }
+// Peli pystyasennossa (käyttäjä 2026-11-23): lukitus näkymän avautuessa ja vapautus sulkeutuessa, kulki se mitä
+// reittiä tahansa (Sulje, Takaisin, Koti, toinen näkymä). Android: SatniApp.lockPortrait; asennettu verkkosovellus:
+// Screen Orientation API (toimii vain koko näytön tilassa, muuten ohitetaan).
+function peliOrientation() {
+  const on = !$("peli-view").hidden;
+  try { if (window.SatniApp && window.SatniApp.lockPortrait) return window.SatniApp.lockPortrait(on); } catch (e) { /* ei siltaa */ }
+  try { if (on) screen.orientation?.lock?.("portrait").catch(() => {}); else screen.orientation?.unlock?.(); } catch (e) { /* ei tukea */ }
+}
+if ($("peli-view")) new MutationObserver(peliOrientation).observe($("peli-view"), { attributes: true, attributeFilter: ["hidden"] });
 function hidePeli() { peliStopAudio(); const was = !$("peli-view").hidden; $("peli-view").hidden = true; if (was) overlayClosed(); }
 // Takaisin-ele: ensin pelistä valikkoon (peli jää jatkettavaksi), sitten näkymä kiinni
 function closePeli() {
@@ -822,6 +837,13 @@ function bindPeli() {
     else if (act === "again") peliStart(e.target.closest("[data-act]").dataset.mode);
     else if (act === "menu") renderPeliMenu();
     else if (act === "clock-again") peliClockSay(peliRun?.q);
+    else if (act === "clock-text" && peliRun?.q?.listen) {
+      peliRun.q.showText = true;
+      peliSave();
+      const say = document.querySelector(".peli-clock-say");
+      if (say) { say.textContent = peliRun.q.prompt; say.classList.remove("masked"); }
+      e.target.closest("[data-act]").remove();
+    }
     else if (act === "hint") peliHint(e.target.closest("[data-act]"));
     else if (act === "listen") peliSayWord(peliRun?.q?.sme, e.target.closest("[data-act]"));
     else if (act === "keys-hide" || act === "keys-show") {

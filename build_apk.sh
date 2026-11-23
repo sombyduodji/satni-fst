@@ -58,8 +58,21 @@ docker run --rm \
     gradle --quiet --no-daemon --project-cache-dir /work/project-cache \
         -PsatniVersionName="$VERSION" -PsatniVersionCode="$VERSION_CODE" ${ABIS:+-PsatniAbis=$ABIS} "$TASK" || exit 1
 
-# DEV ja BETA allekirjoitetaan julkaisuavaimella (2026-11-22): tarkistetaan, ettei APK jäänyt allekirjoittamatta
+# Kaikki APK:t allekirjoitetaan julkaisuavaimella (DEV ja BETA 2026-11-22). Koventaminen (yötesti 23.11.): tarkistetaan
+# allekirjoitus (apksigner verify, varmenteen SHA-256 = julkaisuavain) ja ettei APK ole debuggable; muuten koonti
+# keskeytyy eikä APK:ta kopioida dist/:iin.
+RELEASE_CERT_SHA256=727296764281e20146f999a54636265a799ef4c4a21f3f23f7320c4620b1587d
+BUILT="$CACHE_DIR/build/app/outputs/apk/$APK"
+CHECK=$(docker run --rm -v "$(dirname "$BUILT")":/apk:ro satni-fst-android-build sh -c \
+    "BT=/opt/android-sdk/build-tools/35.0.0; \$BT/apksigner verify --print-certs /apk/$(basename "$BUILT") && \$BT/aapt dump badging /apk/$(basename "$BUILT") | grep -c application-debuggable" 2>&1)
+if ! echo "$CHECK" | grep -qi "certificate SHA-256 digest: $RELEASE_CERT_SHA256"; then
+    echo "VIRHE: APK ei ole allekirjoitettu julkaisuavaimella:"; echo "$CHECK" | head -5; exit 1
+fi
+if [ "$(echo "$CHECK" | tail -1)" != "0" ]; then
+    echo "VIRHE: APK on debuggable (application-debuggable)"; exit 1
+fi
+echo "allekirjoitus: julkaisuavain OK, ei debuggable"
 mkdir -p "$(dirname "$OUT")"
-cp "$CACHE_DIR/build/app/outputs/apk/$APK" "$OUT" || exit 1
+cp "$BUILT" "$OUT" || exit 1
 echo "$OUT: versio $VERSION ($VERSION_CODE)"
 ls -la "$OUT"

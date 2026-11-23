@@ -89,6 +89,8 @@ public class MainActivity extends Activity {
         web.setWebViewClient(new Client());
         // Vain sovelluksen omat sivut latautuvat WebViewiin (ulkoiset linkit avataan muissa sovelluksissa)
         ocr = new Ocr(this, web);
+        // DEV: WebView DevTools puhelintesteihin (APK ei ole debuggable, joten ei automaattisesti); BETA ja julkaisu ilman
+        if (BuildConfig.WEB_DEBUG) WebView.setWebContentsDebuggingEnabled(true);
         web.addJavascriptInterface(ocr, "SatniOcr");
         web.addJavascriptInterface(new AppBridge(), "SatniApp");
         // Kuunteluharjoituksen tila sivulle (DrillService soittaa myös näytön ollessa pois päältä)
@@ -390,6 +392,14 @@ public class MainActivity extends Activity {
         @android.webkit.JavascriptInterface
         public void drillStart(String config) {
             DrillService.start(MainActivity.this, config);
+        }
+
+        /** Peli pystyasennossa (käyttäjä 2026-11-23): peli on suunniteltu pystyyn, vaakatasossa vastaukset jäivät näytön
+         *  alle. Lukitus kun pelinäkymä avautuu, vapautus kun se sulkeutuu (web/minipeli.js tarkkailee näkymää). */
+        @android.webkit.JavascriptInterface
+        public void lockPortrait(boolean on) {
+            runOnUiThread(() -> setRequestedOrientation(on ? android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    : android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED));
         }
 
         /** Natiivi soitin vain Android 10+:lla: MediaPlayer soittaa Ogg Opus -tiedostoja vasta siitä alkaen. Vanhemmilla

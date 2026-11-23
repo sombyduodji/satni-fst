@@ -149,10 +149,12 @@ def suggestions(src, have_finnish=False):
     rows = []
     for w, inari, nob in raw.values():
         if inari:
-            kept = [f for f, _ in inari.most_common() if ok(f, w["pos"])][:MAX_INARI]
+            # Tasapelissä aakkosjärjestys: ennen joukkojen satunnainen järjestys valitsi eri ehdotukset eri ajoilla
+            # (44 sanaa vaihteli, yötesti/vienti 2026-11-23)
+            kept = [f for f, _ in sorted(inari.items(), key=lambda kv: (-kv[1], kv[0])) if ok(f, w["pos"])][:MAX_INARI]
             rows += [(w["id"], f, "smn") for f in kept]
         else:
-            ranked = nob.most_common()
+            ranked = sorted(nob.items(), key=lambda kv: (-kv[1], kv[0]))
             fin, count = ranked[0]
             if (count >= 2 or len(ranked) == 1) and (len(ranked) == 1 or count > ranked[1][1]) and ok(fin, w["pos"]):
                 rows.append((w["id"], fin, "nob"))
