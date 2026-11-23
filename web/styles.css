@@ -906,7 +906,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .ocr-status:empty { display: none; }
 .ocr-view .ocr-offer { max-width: 560px; margin: 0; background: var(--ov); color: #e5e9f0; }
 .ocr-view .ocr-offer button:not(.primary) { background: transparent; color: #e5e9f0; }
-.ocr-bottom { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center;
+.ocr-bottom { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) auto repeat(2, minmax(0, 1fr)); column-gap: 6px; align-items: start;
   padding: 30px 18px max(14px, env(safe-area-inset-bottom)); background: linear-gradient(rgba(11, 13, 16, 0), rgba(11, 13, 16, .9) 50%); }
 .ocr-tool { display: flex; flex-direction: column; align-items: center; gap: 5px; border: 0; background: none; color: #e5e9f0; font: inherit;
   font-size: 13px; font-weight: 500; cursor: pointer; padding: 0; min-width: 0; }
@@ -915,6 +915,12 @@ dialog::backdrop { background: rgba(0, 0, 0, .4); }
 .ocr-tool > span { width: 48px; height: 48px; border-radius: 12px; background: var(--ov); display: grid; place-items: center; }
 .ocr-tool svg { width: 22px; height: 22px; }
 .ocr-tool b { font-weight: 500; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Kuvanäkymän alarivi 2026-11-23: Valitse kuva (2 saraketta) · laukaisin · Poimi lause · Valitse itse; nimet saavat rivittyä */
+#ocr-gallery { grid-column: 1 / span 2; }
+.ocr-bottom .ocr-shutter { grid-column: 3; align-self: start; margin-top: -11px; }
+#ocr-pick, #ocr-selfsel { justify-self: center; }
+.ocr-bottom .ocr-tool b { white-space: normal; text-align: center; line-height: 1.2; }
+.ocr-view.empty #ocr-pick, .ocr-view.empty #ocr-selfsel { visibility: hidden; }
 .ocr-shutter { justify-self: center; width: 70px; height: 70px; border-radius: 50%; border: 4px solid #e5e9f0; background: none; padding: 4px; cursor: pointer; }
 .ocr-shutter span { display: block; width: 100%; height: 100%; border-radius: 50%; background: var(--accent, #3b82f6); }
 .ocr-shutter:active span { transform: scale(.9); }

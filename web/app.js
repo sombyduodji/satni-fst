@@ -4447,7 +4447,8 @@ function applyOcrLook() {
   // Inari poistettu käytöstä asetuksista: kuvan kieli takaisin pohjoissaameksi (vain kun tietokanta on ladattu)
   if (db && isMinor(settings.ocrFrom) && !minorOn(settings.ocrFrom)) { settings.ocrFrom = "sme"; saveSettings(); }
   if (settings.lang === "eng" && settings.ocrFrom === "ui") { settings.ocrFrom = "sme"; saveSettings(); }
-  $("ocr-pick").style.visibility = settings.lang === "eng" ? "hidden" : "";
+  // Lauseen kääntäminen vain suomeksi ja norjaksi: Poimi lause ja Valitse itse piiloon englanniksi
+  $("ocr-pick").style.visibility = $("ocr-selfsel").style.visibility = settings.lang === "eng" ? "hidden" : "";
   // Yläreunan kielipainike: Pohjoissaame → Suomi ▾ (avaa ⋯-paneelin)
   const arrow = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`;
   const chev = `<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
@@ -6197,6 +6198,8 @@ function bindOcr() {
   }).observe($("ocr-view"), { attributes: true, attributeFilter: ["hidden", "class"] });
   $("ocr-close").onclick = () => { if (ocr) pickOcrWord(null); $("ocr-settings").hidden = true; $("ocr-view").hidden = true; };
   $("ocr-pick").onclick = (e) => { e.stopPropagation(); pickSentence(); };
+  // Valitse itse suoraan kuvasta (käyttäjä 2026-11-23: ennen vain Poimi lause -> lausenäkymä -> Valitse sanat itse)
+  $("ocr-selfsel").onclick = (e) => { e.stopPropagation(); if (settings.lang !== "eng") startWordSelect(); };
   $("ocr-sel-cancel").onclick = () => endWordSelect(false);
   $("ocr-sel-done").onclick = () => endWordSelect(true);
   // Lausenäkymästä takaisin kuvaan valitsemaan: nykyisen lauseen sanat valmiiksi valittuina
