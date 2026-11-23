@@ -19,7 +19,16 @@ if (location.hostname === "appassets.androidplatform.net") document.documentElem
     if (!h || !p) return;
     shown = true;
     h.removeAttribute("data-i18n"); p.removeAttribute("data-i18n");
-    var lang = document.documentElement.lang, nb = lang === "nb", en = lang === "en", app = location.hostname === "appassets.androidplatform.net";
+    var lang = document.documentElement.lang;
+    // Ensimmäinen käynnistys (kieltä ei vielä valittu): laitteen kieli, ettei englannin- tai norjankielinen puhelin saa
+    // ilmoitusta suomeksi (yötesti 2026-11-24, Android 9 -emulaattori en-US); suomi ja saame kuten ennen suomeksi
+    try {
+      if (!JSON.parse(localStorage.getItem("satni-settings") || "{}").uiLang) {
+        var nl = String(navigator.language || "").toLowerCase();
+        lang = /^(nb|nn|no)\b/.test(nl) ? "nb" : /^(fi|se|smn|sms)\b/.test(nl) || !nl ? "fi" : "en";
+      }
+    } catch (e) {}
+    var nb = lang === "nb", en = lang === "en", app = location.hostname === "appassets.androidplatform.net";
     h.textContent = nb ? "Nettleseren er for gammel" : en ? "Your browser is too old" : "Selain on liian vanha";
     p.textContent = nb
       ? (app ? "Oppdater «Android System WebView» i Google Play og åpne appen på nytt." : "Oppdater nettleseren til nyeste versjon og åpne siden på nytt.")
