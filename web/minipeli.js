@@ -302,6 +302,7 @@ function peliModeSub(id, sami) {
 }
 
 function renderPeliMenu() {
+  if (!peli) return;  // vasta loadPeli:n jälkeen (openPeli piirtää valikon, kun data on ladattu; yötesti 2026-11-24)
   peliHead(pt().title, false);
   const T = pt();
   const sami = peliMenuSami();
