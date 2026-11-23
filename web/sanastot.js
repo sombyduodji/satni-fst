@@ -593,6 +593,8 @@ function renderSanasto(listId) {
     }).join("");
   }
   if (l.rows.some((r) => (r.sme || []).some((x) => x.dial))) html += `<p class="sanasto-hint">${esc(t("dialLegend"))}</p>`;
+  // Apusanojen esimerkit (2026-11-23): saamenkieliset lauseet sanakirjoista, osa käännöksistä uusia: hiljainen huomautus
+  if (APU_LISTS.includes(l.id)) html += `<p class="sanasto-hint">${esc(t("apuExNote"))}</p>`;
   html += `${sanastoFoot()}`;
   $("sanasto-body").innerHTML = html;
   $("sanasto-body").scrollTop = 0;
