@@ -19,6 +19,7 @@ import unicodedata
 
 import apertium_data
 import pivot_fin
+import sanaperhe
 import der_fin
 import cmp_fin
 import wiktionary_eng
@@ -363,6 +364,10 @@ def main():
         CREATE TABLE der_fin (word_id INTEGER PRIMARY KEY, fin TEXT, base TEXT, suffix TEXT) WITHOUT ROWID;
         -- Johdos sanasta X (der_fin.der_of_rows, 2026-11-24): sanakortti näyttää pohjasanan, kun käännös puuttuu
         CREATE TABLE der_of (word_id INTEGER PRIMARY KEY, base TEXT, base_id INTEGER) WITHOUT ROWID;
+        -- Sanaperhe (sanaperhe.py, 2026-11-24): johdos -> pohjasana (kind der, tag = johdin) ja yhdyssana -> osa (kind cmp,
+        -- nr = osan järjestys); vain analysaattorin varmat linkit hakusanojen välillä. Sanakortin Sanaperhe-välilehti.
+        CREATE TABLE family (child_id INTEGER, kind TEXT, parent_id INTEGER, nr INTEGER, tag TEXT,
+                             PRIMARY KEY (child_id, kind, parent_id, nr)) WITHOUT ROWID;
         -- Yhdyssanojen tarkistetut suomennokset sanoille ilman suomennosta (cmp_fin.py, cmp_fin_hyvaksytyt.tsv)
         CREATE TABLE cmp_fin (word_id INTEGER PRIMARY KEY, fin TEXT, parts TEXT) WITHOUT ROWID;
         -- Englanti Wiktionarysta suomen ja norjan kautta, kun molemmat antavat saman (wiktionary_eng.py, tarkistamaton)
@@ -566,6 +571,10 @@ def main():
     der_of_rows = der_fin.der_of_rows(src)
     dst.executemany("INSERT INTO der_of VALUES (?,?,?)", der_of_rows)
     print(f"Johdos sanasta X: {len(der_of_rows)} sanaa ilman suomennosta tai norjannosta")
+    family_rows = sanaperhe.rows(src)
+    dst.executemany("INSERT INTO family VALUES (?,?,?,?,?)", family_rows)
+    print(f"Sanaperhe: {sum(1 for r in family_rows if r[1] == 'der')} johdosta, "
+          f"{len({r[0] for r in family_rows if r[1] == 'cmp'})} yhdyssanaa")
     dst.executemany("INSERT INTO cmp_fin VALUES (?,?,?)", cmp_fin_rows)
     print(f"Yhdyssanojen tarkistetut suomennokset: {len(cmp_fin_rows)}")
     print(f"Johdokset: {len(der_base_rows)} pohjasanaa, {len(der_fin_rows)} johdettua suomennosta"
@@ -586,6 +595,7 @@ def main():
     dst.executescript("""
         CREATE INDEX idx_lemma_fold ON dictionary(lemma_fold);
         CREATE INDEX idx_sme_lemma ON dictionary(sme_lemma);
+        CREATE INDEX idx_family_parent ON family(parent_id);
         CREATE INDEX idx_trans_search_word ON trans_search(word_id);
         -- Yötesti 23.11.: saksan ja koltan haku (app.js queryDatabase: t.lang = 'deumt'/'smsvia'/'smsplain' AND
         -- t.fold = ?) luki koko taulun joka haulla: OnePlus Nord N10 ~700 ms jokaiseen hakuun, indeksien kanssa ~16 ms.

@@ -1761,6 +1761,8 @@ function selectResult(i, pushHistory = true) {
   renderTable();
   renderMeanings(meanings);
   renderRaw();
+  state.familyOpen = new Set();
+  try { renderFamily(); } catch (e) { $("family-tab").hidden = true; console.warn("sanaperhe", e); }
   if (pushHistory) addHistory(w.sme_lemma);
 }
 
@@ -2615,11 +2617,87 @@ function renderRaw() {
   $("panel-raw").innerHTML = `<div class="raw">${html || esc(state.word.sme_lemma)}</div>`;
 }
 
-const TABS = ["table", "grade", "meanings", "raw"];
+// Sanaperhe (family, sanaperhe.py): pohjasana, yhdyssanan osat, johdokset, yhdyssanat ja saman pohjan johdokset.
+// Vain analysaattorin varmat linkit sanakirjan hakusanojen välillä. Välilehti näkyy vain, kun sanalla on sukulaisia.
+const FAMILY_SHOW = 12;
+function familyOf(id) {
+  const empty = { base: null, parts: [], derived: [], compounds: [], siblings: [] };
+  if (!hasTable("family")) return empty;
+  const col = (LANGUAGES[settings.lang] || {}).col || "finnish_translation";
+  const sel = `d.id, d.sme_lemma, d.pos, d.${col} AS tr`;
+  const up = all(`SELECT f.kind, f.nr, f.tag, ${sel} FROM family f JOIN dictionary d ON d.id = f.parent_id WHERE f.child_id = ? ORDER BY f.kind, f.nr`, [id]);
+  const down = all(`SELECT f.kind, ${sel} FROM family f JOIN dictionary d ON d.id = f.child_id WHERE f.parent_id = ?
+                    GROUP BY f.kind, d.id ORDER BY COALESCE(d.freq, 0) DESC, d.sme_lemma`, [id]);
+  const base = up.find((r) => r.kind === "der") || null;
+  const siblings = base ? all(`SELECT ${sel} FROM family f JOIN dictionary d ON d.id = f.child_id
+                    WHERE f.parent_id = ? AND f.kind = 'der' AND f.child_id != ? ORDER BY COALESCE(d.freq, 0) DESC, d.sme_lemma LIMIT 30`, [base.id, id]) : [];
+  return { base, parts: up.filter((r) => r.kind === "cmp"), derived: down.filter((r) => r.kind === "der"),
+           compounds: down.filter((r) => r.kind === "cmp"), siblings };
+}
+function familyRow(r) {
+  const tr = splitList(r.tr).slice(0, 3).join(", ");
+  return `<a class="fam-row" href="#/sana/${encodeURIComponent(r.sme_lemma)}"><span class="fam-w">${esc(r.sme_lemma)}</span>` +
+    `<span class="fam-t">${esc(tr)}</span></a>`;
+}
+function familyList(head, rows, key) {
+  if (!rows.length) return "";
+  const open = state.familyOpen && state.familyOpen.has(key);
+  const shown = open ? rows : rows.slice(0, FAMILY_SHOW);
+  return `<h3 class="lang-head">${esc(head)}${rows.length > FAMILY_SHOW ? ` (${rows.length})` : ""}</h3><div class="fam-list">` +
+    shown.map(familyRow).join("") + `</div>` +
+    (rows.length > shown.length ? `<button type="button" class="fam-more link-btn" data-fam="${key}">${esc(t("famShowAll", rows.length))}</button>` : "");
+}
+function renderFamily() {
+  const w = state.word, f = state.family = familyOf(w.id);
+  let html = "";
+  if (f.base) html += familyList(t("famBase"), [f.base], "base");
+  if (f.parts.length) {
+    html += `<h3 class="lang-head">${esc(t("famParts"))}</h3><p class="fam-parts">` +
+      f.parts.map((r) => `<a href="#/sana/${encodeURIComponent(r.sme_lemma)}">${esc(r.sme_lemma)}</a>`).join(" + ") + `</p>` +
+      `<div class="fam-list">${f.parts.map(familyRow).join("")}</div>`;
+  }
+  html += familyList(t("famDerived"), f.derived, "der");
+  html += familyList(t("famCompounds"), f.compounds, "cmp");
+  html += familyList(t("famSiblings", f.base ? f.base.sme_lemma : ""), f.siblings, "sib");
+  const any = html !== "";
+  if (any) html += `<p class="muted small fam-note">${esc(t("famNote"))}</p>`;
+  $("panel-family").innerHTML = html;
+  $("family-tab").hidden = !any;
+  if (!any && state.tab === "family") setTab("table");
+  // Kortissa johdoksen pohjasana: "sanasta čakča – syksy" (myös kun käännös on; käännöksettömän sanan der_of-rivin tilalle).
+  // Muuten yhdyssanan osat tai yhteenveto, joka avaa välilehden (välilehti voi olla kapealla näytöllä piilossa oikealla).
+  const line = $("der-of-line");
+  const open = `<a href="#" class="fam-open">${esc(t("famSum", f.derived.length, f.compounds.length))} ›</a>`;
+  if (!f.base && f.parts.length) {
+    line.innerHTML = `<span class="muted">${esc(t("famPartsLine"))}</span> ` +
+      f.parts.map((r) => `<a href="#/sana/${encodeURIComponent(r.sme_lemma)}">${esc(r.sme_lemma)}</a>`).join(" + ") +
+      (f.derived.length || f.compounds.length ? ` · ${open}` : "");
+    line.hidden = false;
+  } else if (!f.base && (f.derived.length || f.compounds.length) && line.hidden) {
+    line.innerHTML = open;
+    line.hidden = false;
+  }
+  if (f.base) {
+    const tr = splitList(f.base.tr).slice(0, 3).join(", ");
+    $("der-of-line").innerHTML = `<span class="muted">${esc(t("derFrom"))}</span> <a href="#/sana/${encodeURIComponent(f.base.sme_lemma)}">` +
+      `${esc(f.base.sme_lemma)}</a>` + (tr ? ` <span class="muted">– ${esc(tr)}</span>` : "");
+    $("der-of-line").hidden = false;
+  }
+}
+
+const TABS = ["table", "grade", "meanings", "raw", "family"];
 function setTab(tab) {
   closeFormPop();
   state.tab = tab;
   for (const b of $("tabs").children) b.classList.toggle("active", b.dataset.tab === tab);
+  const act = $("tabs").querySelector(`[data-tab="${tab}"]`);
+  // Valittu välilehti näkyviin vaakavierityksessä (vain välilehtirivi vierii, ei sivu)
+  const bar = $("tabs");
+  if (act && !bar.hidden && bar.scrollWidth > bar.clientWidth) {
+    const a = act.getBoundingClientRect(), r = bar.getBoundingClientRect();
+    if (a.right > r.right) bar.scrollLeft += a.right - r.right;
+    else if (a.left < r.left) bar.scrollLeft -= r.left - a.left;
+  }
   for (const t of TABS) $("panel-" + t).hidden = t !== tab;
 }
 
@@ -6584,6 +6662,16 @@ function bindEvents() {
   $("tabs").onclick = (e) => { if (e.target.dataset.tab) setTab(e.target.dataset.tab); };
   $("grad-sum").onclick = () => { setTab("grade"); $("tabs").scrollIntoView({ block: "start", behavior: "smooth" }); };
   $("more-meanings").onclick = (e) => { e.preventDefault(); setTab("meanings"); };
+  $("der-of-line").addEventListener("click", (e) => {
+    if (!e.target.closest(".fam-open")) return;
+    e.preventDefault(); setTab("family"); $("tabs").scrollIntoView({ block: "start", behavior: "smooth" });
+  });
+  $("panel-family").onclick = (e) => {
+    const b = e.target.closest(".fam-more");
+    if (!b) return;
+    state.familyOpen.add(b.dataset.fam);
+    renderFamily();
+  };
   $("speak-btn").onclick = () => speak(shownLemma(state.word), $("speak-btn"));
   $("fav-btn").onclick = toggleFavourite;
   bindFormPop();

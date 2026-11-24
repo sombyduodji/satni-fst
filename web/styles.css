@@ -2345,3 +2345,14 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .arow .ar-ui { font-size: 15px; color: var(--muted); overflow-wrap: anywhere; }
 .arow .ar-sme { font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
 .arow .ar-sme .sw { padding: 0; }
+/* Sanaperhe-välilehti (2026-11-24): pohjasana, osat, johdokset, yhdyssanat; rivi = saamen sana | käännös */
+.fam-list { display: flex; flex-direction: column; }
+.fam-row { display: flex; justify-content: space-between; gap: 12px; padding: 8px 2px; border-bottom: 1px solid var(--border);
+  text-decoration: none; color: var(--text); min-height: 40px; align-items: center; }
+.fam-row:last-child { border-bottom: 0; }
+.fam-row:hover .fam-w { text-decoration: underline; }
+.fam-w { color: var(--accent); font-weight: 500; overflow-wrap: anywhere; min-width: 0; }
+.fam-t { color: var(--muted); text-align: right; overflow-wrap: anywhere; min-width: 0; font-size: 14px; }
+.fam-parts { margin: 0 0 4px; font-size: 17px; }
+.fam-more { color: var(--accent); padding: 10px 0; }
+.fam-note { margin-top: 16px; }
