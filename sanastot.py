@@ -308,17 +308,20 @@ def lists():
     L.append({"id": "saa", "icon": "snow", "title": {"fi": "Sää ja lumi", "nb": "Vær og snø"},
               "rows": [row([fi], [WEATHER_NB.get(s) or (first(entry(s)[4]) if entry(s) else "")], [sme(s, None, [], fi=fi)]) for s, fi in weather]})
 
-    prons = [("minä · minun · minulle · minulla", "jeg · min · til meg · hos meg", "mun"), ("sinä · sinun · sinulle · sinulla", "du · din · til deg · hos deg", "don"),
-             ("hän · hänen · hänelle · hänellä", "han/hun · hans/hennes · til ham/henne · hos ham/henne", "son"),
-             ("me kaksi · meidän kahden · meille kahdelle · meillä kahdella", "vi to · vår (to) · til oss to · hos oss to", "moai"),
-             ("te kaksi · teidän kahden · teille kahdelle · teillä kahdella", "dere to · deres (to) · til dere to · hos dere to", "doai"),
-             ("he kaksi · heidän kahden · heille kahdelle · heillä kahdella", "de to · deres (to) · til dem to · hos dem to", "soai"),
-             ("me · meidän · meille · meillä", "vi · vår · til oss · hos oss", "mii"), ("te · teidän · teille · teillä", "dere · deres · til dere · hos dere", "dii"),
-             ("he · heidän · heille · heillä", "de · deres · til dem · hos dem", "sii")]
+    # Komitatiivi (käyttäjä 2026-11-23: muinna, minguin …; sama kuin lang-sme-generaattori mun+Pron+Pers+Sg1+Com)
+    prons = [("minä · minun · minulle · minulla · minun kanssani", "jeg · min · til meg · hos meg · med meg", "mun"),
+             ("sinä · sinun · sinulle · sinulla · sinun kanssasi", "du · din · til deg · hos deg · med deg", "don"),
+             ("hän · hänen · hänelle · hänellä · hänen kanssaan", "han/hun · hans/hennes · til ham/henne · hos ham/henne · med ham/henne", "son"),
+             ("me kaksi · meidän kahden · meille kahdelle · meillä kahdella · meidän kahden kanssa", "vi to · vår (to) · til oss to · hos oss to · med oss to", "moai"),
+             ("te kaksi · teidän kahden · teille kahdelle · teillä kahdella · teidän kahden kanssa", "dere to · deres (to) · til dere to · hos dere to · med dere to", "doai"),
+             ("he kaksi · heidän kahden · heille kahdelle · heillä kahdella · heidän kahden kanssa", "de to · deres (to) · til dem to · hos dem to · med dem to", "soai"),
+             ("me · meidän · meille · meillä · meidän kanssamme", "vi · vår · til oss · hos oss · med oss", "mii"),
+             ("te · teidän · teille · teillä · teidän kanssanne", "dere · deres · til dere · hos dere · med dere", "dii"),
+             ("he · heidän · heille · heillä · heidän kanssaan", "de · deres · til dem · hos dem · med dem", "sii")]
     prow = []
     for fi, nb, s in prons:
         e = db.execute("SELECT id FROM dictionary WHERE sme_lemma = ? AND subtype = 'Pers'", (s,)).fetchone()
-        words = [s] + [form(e[0], t) for t in ("Gen", "Ill", "Loc")] if e else [s]
+        words = [s] + [form(e[0], t) for t in ("Gen", "Ill", "Loc", "Com")] if e else [s]
         prow.append(row([fi], [nb], [{"w": [w for w in words if w], "id": e[0] if e else None, "fi": "", "nb": ""}]))
     L.append({"id": "pronominit", "icon": "person", "title": {"fi": "Pronominit", "nb": "Pronomen"},
               "hint": {"fi": "saamessa oma muoto kahdelle · moai = me kaksi · mii = me (kolme tai useampi)",
@@ -352,9 +355,11 @@ def lists():
         if r["sme"][0]["w"][0] == "galles" and not r["nb"][0]:
             r["nb"] = ["hva tid"]
     # Taivutusmuodot kuten Pronominit-listassa (käyttäjä 2026-11-22; GiellaLT lang-sme: gii Gen/Ill/Loc, mii Acc/Ill/Loc)
-    QFORMS = {"gii": (["gii", "gean", "geasa", "geas"], "kuka · kenen · kenelle · keneltä, kenellä",
-                      "hvem · hvem sin · til hvem · hos hvem, fra hvem"),
-              "mii": (["mii", "maid", "masa", "mas"], "mikä · mitä · mihin · mistä, missä", "hva · hva (objekt) · til hva · i hva, fra hva")}
+    # Komitatiivi (2026-11-24): gii+Pron+Interr+Sg+Com = geainna, mii = mainna (lang-sme-generaattori ja paradigms)
+    QFORMS = {"gii": (["gii", "gean", "geasa", "geas", "geainna"], "kuka · kenen · kenelle · keneltä, kenellä · kenen kanssa",
+                      "hvem · hvem sin · til hvem · hos hvem, fra hvem · med hvem"),
+              "mii": (["mii", "maid", "masa", "mas", "mainna"], "mikä · mitä · mihin · mistä, missä · minkä kanssa, millä",
+                      "hva · hva (objekt) · til hva · i hva, fra hva · med hva")}
     for r in qrows:
         f = QFORMS.get(r["sme"][0]["w"][0])
         if f:
@@ -399,8 +404,11 @@ def lists():
         rows = []
         for _sec, words in spec["sections"]:
             for lemma, pos, forms, fi, nb, _en, ex in words:
-                e = entry(lemma, pos)
+                base = lemma.split(" (")[0]  # "dát (pl.)" = dát monikossa (oma rivi, avain r["key"])
+                e = entry(base, pos)
                 r = row([fi], [nb], [{"w": forms or [lemma], "id": e[0] if e else None, "fi": fi, "nb": nb}])
+                if base != lemma:
+                    r["key"] = lemma
                 if ex:
                     r["ex"] = {"sme": ex[0], "fi": ex[1], "nb": ex[2]}
                 rows.append(r)
@@ -461,15 +469,15 @@ def add_sections(L):
             continue
         where = {w: i for i, (_, _, ws) in enumerate(secs) for w in ws}
         for r in lst["rows"]:
-            key = r["sme"][0]["w"][0]
+            key = r.get("key") or r["sme"][0]["w"][0]
             if key not in where:
                 problems.append(f"{lst['id']}: ei osiota sanalle {key}")
             r["sec"] = where.get(key, len(secs) - 1)
         order = {w: k for _, _, ws in secs for k, w in enumerate(ws)}
-        lst["rows"].sort(key=lambda r: (r["sec"], order.get(r["sme"][0]["w"][0], 99)))
+        lst["rows"].sort(key=lambda r: (r["sec"], order.get(r.get("key") or r["sme"][0]["w"][0], 99)))
         lst["sections"] = [{"fi": fi, "nb": nb} for fi, nb, _ in secs]
         for k, (_, _, ws) in enumerate(secs):
-            missing = set(ws) - {r["sme"][0]["w"][0] for r in lst["rows"]}
+            missing = set(ws) - {r.get("key") or r["sme"][0]["w"][0] for r in lst["rows"]}
             if missing:
                 problems.append(f"{lst['id']}: osion sanoja puuttuu listasta: {', '.join(sorted(missing))}")
 

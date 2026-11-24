@@ -21,12 +21,24 @@ LISTS = [
               "dát = this (near me) · diet = that (near you) · dat = it, that · duot = that over there"),
      "sections": [
          (("Tämä ja se", "Denne og den", "This and that"), [
-             ("dát", "Pron", ["dát", "dán", "dása", "dás"], "tämä · tämän · tähän · tässä, tästä",
-              "denne · dennes · hit, til denne · her, av denne", "this · of this · to this · here, of this",
+             # Komitatiivi ja monikko (käyttäjä 2026-11-23; lang-sme-generaattori: dát+Pron+Dem+Sg+Com = dáinna,
+             # Pl+Gen dáid, Pl+Ill dáidda, Pl+Loc dáin, Pl+Com dáiguin; dat samoin). Monikkorivin avain "dát (pl.)"
+             # (sanastot.py: r["key"]), ensimmäinen muoto dát kuten yksikössä.
+             ("dát", "Pron", ["dát", "dán", "dása", "dás", "dáinna"], "tämä · tämän · tähän · tässä, tästä · tämän kanssa, tällä",
+              "denne · dennes · hit, til denne · her, av denne · med denne", "this · of this · to this · here, of this · with this",
               ("Dovddat go dán bártni?", "Tunnetko tämän pojan?", "Kjenner du denne gutten?", "Do you know this boy?", {"fi": O, "nb": N})),
-             ("dat", "Pron", ["dat", "dan", "dasa", "das"], "se · sen · siihen · siinä, siitä",
-              "den, det · dens · til det · i det, av det", "it, that · its · to it · in it, of it",
+             ("dát (pl.)", "Pron", ["dát", "dáid", "dáidda", "dáin", "dáiguin"], "nämä · näiden · näihin · näissä, näistä · näiden kanssa, näillä",
+              "disse · disses · til disse · i disse, av disse · med disse", "these · of these · to these · in these, of these · with these",
+              ("Dáid beivviid lea leamaš hui balvái.", "Viime päivinä on ollut hyvin pilvistä.", "De siste dagene har det vært veldig overskyet.",
+               "It has been very cloudy these last few days.", {"fi": F, "nb": O})),
+             ("dat", "Pron", ["dat", "dan", "dasa", "das", "dainna"], "se · sen · siihen · siinä, siitä · sen kanssa, sillä",
+              "den, det · dens · til det · i det, av det · med det", "it, that · its · to it · in it, of it · with it",
               ("Dat ii geasut mu.", "Se ei houkuttele minua.", "Det frister meg ikke.", "That doesn't tempt me.", {"fi": O, "nb": O})),
+             # Esimerkki dict-sme-spa:sta (daiguin: "Siempre trabajamos con esos renos."), suomi ja norja sen pohjalta
+             ("dat (pl.)", "Pron", ["dat", "daid", "daidda", "dain", "daiguin"], "ne · niiden · niihin · niissä, niistä · niiden kanssa, niillä",
+              "de · deres · til dem · i dem, av dem · med dem", "they, those · their · to them · in them, of them · with them",
+              ("Mii bargat álo daiguin bohccuiguin.", "Me teemme aina töitä niiden porojen kanssa.", "Vi arbeider alltid med de reinene.",
+               "We always work with those reindeer.", {"fi": O, "nb": O})),
              ("diet", "Pron", None, "se (lähellä sinua)", "den (nær deg)", "that (near you)",
               ("Mii diet lea?", "Mikä se on?", "Hva er det der?", "What's that?", {"fi": O, "nb": N})),
              ("duot", "Pron", None, "tuo", "den der borte", "that over there",

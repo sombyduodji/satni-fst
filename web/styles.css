@@ -2323,3 +2323,8 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .report-dlg.missing-mode .report-kinds, .report-dlg.missing-mode .report-nomissing,
 .report-dlg:not(.missing-mode) .report-missing-only { display: none; }
 #missing-line { margin-top: 8px; }
+/* Viisi muotoa (komitatiivi 2026-11-24: mun · mu · munnje · mus · muinna): kapeat sarakkeet, pitkä illatiivi leveämpi */
+/* Sarakkeet saamen sanan levyisiä (sana ei katkea: munnuide), merkitys rivittyy sarakkeen sisällä */
+.sanasto-row.ptab[style*="--cols:5"] { grid-template-columns: repeat(5, minmax(max-content, 1fr)); column-gap: 6px; }
+.sanasto-row.ptab[style*="--cols:5"] .pt-cell .sw { font-size: 14.5px; overflow-wrap: normal; white-space: nowrap; }
+.sanasto-row.ptab[style*="--cols:5"] .pt-fi { width: 0; min-width: 100%; overflow-wrap: break-word; }

@@ -70,14 +70,14 @@ ROWS = {
             "njáhcu": ["thaw"], "arvi": ["rain"], "biegga": ["wind"], "buolaš": ["frost, freezing cold"], "liekkas": ["warm"],
             "galmmas": ["cold"], "beaivváš": ["sun"], "balva": ["cloud"], "mierká": ["fog"], "jiekŋa": ["ice"],
             "stoarbma": ["storm"], "baján": ["thunder"]},
-    "pronominit": {"mun": ["I · my · to me · with me"], "don": ["you · your · to you · with you"],
-                   "son": ["he/she · his/her · to him/her · with him/her"],
-                   "moai": ["we two · our (two) · to us two · with us two"],
-                   "doai": ["you two · your (two) · to you two · with you two"],
-                   "soai": ["they two · their (two) · to them two · with them two"],
-                   "mii": ["we · our · to us · with us"], "dii": ["you (all) · your · to you · with you"],
-                   "sii": ["they · their · to them · with them"]},
-    "kysymykset": {"gii": ["who · whose · to whom · from whom"], "mii": ["what · what (object) · to what · from what, in what"], "gos": ["where, from where"], "gosa": ["where to"], "goas": ["when"],
+    "pronominit": {"mun": ["I · my · to me · with me · together with me"], "don": ["you · your · to you · with you · together with you"],
+                   "son": ["he/she · his/her · to him/her · with him/her · together with him/her"],
+                   "moai": ["we two · our (two) · to us two · with us two · together with us two"],
+                   "doai": ["you two · your (two) · to you two · with you two · together with you two"],
+                   "soai": ["they two · their (two) · to them two · with them two · together with them two"],
+                   "mii": ["we · our · to us · with us · together with us"], "dii": ["you (all) · your · to you · with you · together with you"],
+                   "sii": ["they · their · to them · with them · together with them"]},
+    "kysymykset": {"gii": ["who · whose · to whom · from whom · with whom"], "mii": ["what · what (object) · to what · from what, in what · with what"], "gos": ["where, from where"], "gosa": ["where to"], "goas": ["when"],
                    "manne": ["why"], "mo": ["how"], "galle": ["how many"], "galles": ["at what time"],
                    "goabbá": ["which (of two)"], "makkár": ["what kind of"]},
     "tervehdykset": {"Bures!": ["hi, hello"], "Buorre iđit": ["good morning"], "Buorre beaivi": ["good day"],
@@ -146,7 +146,7 @@ def apply(L, problems):
         for k, sec in enumerate(lst.get("sections", [])):
             sec["en"] = SECTIONS[lid][k]
         for r in lst["rows"]:
-            key = r["sme"][0]["w"][0]
+            key = r.get("key") or r["sme"][0]["w"][0]
             en = ROWS.get(lid, {}).get(key)
             if not en:
                 problems.append(f"en: puuttuu {lid}: {key}")
