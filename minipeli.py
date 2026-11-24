@@ -20,6 +20,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(SCRIPT_DIR, "web", "data", "minipeli.json")
 
 from elaimet import ANIMALS, ANIMALS_EN  # sama sanasto Sanastot-listassa Eläimet (elaimet.py)
+import marjat  # Marjat, hedelmät ja kasvikset (marjat.py, 2026-11-24): sama sanasto kuin Sanastot-listassa
 
 # Norjan järjestysluvut 1–100 (bokmål)
 NB_UNITS = ["", "første", "andre", "tredje", "fjerde", "femte", "sjette", "sjuende", "åttende", "niende"]
@@ -86,7 +87,8 @@ def english(db, data, lists):
             src["list" if w[0] in from_lists else "dict" if dict_en(w[0], w[3]) else "mt"] += 1
     # Aiheet omina karttoinaan: sama saamen sana voi olla kahdessa listassa eri merkityksessä (mii = me / mikä)
     cats = {"ordinals": {o[0]: sanastot_en.en_ord(o[3]) for o in data["cats"]["ordinals"]},
-            "animals": {it[0]: ANIMALS_EN[it[0]] for it in data["cats"]["animals"]}}
+            "animals": {it[0]: ANIMALS_EN[it[0]] for it in data["cats"]["animals"]},
+            "berries": {it[0]: marjat.EN[it[0]] for it in data["cats"]["berries"]}}
     for k, lids in (("time", ("viikonpaivat", "vuodenajat", "kuukaudet")), ("colours", ("varit",)), ("questions", ("kysymykset",))):
         own = {r["sme"][0]["w"][0]: first(r["en"][0], 1) for lid in lids for r in lists[lid]["rows"] if r.get("en")}
         cats[k] = {it[0]: own[it[0]] for it in data["cats"][k] if it[0] in own}
@@ -164,7 +166,7 @@ def inari(db, data):
             seen.add(w[0])
             words.append(w)
     cats = {}
-    for k in ("time", "colours", "questions", "animals"):
+    for k in ("time", "colours", "questions", "animals", "berries"):
         lst = conv(data["cats"][k])
         if len(lst) >= SMN_MIN_CAT:
             cats[k] = lst
@@ -323,7 +325,7 @@ def main():
     base = lambda t: t.split(" · ")[0]
     questions = [[r["sme"][0]["w"][0], base(r["fi"][0]), base(r["nb"][0])] for r in lists["kysymykset"]["rows"]]
     data = {"words": words, "cats": {"ordinals": ordinals(), "time": time, "colours": colours, "questions": questions,
-                                     "animals": [list(a) for a in ANIMALS]}}
+                                     "animals": [list(a) for a in ANIMALS], "berries": [list(a) for a in marjat.WORDS]}}
     data["en"] = english(db, data, lists)
     # Inarinsaame (asetuksista valittava, kokeellinen): samat käsitteet, sana kahdesta lähteestä tarkistettuna
     data["smn"] = inari(db, data)
@@ -332,7 +334,7 @@ def main():
         json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
     lv = [w[4] for w in words]
     print(f"{OUT}: {len(words)} sanaa ({lv.count(1)} aloittelija), järjestysluvut {len(data['cats']['ordinals'])}, "
-          f"aika {len(time)}, värit {len(colours)}, kysymyssanat {len(questions)}, eläimet {len(ANIMALS)}, {os.path.getsize(OUT)} tavua")
+          f"aika {len(time)}, värit {len(colours)}, kysymyssanat {len(questions)}, eläimet {len(ANIMALS)}, marjat {len(marjat.WORDS)}, {os.path.getsize(OUT)} tavua")
     if missing:
         print("HUOM: ei sanakirjassa:", missing)
 

@@ -60,11 +60,11 @@ async function harjLoad() {
     const k = await fetch("data/kello.json");
     if (k.ok) harjIndex.lists.push({ id: "kello", rows: (await k.json()).rows.map((x) => ({ fi: x.fi, sme: x.smeFull, d: x.d || [2, 2], level: x.level, h: x.h, m: x.m })) });
   } catch (e) { /* ei kelloharjoitusta */ }
-  // Apusanalistojen osiot sanastoista (sana -> osion numero) ja osioiden nimet
+  // Apusanalistojen ja Marjat-listan (2026-11-24) osiot sanastoista (sana -> osion numero) ja osioiden nimet
   try {
     await loadSanastot();
     for (const l of harjIndex.lists) {
-      if (!APU_LISTS.includes(l.id)) continue;
+      if (!APU_LISTS.includes(l.id) && l.id !== "marjat") continue;
       const src = sanastot.find((x) => x.id === l.id);
       if (!src) continue;
       const sec = Object.fromEntries(src.rows.map((r) => [r.sme[0].w[0], r.sec]));

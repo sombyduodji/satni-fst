@@ -379,6 +379,10 @@ def lists():
     import elaimet
     L.append({"id": "elaimet", "icon": "paw", "title": {"fi": "Eläimet", "nb": "Dyr"},
               "rows": [row([fi], [nb], [sme(s_, "N", [], fi=fi, nb=nb)]) for s_, fi, nb in elaimet.ANIMALS]})
+    # Marjat, hedelmät ja kasvikset (marjat.py, käyttäjä 2026-11-23): sanakirjan sanat, Sápmin omat osion alussa
+    import marjat
+    L.append({"id": "marjat", "icon": "berry", "title": {"fi": "Marjat, hedelmät ja kasvikset", "nb": "Bær, frukt og grønnsaker"},
+              "rows": [row([fi], [nb], [sme(s_, "N", [], fi=fi, nb=nb)]) for s_, fi, nb in marjat.WORDS]})
     # Kellonajat (kello.py ja kello.json, käyttäjä 2026-11-23): kello, saame ja suomi; norjaksi ja englanniksi
     # digitaalinen aika. Napautus soittaa Biretin lauseen (audio/w/kello-<i>-sme.ogg)
     clock = json.load(open(os.path.join(SCRIPT_DIR, "kello.json"), encoding="utf-8"))["rows"]
@@ -441,6 +445,9 @@ SECTIONS = {
 # Eläinten osiot (elaimet.py)
 import elaimet as _ela
 SECTIONS["elaimet"] = [(t[0], t[1], t[3]) for t in _ela.SECTIONS]
+# Marjojen, hedelmien ja kasvisten osiot (marjat.py)
+import marjat as _mar
+SECTIONS["marjat"] = [(t[0], t[1], t[3]) for t in _mar.SECTIONS]
 # Apusanojen osiot samasta tiedostosta (apusanat.py)
 import apusanat as _apu
 for _spec in _apu.LISTS:

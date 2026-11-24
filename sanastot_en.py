@@ -189,3 +189,9 @@ SECTIONS["elaimet"] = [t[2] for t in _ela.SECTIONS]
 ROWS["elaimet"] = {a[0]: [_ela.ANIMALS_EN[a[0]]] for a in _ela.ANIMALS}
 TITLES["kellonajat"] = "Clock times"
 HINTS["kellonajat"] = "beal njeallje = half past three · from 20 to 40 past you count from the half hour: logi váile beal njeallje = 3:20"
+
+# Marjat, hedelmät ja kasvikset (2026-11-24)
+import marjat as _mar
+TITLES["marjat"] = "Berries, fruit and vegetables"
+SECTIONS["marjat"] = [t[2] for t in _mar.SECTIONS]
+ROWS["marjat"] = {a[0]: [_mar.EN[a[0]]] for a in _mar.WORDS}

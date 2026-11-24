@@ -12,6 +12,8 @@ const SANASTO_ICON = {
   // Kellonajat ja eläimet (2026-11-23): herätyskello (sama kuin harjoituksessa ja pelissä), tassu
   alarm: '<circle cx="12" cy="13" r="7.5"/><path d="M12 9.2V13l2.6 1.8"/><path d="M4.2 6.2l3-2.4M19.8 6.2l-3-2.4M7.3 19.2l-1.6 1.9M16.7 19.2l1.6 1.9"/>',
   paw: '<circle cx="7.5" cy="9" r="1.8"/><circle cx="12" cy="6.5" r="1.8"/><circle cx="16.5" cy="9" r="1.8"/><path d="M12 11.5c-3 0-5.5 3.5-5.5 5.6 0 1.6 1.3 2.4 2.7 2.4 1.1 0 1.8-.6 2.8-.6s1.7.6 2.8.6c1.4 0 2.7-.8 2.7-2.4 0-2.1-2.5-5.6-5.5-5.6z"/>',
+  // Marjat, hedelmät ja kasvikset (2026-11-24): marjarypäs
+  berry: '<circle cx="8.3" cy="15.2" r="3.6"/><circle cx="15.7" cy="15.2" r="3.6"/><circle cx="12" cy="9.2" r="3.6"/><path d="M12 5.6c.3-1.6 1.4-2.6 3.2-2.9"/>',
   // Apusanat (2026-11-22): osoittava käsi, paikkamerkki, tiimalasi, ketju
   pointer: '<path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10"/><path d="M12 10V8.5a1.5 1.5 0 0 1 3 0V11"/><path d="M15 11v-.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-.5a6 6 0 0 1-4.7-2.3L4.5 15.6a1.6 1.6 0 0 1 2.4-2.1L9 15.5V11"/>',
   place: '<path d="M12 21s-6.5-6.1-6.5-11a6.5 6.5 0 0 1 13 0c0 4.9-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
@@ -104,7 +106,7 @@ const SANASTO_GROUPS = [
   { id: "perus", color: "yellow", lists: ["luvut", "varit", "kysymykset", "tamajase", "sidesanat"] },
   { id: "aika", color: "blue", lists: ["viikonpaivat", "kuukaudet", "vuodenajat", "aika", "kellonajat", "aikasanat"] },
   { id: "ihmiset", color: "red", lists: ["suku", "pronominit", "tervehdykset"] },
-  { id: "luonto", color: "green", lists: ["suunnat", "taallajatuolla", "saa", "porot", "elaimet"] },
+  { id: "luonto", color: "green", lists: ["suunnat", "taallajatuolla", "saa", "porot", "elaimet", "marjat"] },
 ];
 // Analoginen kello (kellopeli ja kuunteluharjoitus, 2026-11-22): SVG, värit teeman muuttujista, numerot 1–12.
 // Tuntiosoitin liikkuu minuuttien mukana (puoli neljä: osoitin kolmen ja neljän puolivälissä), kuten oikeassa kellossa.
@@ -748,7 +750,7 @@ function sanastoSpeakAll() {
 
 // Listan yläreunan painikkeet (2026-11-23): Harjoittele kuunnellen ja Pelaa (jos listalle on pelitila)
 const SANASTO_GAME = { varit: "colours", kysymykset: "questions", viikonpaivat: "time", kuukaudet: "time", vuodenajat: "time",
-  luvut: "ordinals", elaimet: "animals", kellonajat: "clock" };
+  luvut: "ordinals", elaimet: "animals", marjat: "berries", kellonajat: "clock" };
 function sanastoActions(listId) {
   const harj = typeof harjListButton === "function" ? harjListButton(listId === "kellonajat" ? "kello" : listId) : "";
   const mode = SANASTO_GAME[listId];
