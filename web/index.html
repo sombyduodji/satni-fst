@@ -145,6 +145,8 @@
           </div>
         </div>
         <p class="translation"><span id="translation"></span> <a href="#" id="more-meanings" class="more"></a></p>
+        <!-- Haku ei löytänyt mitään: ilmoitus puuttuvasta sanasta (app.js: openMissingReport, 2026-11-24) -->
+        <p id="missing-line" class="report-line" hidden><a href="#" id="missing-btn" class="report-link"><span aria-hidden="true">⚑</span> <span data-i18n="reportMissing">Ilmoita puuttuvasta sanasta</span></a></p>
         <!-- Haku ei löytänyt sanaa: yhdyssanan osat ja koko sanan käännös (app.js: renderSearchParts) -->
         <div id="search-parts" class="search-parts" hidden></div>
         <p id="sme-def" class="sme-def" lang="se" hidden></p>
@@ -275,7 +277,8 @@
   <!-- Virheilmoitus sanakortista: mikä on väärin, mikä olisi oikein; "Valmistele sähköposti" avaa käyttäjän oman
        sähköpostisovelluksen (mailto), jossa on sanan ja haun tiedot. Mitään ei lähetetä automaattisesti. -->
   <dialog id="report-dlg" class="exp-dlg report-dlg">
-    <h2 data-i18n="reportError">Ilmoita virheestä</h2>
+    <h2 class="report-nomissing" data-i18n="reportError">Ilmoita virheestä</h2>
+    <h2 class="report-missing-only" data-i18n="reportMissing">Ilmoita puuttuvasta sanasta</h2>
     <p id="report-about" class="muted small"></p>
     <fieldset class="report-kinds">
       <legend data-i18n="reportWhat">Mikä on väärin?</legend>
@@ -290,7 +293,7 @@
       <label><input type="radio" name="report-kind" value="other"><span data-i18n="reportKindOther"></span></label>
     </fieldset>
     <label class="report-text report-list-only"><span data-i18n="reportWhichWord"></span><input type="text" id="report-word"></label>
-    <label class="report-text"><span data-i18n="reportFix"></span><textarea id="report-text" rows="3"></textarea></label>
+    <label class="report-text"><span class="report-nomissing" data-i18n="reportFix"></span><span class="report-missing-only" data-i18n="reportMissingFix"></span><textarea id="report-text" rows="3"></textarea></label>
     <div class="dialog-actions">
       <button type="button" class="chip-btn" id="report-cancel" data-i18n="cancel">Peruuta</button>
       <button type="button" class="chip-btn primary" id="report-send" data-i18n="reportSend">Valmistele sähköposti</button>

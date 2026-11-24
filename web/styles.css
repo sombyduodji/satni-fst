@@ -2319,3 +2319,7 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .clock-zoom.playing .krim, .clock-zoom.leaving .krim { opacity: 1; animation: krim var(--kdur, 1.6s) linear both; }
 @media (prefers-reduced-motion: reduce) { .clock-zoom.playing .kh, .clock-zoom.playing .km, .clock-zoom.playing .krim { animation: none; } }
 .clock-zoom, .clock-zoom:focus, .clock-zoom:focus-visible { outline: none; }
+/* Ilmoitus puuttuvasta sanasta (2026-11-24): sama lomake ilman virhetyyppejä */
+.report-dlg.missing-mode .report-kinds, .report-dlg.missing-mode .report-nomissing,
+.report-dlg:not(.missing-mode) .report-missing-only { display: none; }
+#missing-line { margin-top: 8px; }

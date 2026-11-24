@@ -405,6 +405,7 @@ function openReport() {
 }
 
 function sendReport() {
+  if ($("report-dlg").classList.contains("missing-mode")) return missingSendReport();  // haku ei löytänyt sanaa
   if ($("report-dlg").classList.contains("game-mode")) return peliSendReport();  // minipeli (minipeli.js)
   if ($("report-dlg").classList.contains("ctx-mode")) return ctxSendReport();  // kuva, lauseet, harjoitus
   if ($("report-dlg").classList.contains("list-mode")) return sanastoSendReport();  // sanastolista (sanastot.js)
@@ -474,6 +475,38 @@ function ctxSendReport() {
   reportCtx = null;
   openReportMail(subject, body);
 }
+// Ilmoitus puuttuvasta sanasta (2026-11-24): haku ei löytänyt mitään. Sana valmiina, hakusuunta ja käyttöliittymä
+// viestiin; käyttäjä voi kertoa, mitä sana tarkoittaa tai missä hän näki sen. Sama lomake ilman virhetyyppejä.
+function openMissingReport() {
+  const q = (state.query || "").trim();
+  if (!q) return;
+  const dlg = $("report-dlg");
+  dlg.classList.remove("game-mode", "ctx-mode");
+  dlg.classList.add("list-mode", "missing-mode");
+  $("report-about").textContent = `${t("reportLabels").search}: ${q} · ${t("missingDir", langName(settings.lang))}`;
+  $("report-word").value = q.slice(0, 80);
+  $("report-text").value = "";
+  dlg.querySelector('input[value="other"]').checked = true;
+  dlg.showModal();
+}
+function missingSendReport() {
+  const L = t("reportLabels"), q = (state.query || "").trim();
+  const word = $("report-word").value.trim().slice(0, 80) || q;
+  const subject = `${t("reportMissingSubject")} – ${word}`;
+  const body = [
+    $("report-text").value.trim().slice(0, 1200), "",
+    `--- ${t("reportDetails")} ---`,
+    `${L.place}: ${t("reportPlaces").missing}`,
+    `${L.word}: ${word}`,
+    `${L.search}: ${q}`,
+    `${L.dir}: ${t("missingDir", langName(settings.lang))}`,
+    `${L.ui}: ${UI_LANGUAGES[settings.uiLang].name}`,
+    `${L.version}: ${$("about-version").textContent}`,
+    `${L.link}: ${PUBLIC_APP_URL}#/sana/${encodeURIComponent(q)}`,
+  ].filter((line, i) => line !== "" || i === 1).join("\n");
+  openReportMail(subject, body);
+}
+
 // Virheilmoituksen linkki näkymän loppuun (sama ulkoasu kuin sanakortissa)
 const reportLinkHtml = (cls) => `<p class="report-line ${cls}"><a href="#" class="report-link" data-report="1">` +
   `<span aria-hidden="true">⚑</span> <span>${esc(t("reportError"))}</span></a></p>`;
@@ -1422,6 +1455,8 @@ function showSearch(query, results, index = 0, pushHistory = true) {
     $("report-btn").hidden = true;
     $("word-links").hidden = true;
     $("translation").textContent = t("noHitsHint");
+    // Ilmoita puuttuvasta sanasta (2026-11-24): ei tyhjälle eikä pelkille jokerimerkeille
+    $("missing-line").hidden = !query.replace(/[*?\s]/g, "");
     renderSearchParts(query);
     $("form-translation").hidden = true;  // edellisen sanan rivit pois
     $("extra-translations").hidden = true;
@@ -1668,6 +1703,7 @@ function selectResult(i, pushHistory = true) {
   $("fav-btn").hidden = false;
   $("speak-btn").hidden = false;
   $("report-btn").hidden = false;
+  $("missing-line").hidden = true;
   $("word-links").hidden = false;
   $("gt-link").href = SANIT_URL.replace("{lang}", settings.lang === "nob" ? "nob" : "fin")
     .replace("{word}", encodeURIComponent(w.sme_lemma));
@@ -6484,6 +6520,9 @@ function bindEvents() {
   };
   $("report-btn").onclick = (e) => { e.preventDefault(); openReport(); };
   $("report-cancel").onclick = () => $("report-dlg").close();
+  $("missing-btn").onclick = (e) => { e.preventDefault(); openMissingReport(); };
+  // Puuttuvan sanan tila vain sille avaukselle (muut lomakkeen avaajat eivät tunne sitä)
+  $("report-dlg").addEventListener("close", () => $("report-dlg").classList.remove("missing-mode"));
   $("report-send").onclick = sendReport;
   // Kielivalinta koskee vain käännösvirhettä: valinnan muutos valitsee sen
   $("report-lang").onchange = () => { $("report-dlg").querySelector('input[value="trans"]').checked = true; };
