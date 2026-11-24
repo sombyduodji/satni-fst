@@ -276,14 +276,17 @@ const afterOverlayPop = [];
 const overlayLayerFns = [];   // näkymäkohtaiset kerrokset (sanastot.js, minipeli.js, lauseet.js)
 const isOverlayState = (s) => !!(s && s.satniOverlay);
 const overlayDepth = (s) => (isOverlayState(s) ? s.satniDepth || 1 : 0);
-const overlayViewOpen = () => ["peli-view", "sanasto-view", "lause-view", "settings-view"].some((id) => $(id) && !$(id).hidden);
+const OVERLAY_VIEWS = ["peli-view", "sanasto-view", "lause-view", "settings-view"];
+const overlayViewOpen = () => OVERLAY_VIEWS.some((id) => $(id) && !$(id).hidden);
 // Myös valikko (drawer) ja aloitussivun ikkunat (Tietoa, palaute, tuki) ovat kerroksia: ilman omaa merkintää Takaisin
 // valikon ollessa auki poistui Chromessa sovelluksesta (yötesti 2026-11-15)
 const drawerOpen = () => document.body.classList.contains("sidebar-open");
 const overlayOpen = () => overlayViewOpen() || drawerOpen() || !!document.querySelector("dialog[open]");
 function overlayLayers() {
   if (!overlayOpen()) return 0;
-  return (overlayViewOpen() ? 1 : 0) + overlayLayerFns.reduce((n, f) => n + f(), 0) + (formPopTarget ? 1 : 0) +
+  // Jokainen avoin näkymä on oma kerroksensa: Pelaa-painike avaa pelin Sanastojen päälle (yötesti 2026-11-24: yksi
+  // Takaisin sulki sekä pelin että listan, kun kaksi näkymää laskettiin yhdeksi)
+  return OVERLAY_VIEWS.filter((id) => $(id) && !$(id).hidden).length + overlayLayerFns.reduce((n, f) => n + f(), 0) + (formPopTarget ? 1 : 0) +
     (document.querySelector("dialog[open]") ? 1 : 0) + (drawerOpen() ? 1 : 0);
 }
 // Päällimmäinen avoin ikkuna kiinni (Takaisin verkkoversiossa)
