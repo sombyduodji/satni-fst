@@ -6138,7 +6138,8 @@ const LICENSE_FILES = ["NOTICES.txt", "GPL-3.0.txt", "LGPL-3.0.txt", "CC-BY-4.0.
   "../vendor/LICENSE-sql.js.txt"];
 async function showLicenses() {
   let files = LICENSE_FILES;
-  try {
+  // Vain työpöytäversio (versionumero eikä Android): muualla tiedostoa ei ole, ja haku näkyi 404-virheenä (1.1.0-testi)
+  if (window.SATNI_VERSION && window.SATNI_PLATFORM !== "android") try {
     const r = await fetch("licenses/desktop/files.txt");
     // Ilman verkkoa vanha service worker voi palauttaa index.html:n puuttuvan tiedoston tilalle
     if (r.ok && !(r.headers.get("content-type") || "").includes("text/html")) files = files.concat((await r.text()).split("\n").map((f) => f.trim()).filter(Boolean).map((f) => "desktop/" + f));
