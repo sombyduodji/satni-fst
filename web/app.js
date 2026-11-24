@@ -942,10 +942,15 @@ function queryDatabase(query) {
   // (lei = leahkit eikä norjan "lei", mus = mun eikä norjan "mus")
   // Myös kirjoitettu asu sellaisenaan: lyhenteellä alkavan yhdyssanan muodot (PP-bálvalusat, TV-fálaldaga)
   const forms = [q, capitalize(q), nordic(q), capitalize(nordic(q)), query.trim()];
-  for (const r of all(
-    `SELECT DISTINCT d.${cols.split(", ").join(", d.")}
-     FROM paradigms p JOIN dictionary d ON d.id = p.word_id WHERE p.surface IN (?, ?, ?, ?, ?)`, forms
-  )) add(r, r.freq >= COMMON_WORD ? 1.2 : 5);
+  // Verbinominit ja partisiipit (Actio, PrsPrc, PrfPrc, Ger, VAbess, VGen; käyttäjä 2026-11-23): jos haettu muoto on
+  // jonkin toisen sanan tavallinen taivutusmuoto (geahččaleamis = geahččaleapmi Sg+Loc), se ensin ja verbin
+  // johdosmuoto (geahččalit Actio+Loc) sen jälkeen, eikä yleisen verbin 1.2 nosta sitä. Ilman tavallista osumaa ennallaan.
+  const formHits = all(
+    `SELECT d.${cols.split(", ").join(", d.")}, MIN(CASE WHEN t.tag LIKE 'Actio%' OR t.tag IN ('PrsPrc', 'PrfPrc', 'Ger', 'VAbess', 'VGen')
+       THEN 1 ELSE 0 END) AS derived
+     FROM paradigms p JOIN dictionary d ON d.id = p.word_id JOIN tags t ON t.id = p.tag_id WHERE p.surface IN (?, ?, ?, ?, ?) GROUP BY d.id`, forms);
+  const plainForm = formHits.some((r) => !r.derived);
+  for (const r of formHits) add(r, plainForm && r.derived ? 5.05 : r.freq >= COMMON_WORD ? 1.2 : 5);
   // Passiivimuoto (máksojuvvo -> máksit), sme_passive.py; vanhassa aineistossa taulua ei ole
   try {
     for (const r of all(
