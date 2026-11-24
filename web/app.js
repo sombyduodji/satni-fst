@@ -6666,9 +6666,14 @@ function bindEvents() {
     if (!e.target.closest(".fam-open")) return;
     e.preventDefault(); setTab("family"); $("tabs").scrollIntoView({ block: "start", behavior: "smooth" });
   });
+  // Tuplanapautus "Näytä kaikki" -painikkeeseen: toinen napautus osui riviin, joka liukui painikkeen paikalle, ja avasi
+  // satunnaisen sanan (yötesti 2026-11-25). Rivilinkit eivät toimi hetkeen laajennuksen jälkeen.
+  let famExpandAt = 0;
   $("panel-family").onclick = (e) => {
+    if (e.target.closest(".fam-row, .fam-parts a") && Date.now() - famExpandAt < 600) { e.preventDefault(); return; }
     const b = e.target.closest(".fam-more");
     if (!b) return;
+    famExpandAt = Date.now();
     state.familyOpen.add(b.dataset.fam);
     renderFamily();
   };

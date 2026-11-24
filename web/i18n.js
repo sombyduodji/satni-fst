@@ -571,7 +571,7 @@ const UI_TEXTS = {
     tabMeanings: (n, examples) => `Betydninger (${n})` + (examples ? ` og eksempler (${examples})` : ""),
     tabFamily: "Ordfamilie", famBase: "Grunnord", famParts: "Ledd", famDerived: "Avledninger", famCompounds: "Sammensatte ord",
     famSiblings: (b) => `Andre avledninger av ${b}`, famShowAll: (n) => `Vis alle (${n})`, derFrom: "av", famPartsLine: "sammensatt:",
-    famSum: (d, c) => "Ordfamilie: " + [d ? `${d} ${d === 1 ? "avledning" : "avledninger"}` : "", c ? `${c} sammensatte ord` : ""].filter(Boolean).join(", "),
+    famSum: (d, c) => "Ordfamilie: " + [d ? `${d} ${d === 1 ? "avledning" : "avledninger"}` : "", c ? `${c} ${c === 1 ? "sammensatt ord" : "sammensatte ord"}` : ""].filter(Boolean).join(", "),
     famNote: "Bare ordbokord som GiellaLTs analysator knytter sammen som avledning eller sammensetning.",
     noHits: (q) => `Ingen treff for «${q}»`,
     noHitsHint: "Prøv en annen skrivemåte, grunnformen eller en oversettelse. Skriv ? for en uklar bokstav og * for flere: á?bmogis, *ortnega.",
