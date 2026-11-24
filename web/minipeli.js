@@ -710,6 +710,7 @@ async function peliSayWord(word, btn) {
 // --- Avaus ja sulkeminen ---
 function openPeli() {
   stopTts();
+  peliFromList = false;
   $("peli-view").hidden = false;
   overlayOpened();  // verkkoversion Takaisin sulkee pelin (app.js)
   loadPeli().then(() => {
@@ -731,18 +732,26 @@ function peliOrientation() {
 if ($("peli-view")) new MutationObserver(peliOrientation).observe($("peli-view"), { attributes: true, attributeFilter: ["hidden"] });
 // Sanastojen Pelaa-painike (2026-11-23): peli auki suoraan listan tilaan (valittu pelitapa); jos tila ei ole käytössä
 // valitulla saamen kielellä (kello inariksi), näkyy valikko
+// Pelaa-reitti (käyttäjä 2026-11-24): Takaisin pelistä tai tulosruudusta suoraan listaan, ei pelivalikon kautta
+// (Android ja verkko samoin). Valikkoon itse siirtynyt käyttäjä palaa taas tavalliseen järjestykseen.
+let peliFromList = false;
+const peliSheetOpen = () => !!$("peli-body").querySelector(".peli-sheet");
+// Kerros pelin sisällä: käynnissä oleva peli tai tulosruutu (Takaisin vie pelivalikkoon); ei Pelaa-reitillä
+const peliInnerLayer = () => !$("peli-view").hidden && !peliFromList && ((peliRun && !$("peli-back").hidden) || peliSheetOpen());
 function peliOpenMode(mode) {
   openPeli();
+  peliFromList = true;
   loadPeli().then(() => { if (peliModesFor(peliMenuSami()).some((m) => m.id === mode)) peliStart(mode); }).catch(() => {});
 }
 // Pelitilan sanasto (tulossivun linkki): pelitila -> Sanastojen lista
 const PELI_LIST = { colours: "varit", questions: "kysymykset", time: "viikonpaivat", ordinals: "luvut", animals: "elaimet", berries: "marjat",
   clock: "kellonajat", clockAll: "kellonajat" };
 function hidePeli() { peliStopAudio(); const was = !$("peli-view").hidden; $("peli-view").hidden = true; if (was) overlayClosed(); }
-// Takaisin-ele: ensin pelistä valikkoon (peli jää jatkettavaksi), sitten näkymä kiinni
+// Takaisin-ele: ensin pelistä tai tulosruudusta valikkoon (peli jää jatkettavaksi), sitten näkymä kiinni;
+// Sanastojen Pelaa-reitillä suoraan listaan
 function closePeli() {
   if ($("peli-view").hidden) return false;
-  if (peliRun && !$("peli-back").hidden) { renderPeliMenu(); return true; }
+  if (peliInnerLayer()) { renderPeliMenu(); return true; }
   hidePeli();
   return true;
 }
@@ -819,7 +828,7 @@ function bindPeli() {
     if (list) list.hidden = !open;
   };
   renderPeliMute();
-  $("peli-back").onclick = () => renderPeliMenu();
+  $("peli-back").onclick = () => { peliFromList = false; renderPeliMenu(); };
   if ($("game-toggle")) {
     $("game-toggle").onchange = (e) => { settings.game = e.target.checked; saveSettings(); applyPeliButton(); };
   }
@@ -849,7 +858,7 @@ function bindPeli() {
     if (act === "resume") renderPeliQuestion();
     else if (act === "fresh") { peliRun = null; peliSave(); renderPeliMenu(); }
     else if (act === "again") peliStart(e.target.closest("[data-act]").dataset.mode);
-    else if (act === "menu") renderPeliMenu();
+    else if (act === "menu") { peliFromList = false; renderPeliMenu(); }
     else if (act === "clock-again") peliClockSay(peliRun?.q);
     else if (act === "open-list") {
       const id = e.target.closest("[data-act]").dataset.list;
@@ -881,7 +890,7 @@ function bindPeli() {
   for (const ev of ["pointerdown", "mousedown"]) {
     $("peli-body").addEventListener(ev, (e) => { if (e.target.closest(".pw-key, .pw-hint-btn")) e.preventDefault(); });
   }
-  overlayLayerFns.push(() => (!$("peli-view").hidden && peliRun && !$("peli-back").hidden ? 1 : 0));  // käynnissä oleva peli (app.js)
+  overlayLayerFns.push(() => (peliInnerLayer() ? 1 : 0));  // käynnissä oleva peli tai tulosruutu (app.js); ei Pelaa-reitillä
   // Takaisin-ele (MainActivity: closeOcr) ja Esc: ensin avoin ikkuna, sitten peli
   const closeOcrBase = window.closeOcr;
   window.closeOcr = () => {

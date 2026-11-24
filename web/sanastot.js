@@ -543,8 +543,19 @@ function renderSanasto(listId) {
       return;
     }
     // Osiot (sanastot.py SECTIONS): jokainen oma korttinsa otsikkoineen; rivit kortin sisällä ohuin viivoin erotettuina
-    const secs = l.sections || [{}];
+    // Aakkostaulukko (Eläimet, käyttäjä 2026-11-24): ei osioita, yksi rivi sanaa kohden käyttöliittymän kieli | saame,
+    // käyttöliittymän kielen aakkosissa (suomi, norja, englanti). Datan rivijärjestys ennallaan (harjoituksen äänet).
+    const alpha = l.layout === "alpha";
+    const secs = alpha ? [{}] : l.sections || [{}];
     html += secs.map((sec, i) => {
+      if (alpha) {
+        const coll = (() => { try { return new Intl.Collator({ fi: "fi", nb: "nb", en: "en" }[lang] || "fi"); } catch (e) { return new Intl.Collator(); } })();
+        const sorted = [...l.rows].sort((a, b) => coll.compare(uiOf(a)[0] || "", uiOf(b)[0] || ""));
+        return `<section class="sl-sec"><div class="sl-card arows">` + sorted.map((r) => {
+          const x = r.sme[0];
+          return `<div class="sanasto-row arow"><span class="ar-ui">${esc(uiOf(r)[0] || "")}</span><span class="ar-sme">${tapX(x, x.w[0], true)}</span></div>`;
+        }).join("") + `</div></section>`;
+      }
       const rows = l.rows.filter((r) => (r.sec || 0) === i);
       if (!rows.length) return "";
       // Parittoman yhden muodon jakson viimeinen solu koko leveydelle, ettei ruudukkoon jää tyhjää koloa

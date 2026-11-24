@@ -382,7 +382,9 @@ def lists():
     L.append({"id": "tervehdykset", "icon": "greet", "title": {"fi": "Tervehdykset", "nb": "Hilsener"}, "rows": grows})
     # Eläimet (elaimet.py, käyttäjä 2026-11-23): samat sanat kuin minipelissä, nyt myös sanastona
     import elaimet
-    L.append({"id": "elaimet", "icon": "paw", "title": {"fi": "Eläimet", "nb": "Dyr"},
+    # layout "alpha" (käyttäjä 2026-11-24): yksi taulukko saame | suomi aakkosjärjestyksessä ilman osioita (vähemmän
+    # tilaa); rivien järjestys datassa ennallaan (harjoituksen äänitiedostot ovat rivinumeron mukaan)
+    L.append({"id": "elaimet", "icon": "paw", "layout": "alpha", "title": {"fi": "Eläimet", "nb": "Dyr"},
               "rows": [row([fi], [nb], [sme(s_, "N", [], fi=fi, nb=nb)]) for s_, fi, nb in elaimet.ANIMALS]})
     # Marjat, hedelmät ja kasvikset (marjat.py, käyttäjä 2026-11-23): sanakirjan sanat, Sápmin omat osion alussa
     import marjat

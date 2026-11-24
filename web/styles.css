@@ -112,6 +112,10 @@ select {
 html.view-open { overflow: hidden; }
 .sanasto-view { position: fixed; inset: 0; z-index: 46; background: var(--bg); display: flex; flex-direction: column; }
 .sanasto-view[hidden] { display: none; }
+/* Peli Sanastojen päällä (Pelaa-painike, 2026-11-24): sama luokka ja z-index kuin listalla, ja lista on HTML:ssä
+   myöhemmin, joten se peitti pelin (napautukset osuivat listaan). Peli kerroksen verran ylemmäs; se päättyy
+   alapalkin yläpuolelle (bottom: var(--nav-h)), joten alapalkki ei jää alle. */
+.sanasto-view.peli-view { z-index: 47; }
 .sanasto-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); }
 .sanasto-view > .stripe { flex: none; }
 .sanasto-view > .stripe + .sanasto-body { padding-top: 12px; }
@@ -2334,3 +2338,10 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
   background: color-mix(in srgb, #e0a100 18%, transparent); color: inherit; vertical-align: 1px; }
 .der-of-line { margin: 4px 0 0; }
 #notrans-line { margin-top: 6px; }
+
+/* Aakkostaulukko (Eläimet, 2026-11-24): käyttöliittymän kieli | saame, yksi rivi sanaa kohden */
+.sl-card.arows > .sanasto-row.arow { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px;
+  align-items: baseline; padding: 3px 12px; min-height: 0; line-height: 1.25; }
+.arow .ar-ui { font-size: 15px; color: var(--muted); overflow-wrap: anywhere; }
+.arow .ar-sme { font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
+.arow .ar-sme .sw { padding: 0; }
