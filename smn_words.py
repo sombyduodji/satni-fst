@@ -82,7 +82,9 @@ class InariPicker:
                 if line.startswith("#") or len(c) < 6 or c[0] == "pohjoissaame":
                     continue
                 if c[5].strip():
-                    self.reviewed[c[0]] = c[5].strip()
+                    # avain (pohjoissaame, suomi): sama sana voi olla kahdella rivillä (dát tämä / dát nämä);
+                    # tyhjä suomi = vanha merkintä, joka koskee sanan kaikkia rivejä
+                    self.reviewed[(c[0], c[1].strip())] = c[5].strip()
 
     @property
     def available(self):
@@ -101,8 +103,9 @@ class InariPicker:
         piv = self.pivot(sme)
         concept = set(terms(fi))
         cands = sorted(set().union(*[self.fin_smn.get(t, set()) for t in concept])) if concept else []
-        if sme in self.reviewed:
-            word, why = (None if self.reviewed[sme] == "-" else self.reviewed[sme]), "tarkistettu"
+        rk = (sme, fi) if (sme, fi) in self.reviewed else (sme, "") if (sme, "") in self.reviewed else None
+        if rk:
+            word, why = (None if self.reviewed[rk] == "-" else self.reviewed[rk]), "tarkistettu"
         elif piv and self.fits(piv, pos) and (self.smn_fin.get(piv, set()) & concept or piv in cands):
             word, why = piv, "kahdesta lähteestä"
         else:
@@ -129,8 +132,8 @@ class InariPicker:
                     "# Viimeinen sarake: inarinsaamen sana = käyttöön, '-' = ei käyttöön (tarkistettu), tyhjä = vielä tarkistamatta.\n"
                     "# pivot = dict-sme-smn:n käännös pohjoissaamen sanalle; suora = dict-fin-smn/dict-smn-fin suomennoksen perusteella.\n")
             f.write("pohjoissaame\tsuomi\tnorja\tpivot\tsuora sanakirja\tinarinsaame (tarkistettu)\n")
-            for sme, ok in sorted(self.reviewed.items()):
-                f.write(f"{sme}\t\t\t\t\t{ok}\n")
+            for (sme, fi), ok in sorted(self.reviewed.items()):
+                f.write(f"{sme}\t{fi}\t\t\t\t{ok}\n")
             for r in self.review:
                 f.write("\t".join(r) + "\t\n")
 

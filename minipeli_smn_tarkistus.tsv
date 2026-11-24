@@ -2,7 +2,12 @@
 # Viimeinen sarake: inarinsaamen sana = käyttöön, '-' = ei käyttöön (tarkistettu), tyhjä = vielä tarkistamatta.
 # pivot = dict-sme-smn:n käännös pohjoissaamen sanalle; suora = dict-fin-smn/dict-smn-fin suomennoksen perusteella.
 pohjoissaame	suomi	norja	pivot	suora sanakirja	inarinsaame (tarkistettu)
+gurká	kurkku				kurkkâ
+gáiccamuorji	vadelma				vađukkâš
+jieret	punainen viinimarja				jiereeh
+ruonas	vihannes, kasvis				ruonâs
 soaitit					-
+čirsa	kirsikka				kirsik
 giđđageassi	alkukesä	forsommer			
 maŋŋelgaskabeaivi	iltapäivä	ettermiddag		eehidpeivi, ehidispeivi	
 galles	monelta?	hva tid?			
@@ -116,10 +121,5 @@ goabbá	kumpi	hvilken av de to	kuábáš	kuábbáš, kuábbáš peri, kuábbáš
 galles	monelta	hva tid			
 gáhttu	kissa	katt	káttu	kaasi, kissá	
 beahceloddi	metso	storfugl		kuáppil, čuhčá	
-jieret	punainen viinimarja	villrips			
-gáiccamuorji	vadelma	bringebær		vatukkâš, vađukkâš	
 eanamuorji	mansikka	jordbær	eennâmmyerji	mansik, mansikka	
-čirsa	kirsikka	kirsebær		kirsik, tähtimyerji	
 kálla	kaali	kål		kaali, kaalâ	
-gurká	kurkku	agurk		kurkku, kurkkâ, loppâniđ, pahčániđ, puáhčániđ, čuolmâduđ	
-ruonas	vihannes, kasvis	grønnsak		puurrâmšaddo, ruonâs, ruánáášaddo	

@@ -2,8 +2,15 @@
 # Viimeinen sarake: inarinsaamen sana = käyttöön, '-' = ei käyttöön (tarkistettu), tyhjä = vielä tarkistamatta.
 # pivot = dict-sme-smn:n käännös pohjoissaamen sanalle; suora = dict-fin-smn/dict-smn-fin suomennoksen perusteella.
 pohjoissaame	suomi	norja	pivot	suora sanakirja	inarinsaame (tarkistettu)
+dat	ne				toh
+dát	nämä				taah
+gurká					kurkkâ
+gáiccamuorji					vađukkâš
+jieret					jiereeh
 kvárta					varttâ
+ruonas					ruonâs
 sekunda					seekunt
+čirsa					kirsik
 giđđageassi	alkukesä	forsommer			
 maŋŋelgaskabeaivi	iltapäivä	ettermiddag		eehidpeivi, ehidispeivi	
 galles	monelta?	hva tid?			
@@ -40,15 +47,8 @@ Dearvvuođat	terveisiä	hilsener
 Lihkku beivviin!	hyvää syntymäpäivää, onnea päivän johdosta	gratulerer med dagen			
 gáhttu	kissa	katt	káttu	kaasi, kissá	
 beahceloddi	metso	storfugl		kuáppil, čuhčá	
-jieret	punainen viinimarja	villrips			
-gáiccamuorji	vadelma	bringebær		vatukkâš, vađukkâš	
 eanamuorji	mansikka	jordbær	eennâmmyerji	mansik, mansikka	
-čirsa	kirsikka	kirsebær		kirsik, tähtimyerji	
 kálla	kaali	kål		kaali, kaalâ	
-gurká	kurkku	agurk		kurkku, kurkkâ, loppâniđ, pahčániđ, puáhčániđ, čuolmâduđ	
-ruonas	vihannes, kasvis	grønnsak		puurrâmšaddo, ruonâs, ruánáášaddo	
-dát	nämä	disse	taat		
-dat	ne	de	tot		
 diekko	siinä	der	tiegu	nuuvt, tagopeht, tast, tastan, taste, tie	
 duos	tuossa, tuosta	akkurat der		tuo, tuogu, tuođee	
 ruovttus	kotona	hjemme		koođijn, kuáttun, pääihist	
