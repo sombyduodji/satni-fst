@@ -114,7 +114,7 @@ const UI_TEXTS = {
     expEnable: "Ota käyttöön", cancel: "Peruuta", smsVia: "suomen kautta, likimääräinen",
     // Koltansaame Muut kielet -kohdassa: varoitus päälle kytkettäessä ja valinta pohjoissaamen sanakorteille
     // Virheilmoitus sanakortista (app.js: openReport, sendReport)
-    reportError: "Ilmoita virheestä", reportWhat: "Mikä on väärin?", reportKindTrans: "Käännös on väärä tai huono",
+    reportError: "Ilmoita virheestä", reportWhat: "Mikä on väärin?", reportKindTrans: "Käännös on väärä tai huono", reportKindMissing: "Käännös puuttuu", reportMissingTrans: "Ilmoita puuttuvasta käännöksestä", fallbackLang: "varakieli", derOf: "johdos sanasta",
     reportKindWord: "Haku toi kokonaan väärän sanan", reportKindForm: "Taivutusmuoto on väärin", reportKindOther: "Muu",
     reportFix: "Mikä olisi oikein? (valinnainen)", reportSend: "Valmistele sähköposti", reportSubject: "Sátni FST: virheilmoitus",
     reportSubjectKind: { trans: "käännös", word: "väärä sana", form: "taivutus", sme: "saamen sana", audio: "äänite", inappropriate: "sopimaton", other: "muu" },
@@ -443,7 +443,7 @@ const UI_TEXTS = {
     register: { vulgar: "vulgært", derogatory: "nedsettende", offensive: "støtende" },
     registerNote: "Ifølge Wiktionary regnes ordet som vulgært, nedsettende eller støtende",
     expEnable: "Slå på", cancel: "Avbryt", smsVia: "via finsk, omtrentlig",
-    reportError: "Meld fra om feil", reportWhat: "Hva er feil?", reportKindTrans: "Oversettelsen er feil eller dårlig",
+    reportError: "Meld fra om feil", reportWhat: "Hva er feil?", reportKindTrans: "Oversettelsen er feil eller dårlig", reportKindMissing: "Oversettelsen mangler", reportMissingTrans: "Meld fra om manglende oversettelse", fallbackLang: "reservespråk", derOf: "avledet av",
     reportKindWord: "Søket ga et helt feil ord", reportKindForm: "En bøyningsform er feil", reportKindOther: "Annet",
     reportFix: "Hva ville vært riktig? (valgfritt)", reportSend: "Lag e-post", reportSubject: "Sátni FST: feilmelding",
     reportSubjectKind: { trans: "oversettelse", word: "feil ord", form: "bøyning", sme: "samisk ord", audio: "lydopptak", inappropriate: "upassende", other: "annet" },
@@ -768,7 +768,7 @@ UI_TEXTS.en = {
   register: { vulgar: "vulgar", derogatory: "derogatory", offensive: "offensive" },
   registerNote: "According to Wiktionary, the word is considered vulgar, derogatory or offensive",
   expEnable: "Turn on", cancel: "Cancel", smsVia: "via Finnish, approximate",
-  reportError: "Report an error", reportWhat: "What is wrong?", reportKindTrans: "The translation is wrong or poor",
+  reportError: "Report an error", reportWhat: "What is wrong?", reportKindTrans: "The translation is wrong or poor", reportKindMissing: "The translation is missing", reportMissingTrans: "Report a missing translation", fallbackLang: "fallback", derOf: "derived from",
   reportKindWord: "The search gave a completely wrong word", reportKindForm: "An inflected form is wrong", reportKindOther: "Other",
   reportFix: "What would be right? (optional)", reportSend: "Prepare email", reportSubject: "Sátni FST: error report",
   reportSubjectKind: { trans: "translation", word: "wrong word", form: "inflection", sme: "Sámi word", audio: "recording", inappropriate: "inappropriate", other: "other" },

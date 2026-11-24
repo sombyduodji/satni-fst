@@ -361,6 +361,8 @@ def main():
         -- Johdokset (der_fin.py): pohjasanat yhdyssanojen käännökseen ja johdetut -vuohta-suomennokset (-uus/-yys)
         CREATE TABLE der_base (word_id INTEGER PRIMARY KEY, bases TEXT) WITHOUT ROWID;
         CREATE TABLE der_fin (word_id INTEGER PRIMARY KEY, fin TEXT, base TEXT, suffix TEXT) WITHOUT ROWID;
+        -- Johdos sanasta X (der_fin.der_of_rows, 2026-11-24): sanakortti näyttää pohjasanan, kun käännös puuttuu
+        CREATE TABLE der_of (word_id INTEGER PRIMARY KEY, base TEXT, base_id INTEGER) WITHOUT ROWID;
         -- Yhdyssanojen tarkistetut suomennokset sanoille ilman suomennosta (cmp_fin.py, cmp_fin_hyvaksytyt.tsv)
         CREATE TABLE cmp_fin (word_id INTEGER PRIMARY KEY, fin TEXT, parts TEXT) WITHOUT ROWID;
         -- Englanti Wiktionarysta suomen ja norjan kautta, kun molemmat antavat saman (wiktionary_eng.py, tarkistamaton)
@@ -561,6 +563,9 @@ def main():
     print(f"Suomennosehdotukset: {len(pivot_rows)} riviä" if pivot_rows else "Suomennosehdotukset: dict-smn-fin puuttuu (hae_sanakirjat.sh)")
     dst.executemany("INSERT INTO der_base VALUES (?,?)", der_base_rows)
     dst.executemany("INSERT INTO der_fin VALUES (?,?,?,?)", der_fin_rows)
+    der_of_rows = der_fin.der_of_rows(src)
+    dst.executemany("INSERT INTO der_of VALUES (?,?,?)", der_of_rows)
+    print(f"Johdos sanasta X: {len(der_of_rows)} sanaa ilman suomennosta tai norjannosta")
     dst.executemany("INSERT INTO cmp_fin VALUES (?,?,?)", cmp_fin_rows)
     print(f"Yhdyssanojen tarkistetut suomennokset: {len(cmp_fin_rows)}")
     print(f"Johdokset: {len(der_base_rows)} pohjasanaa, {len(der_fin_rows)} johdettua suomennosta"

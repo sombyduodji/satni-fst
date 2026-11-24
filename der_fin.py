@@ -121,3 +121,50 @@ def rows(src):
                 fin_rows.append((ids[lemma], ", ".join(cands[:3]), base, SUFFIX[suffix]))
                 break
     return base_rows, fin_rows
+
+
+# Kaikki johdokset sanoille, joilta puuttuu suomennos tai norjannos (2026-11-24, käyttäjä: "johdos sanasta X"
+# sanakorttiin, kun käännöstä ei ole). Vain varmat: analysaattorin perusmuotojäsennys (ei yhdyssanaa, ei virhettä),
+# lähin pohjasana (vähiten Der-vaiheita) yksiselitteinen, pohjasana on sanakirjassa eikä ole sana itse.
+LEMMA_TAIL = {"V": ("+Inf",), "N": ("+Sg+Nom",), "A": ("+Sg+Nom", "+Attr"), "Adv": ("+Adv",)}
+
+
+def der_of_rows(src):
+    """der_of-rivit (word_id, base, base_id) export_web_data.py:lle."""
+    words = src.execute("SELECT id, sme_lemma, pos, finnish_translation, nob_translation FROM dictionary").fetchall()
+    ids = {}
+    for wid, lemma, *_ in words:
+        ids.setdefault(lemma, wid)
+    targets = {lemma: (wid, pos) for wid, lemma, pos, f, n in words
+               if (not (f or "").strip() or not (n or "").strip()) and pos in LEMMA_TAIL and lemma not in ("",)}
+    path = next((p for p in ANALYSER_PATHS if os.path.exists(p)), None)
+    if not path or not shutil.which("hfst-lookup") or not targets:
+        return []
+    out = subprocess.run(["hfst-lookup", "-q", path], input="\n".join(targets) + "\n", capture_output=True, text=True).stdout
+    readings = {}
+    for line in out.splitlines():
+        parts = line.split("\t")
+        if len(parts) < 2 or parts[0] not in targets:
+            continue
+        a = parts[1]
+        if "Err/" in a or "+?" in a or "Cmp" in a or "Der/" not in a:
+            continue
+        pos = targets[parts[0]][1]
+        tail = a[a.rindex("Der/"):]
+        tail = tail[tail.index("+"):] if "+" in tail else ""
+        if not tail.startswith("+" + pos + "+") and tail != "+" + pos or not tail.endswith(LEMMA_TAIL[pos]):
+            continue
+        # Lähin pohjasana: viimeistä Der-vaihetta edeltävä lemma (várra+N+Der/lasj+A+Der/vuota -> váralaš jos
+        # toinen jäsennys antaa sen suoraan; ketjun alku vain, jos lyhyempää ei ole)
+        readings.setdefault(parts[0], set()).add((a.count("Der/"), a.split("+")[0]))
+    rows = []
+    for lemma, rs in readings.items():
+        least = min(n for n, _ in rs)
+        bases = {b for n, b in rs if n == least}
+        if len(bases) != 1:
+            continue
+        base = bases.pop()
+        if base == lemma or base not in ids:
+            continue
+        rows.append((targets[lemma][0], base, ids[base]))
+    return rows

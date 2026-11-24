@@ -155,6 +155,10 @@
         <p id="eng-mt-line" class="translation" hidden></p>
         <!-- Johdettu suomennos (der_fin.py): váralašvuohta ≈ vaarallisuus, kun sanakirjassa ei ole suomennosta -->
         <p id="der-fin-line" class="translation" hidden></p>
+        <!-- Käännös puuttuu (2026-11-24): toisen kielen käännös varakielenä, johdoksen pohjasana ja ilmoituslinkki (app.js: renderNoTrans) -->
+        <p id="fallback-line" class="translation fallback-line" hidden></p>
+        <p id="der-of-line" class="der-of-line" hidden></p>
+        <p id="notrans-line" class="report-line" hidden><a href="#" id="notrans-btn" class="report-link"><span aria-hidden="true">⚑</span> <span data-i18n="reportMissingTrans">Ilmoita puuttuvasta käännöksestä</span></a></p>
         <p id="form-translation" class="form-translation" hidden></p>
         <p id="extra-translations" class="extra-translations" hidden></p>
         <p id="position-line" class="muted small" hidden></p>
@@ -284,6 +288,7 @@
       <legend data-i18n="reportWhat">Mikä on väärin?</legend>
       <label><input type="radio" name="report-kind" value="trans" checked>
         <span><span data-i18n="reportKindTrans"></span> <select id="report-lang" class="report-card-only"></select></span></label>
+      <label class="report-card-only"><input type="radio" name="report-kind" value="missing"><span data-i18n="reportKindMissing"></span></label>
       <!-- Sanakortti: väärä sana ja taivutus; sanastolista (sanastot.js): saamen sana tai muoto ja äänite -->
       <label class="report-card-only"><input type="radio" name="report-kind" value="word"><span data-i18n="reportKindWord"></span></label>
       <label class="report-card-only"><input type="radio" name="report-kind" value="form"><span data-i18n="reportKindForm"></span></label>

@@ -416,7 +416,7 @@ function sendReport() {
   const kind = $("report-dlg").querySelector('input[name="report-kind"]:checked').value;
   const lang = $("report-lang").value || settings.lang;
   const shown = Object.fromEntries(reportLanguages())[lang] || "";
-  const kindText = { trans: t("reportKindTrans"), word: t("reportKindWord"), form: t("reportKindForm"), other: t("reportKindOther") }[kind];
+  const kindText = { trans: t("reportKindTrans"), missing: t("reportKindMissing"), word: t("reportKindWord"), form: t("reportKindForm"), other: t("reportKindOther") }[kind];
   const lemma = shownLemma(w);
   const subject = `${t("reportSubject")} – ${lemma} (${t("reportSubjectKind")[kind]}${kind === "trans" ? ", " + langName(lang) : ""})`;
   const others = [...activeExtraLangs(), ...(settings.skolt ? ["sms"] : [])].map(langName);
@@ -461,7 +461,7 @@ function openCtxReport(ctx) {
 function ctxSendReport() {
   const c = reportCtx || { place: "photo", lines: [] }, L = t("reportLabels"), place = t("reportPlaces")[c.place];
   const kind = $("report-dlg").querySelector('input[name="report-kind"]:checked').value;
-  const kindText = { trans: t("reportKindTrans"), sme: t("reportKindSme"), audio: t("reportKindAudio"), other: t("reportKindOther") }[kind];
+  const kindText = { trans: t("reportKindTrans"), missing: t("reportKindMissing"), sme: t("reportKindSme"), audio: t("reportKindAudio"), other: t("reportKindOther") }[kind];
   const word = $("report-word").value.trim().slice(0, 80);
   const subject = `${t("reportSubject")} – ${place}${word ? ": " + word : ""} (${t("reportSubjectKind")[kind]})`;
   const body = [
@@ -948,11 +948,15 @@ function queryDatabase(query) {
   // Verbinominit ja partisiipit (Actio, PrsPrc, PrfPrc, Ger, VAbess, VGen; käyttäjä 2026-11-23): jos haettu muoto on
   // jonkin toisen sanan tavallinen taivutusmuoto (geahččaleamis = geahččaleapmi Sg+Loc), se ensin ja verbin
   // johdosmuoto (geahččalit Actio+Loc) sen jälkeen, eikä yleisen verbin 1.2 nosta sitä. Ilman tavallista osumaa ennallaan.
+  // Progressiivi -min (Actio+Ess: lohkamin, bargamin) on tavallista verbin taivutusta (käyttäjä 2026-11-24): verbi ensin.
   const formHits = all(
-    `SELECT d.${cols.split(", ").join(", d.")}, MIN(CASE WHEN t.tag LIKE 'Actio%' OR t.tag IN ('PrsPrc', 'PrfPrc', 'Ger', 'VAbess', 'VGen')
+    `SELECT d.${cols.split(", ").join(", d.")}, MIN(CASE WHEN (t.tag LIKE 'Actio%' AND t.tag <> 'Actio+Ess') OR t.tag IN ('PrsPrc', 'PrfPrc', 'Ger', 'VAbess', 'VGen')
        THEN 1 ELSE 0 END) AS derived
      FROM paradigms p JOIN dictionary d ON d.id = p.word_id JOIN tags t ON t.id = p.tag_id WHERE p.surface IN (?, ?, ?, ?, ?) GROUP BY d.id`, forms);
-  const plainForm = formHits.some((r) => !r.derived);
+  // Tavallinen osuma voittaa vain, jos sillä on käännös käyttöliittymän kielellä (heaitimis: heaitin "frafall" ilman
+  // suomennosta ei nouse heaitit "lakata" edelle suomeksi; norjaksi nousee). Vertailu 2026-11-24, kuvien lauseet.
+  const uiCol = LANGUAGES[settings.lang] && LANGUAGES[settings.lang].col;
+  const plainForm = formHits.some((r) => !r.derived && (!uiCol || (r[uiCol] || "").trim()));
   for (const r of formHits) add(r, plainForm && r.derived ? 5.05 : r.freq >= COMMON_WORD ? 1.2 : 5);
   // Passiivimuoto (máksojuvvo -> máksit), sme_passive.py; vanhassa aineistossa taulua ei ole
   try {
@@ -1738,6 +1742,7 @@ function selectResult(i, pushHistory = true) {
   renderPivotFin(w, trans);
   renderDerFin(w, trans);
   renderExtraTranslations(w, groups);
+  renderNoTrans(w, trans);
   // Ensimmäinen saamenkielinen määritelmä kortissa, kaikki Merkitykset-välilehdellä
   state.definitions = data.definitions || [];
   state.alsoFin = data.alsoFin || "";
@@ -1881,6 +1886,38 @@ function renderDerFin(w, trans) {
   const links = c.parts.split("+").map((p) => `<a href="#/sana/${encodeURIComponent(p)}">${esc(p)}</a>`).join(" + ");
   line.innerHTML = `≈ ${esc(c.fin)} <span class="muted small">(${esc(t("cmpFinNote"))}: ${links})</span>`;
   line.hidden = false;
+}
+
+// Käännös puuttuu käyttöliittymän kielellä (käyttäjä 2026-11-24): sana näytetään silti, jotta sen voi ilmoittaa.
+// 1) Toisen kielen sanakirjakäännös varakielenä, vaikka kieli ei olisi valittuna (ei kieliä, jotka jo näkyvät).
+// 2) Johdos sanasta X (der_of, der_fin.py): analysaattorin yksiselitteinen pohjasana ja sen oma käännös; sanan omaa
+//    merkitystä ei arvata. 3) Ilmoita puuttuvasta käännöksestä -linkki (Ilmoita virheestä -lomake, "Käännös puuttuu").
+const FALLBACK_LANGS = { fin: ["nob", "eng", "spa", "smn", "smj", "sma"], nob: ["fin", "eng", "spa", "smn", "smj", "sma"],
+                         eng: ["nob", "fin", "spa", "smn", "smj", "sma"] };
+function renderNoTrans(w, trans) {
+  const fb = $("fallback-line"), der = $("der-of-line");
+  fb.hidden = der.hidden = $("notrans-line").hidden = true;
+  if (trans) return;
+  const shown = new Set([settings.lang, ...activeExtraLangs()]);
+  for (const lang of FALLBACK_LANGS[settings.lang] || []) {
+    if (shown.has(lang)) continue;
+    const text = translationOf(w, 4, lang);
+    if (!text) continue;
+    fb.innerHTML = `<span class="muted">${esc(t("langIn")[lang])}:</span> ${labelledList(text, lang)} ` +
+      `<span class="fallback-badge">${esc(t("fallbackLang"))}</span>`;
+    fb.hidden = false;
+    break;
+  }
+  let d = null;
+  try { d = hasTable("der_of") && all("SELECT base, base_id FROM der_of WHERE word_id = ?", [w.id])[0]; } catch (e) { /* vanha tietokanta */ }
+  if (d) {
+    const col = LANGUAGES[settings.lang] && LANGUAGES[settings.lang].col;
+    const bt = col ? splitList((all(`SELECT ${col} AS t FROM dictionary WHERE id = ?`, [d.base_id])[0] || {}).t).slice(0, 3).join(", ") : "";
+    der.innerHTML = `<span class="muted">${esc(t("derOf"))}</span> <a href="#/sana/${encodeURIComponent(d.base)}">${esc(d.base)}</a>` +
+      (bt ? ` <span class="muted">– ${esc(bt)}</span>` : "");
+    der.hidden = false;
+  }
+  $("notrans-line").hidden = false;
 }
 
 function renderPivotFin(w, trans) {
@@ -6527,6 +6564,11 @@ function bindEvents() {
     setSkolt(true, false);  // pohjoissaamen sanakortit omasta alakohdastaan
   };
   $("report-btn").onclick = (e) => { e.preventDefault(); openReport(); };
+  $("notrans-btn").onclick = (e) => {
+    e.preventDefault();
+    openReport();
+    $("report-dlg").querySelector('input[value="missing"]').checked = true;
+  };
   $("report-cancel").onclick = () => $("report-dlg").close();
   $("missing-btn").onclick = (e) => { e.preventDefault(); openMissingReport(); };
   // Puuttuvan sanan tila vain sille avaukselle (muut lomakkeen avaajat eivät tunne sitä)

@@ -109,10 +109,9 @@ class InariPicker:
         elif piv and self.fits(piv, pos) and (self.smn_fin.get(piv, set()) & concept or piv in cands):
             word, why = piv, "kahdesta lähteestä"
         else:
-            near = [d for d in cands if lev(d.lower(), piv.lower()) <= 2 and self.fits(d, pos)] if piv else []
-            if len(near) == 1:
-                word, why = near[0], "uudempi asu"
-            elif len(concept) == 1 and len(cands) == 1 and self.fits(cands[0], pos) and self.smn_fin.get(cands[0], set()) & concept:
+            # 2026-11-24 (käyttäjä): vain 100 % varmat. "Uudempi asu" (pivotin kaltainen kirjoitusasu) ei ole varma,
+            # eikä suora sana, jos pivot antaa toisen sanan (lähteet ristiriidassa); ne jäävät tarkistettaviksi.
+            if not piv and len(concept) == 1 and len(cands) == 1 and self.fits(cands[0], pos) and self.smn_fin.get(cands[0], set()) & concept:
                 word, why = cands[0], "suora molempiin suuntiin"
             else:
                 word, why = None, "tarkistettavana"

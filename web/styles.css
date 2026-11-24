@@ -2328,3 +2328,9 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .sanasto-row.ptab[style*="--cols:5"] { grid-template-columns: repeat(5, minmax(max-content, 1fr)); column-gap: 6px; }
 .sanasto-row.ptab[style*="--cols:5"] .pt-cell .sw { font-size: 14.5px; overflow-wrap: normal; white-space: nowrap; }
 .sanasto-row.ptab[style*="--cols:5"] .pt-fi { width: 0; min-width: 100%; overflow-wrap: break-word; }
+
+/* Käännös puuttuu (2026-11-24): varakielen käännös, johdoksen pohjasana ja ilmoituslinkki */
+.fallback-badge { display: inline-block; font-size: 0.75em; padding: 1px 7px; border-radius: 6px; margin-left: 4px;
+  background: color-mix(in srgb, #e0a100 18%, transparent); color: inherit; vertical-align: 1px; }
+.der-of-line { margin: 4px 0 0; }
+#notrans-line { margin-top: 6px; }
