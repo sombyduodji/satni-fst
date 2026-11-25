@@ -2453,3 +2453,5 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .fam-pill .fp-count { color: var(--muted); font-weight: 400; }
 .fam-pill .lp-arrow { color: var(--muted); }
 .report-foot { align-items: center; }
+/* Ei erotinviivaa käännöslaatikon ja muiden kielten välissä (käyttäjä 2026-11-25: viiva laatikon alla hämäsi) */
+.extra-translations { border-top: 0; padding-top: 2px; margin-top: 6px; }
