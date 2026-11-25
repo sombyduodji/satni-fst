@@ -2439,3 +2439,17 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .more-line:has(> .more:empty) { display: none; }
 .word-top .word-title .word-head h1 { flex: 0 1 auto; }
 .more-line .more { margin-left: 0; padding-left: 0; }
+
+/* Muut merkitykset -kuvake käännösrivin oikeassa reunassa; Sanaperhe pillerinä (käyttäjä 2026-11-25) */
+.trans-row { display: flex; align-items: center; gap: 10px; }
+.trans-row #translation { flex: 1 1 auto; min-width: 0; }
+.more-icon { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent); text-decoration: none; }
+.more-icon:hover { background: color-mix(in srgb, var(--accent) 20%, transparent); }
+.more-icon:active { transform: scale(.92); }
+.fam-pill { font-weight: 500; }
+.fam-pill .lp-mark { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+.fam-pill .fp-text b { font-weight: 600; }
+.fam-pill .fp-count { color: var(--muted); font-weight: 400; }
+.fam-pill .lp-arrow { color: var(--muted); }
+.report-foot { align-items: center; }

@@ -1527,7 +1527,8 @@ function showSearch(query, results, index = 0, pushHistory = true) {
     renderSearchParts(query);
     $("form-translation").hidden = true;  // edellisen sanan rivit pois
     $("extra-translations").hidden = true;
-    $("more-meanings").textContent = "";
+    $("more-meanings").innerHTML = "";
+    $("more-meanings").hidden = true;
     $("gradation").innerHTML = "";
     $("word-info").textContent = "";
     return;
@@ -1820,9 +1821,14 @@ function selectResult(i, pushHistory = true) {
   // Saamenkielinen selitys vain Merkitykset-välilehdellä (käyttäjä 2026-11-25: kortissa se ei auta useimpia käyttäjiä)
   void def;
   $("sme-def").hidden = true;
-  $("more-meanings").textContent = ownGroup.length > 1 ? t("otherMeanings") + " ›" :
+  // Muut merkitykset (tai muut kielet) kuvakepainikkeena käännösrivin oikeassa reunassa; nimi saavutettavuutta varten
+  const moreLabel = ownGroup.length > 1 ? t("otherMeanings") :
     groups.some(([lang]) => lang !== settings.lang) && $("extra-translations").hidden ? t("otherLangs") : "";
-  $("more-meanings").hidden = !$("more-meanings").textContent;  // tyhjä linkki ei jää Tab-järjestykseen
+  const mm = $("more-meanings");
+  mm.hidden = !moreLabel;
+  mm.title = moreLabel;
+  mm.setAttribute("aria-label", moreLabel);
+  mm.innerHTML = !moreLabel ? "" : ownGroup.length > 1 ? ICON_LIST : ICON_GLOBE;
 
   renderGradation();
   renderInfo(w);
@@ -2073,6 +2079,10 @@ function skoltFor(w) {
 
 // Analysaattorin merkintä luettavaksi (Ind+Prt+Sg3 -> preteriti, yks. 3. persoona; Pl+Ill -> monikon illatiivi).
 // Tuntemattomat osat jätetään pois; jos mitään ei tunnisteta, näytetään merkintä sellaisenaan.
+const ICON_LIST = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor"/></svg>`;
+const ICON_GLOBE = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>`;
+const ICON_FAMILY = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="2.2"/><circle cx="5" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/><path d="M12 7.2V12M12 12H5v4.8M12 12h7v4.8"/></svg>`;
+
 function describeTag(tag) {
   const W = t("tagWords"), parts = tag.split("+");
   const person = parts.find((x) => /^(Sg|Du|Pl)[123]$/.test(x));
@@ -2829,7 +2839,10 @@ function renderFamily() {
   // 2026-11-25: tietorivillä se peitti pääsanamuodot); tietorivillä vain sanan oma rakenne (osat tai pohjasana).
   const line = $("der-of-line"), foot = $("fam-foot");
   foot.hidden = !(f.derived.length || f.compounds.length);
-  foot.textContent = foot.hidden ? "" : `${t("famSum", f.derived.length, f.compounds.length)} ›`;
+  // Pilleri "Sanasta muualla" -linkkien tyyliin: kuvake, nimi ja lukumäärät (käyttäjä 2026-11-25: pelkkä sininen teksti ei riittänyt)
+  const [famName, famCounts] = t("famSum", f.derived.length, f.compounds.length).split(": ");
+  foot.innerHTML = foot.hidden ? "" : `<span class="lp-mark">${ICON_FAMILY}</span><span class="fp-text"><b>${esc(famName)}</b>` +
+    ` <span class="fp-count">${esc(famCounts || "")}</span></span><span class="lp-arrow">›</span>`;
   if (!f.base && f.parts.length) {
     line.innerHTML = `<span class="muted">${esc(t("famPartsLine"))}</span> ` +
       f.parts.map((r) => `<a href="#/sana/${encodeURIComponent(r.sme_lemma)}">${esc(r.sme_lemma)}</a>`).join(" + ");
