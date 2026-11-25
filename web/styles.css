@@ -2530,5 +2530,6 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 /* ?-opas vain sanakortissa: piiloon, kun koko näytön näkymä (sanastot, peli, lause, asetukset) tai valokuvahaku on auki */
 html.view-open #help-btn, body:has(#ocr-view:not([hidden])) #help-btn { display: none !important; }
 .help-panel:focus { outline: none; }
-/* ?-opas piiloon myös, kun Lisää-valikko (sivupaneeli/alapaneeli) tai jokin ikkuna on auki (puhelintesti 2026-11-25) */
-body.sidebar-open #help-btn, body:has(dialog[open]:not(#help-dlg)) #help-btn { display: none !important; }
+/* Kun Lisää-valikko (sivupaneeli/alapaneeli) tai jokin ikkuna on auki, ? jää näkyviin taustalle kuten muut sanakortin
+   painikkeet, mutta ei ole napautettavissa (puhelintesti 2026-11-25; käyttäjä: ei katoa taustalta). openHelp tarkistaa saman. */
+body.sidebar-open #help-btn, body:has(dialog[open]:not(#help-dlg)) #help-btn { pointer-events: none; }
