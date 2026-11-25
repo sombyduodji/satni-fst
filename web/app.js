@@ -1507,6 +1507,7 @@ function showSearch(query, results, index = 0, pushHistory = true) {
     $("tabs").hidden = true;
     $("word-foot").hidden = true;
     $("grad-sum").hidden = true;
+    $("der-of-line").hidden = true;  // edellisen sanan sanaperhe- tai johdosrivi pois
     for (const t of TABS) $("panel-" + t).hidden = true;
     $("lemma").textContent = t("noHits", query);
     $("pos-badge").hidden = true;
@@ -1528,6 +1529,8 @@ function showSearch(query, results, index = 0, pushHistory = true) {
   $("search-parts").hidden = true;
   renderResults();
   selectResult(Math.min(index, state.results.length - 1), pushHistory);
+  // Yksi tulos: sama sana ja käännös näkyvät kortissa, joten tulosriviä ei toisteta (käyttäjä 2026-11-25)
+  $("results").hidden = state.results.length <= 1;
 }
 
 // Haku ei löytänyt sanaa: yhdyssanan osat kuten kuvahaussa (váralašvuođadieđáhusaid = váralašvuođa + dieđáhusaid),
@@ -1992,31 +1995,34 @@ function renderPivotFin(w, trans) {
 }
 
 function renderExtraTranslations(w, groups) {
+  // Muut kielet kaksipalstaisena luettelona (käyttäjä 2026-11-25): kielen nimi vasemmalla, sana oikealla. Konekäännös
+  // ja tarkistamaton lähde lyhyenä tunnisteena; napautus näyttää selityksen (bindCard: .xl-tag).
+  const tag = (note, cls = "") => ` <button type="button" class="xl-tag${cls}" data-note="${esc(note)}">${esc(t("mtTag"))}</button>`;
+  const row = (lang, html) => `<span class="xl-lang">${esc(langName(lang) || lang)}</span><span class="xl-val">${html}</span>`;
   const lines = activeExtraLangs().map((lang) => {
     const own = (groups.find(([l]) => l === lang) || [lang, []])[1][0];
     const text = own ? splitList(own.translations || own.explanations).slice(0, 4).join(", ") : translationOf(w, 3, lang);
     if (!text && lang === "eng") {
       // Wiktionaryn englanti suomen ja norjan kautta (taulu wikt_eng, wiktionary_eng.py): tarkistamaton, ei hakuun
-      let row = null;
-      try { row = all("SELECT eng FROM wikt_eng WHERE word_id = ?", [w.id])[0]; } catch (e) { /* vanha tietokanta */ }
-      if (row) return `<span class="muted">${esc(t("langIn").eng)}:</span> ${labelledList(splitList(row.eng).slice(0, 3).join(", "), "eng")} ` +
-        `<span class="muted small">(${esc(t("wiktEngNote"))})</span>`;
+      let r = null;
+      try { r = all("SELECT eng FROM wikt_eng WHERE word_id = ?", [w.id])[0]; } catch (e) { /* vanha tietokanta */ }
+      if (r) return row("eng", labelledList(splitList(r.eng).slice(0, 3).join(", "), "eng") + tag(t("wiktEngNote")));
       const mt = engMtOf(w.id);
-      if (mt) return `<span class="muted">${esc(t("langIn").eng)}:</span> ≈ ${esc(mt.eng)} <span class="muted small">(${esc(t("engMtNote", mt.level))})</span>`;
+      if (mt) return row("eng", esc(mt.eng) + tag(t("engMtNote", mt.level)));
     }
     if (!text && lang === "spa") {
       const mt = spaMtOf(w.id);
-      if (mt) return `<span class="muted">${esc(t("langIn").spa)}:</span> ≈ ${esc(mt.spa)} <span class="muted small">(${esc(t("engMtNote", mt.level))})</span>`;
+      if (mt) return row("spa", esc(mt.spa) + tag(t("engMtNote", mt.level)));
     }
-    return text && `<span class="muted">${esc(t("langIn")[lang])}:</span> ${labelledList(text, lang)}`;
+    return text && row(lang, labelledList(text, lang));
   }).filter(Boolean);
   const deu = deuMtOf(w.id);
-  if (deu) lines.push(`<span class="muted">${esc(t("langIn").deu)}:</span> ≈ ${esc(deu.deu)} <span class="muted small">(${esc(t("engMtNote", deu.level))})</span>`);
+  if (deu) lines.push(row("deu", esc(deu.deu) + tag(t("engMtNote", deu.level))));
   const sms = skoltFor(w);
-  if (sms) lines.push(`<span class="muted">${esc(t("langIn").sms)}${sms.via ? ` (${esc(t("smsVia"))})` : ""}:</span> ${esc(sms.text)}` +
-    ` <span class="unchecked-badge">${esc(t("smsUnchecked"))}</span>`);
+  if (sms) lines.push(row("sms", esc(sms.text) + (sms.via ? ` <span class="muted small">(${esc(t("smsVia"))})</span>` : "") +
+    ` <span class="unchecked-badge">${esc(t("smsUnchecked"))}</span>`));
   $("extra-translations").hidden = !lines.length;
-  $("extra-translations").innerHTML = lines.join("<br>");
+  $("extra-translations").innerHTML = lines.join("");
 }
 
 // Koltansaame (kokeellinen, tietokannan taulu sms, export_web_data.py / skolt_data.py). Pohjoissaamen ja
@@ -2512,7 +2518,7 @@ function renderTable() {
       return `<span class="form ${cls}" data-speak="${esc(speak)}" title="${esc(t("listenTo", speak))}">${esc(v)}</span>`;
     }).join('<span class="sep"> / </span>');
     const tr = translate ? translate(trTags || items.map(([tag]) => tag), neg) : "";
-    return `<td>${prefix ? `<span class="pron">${esc(prefix)}</span> ` : ""}${forms}${tr ? `<span class="form-tr">${esc(tr)}</span>` : ""}</td>`;
+    return `<td>${prefix ? `<span class="pron">${esc(prefix)}</span> ` : ""}${forms}${tr ? `<span class="form-tr">${tr.split(" / ").map(esc).join("<br>")}</span>` : ""}</td>`;
   };
   const label = (t) => `<td class="label">${esc(t)}</td>`;
   const section = (...cells) => `<tr class="section">${cells.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`;
@@ -2570,8 +2576,8 @@ function renderTable() {
 
   $("panel-table").innerHTML =
     (legend ? `<p class="legend">${t("gradeLegend")}</p>` : "") +
-    (settings.exp.tableTr && html.includes("form-tr") ? `<p class="hint form-tr-note">${esc(t("tableTrNote"))}</p>` : "") +
-    html + `<p class="hint">${esc(t("tapHint"))}</p>`;
+    html + (settings.exp.tableTr && html.includes("form-tr") ? `<p class="hint form-tr-note">${esc(t("tableTrNote"))}</p>` : "") +
+    `<p class="hint">${esc(t("tapHint"))}</p>`;
   boxTables($("panel-table"));
 }
 
@@ -2650,8 +2656,11 @@ function renderMeanings(meanings) {
   }
   if (!meanings.length && !defs.length && !rel.length) html += `<p class="muted">${esc(t("noMeanings"))}</p>`;
   $("panel-meanings").innerHTML = html;
-  const examples = meanings.reduce((n, m) => n + m.examples.length, 0);
-  $("meanings-tab").textContent = t("tabMeanings", meanings.length, examples);
+  // Välilehti ilman lukumäärää ja piiloon, kun näytettävää ei ole (käyttäjä 2026-11-25: tiiviimpi välilehtirivi)
+  $("meanings-tab").textContent = t("tabMeanings");
+  const empty = !meanings.length && !defs.length && !rel.length;
+  $("meanings-tab").hidden = empty;
+  if (empty && state.tab === "meanings") setTab("table");
 }
 
 function renderRaw() {
@@ -6708,6 +6717,10 @@ function bindEvents() {
   bindBottomNav();
 
   $("tabs").onclick = (e) => { if (e.target.dataset.tab) setTab(e.target.dataset.tab); };
+  $("extra-translations").addEventListener("click", (e) => {
+    const b = e.target.closest(".xl-tag");
+    if (b) toast(b.dataset.note);
+  });
   $("grad-sum").onclick = () => { setTab("grade"); $("tabs").scrollIntoView({ block: "start", behavior: "smooth" }); };
   $("more-meanings").onclick = (e) => { e.preventDefault(); setTab("meanings"); };
   $("der-of-line").addEventListener("click", (e) => {

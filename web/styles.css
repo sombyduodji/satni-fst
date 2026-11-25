@@ -21,7 +21,7 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0f141b; --surface: #171e27; --surface-alt: #1b232e; --border: #2a3441;
-    --text: #e5e9f0; --muted: #94a3b8; --subtle: #8391a5;
+    --text: #e5e9f0; --muted: #a9b6c8; --subtle: #8f9db0;
     --accent: #3b82f6; --accent-hover: #60a5fa;
     --flag-red: #fb7185; --flag-yellow: #facc15; --flag-blue: #60a5fa; --flag-green: #4ade80;
     --on-flag: #0f141b;
@@ -38,7 +38,7 @@
 }
 :root[data-theme="dark"] {
   --bg: #0f141b; --surface: #171e27; --surface-alt: #1b232e; --border: #2a3441;
-  --text: #e5e9f0; --muted: #94a3b8; --subtle: #8391a5;
+  --text: #e5e9f0; --muted: #a9b6c8; --subtle: #8f9db0;
   --accent: #3b82f6; --accent-hover: #60a5fa;
     --flag-red: #fb7185; --flag-yellow: #facc15; --flag-blue: #60a5fa; --flag-green: #4ade80;
     --on-flag: #0f141b;
@@ -2356,3 +2356,28 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .fam-parts { margin: 0 0 4px; font-size: 17px; }
 .fam-more { color: var(--accent); padding: 10px 0; }
 .fam-note { margin-top: 16px; }
+
+/* --- Sanakortin selkeytys (käyttäjä 2026-11-25): yksi otsikkorivi, harmaa tietorivi, muut kielet kahtena palstana,
+   virheilmoitus alareunassa pienenä linkkinä. Tummassa tilassa --muted yhtä pykälää vaaleampi (luettavuus himmeällä). */
+.word-top .word-title { width: 100%; flex-wrap: nowrap; align-items: center; }
+.word-top .word-title h1 { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.word-meta { display: flex; flex-wrap: wrap; align-items: baseline; margin: 4px 0 2px; font-size: 14px; color: var(--muted); line-height: 1.5; }
+.word-meta > :not([hidden]) ~ :not([hidden])::before { content: "·"; margin: 0 7px; color: var(--subtle); font-weight: 400; }
+.word-meta .badge { background: none; color: inherit; padding: 0; border-radius: 0; font-size: inherit; font-weight: 400; }
+.word-meta .der-of-line { margin: 0; display: inline; }
+.word-meta .grad-sum { display: inline-flex; width: auto; margin: 0; padding: 0; border: 0; background: none; font: inherit; color: inherit;
+  gap: 0; cursor: pointer; border-radius: 4px; }
+.word-meta .grad-sum .gs-forms, .word-meta .grad-sum .gs-more { display: none; }
+.word-meta .grad-sum .gs-clusters { font-size: inherit; font-weight: 600; }
+.word-meta .grad-sum:hover { text-decoration: underline; }
+.word .translation { font-size: 21px; margin: 10px 0 10px; }
+.extra-translations { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; font-size: 15px;
+  margin: 0 0 10px; padding-top: 8px; border-top: 1px solid var(--border); align-items: baseline; }
+.extra-translations .xl-lang { color: var(--muted); font-size: 14px; }
+.extra-translations .xl-val { min-width: 0; overflow-wrap: anywhere; }
+.xl-tag { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 6px; border: 0; font: 500 11px/1.6 inherit;
+  background: var(--chip); color: var(--muted); cursor: pointer; vertical-align: 1px; }
+.report-foot { margin: 10px 0 0; text-align: right; }
+.form-tr { line-height: 1.35; }
+/* Välilehdet mahtuvat yhdelle riville 360 px:n puhelimessakin (Taivutus · Aste · Merkitykset (n) · Perhe · Kaikki) */
+@media (max-width: 480px) { .tabs { gap: 0; } .tabs button { padding: 10px 5px; font-size: 14px; } }

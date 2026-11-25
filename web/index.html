@@ -133,16 +133,19 @@
         <div class="word-top">
           <div class="word-title">
             <h1 id="lemma"></h1>
-            <span id="pos-badge" class="badge"></span>
             <!-- Kuuntele: pyöreä kaiutinpainike, äänen haun ajan pyörivä kehä (styles.css) -->
             <span class="word-actions">
             <button id="speak-btn" class="speak-btn" data-i18n-title="listen" data-i18n-aria="listen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
             <button id="fav-btn" class="star-btn">☆</button>
             </span>
-            <!-- Virheilmoitus kaiuttimen ja suosikin vieressä: lomake, joka valmistelee sähköpostin käyttäjän omaan
-                 sovellukseen (app.js: openReport). Ei mahdu samalle riville pitkän sanan kanssa: rivittyy oikealle. -->
-            <a href="#" id="report-btn" class="report-top"><span aria-hidden="true">⚑</span> <span data-i18n="reportError">Ilmoita virheestä</span></a>
           </div>
+        </div>
+        <!-- Sanakortin selkeytys (käyttäjä 2026-11-25): sanaluokka, johdos/yhdyssana ja astevaihtelu yhtenä harmaana
+             rivinä sanan alla; erotin (·) tulee CSS:stä näkyvien osien väliin -->
+        <div id="word-meta" class="word-meta">
+          <span id="pos-badge" class="badge"></span>
+          <p id="der-of-line" class="der-of-line" hidden></p>
+          <button type="button" id="grad-sum" class="grad-sum" hidden></button>
         </div>
         <p class="translation"><span id="translation"></span> <a href="#" id="more-meanings" class="more"></a></p>
         <!-- Haku ei löytänyt mitään: ilmoitus puuttuvasta sanasta (app.js: openMissingReport, 2026-11-24) -->
@@ -157,24 +160,23 @@
         <p id="der-fin-line" class="translation" hidden></p>
         <!-- Käännös puuttuu (2026-11-24): toisen kielen käännös varakielenä, johdoksen pohjasana ja ilmoituslinkki (app.js: renderNoTrans) -->
         <p id="fallback-line" class="translation fallback-line" hidden></p>
-        <p id="der-of-line" class="der-of-line" hidden></p>
         <p id="notrans-line" class="report-line" hidden><a href="#" id="notrans-btn" class="report-link"><span aria-hidden="true">⚑</span> <span data-i18n="reportMissingTrans">Ilmoita puuttuvasta käännöksestä</span></a></p>
         <p id="form-translation" class="form-translation" hidden></p>
         <p id="extra-translations" class="extra-translations" hidden></p>
         <p id="position-line" class="muted small" hidden></p>
         <p id="dialect-line" class="muted small" hidden></p>
-        <!-- Astevaihtelu tiiviinä rivinä (kokeilu B, test-fable): täydet tiedot Astevaihtelu-välilehdellä, jotta
-             taivutustaulukko näkyy ensimmäisellä näytöllä -->
-        <button type="button" id="grad-sum" class="grad-sum" hidden></button>
         <p id="word-info" class="muted small"></p>
+        <!-- Virheilmoitus kortin alareunassa pienenä linkkinä (ennen iso painike otsikkorivillä): lomake valmistelee
+             sähköpostin käyttäjän omaan sovellukseen (app.js: openReport) -->
+        <p class="report-foot"><a href="#" id="report-btn" class="report-link"><span aria-hidden="true">⚑</span> <span data-i18n="reportError">Ilmoita virheestä</span></a></p>
       </article>
 
       <nav id="tabs" class="tabs" hidden>
         <button data-tab="table" class="active" data-i18n="tabTable">Taivutus</button>
-        <button data-tab="grade" id="grade-tab" data-i18n="gradation">Astevaihtelu</button>
+        <button data-tab="grade" id="grade-tab" data-i18n="tabGrade">Aste</button>
         <button data-tab="meanings" id="meanings-tab">Merkitykset</button>
-        <button data-tab="family" id="family-tab" data-i18n="tabFamily" hidden>Sanaperhe</button>
-        <button data-tab="raw" data-i18n="tabRaw">Kaikki muodot</button>
+        <button data-tab="family" id="family-tab" data-i18n="tabFamilyShort" hidden>Perhe</button>
+        <button data-tab="raw" data-i18n="tabRawShort">Kaikki</button>
       </nav>
       <section id="panel-table" class="card panel" hidden></section>
       <section id="panel-grade" class="card panel" hidden><div id="gradation" class="gradation"></div></section>
