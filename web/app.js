@@ -2121,34 +2121,51 @@ const HELP_ITEMS = {
   word: [["speak-btn", "speak"], ["fav-btn", "fav"], ["report-btn", "report"], ["word-forms", "forms"], ["trans-box", "trans"],
     ["more-meanings", "more"], ["extra-translations", "extra"], ["fam-foot", "fam"], ["tabs", "tabs"]],
 };
+let helpItems = [], helpStep = 0;
+// Renkaat näkyvissä oleville osille; nykyinen kohta kirkkaana, muut himmeinä (seuraavat vieritystä)
+function placeHelpMarks() {
+  const marks = $("help-marks");
+  marks.innerHTML = "";
+  helpItems.forEach(([el], i) => {
+    const r = el.getBoundingClientRect();
+    if (r.bottom < 0 || r.top > innerHeight || !r.width) return;
+    const cur = i === helpStep ? " current" : "";
+    const ring = document.createElement("div");
+    ring.className = "help-ring" + cur;
+    Object.assign(ring.style, { left: `${r.left - 4}px`, top: `${r.top - 4}px`, width: `${r.width + 8}px`, height: `${r.height + 8}px` });
+    const num = document.createElement("span");
+    num.className = "help-num" + cur;
+    num.textContent = i + 1;
+    Object.assign(num.style, { left: `${Math.min(innerWidth - 26, Math.max(2, r.right - 10))}px`, top: `${Math.max(2, r.top - 14)}px` });
+    marks.append(ring, num);
+  });
+}
+// Yksi kohta kerrallaan (käyttäjä 2026-11-25: kaikki selitykset kerralla peittivät puolet näytöstä): kohta vieritetään
+// näkyviin paneelin yläpuolelle, selitys paneelissa, Edellinen / Seuraava
+function showHelpStep(i) {
+  const T = t("help").word;
+  helpStep = Math.max(0, Math.min(helpItems.length - 1, i));
+  const [el, key] = helpItems[helpStep];
+  $("help-pos").textContent = `${helpStep + 1} / ${helpItems.length}`;
+  $("help-text").textContent = T.items[key];
+  $("help-prev").textContent = "‹ " + t("helpPrev");
+  $("help-prev").hidden = helpStep === 0;
+  const last = helpStep === helpItems.length - 1;
+  $("help-next").textContent = last ? t("helpDone") : t("helpNext") + " ›";
+  const panelTop = innerHeight - $("help-dlg").querySelector(".help-panel").offsetHeight;
+  const r = el.getBoundingClientRect();
+  const want = Math.max(70, (panelTop - Math.min(r.height, panelTop - 90)) / 2);
+  if (r.top < 60 || r.bottom > panelTop - 10) window.scrollTo({ top: Math.max(0, scrollY + r.top - want), behavior: "smooth" });
+  placeHelpMarks();
+}
 function openHelp() {
   const view = "word", T = t("help")[view];
   const shown = (el) => el && !el.hidden && el.getClientRects().length > 0 && el.closest("[hidden]") === null;
-  const items = HELP_ITEMS[view].map(([id, key]) => [$(id), key]).filter(([el]) => shown(el));
-  const card = $("word");
-  window.scrollTo({ top: Math.max(0, card.getBoundingClientRect().top + scrollY - 76), behavior: "instant" });
-  const marks = $("help-marks");
-  marks.innerHTML = "";
-  $("help-list").innerHTML = "";
-  items.forEach(([el, key], i) => {
-    const r = el.getBoundingClientRect();
-    if (r.bottom > 0 && r.top < innerHeight * 0.55) {
-      const ring = document.createElement("div");
-      ring.className = "help-ring";
-      Object.assign(ring.style, { left: `${r.left - 4}px`, top: `${r.top - 4}px`, width: `${r.width + 8}px`, height: `${r.height + 8}px` });
-      const num = document.createElement("span");
-      num.className = "help-num";
-      num.textContent = i + 1;
-      Object.assign(num.style, { left: `${Math.min(innerWidth - 26, Math.max(2, r.right - 10))}px`, top: `${Math.max(2, r.top - 14)}px` });
-      marks.append(ring, num);
-    }
-    const li = document.createElement("li");
-    li.textContent = T.items[key];
-    $("help-list").append(li);
-  });
+  helpItems = HELP_ITEMS[view].map(([id, key]) => [$(id), key]).filter(([el]) => shown(el));
+  if (!helpItems.length) return;
   $("help-title").textContent = T.title;
-  $("help-close-hint").textContent = t("helpClose");
-  $("help-dlg").showModal();
+  $("help-dlg").show();  // ei modaalinen: kosketus läpi, joten sivua voi vierittää ja renkaat seuraavat
+  showHelpStep(0);
 }
 
 function describeTag(tag) {
@@ -6883,7 +6900,21 @@ function bindEvents() {
   };
   $("report-btn").onclick = (e) => { e.preventDefault(); openReport(); };
   $("help-btn").onclick = openHelp;
-  $("help-dlg").onclick = () => $("help-dlg").close();
+  // Napautus paneelin ulkopuolella sulkee ohjeen eikä osu alla olevaan painikkeeseen; vieritys ei ole napautus
+  document.addEventListener("click", (e) => {
+    if (!$("help-dlg").open || e.target.closest(".help-panel")) return;
+    e.preventDefault(); e.stopPropagation();
+    $("help-dlg").close();
+  }, true);
+  $("help-x").onclick = () => $("help-dlg").close();
+  $("help-prev").onclick = () => showHelpStep(helpStep - 1);
+  $("help-next").onclick = () => (helpStep >= helpItems.length - 1 ? $("help-dlg").close() : showHelpStep(helpStep + 1));
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("help-dlg").open) { e.preventDefault(); $("help-dlg").close(); } }, true);
+  // Sivu vierii ohjeen alla (kaikki osat eivät mahdu kerralla näkyviin): renkaat seuraavat vieritystä ja koon muutosta
+  let helpRaf = 0;
+  const followHelp = () => { if ($("help-dlg").open && !helpRaf) helpRaf = requestAnimationFrame(() => { helpRaf = 0; placeHelpMarks(); }); };
+  addEventListener("scroll", followHelp, { passive: true });
+  addEventListener("resize", followHelp);
   $("notrans-btn").onclick = (e) => {
     e.preventDefault();
     openReport();
