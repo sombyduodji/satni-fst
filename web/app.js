@@ -2373,6 +2373,19 @@ function inflectionClassCell(w) {
 // infinitiivi ja preesensin yksikön 1. persoona (dahkat, dagan). Väri asteen mukaan (vahva vihreä, heikko oranssi);
 // napautus avaa Aste-välilehden, jos sanalla on astevaihtelu.
 const PRINCIPAL_TAGS = { N: [["Sg+Nom", "Pl+Nom"], ["Sg+Gen", "Pl+Gen"]], A: [["Sg+Nom"], ["Sg+Gen"], ["Attr"]], V: [["Inf"], ["Ind+Prs+Sg1"]] };
+// Astevaihtelun konsonanttiaines korostettuna muodossa (áhčči: hčč vihreänä ja alleviivattuna, áhči: hč oranssina).
+// Kohta valitaan vokaalien välistä (painollisen tavun jälkeen); yhdyssanassa viimeinen osuma (sámemánná). Jos
+// kohtaa ei löydy varmasti, muotoa ei korosteta.
+const VOWELS = /[aáâeiouyäöåæø]/i;
+function markCluster(form, cluster, cls) {
+  if (!cluster || !cls) return esc(form);
+  let at = -1;
+  for (let i = form.indexOf(cluster); i >= 0; i = form.indexOf(cluster, i + 1)) {
+    if (i > 0 && VOWELS.test(form[i - 1]) && (i + cluster.length >= form.length || VOWELS.test(form[i + cluster.length]))) at = i;
+  }
+  if (at < 0) return esc(form);
+  return esc(form.slice(0, at)) + `<span class="${cls} pf-cluster">${esc(cluster)}</span>` + esc(form.slice(at + cluster.length));
+}
 function renderPrincipal() {
   const el = $("principal"), w = state.word;
   const tags = PRINCIPAL_TAGS[(w.pos || "").toUpperCase()] || [];
@@ -2385,7 +2398,8 @@ function renderPrincipal() {
     seen.add(f);
     const g = state.grades.get(tag + "|" + f);
     const cls = g === "GD" ? "gd" : g === "HD" ? "hd" : "";
-    parts.push((tag === "Attr" ? `<span class="pf-label">attr.</span> ` : "") + `<span class="${cls}" lang="se" translate="no">${esc(f)}</span>`);
+    parts.push((tag === "Attr" ? `<span class="pf-label">attr.</span> ` : "") +
+      `<span class="pf-form" lang="se" translate="no">${markCluster(f, cls === "gd" ? w.gd_cluster : cls === "hd" ? w.hd_cluster : "", cls)}</span>`);
   }
   el.hidden = parts.length < 2;
   el.innerHTML = parts.join(", ");
@@ -2402,9 +2416,11 @@ function renderGradation() {
   renderPrincipal();
   if (!any) return;
   const forms = full.querySelector(".grad-cell.forms .gc-val");
-  sum.innerHTML = (forms
-    ? `<span class="gs-forms" lang="se" translate="no">${forms.innerHTML}</span><span class="gs-clusters"><span class="gd">${esc(w.gd_cluster)}</span> → <span class="hd">${esc(w.hd_cluster)}</span></span>`
-    : `<span class="muted"><i>${esc(t("noGradation"))}</i></span>`) + `<span class="gs-more">${esc(t("gradation"))} ›</span>`;
+  // Tietorivillä pääsanamuotojen jälkeen: "Astevaihtelu: hčč → hč ›" (napautus avaa Aste-välilehden selityksineen).
+  // Sanalla ilman näkyvää astevaihtelua riviä ei näytetä (välilehti kertoo sen).
+  sum.hidden = !forms;
+  sum.innerHTML = forms ? `<span class="gs-label">${esc(t("gradation"))}:</span> <span class="gs-clusters"><span class="gd">${esc(w.gd_cluster)}</span> → ` +
+    `<span class="hd">${esc(w.hd_cluster)}</span></span> <span class="gs-more">›</span>` : "";
 }
 function renderGradationFull() {
   const w = state.word;

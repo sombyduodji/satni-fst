@@ -2367,7 +2367,7 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .word-meta .der-of-line { margin: 0; display: inline; }
 .word-meta .grad-sum { display: inline-flex; width: auto; margin: 0; padding: 0; border: 0; background: none; font: inherit; color: inherit;
   gap: 0; cursor: pointer; border-radius: 4px; }
-.word-meta .grad-sum .gs-forms, .word-meta .grad-sum .gs-more { display: none; }
+.word-meta .grad-sum .gs-forms { display: none; }
 .word-meta .grad-sum .gs-clusters { font-size: inherit; font-weight: 600; }
 .word-meta .grad-sum:hover { text-decoration: underline; }
 .word .translation { font-size: 21px; margin: 10px 0 10px; }
@@ -2385,4 +2385,9 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .word-meta .principal { font-weight: 600; }
 .word-meta .principal.clickable { cursor: pointer; }
 .word-meta .principal .pf-label { font-weight: 400; color: var(--muted); font-size: 13px; }
-.word-meta .grad-sum { display: none !important; }
+.word-meta .grad-sum { gap: 0 4px; align-items: baseline; }
+.word-meta .grad-sum .gs-label { color: var(--muted); }
+.word-meta .grad-sum .gs-more { display: inline; margin: 0; color: var(--muted); }
+/* Pääsanamuodot: sana tekstin värillä, astevaihtelun konsonantit värillä ja alleviivattuina (áh̲č̲č̲i, áh̲č̲i) */
+.word-meta .principal .pf-form { color: var(--text); }
+.word-meta .principal .pf-cluster { text-decoration-line: underline; text-decoration-thickness: 2px; text-underline-offset: .2em; }
