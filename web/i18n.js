@@ -252,7 +252,7 @@ const UI_TEXTS = {
     morePrefix: (n, q) => `+${n} muuta sanaa, jotka alkavat ”${q}”`, fewerPrefix: "Näytä vähemmän",
     moreMeanings: (n) => `+${n} merkitystä`, otherLangs: "muut kielet",
     searchedForm: (q, tags) => `Haettu muoto ${q}: ${tags}`,
-    helpBtn: "Ohje tälle sivulle", helpClose: "Napauta mitä tahansa tai paina Takaisin sulkeaksesi.", helpNext: "Seuraava", helpPrev: "Edellinen", helpDone: "Valmis",
+    helpBtn: "Ohje tälle sivulle", helpClose: "Napauta mitä tahansa tai paina Takaisin sulkeaksesi.", helpNext: "Seuraava", helpPrev: "Edellinen", helpDone: "Valmis", helpCloseBtn: "Sulje opas", helpTapTip: "Voit myös napauttaa kohtaa sivulla. Napautus muualle sulkee oppaan.",
     help: { word: { title: "Sanakortti", items: {
       speak: "Kuuntele sana. Ääni tulee Divvunin saamen puhesynteesistä; äänen (Biret, Máhtte tai Sunná) voi vaihtaa Asetuksista. Osa sanoista on tallennettu sovellukseen, ja ne soivat ilman verkkoa.",
       fav: "Lisää sana suosikkeihin. Suosikit ja hakuhistoria löytyvät Lisää-valikosta.",
@@ -603,7 +603,7 @@ const UI_TEXTS = {
     morePrefix: (n, q) => `+${n} andre ord som begynner med «${q}»`, fewerPrefix: "Vis færre",
     moreMeanings: (n) => `+${n} betydninger`, otherLangs: "andre språk",
     searchedForm: (q, tags) => `Søkt form ${q}: ${tags}`,
-    helpBtn: "Hjelp for denne siden", helpClose: "Trykk hvor som helst eller Tilbake for å lukke.", helpNext: "Neste", helpPrev: "Forrige", helpDone: "Ferdig",
+    helpBtn: "Hjelp for denne siden", helpClose: "Trykk hvor som helst eller Tilbake for å lukke.", helpNext: "Neste", helpPrev: "Forrige", helpDone: "Ferdig", helpCloseBtn: "Lukk guiden", helpTapTip: "Du kan også trykke på et element på siden. Trykk et annet sted for å lukke.",
     help: { word: { title: "Ordkortet", items: {
       speak: "Lytt til ordet. Lyden kommer fra Divvuns samiske talesyntese; stemmen (Biret, Máhtte eller Sunná) kan byttes i Innstillinger. Noen ord er lagret i appen og spilles uten nett.",
       fav: "Legg ordet til favoritter. Favoritter og søkehistorikk finner du i Mer-menyen.",
@@ -949,7 +949,7 @@ UI_TEXTS.en = {
   morePrefix: (n, q) => `+${n} more words starting with “${q}”`, fewerPrefix: "Show fewer",
   moreMeanings: (n) => `+${n} meanings`, otherLangs: "other languages",
   searchedForm: (q, tags) => `Searched form ${q}: ${tags}`,
-  helpBtn: "Help for this page", helpClose: "Tap anywhere or press Back to close.", helpNext: "Next", helpPrev: "Back", helpDone: "Done",
+  helpBtn: "Help for this page", helpClose: "Tap anywhere or press Back to close.", helpNext: "Next", helpPrev: "Back", helpDone: "Done", helpCloseBtn: "Close guide", helpTapTip: "You can also tap a part of the page. Tap elsewhere to close.",
   help: { word: { title: "Word card", items: {
     speak: "Listen to the word. The voice comes from Divvun's Sámi speech synthesis; you can change the voice (Biret, Máhtte or Sunná) in Settings. Some words are stored in the app and play offline.",
     fav: "Add the word to your favourites. Favourites and search history are in the More menu.",

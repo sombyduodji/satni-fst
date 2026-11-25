@@ -2122,21 +2122,39 @@ const HELP_ITEMS = {
     ["more-meanings", "more"], ["extra-translations", "extra"], ["fam-foot", "fam"], ["tabs", "tabs"]],
 };
 let helpItems = [], helpStep = 0;
-// Renkaat näkyvissä oleville osille; nykyinen kohta kirkkaana, muut himmeinä (seuraavat vieritystä)
+// Nykyinen kohta hehkuvalla korostuksella elementin omaan muotoon (pyöristys elementin mukaan), muille vain pieni
+// himmeä numero yläpuolelle (käyttäjä 2026-11-25: eri kokoiset laatikot menivät päällekkäin). Seuraa vieritystä.
 function placeHelpMarks() {
   const marks = $("help-marks");
   marks.innerHTML = "";
+  const rects = helpItems.map(([el]) => el.getBoundingClientRect());
+  // Kaikilla kohdilla oma ääriviiva, jotta numero liittyy selvästi alueeseen (käyttäjä 2026-11-25); nykyinen hehkuu.
+  // Pienet painikkeet: samankokoiset ympyrät, numerot samalle korkeudelle. Leveät osat: elementin muotoinen ohut viiva,
+  // numero sen vasemmassa yläkulmassa.
+  const small = (r) => r.width < 64;
+  const D = Math.max(46, ...rects.filter(small).map((r) => Math.max(r.width, r.height) + 6));
+  const rowTop = (r) => Math.min(...rects.filter((q) => small(q) && Math.abs((q.top + q.bottom) / 2 - (r.top + r.bottom) / 2) < 14)
+    .map((q) => (q.top + q.bottom) / 2 - D / 2));
   helpItems.forEach(([el], i) => {
-    const r = el.getBoundingClientRect();
+    const r = rects[i];
     if (r.bottom < 0 || r.top > innerHeight || !r.width) return;
-    const cur = i === helpStep ? " current" : "";
+    const cur = i === helpStep;
+    let box;
+    if (small(r)) {
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      box = { left: cx - D / 2, top: cy - D / 2, width: D, height: D, radius: D / 2 };
+    } else {
+      const rad = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0;
+      box = { left: r.left - 5, top: r.top - 5, width: r.width + 10, height: r.height + 10, radius: Math.min(Math.max(rad + 5, 10), 18) };
+    }
     const ring = document.createElement("div");
-    ring.className = "help-ring" + cur;
-    Object.assign(ring.style, { left: `${r.left - 4}px`, top: `${r.top - 4}px`, width: `${r.width + 8}px`, height: `${r.height + 8}px` });
+    ring.className = "help-ring" + (cur ? " current" : "");
+    Object.assign(ring.style, { left: `${box.left}px`, top: `${box.top}px`, width: `${box.width}px`, height: `${box.height}px`, borderRadius: `${box.radius}px` });
     const num = document.createElement("span");
-    num.className = "help-num" + cur;
+    num.className = "help-num" + (cur ? " current" : "");
     num.textContent = i + 1;
-    Object.assign(num.style, { left: `${Math.min(innerWidth - 26, Math.max(2, r.right - 10))}px`, top: `${Math.max(2, r.top - 14)}px` });
+    const pos = small(r) ? { left: box.left + D / 2 - 10, top: rowTop(r) - 14 } : { left: box.left - 9, top: box.top - 10 };
+    Object.assign(num.style, { left: `${Math.min(innerWidth - 22, Math.max(2, pos.left))}px`, top: `${Math.max(2, pos.top)}px` });
     marks.append(ring, num);
   });
 }
@@ -2148,6 +2166,8 @@ function showHelpStep(i) {
   const [el, key] = helpItems[helpStep];
   $("help-pos").textContent = `${helpStep + 1} / ${helpItems.length}`;
   $("help-text").textContent = T.items[key];
+  $("help-close-btn").textContent = t("helpCloseBtn");
+  $("help-tip").textContent = t("helpTapTip");
   $("help-prev").textContent = "‹ " + t("helpPrev");
   $("help-prev").hidden = helpStep === 0;
   const last = helpStep === helpItems.length - 1;
@@ -6900,12 +6920,15 @@ function bindEvents() {
   };
   $("report-btn").onclick = (e) => { e.preventDefault(); openReport(); };
   $("help-btn").onclick = openHelp;
-  // Napautus paneelin ulkopuolella sulkee ohjeen eikä osu alla olevaan painikkeeseen; vieritys ei ole napautus
+  // Ohjeen aikana: napautus selitettävään kohtaan näyttää sen selityksen (ei käytä painiketta); napautus muualle sulkee
+  // ohjeen. Vieritys ei ole napautus.
   document.addEventListener("click", (e) => {
     if (!$("help-dlg").open || e.target.closest(".help-panel")) return;
     e.preventDefault(); e.stopPropagation();
-    $("help-dlg").close();
+    const i = helpItems.findIndex(([el]) => el.contains(e.target));
+    if (i >= 0) showHelpStep(i); else $("help-dlg").close();
   }, true);
+  $("help-close-btn").onclick = () => $("help-dlg").close();
   $("help-x").onclick = () => $("help-dlg").close();
   $("help-prev").onclick = () => showHelpStep(helpStep - 1);
   $("help-next").onclick = () => (helpStep >= helpItems.length - 1 ? $("help-dlg").close() : showHelpStep(helpStep + 1));
