@@ -12,6 +12,11 @@ const LAUSE_NEG_PERSON = { en: "Sg1", et: "Sg2", ei: "Sg3", emme: "Pl1", ette: "
 const LAUSE_CLITICS = [["kään", "ge"], ["kaan", "ge"], ["kin", "nai"], ["han", "han"], ["hän", "han"], ["ko", "go"], ["kö", "go"]];
 // Suomen persoonapronomini -> saamen (mii = me on persoonapronomini, ei kysymyssana mii = mikä)
 const LAUSE_PRONOUN = { minä: "mun", sinä: "don", hän: "son", me: "mii", te: "dii", he: "sii" };
+// Duaali: suomessa ei ole duaalia, joten kahta ihmistä tarkoittava me/te/he näkyy vain, kun luku on sanottu
+// (me kaksi = moai, teille kahdelle = dudnuide, he kaksi lähtivät = soai vulge). Muuten monikko (me = mii).
+// Kaksi-sana sisältyy saamen pronominiin; samassa lauseessa saman persoonan verbi ja kieltoverbi duaalissa.
+const LAUSE_DUAL = { me: ["moai", "1"], te: ["doai", "2"], he: ["soai", "3"] };
+const LAUSE_NEG_DUAL = { 1: "ean", 2: "eahppi", 3: "eaba" };
 // Luvut, joiden jälkeen saamen substantiivi on yksikön genetiivissä (guokte gáfe); 7- ei ole vielä tarkistettu
 const LAUSE_SMALL_NUMBERS = ["kaksi", "kolme", "neljä", "viisi", "kuusi"];
 const LAUSE_POS = { N: ["N"], V: ["V"], A: ["A"], Num: ["Num"], Pron: ["Pron"] };
@@ -243,9 +248,19 @@ function lauseParse(text) {
     const gen = t.analyses.find((a) => a.base === t.pick.base && a.cell === t.pick.cell.replace("Nom", "Gen"));
     if (verbBefore && gen) t.pick = gen;
   });
+  // me kaksi, meidän kahden, teille kahdelle: pronomini ja kaksi-sana samassa sijassa peräkkäin
+  tokens.forEach((t, i) => {
+    if (!t.pick || !LAUSE_DUAL[t.pick.base] || !(t.pick.pos === "Pron" || !t.pick.cell) || t.clitic || t.px) return;
+    const next = tokens[i + 1], cell = t.pick.cell || "Nom";
+    // Persoonapronominin nominatiivi on sanakirjan sana (pick.cell tyhjä); kahden on myös oma sanansa (guovttá)
+    if (next && !next.clitic && !next.px && (next.analyses || []).some((a) => a.base === "kaksi" && a.cell === "Sg+" + cell)) {
+      t.dual = LAUSE_DUAL[t.pick.base][1];
+      next.dualNum = true;
+    }
+  });
   for (const t of tokens) {
     if (!t.pick) continue;
-    const pron = LAUSE_PRONOUN[t.pick.base];
+    const pron = t.dual ? LAUSE_DUAL[t.pick.base][0] : LAUSE_PRONOUN[t.pick.base];
     t.candidates = pron ? all("SELECT id, sme_lemma, pos, freq FROM dictionary WHERE sme_lemma = ? AND subtype = 'Pers'", [pron])
       : lauseCandidates(t.pick.base, t.pick.pos);
     t.choice = t.candidates[0] || null;
@@ -374,10 +389,23 @@ function lauseVerbPluralSubject(tokens, i, passive) {
     && lauseGoverningVerb(tokens, j) === v && lauseSamiTag(tokens, j) === "Pl+Nom");
 }
 
+// Saman lauseen (pilkkujen välissä) duaalisubjektin persoona ("1", "2", "3") tai null
+function lauseDualPerson(tokens, i) {
+  const isBreak = (x) => x.punct && /[,.;:!?]/.test(x.punct);
+  let a0 = i; while (a0 > 0 && !isBreak(tokens[a0 - 1])) a0--;
+  let b0 = i; while (b0 < tokens.length - 1 && !isBreak(tokens[b0 + 1])) b0++;
+  return tokens.slice(a0, b0 + 1).find((x) => x.dual && (x.pick.cell || "Nom") === "Nom")?.dual || null;
+}
+
 function lauseSamiForm(tokens, i) {
   const t = tokens[i];
   const clitic = t.clitic ? Object.fromEntries(LAUSE_CLITICS)[t.clitic] : "";
-  if (t.neg) return { form: LAUSE_NEG[t.neg] + clitic, base: "ii", note: LAUSE_NEG_PERSON[t.neg], exact: true };
+  const du = lauseDualPerson(tokens, i);
+  if (t.neg) {
+    if (du && LAUSE_NEG_PERSON[t.neg] === "Pl" + du) return { form: LAUSE_NEG_DUAL[du] + clitic, base: "ii", note: "Du" + du, exact: true };
+    return { form: LAUSE_NEG[t.neg] + clitic, base: "ii", note: LAUSE_NEG_PERSON[t.neg], exact: true };
+  }
+  if (t.dualNum) return { form: "", base: "", tag: "Du", exact: true };
   if (t.name || t.num) return { form: t.raw, base: t.raw, exact: !t.guess };
   if (t.withPost) return { form: "", base: "", tag: "Com", exact: true };
   if (t.post) return { form: t.post, base: t.post, tag: "Po", exact: true };
@@ -388,6 +416,7 @@ function lauseSamiForm(tokens, i) {
   if (t.smeTag && loadWord(t.choice.id).paradigm.has(t.smeTag)) ({ tag, post, guess, passive } = { tag: t.smeTag, post: "", guess: false, passive: false });
   let form = t.choice.sme_lemma, exact = !t.pick.cell;
   if (!t.smeTag && typeof tag === "string" && /\+Sg3$/.test(tag) && lauseVerbPluralSubject(tokens, i, passive)) tag = tag.replace(/Sg3$/, "Pl3");
+  if (!t.smeTag && du && !passive && typeof tag === "string" && tag.endsWith("+Pl" + du)) tag = tag.slice(0, -3) + "Du" + du;
   if (passive) {
     let pf = null;
     try { pf = all("SELECT surface FROM sme_passive WHERE word_id = ? AND tag = ?", [t.choice.id, tag])[0]?.surface; } catch (e) { /* vanha aineisto */ }
