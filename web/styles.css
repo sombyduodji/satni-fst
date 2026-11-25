@@ -2455,3 +2455,11 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .report-foot { align-items: center; }
 /* Ei erotinviivaa käännöslaatikon ja muiden kielten välissä (käyttäjä 2026-11-25: viiva laatikon alla hämäsi) */
 .extra-translations { border-top: 0; padding-top: 2px; margin-top: 6px; }
+/* Sulkeissa vain sanaluokka: (substantiivi) · yhdyssana: sápmi + mánná (käyttäjä 2026-11-25). Jos ei mahdu yhdelle
+   riville, yhdyssana- tai johdosrivi alkaa omalta riviltään ilman erotinta, rivit lähekkäin. */
+.word-sub::before, .word-sub::after { content: none; }
+.word-sub #pos-badge::before { content: "("; }
+.word-sub #pos-badge::after { content: ")"; }
+.word-sub.wrapped { display: block; line-height: 1.35; }
+.word-sub.wrapped > :not([hidden]) { display: block; }
+.word-sub.wrapped > :not([hidden]) ~ :not([hidden])::before { content: none; }

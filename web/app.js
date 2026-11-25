@@ -1839,6 +1839,7 @@ function selectResult(i, pushHistory = true) {
   renderRaw();
   state.familyOpen = new Set();
   try { renderFamily(); } catch (e) { $("family-tab").hidden = true; console.warn("sanaperhe", e); }
+  fitWordSub();
   if (pushHistory) addHistory(w.sme_lemma);
 }
 
@@ -2082,6 +2083,28 @@ function skoltFor(w) {
 const ICON_LIST = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor"/></svg>`;
 const ICON_GLOBE = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>`;
 const ICON_FAMILY = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="2.2"/><circle cx="5" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/><path d="M12 7.2V12M12 12H5v4.8M12 12h7v4.8"/></svg>`;
+
+// Sanaluokkarivi: mahtuessaan yhdellä rivillä "(substantiivi · yhdyssana: sápmi + mánná)", muuten jokainen osa omissa
+// sulkeissaan omalla rivillään (käyttäjä 2026-11-25: kapealla näytöllä tai isolla fontilla "· yhdyssana" alkoi riviltä
+// yksin). Tarkistetaan sanan vaihtuessa ja leveyden muuttuessa (kääntö, fonttikoko).
+function fitWordSub() {
+  const el = $("word-sub");
+  if (!el || el.hidden) return;
+  el.classList.remove("wrapped");
+  const parts = [...el.children].filter((c) => !c.hidden && c.textContent.trim());
+  if (parts.length < 2) return;
+  const lineH = parseFloat(getComputedStyle(el).lineHeight) || 20;
+  const tops = parts.map((c) => c.getBoundingClientRect().top);
+  const tall = parts.some((c) => c.getBoundingClientRect().height > lineH * 1.5);
+  if (tall || Math.max(...tops) - Math.min(...tops) > 2) el.classList.add("wrapped");
+}
+if (window.ResizeObserver) {
+  let lastW = 0;
+  new ResizeObserver((entries) => {
+    const w = Math.round(entries[0].contentRect.width);
+    if (w !== lastW) { lastW = w; fitWordSub(); }
+  }).observe(document.documentElement);
+}
 
 function describeTag(tag) {
   const W = t("tagWords"), parts = tag.split("+");
