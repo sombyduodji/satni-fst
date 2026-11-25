@@ -252,7 +252,7 @@ Linux app, the Debian copyright files of the bundled system libraries.
 
 | Component | Where | Licence |
 |---|---|---|
-| [sql.js](https://github.com/sql-js/sql.js) 1.10.3 (SQLite compiled to WebAssembly; one-line change: the database buffer is not copied when opened) | `web/vendor/` | MIT ([LICENSE-sql.js.txt](web/vendor/LICENSE-sql.js.txt)); SQLite itself is public domain |
+| [sql.js](https://github.com/sql-js/sql.js) 1.10.3 (SQLite compiled to WebAssembly) | `web/vendor/` | MIT ([LICENSE-sql.js.txt](web/vendor/LICENSE-sql.js.txt)); SQLite itself is public domain |
 | [Qt for Python / PySide6](https://doc.qt.io/qtforpython/) 6.9.3 (incl. Qt WebEngine) | desktop builds only, not in this repository | LGPL-3.0 |
 | [PyInstaller](https://pyinstaller.org/) | builds the desktop apps | GPL-2.0 with bootloader exception |
 | [Python](https://www.python.org/) 3.12 | desktop builds only (bundled runtime) | PSF License Agreement |
