@@ -265,6 +265,18 @@ function lauseParse(text) {
       : lauseCandidates(t.pick.base, t.pick.pos);
     t.choice = t.candidates[0] || null;
   }
+  // Saamen postpositio tarvitsee viereensä nominin (talon luona = viesu luhtte, läpi vuoden, häntä vastaan) tai
+  // paikan adverbin (täällä päin = dáppe guvlui). Heti verbin jälkeen ilman nominia perässä sana on itse adverbi:
+  // adverbikäännös ensin (olen kotona = lean ruovttus, ei postpositio geahčen)
+  const nominal = (x) => x && !x.punct && (!x.known || x.name || x.num || ["N", "A", "Num", "Pron"].includes(x.pick?.pos)
+    || !!LAUSE_PRONOUN[x.pick?.base] || ["N", "A", "Num", "Pron"].includes(x.choice?.pos));
+  tokens.forEach((t, i) => {
+    if (t.choice?.pos !== "Po" || t.pick?.cell) return;
+    const prev = tokens[i - 1], next = tokens[i + 1];
+    if (!(prev?.neg || prev?.pick?.pos === "V") || nominal(next)) return;
+    const other = t.candidates.find((c) => c.pos === "Adv");
+    if (other) t.choice = other;
+  });
   // joka: substantiivin edellä "jokainen" (joka päivä = juohke beaivi), muuten relatiivipronomini: ihmisen jälkeen gii
   // (mies, joka tuli = olmmái, gii bođii), muuten mii (talo, jonka näin = viessu, man/maid oidnen)
   tokens.forEach((t, i) => {
