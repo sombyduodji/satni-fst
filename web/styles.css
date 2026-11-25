@@ -2391,3 +2391,8 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 /* Pääsanamuodot: sana tekstin värillä, astevaihtelun konsonantit värillä ja alleviivattuina (áh̲č̲č̲i, áh̲č̲i) */
 .word-meta .principal .pf-form { color: var(--text); }
 .word-meta .principal .pf-cluster { text-decoration-line: underline; text-decoration-thickness: 2px; text-underline-offset: .2em; }
+/* Kortin alareuna: sanaperheen yhteenveto vasemmalla, virheilmoitus oikealla */
+.report-foot { display: flex; justify-content: space-between; align-items: baseline; gap: 6px 16px; flex-wrap: wrap; }
+.report-foot #report-btn { margin-left: auto; }
+.fam-foot { font-size: 14px; color: var(--accent); text-decoration: none; }
+.fam-foot:hover { text-decoration: underline; }

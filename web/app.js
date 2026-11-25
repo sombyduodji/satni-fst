@@ -1509,6 +1509,7 @@ function showSearch(query, results, index = 0, pushHistory = true) {
     $("grad-sum").hidden = true;
     $("der-of-line").hidden = true;  // edellisen sanan sanaperhe- tai johdosrivi pois
     $("principal").hidden = true;
+    $("fam-foot").hidden = true;
     for (const t of TABS) $("panel-" + t).hidden = true;
     $("lemma").textContent = t("noHits", query);
     $("pos-badge").hidden = true;
@@ -2766,15 +2767,14 @@ function renderFamily() {
   if (!any && state.tab === "family") setTab("table");
   // Kortissa johdoksen pohjasana: "sanasta čakča – syksy" (myös kun käännös on; käännöksettömän sanan der_of-rivin tilalle).
   // Muuten yhdyssanan osat tai yhteenveto, joka avaa välilehden (välilehti voi olla kapealla näytöllä piilossa oikealla).
-  const line = $("der-of-line");
-  const open = `<a href="#" class="fam-open">${esc(t("famSum", f.derived.length, f.compounds.length))} ›</a>`;
+  // Yhteenveto ("Sanaperhe: 2 johdosta, 13 yhdyssanaa ›") kortin alareunassa virheilmoituksen vieressä (käyttäjä
+  // 2026-11-25: tietorivillä se peitti pääsanamuodot); tietorivillä vain sanan oma rakenne (osat tai pohjasana).
+  const line = $("der-of-line"), foot = $("fam-foot");
+  foot.hidden = !(f.derived.length || f.compounds.length);
+  foot.textContent = foot.hidden ? "" : `${t("famSum", f.derived.length, f.compounds.length)} ›`;
   if (!f.base && f.parts.length) {
     line.innerHTML = `<span class="muted">${esc(t("famPartsLine"))}</span> ` +
-      f.parts.map((r) => `<a href="#/sana/${encodeURIComponent(r.sme_lemma)}">${esc(r.sme_lemma)}</a>`).join(" + ") +
-      (f.derived.length || f.compounds.length ? ` · ${open}` : "");
-    line.hidden = false;
-  } else if (!f.base && (f.derived.length || f.compounds.length) && line.hidden) {
-    line.innerHTML = open;
+      f.parts.map((r) => `<a href="#/sana/${encodeURIComponent(r.sme_lemma)}">${esc(r.sme_lemma)}</a>`).join(" + ");
     line.hidden = false;
   }
   if (f.base) {
@@ -6767,10 +6767,7 @@ function bindEvents() {
   $("principal").onclick = () => { if (!$("grade-tab").hidden) { setTab("grade"); $("tabs").scrollIntoView({ block: "start", behavior: "smooth" }); } };
   $("grad-sum").onclick = () => { setTab("grade"); $("tabs").scrollIntoView({ block: "start", behavior: "smooth" }); };
   $("more-meanings").onclick = (e) => { e.preventDefault(); setTab("meanings"); };
-  $("der-of-line").addEventListener("click", (e) => {
-    if (!e.target.closest(".fam-open")) return;
-    e.preventDefault(); setTab("family"); $("tabs").scrollIntoView({ block: "start", behavior: "smooth" });
-  });
+  $("fam-foot").onclick = (e) => { e.preventDefault(); setTab("family"); $("tabs").scrollIntoView({ block: "start", behavior: "smooth" }); };
   // Tuplanapautus "Näytä kaikki" -painikkeeseen: toinen napautus osui riviin, joka liukui painikkeen paikalle, ja avasi
   // satunnaisen sanan (yötesti 2026-11-25). Rivilinkit eivät toimi hetkeen laajennuksen jälkeen.
   let famExpandAt = 0;
