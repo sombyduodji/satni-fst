@@ -24,42 +24,55 @@ import java.io.OutputStream;
 public class NativeDb {
     private static final String TAG = "SatniNativeDb";
     private final Context ctx;
-    private volatile SQLiteDatabase db;
-    private volatile String state = "idle";  // idle, copying, ready, error: ...
-    private volatile long copied = 0;
-    /** Kokeilu: kyselyn tulosikkunan koko tavuina (0 = Androidin oletus 2 Mt). */
-    static volatile long WINDOW = 0;
-
-    @JavascriptInterface
-    public void setWindow(long bytes) { WINDOW = bytes; }
+    // Yhteiset kaikille aktiviteetin instansseille: uudelleenluotu aktiviteetti ei avaa tiedostoa uudelleen
+    private static volatile SQLiteDatabase db;
+    private static volatile String state = "idle";  // idle, copying, ready, error: ...
+    private static volatile long copied = 0;
+    private static volatile long total = 0;
 
     NativeDb(Context ctx) {
         this.ctx = ctx.getApplicationContext();
     }
 
-    /** Käynnistää kopioinnin ja avauksen taustasäikeessä; tila luetaan state()-kutsulla. */
+    /** Käynnistää kopioinnin ja avauksen taustasäikeessä; tila luetaan status()-kutsulla. */
     @JavascriptInterface
-    public synchronized void open() {
+    public void open() {
+      synchronized (NativeDb.class) {
         if (!"idle".equals(state) && !state.startsWith("error")) return;
         state = "copying";
         new Thread(() -> {
             try {
-                File f = new File(ctx.getFilesDir(), "satni-web-" + BuildConfig.VERSION_CODE + ".db");
+                File dir = ctx.getFilesDir();
+                // Asennus- tai päivitysaika muuttuu jokaisessa asennuksessa (myös DEV-käännöksissä, joissa versionCode voi
+                // pysyä samana mutta sanakirja muuttua), joten uusi APK kopioi aina oman tiedostonsa
+                long installed = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0).lastUpdateTime;
+                File f = new File(dir, "satni-web-" + BuildConfig.VERSION_CODE + "-" + installed + ".db");
                 long t0 = System.nanoTime();
                 if (!f.exists()) {
                     File tmp = new File(f.getPath() + ".tmp");
-                    try (InputStream in = ctx.getAssets().open("data/satni-web.db");
-                         OutputStream out = new FileOutputStream(tmp)) {
-                        byte[] buf = new byte[1 << 16];
-                        for (int n; (n = in.read(buf)) > 0; ) { out.write(buf, 0, n); copied += n; }
+                    try (InputStream in = ctx.getAssets().open("data/satni-web.db")) {
+                        total = in.available();
+                        // Tilaa tarvitaan tiedoston verran ja vähän päälle; muuten sovellus käyttää sql.js:ää
+                        if (dir.getUsableSpace() < total + (32L << 20)) throw new IllegalStateException("no space");
+                        try (OutputStream out = new FileOutputStream(tmp)) {
+                            byte[] buf = new byte[1 << 16];
+                            for (int n; (n = in.read(buf)) > 0; ) { out.write(buf, 0, n); copied += n; }
+                        }
                     }
                     if (!tmp.renameTo(f)) throw new IllegalStateException("rename failed");
-                    File[] old = ctx.getFilesDir().listFiles((d, n) -> n.startsWith("satni-web-") && !n.equals(f.getName()));
-                    if (old != null) for (File o : old) o.delete();
                 }
+                // Vanhat versiot ja keskeytyneet kopiot pois
+                File[] old = dir.listFiles((d, n) -> n.startsWith("satni-web-") && !n.equals(f.getName()));
+                if (old != null) for (File o : old) o.delete();
                 long t1 = System.nanoTime();
-                db = SQLiteDatabase.openDatabase(f.getPath(), null,
-                        SQLiteDatabase.OPEN_READONLY | SQLiteDatabase.NO_LOCALIZED_COLLATORS);
+                try {
+                    db = SQLiteDatabase.openDatabase(f.getPath(), null,
+                            SQLiteDatabase.OPEN_READONLY | SQLiteDatabase.NO_LOCALIZED_COLLATORS);
+                    db.rawQuery("SELECT count(*) FROM sqlite_master", null).close();
+                } catch (RuntimeException e) {
+                    f.delete();  // vioittunut tiedosto: seuraavalla käynnistyksellä kopioidaan uudelleen
+                    throw e;
+                }
                 Log.i(TAG, "copy " + (t1 - t0) / 1000000 + " ms, open " + (System.nanoTime() - t1) / 1000000 + " ms, " + f.length() + " bytes");
                 state = "ready";
             } catch (Throwable e) {
@@ -67,8 +80,32 @@ public class NativeDb {
                 state = "error: " + e;
             }
         }, "satni-nativedb-open").start();
+      }
     }
 
+    /** idle, copying, ready tai "error: …". */
+    @JavascriptInterface
+    public String status() { return state; }
+
+    @JavascriptInterface
+    public long copied() { return copied; }
+
+    /** Kopioitavan tiedoston koko (tiedossa kopioinnin alettua; 0 ennen sitä). */
+    @JavascriptInterface
+    public long size() {
+        if (total > 0) return total;
+        try (InputStream in = ctx.getAssets().open("data/satni-web.db")) { return in.available(); } catch (Exception e) { return 0; }
+    }
+
+    /** Tarkistaa kyselyn kuten sql.js:n prepare: tyhjä merkkijono = kunnossa, muuten virheilmoitus. */
+    @JavascriptInterface
+    public String check(String sql) {
+        SQLiteDatabase d = db;
+        if (d == null) return "not ready";
+        try { d.compileStatement(sql).close(); return ""; } catch (Throwable e) { return String.valueOf(e.getMessage()); }
+    }
+
+    /** Vaiheen 0 mittauksia varten: tila ja kopioidut tavut. */
     @JavascriptInterface
     public String state() { return state + " " + copied; }
 
@@ -91,10 +128,8 @@ public class NativeDb {
             final JSONArray params = paramsJson == null || paramsJson.isEmpty() ? new JSONArray() : new JSONArray(paramsJson);
             SQLiteDatabase.CursorFactory factory = (sdb, driver, editTable, q) -> {
                 bind(q, params);
-                SQLiteCursor cur = new SQLiteCursor(driver, editTable, q);
-                // Oletusikkuna on 2 Mt (ashmem) joka kyselylle; pieni ikkuna riittää useimpiin ja täyttyy tarvittaessa uudelleen
-                if (android.os.Build.VERSION.SDK_INT >= 28 && WINDOW > 0) cur.setWindow(new android.database.CursorWindow("q", WINDOW));
-                return cur;
+                // Pienempi tulosikkuna kuin Androidin 2 Mt hidasti isoja tuloksia moninkertaisesti (vaihe 0)
+                return new SQLiteCursor(driver, editTable, q);
             };
             try (Cursor c = d.rawQueryWithFactory(factory, sql, null, null)) {
                 StringBuilder sb = new StringBuilder(256);

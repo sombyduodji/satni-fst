@@ -606,7 +606,10 @@ function labelledList(text, lang) {
   }).join(", ");
 }
 
+// IN-listan pala: kahdesti käytettynä alle 999 parametria (Androidin vanhan SQLiten raja)
+const SQL_IN_CHUNK = 400;
 function all(sql, params = []) {
+  if (db && db.native) return db.all(sql, params);
   const stmt = db.prepare(sql);
   stmt.bind(params);
   const rows = [];
@@ -670,6 +673,72 @@ async function loadDatabaseWithRetry() {
     } finally {
       clearInterval(timer);
     }
+  }
+}
+
+// --- Natiivi SQLite Androidilla (haara sql-test) ---
+// Android-sovelluksessa sanakirja luetaan laitteen omalla SQLitellä (window.SatniNativeDb, NativeDb.java): tiedosto
+// kopioidaan APK:sta sovelluksen kansioon kerran versiota kohden, eikä 165 Mt:n tiedostoa pidetä WebViewin muistissa.
+// NativeDatabase ja NativeStatement toteuttavat sen osan sql.js:n rajapinnasta, jota sovellus käyttää (prepare, bind,
+// step, get, getAsObject, reset, free), joten kyselykohdat pysyvät ennallaan. JavascriptInterface-kutsu on
+// synkroninen; step() hakee koko tuloksen yhdellä kutsulla. Virhe avauksessa -> sql.js kuten ennen.
+// Testaus: localStorage satniForceSqlJs = "1" pakottaa sql.js:n (A/B-vertailu).
+function nativeQuery(sql, params) {
+  const r = JSON.parse(window.SatniNativeDb.query(sql, JSON.stringify(params || [])));
+  if (r.error) throw new Error(r.error);
+  return r;
+}
+class NativeStatement {
+  constructor(sql) { this.sql = sql; this.params = []; this.res = null; this.i = -1; }
+  bind(params = []) { this.params = Array.isArray(params) ? params : []; this.res = null; this.i = -1; return true; }
+  step() {
+    if (!this.res) { this.res = nativeQuery(this.sql, this.params); this.i = -1; }
+    return ++this.i < this.res.rows.length;
+  }
+  get() { return this.res.rows[this.i].slice(); }
+  getAsObject() { const o = {}, row = this.res.rows[this.i]; this.res.cols.forEach((c, k) => { o[c] = row[k]; }); return o; }
+  getColumnNames() { return this.res ? this.res.cols.slice() : []; }
+  // sql.js: reset() tyhjentää myös sidotut arvot; sovellus sitoo aina uudelleen
+  reset() { this.res = null; this.i = -1; this.params = []; return true; }
+  free() { this.res = null; return true; }
+}
+class NativeDatabase {
+  get native() { return true; }
+  // sql.js heittää virheen jo prepare-vaiheessa (puuttuva taulu, syntaksi); sovellus käyttää sitä varakyselyihin
+  prepare(sql) {
+    const err = window.SatniNativeDb.check(sql);
+    if (err) throw new Error(err);
+    return new NativeStatement(sql);
+  }
+  all(sql, params) {
+    const r = nativeQuery(sql, params);
+    return r.rows.map((row) => { const o = {}; r.cols.forEach((c, k) => { o[c] = row[k]; }); return o; });
+  }
+}
+async function openNativeDatabase() {
+  const N = window.SatniNativeDb;
+  if (!N || typeof N.open !== "function") return null;
+  try { if (localStorage.getItem("satniForceSqlJs") === "1") return null; } catch (e) { /* ei tallennusta */ }
+  try {
+    N.open();
+    const total = N.size() || 1;
+    for (;;) {
+      const st = N.status();
+      if (st === "ready") break;
+      if (st.startsWith("error")) { console.warn("NativeDb:", st); return null; }
+      if (st === "copying") {
+        $("loading-text").textContent = t("unpacking");
+        $("progress-bar").style.width = `${Math.min(100, Math.round((N.copied() / total) * 100))}%`;
+      }
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    // Inarin, koltan ja sanaparien tiedostot luetaan yhä sql.js:llä (vaihe 4)
+    sqlModule = sqlModule || await initSqlJs({ locateFile: (f) => "vendor/" + f });
+    $("progress-bar").style.width = "100%";
+    return new NativeDatabase();
+  } catch (e) {
+    console.warn("NativeDb:", e);
+    return null;
   }
 }
 
@@ -1616,12 +1685,17 @@ function didYouMean(query, results) {
   // myös isolla alkukirjaimella (erisnimet: danmarkun -> Dánmárkun)
   for (const [v, c] of [...cands]) if (!cands.has(capitalize(v))) cands.set(capitalize(v), c);
   const words = [...cands.keys()];
-  const marks = words.map(() => "?").join(",");
   const col = LANGUAGES[settings.lang].col;
-  const rows = all(`SELECT p.surface AS v, d.id, d.sme_lemma, d.pos, d.freq, d.${col} AS tr FROM paradigms p
+  // Paloina: pitkästä sanasta tulee yli 1 000 vaihtoehtoa, ja Androidin vanha SQLite (ennen 3.32, esim. Android 11)
+  // hyväksyy enintään 999 parametria kyselyssä (sql.js ja uudet 32 766)
+  const rows = [];
+  for (let i = 0; i < words.length; i += SQL_IN_CHUNK) {
+    const part = words.slice(i, i + SQL_IN_CHUNK), marks = part.map(() => "?").join(",");
+    rows.push(...all(`SELECT p.surface AS v, d.id, d.sme_lemma, d.pos, d.freq, d.${col} AS tr FROM paradigms p
                     JOIN dictionary d ON d.id = p.word_id WHERE p.surface IN (${marks})
                     UNION SELECT d.sme_lemma, d.id, d.sme_lemma, d.pos, d.freq, d.${col} FROM dictionary d
-                    WHERE d.lemma_fold IN (${marks})`, [...words, ...words]);
+                    WHERE d.lemma_fold IN (${marks})`, [...part, ...part]));
+  }
   const current = Math.max(0, ...sami.map((r) => r.freq || 0));
   const shown = new Set(sami.map((r) => r.id));
   const best = new Map();  // ehdotettu sana -> yleisin perusmuoto
@@ -7182,7 +7256,7 @@ async function main() {
 
   try {
     showOnly("loading");
-    db = await loadDatabaseWithRetry();
+    db = (await openNativeDatabase()) || await loadDatabaseWithRetry();
   } catch (e) {
     $("loading-text").textContent = e.stalled ? t("loadStalled") : t("loadFailedLong", e.message);
     return;
