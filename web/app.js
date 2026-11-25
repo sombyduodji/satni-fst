@@ -1508,6 +1508,7 @@ function showSearch(query, results, index = 0, pushHistory = true) {
     $("word-foot").hidden = true;
     $("grad-sum").hidden = true;
     $("der-of-line").hidden = true;  // edellisen sanan sanaperhe- tai johdosrivi pois
+    $("principal").hidden = true;
     for (const t of TABS) $("panel-" + t).hidden = true;
     $("lemma").textContent = t("noHits", query);
     $("pos-badge").hidden = true;
@@ -1799,8 +1800,9 @@ function selectResult(i, pushHistory = true) {
   state.alsoFin = data.alsoFin || "";
   state.related = data.related || [];
   const def = state.definitions[0];
-  $("sme-def").hidden = !def;
-  $("sme-def").innerHTML = def ? `<b>${esc(t("smeDef"))}</b>${esc(def.definition)}` : "";
+  // Saamenkielinen selitys vain Merkitykset-välilehdellä (käyttäjä 2026-11-25: kortissa se ei auta useimpia käyttäjiä)
+  void def;
+  $("sme-def").hidden = true;
   $("more-meanings").textContent = ownGroup.length > 1 ? t("moreMeanings", ownGroup.length - 1) :
     groups.some(([lang]) => lang !== settings.lang) ? t("otherLangs") : "";
   $("more-meanings").hidden = !$("more-meanings").textContent;  // tyhjä linkki ei jää Tab-järjestykseen
@@ -2366,6 +2368,30 @@ function inflectionClassCell(w) {
 }
 
 // Kortissa tiivis rivi (viessu → viesu · ss → s), täydet tiedot Astevaihtelu-välilehdellä (kokeilu B, test-fable)
+// Sanakirjan tapaan pääsanamuodot tietorivillä (käyttäjä 2026-11-25): substantiivi nominatiivi ja genetiivi
+// (áhčči, áhči; beana, beatnaga), adjektiivi lisäksi attribuuttimuoto (vielgat, vielgada, attr. vilges), verbi
+// infinitiivi ja preesensin yksikön 1. persoona (dahkat, dagan). Väri asteen mukaan (vahva vihreä, heikko oranssi);
+// napautus avaa Aste-välilehden, jos sanalla on astevaihtelu.
+const PRINCIPAL_TAGS = { N: [["Sg+Nom", "Pl+Nom"], ["Sg+Gen", "Pl+Gen"]], A: [["Sg+Nom"], ["Sg+Gen"], ["Attr"]], V: [["Inf"], ["Ind+Prs+Sg1"]] };
+function renderPrincipal() {
+  const el = $("principal"), w = state.word;
+  const tags = PRINCIPAL_TAGS[(w.pos || "").toUpperCase()] || [];
+  const seen = new Set(), parts = [];
+  for (const alts of tags) {
+    const tag = alts.find((x) => state.paradigm.get(x)?.length);
+    if (!tag) continue;
+    const f = state.paradigm.get(tag)[0];
+    if (seen.has(f)) continue;
+    seen.add(f);
+    const g = state.grades.get(tag + "|" + f);
+    const cls = g === "GD" ? "gd" : g === "HD" ? "hd" : "";
+    parts.push((tag === "Attr" ? `<span class="pf-label">attr.</span> ` : "") + `<span class="${cls}" lang="se" translate="no">${esc(f)}</span>`);
+  }
+  el.hidden = parts.length < 2;
+  el.innerHTML = parts.join(", ");
+  el.classList.toggle("clickable", !$("grade-tab").hidden);
+}
+
 function renderGradation() {
   renderGradationFull();
   const w = state.word, full = $("gradation"), sum = $("grad-sum");
@@ -2373,6 +2399,7 @@ function renderGradation() {
   $("grade-tab").hidden = !any;
   if (!any && state.tab === "grade") setTab("table");
   sum.hidden = !any;
+  renderPrincipal();
   if (!any) return;
   const forms = full.querySelector(".grad-cell.forms .gc-val");
   sum.innerHTML = (forms
@@ -6721,6 +6748,7 @@ function bindEvents() {
     const b = e.target.closest(".xl-tag");
     if (b) toast(b.dataset.note);
   });
+  $("principal").onclick = () => { if (!$("grade-tab").hidden) { setTab("grade"); $("tabs").scrollIntoView({ block: "start", behavior: "smooth" }); } };
   $("grad-sum").onclick = () => { setTab("grade"); $("tabs").scrollIntoView({ block: "start", behavior: "smooth" }); };
   $("more-meanings").onclick = (e) => { e.preventDefault(); setTab("meanings"); };
   $("der-of-line").addEventListener("click", (e) => {

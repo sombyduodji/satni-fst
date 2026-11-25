@@ -2381,3 +2381,8 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .form-tr { line-height: 1.35; }
 /* Välilehdet mahtuvat yhdelle riville 360 px:n puhelimessakin (Taivutus · Aste · Merkitykset (n) · Perhe · Kaikki) */
 @media (max-width: 480px) { .tabs { gap: 0; } .tabs button { padding: 10px 5px; font-size: 14px; } }
+/* Pääsanamuodot tietorivillä (áhčči, áhči · vielgat, vielgada, attr. vilges); astevaihtelurivi on nyt näiden värityksessä */
+.word-meta .principal { font-weight: 600; }
+.word-meta .principal.clickable { cursor: pointer; }
+.word-meta .principal .pf-label { font-weight: 400; color: var(--muted); font-size: 13px; }
+.word-meta .grad-sum { display: none !important; }
