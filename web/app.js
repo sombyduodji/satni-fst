@@ -2195,7 +2195,7 @@ const HELP_ITEMS = {
   word: [["speak-btn", "speak"], ["fav-btn", "fav"], ["report-btn", "report"], ["word-forms", "forms"], ["trans-box", "trans"],
     ["more-meanings", "more"], ["extra-translations", "extra"], ["fam-foot", "fam"], ["tabs", "tabs"]],
 };
-let helpItems = [], helpStep = 0;
+let helpItems = [], helpStep = 0, helpOpenedAt = -1e9;
 // Nykyinen kohta hehkuvalla korostuksella elementin omaan muotoon (pyöristys elementin mukaan), muille vain pieni
 // himmeä numero yläpuolelle (käyttäjä 2026-11-25: eri kokoiset laatikot menivät päällekkäin). Seuraa vieritystä.
 function placeHelpMarks() {
@@ -2265,6 +2265,7 @@ function openHelp() {
   helpItems = HELP_ITEMS[view].map(([id, key]) => [$(id), key]).filter(([el]) => shown(el));
   if (!helpItems.length) return;
   $("help-title").textContent = T.title;
+  helpOpenedAt = performance.now();
   $("help-dlg").show();  // ei modaalinen: kosketus läpi, joten sivua voi vierittää ja renkaat seuraavat
   // Kohdistus paneeliin (ei ensimmäiseen painikkeeseen, jolloin "Sulje opas" näytti valitulta)
   $("help-dlg").querySelector(".help-panel").focus({ preventScroll: true });
@@ -7008,6 +7009,8 @@ function bindEvents() {
   document.addEventListener("click", (e) => {
     if (!$("help-dlg").open || e.target.closest(".help-panel")) return;
     e.preventDefault(); e.stopPropagation();
+    // Tuplanapautus ?-painikkeeseen: toinen napautus ei sulje juuri avattua opasta (yötesti 26.11)
+    if (performance.now() - helpOpenedAt < 500) return;
     const i = helpItems.findIndex(([el]) => el.contains(e.target));
     if (i >= 0) showHelpStep(i); else $("help-dlg").close();
   }, true);
