@@ -2529,3 +2529,4 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .help-num { z-index: 1; }
 /* ?-opas vain sanakortissa: piiloon, kun koko näytön näkymä (sanastot, peli, lause, asetukset) tai valokuvahaku on auki */
 html.view-open #help-btn, body:has(#ocr-view:not([hidden])) #help-btn { display: none !important; }
+.help-panel:focus { outline: none; }

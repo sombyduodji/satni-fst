@@ -2191,6 +2191,8 @@ function openHelp() {
   if (!helpItems.length) return;
   $("help-title").textContent = T.title;
   $("help-dlg").show();  // ei modaalinen: kosketus läpi, joten sivua voi vierittää ja renkaat seuraavat
+  // Kohdistus paneeliin (ei ensimmäiseen painikkeeseen, jolloin "Sulje opas" näytti valitulta)
+  $("help-dlg").querySelector(".help-panel").focus({ preventScroll: true });
   showHelpStep(0);
 }
 
