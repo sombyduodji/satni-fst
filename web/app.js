@@ -644,15 +644,46 @@ function wordClassLabel(pos, subtype) {
 // --- Tietokannan lataus ---
 
 let sqlModule = null;  // sql.js: myös inarin ja koltan erillisille tietokannoille (loadMinor)
-async function loadDatabase() {
-  const SQL = sqlModule = await initSqlJs({ locateFile: (f) => "vendor/" + f });
-  const response = await fetch(DATA_URL);
+// Lataus voi jäädä jumiin ilman virhettä: Android jäädyttää taustalle jääneen sovelluksen kesken latauksen, eikä
+// sovelluksen omasta paketista luettu virta aina jatku jäädytyksen jälkeen (Pixel 9 Pro 25.11.: "Ladataan sanakirjaa…"
+// jäi näkyviin pysyvästi, uudelleenlataus toimi heti). Vahtikoira: jos uusia tavuja ei tule DB_STALL_MS:n aikana
+// sivun ollessa näkyvissä, lataus perutaan ja aloitetaan alusta (enintään DB_ATTEMPTS kertaa). Piilossa ollessa aika
+// ei kulu, joten hidas puhelin tai taustalla odottaminen ei aiheuta turhaa uutta yritystä.
+const DB_STALL_MS = 10000, DB_ATTEMPTS = 3;
+async function loadDatabaseWithRetry() {
+  for (let attempt = 1; ; attempt++) {
+    const ctrl = new AbortController();
+    let last = Date.now(), timer = null;
+    const tick = () => { last = Date.now(); };
+    const stalled = new Promise((_, reject) => {
+      timer = setInterval(() => {
+        if (document.visibilityState !== "visible") { last = Date.now(); return; }
+        if (Date.now() - last > DB_STALL_MS) { ctrl.abort(); reject(Object.assign(new Error("stalled"), { stalled: true })); }
+      }, 1000);
+    });
+    try {
+      return await Promise.race([loadDatabase(ctrl.signal, tick), stalled]);
+    } catch (e) {
+      if (!e.stalled || attempt >= DB_ATTEMPTS) throw e;
+      $("progress-bar").style.width = "0%";
+      $("loading-text").textContent = t("loadRetrying");
+    } finally {
+      clearInterval(timer);
+    }
+  }
+}
+
+async function loadDatabase(signal, tick = () => {}) {
+  const SQL = sqlModule = sqlModule || await initSqlJs({ locateFile: (f) => "vendor/" + f });
+  tick();
+  const response = await fetch(DATA_URL, { signal });
   if (!response.ok) throw new Error(t("loadFailed", response.status));
 
   // Ladataan ja puretaan virtana: pakattua tiedostoa (~49 Mt) ei pidetä muistissa kokonaisena, joten latauksen
   // muistihuippu on puretut palat + yhdistetty tietokanta (~2 × 156 Mt) eikä ~410 Mt. Edistymispalkki seuraa
   // pakattuja tavuja (content-length).
-  const total = Number(response.headers.get("content-length")) || 0;
+  // Android-sovelluksessa otsake voi tulla kahdesti ("165142528, 165142528"): ensimmäinen luku riittää
+  const total = parseInt(response.headers.get("content-length") || "", 10) || 0;
   const reader = response.body.getReader();
   const first = await reader.read();
   if (first.done) throw new Error(t("loadFailed", 0));
@@ -661,6 +692,7 @@ async function loadDatabase() {
     start(ctrl) { ctrl.enqueue(first.value); received = first.value.length; },
     async pull(ctrl) {
       const { done, value } = await reader.read();
+      tick();
       if (done) { $("loading-text").textContent = t("unpacking"); ctrl.close(); return; }
       received += value.length;
       if (total) $("progress-bar").style.width = `${Math.round((received / total) * 90)}%`;
@@ -675,6 +707,7 @@ async function loadDatabase() {
   for (;;) {
     const { done, value } = await out.read();
     if (done) break;
+    tick();
     chunks.push(value);
     size += value.length;
   }
@@ -6891,9 +6924,9 @@ async function main() {
 
   try {
     showOnly("loading");
-    db = await loadDatabase();
+    db = await loadDatabaseWithRetry();
   } catch (e) {
-    $("loading-text").textContent = t("loadFailedLong", e.message);
+    $("loading-text").textContent = e.stalled ? t("loadStalled") : t("loadFailedLong", e.message);
     return;
   }
   $("search").disabled = false;
