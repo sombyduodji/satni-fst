@@ -345,7 +345,11 @@ public class MainActivity extends Activity {
             try {
                 startActivity(new Intent(Intent.ACTION_VIEW, url));
             } catch (ActivityNotFoundException e) {
-                // Ei sovellusta, joka osaisi avata linkin
+                // Ei sovellusta, joka osaisi avata linkin. Sähköposti (virheilmoitus, palaute): web-käyttöliittymä
+                // kertoo, ettei sähköpostisovellusta löytynyt, ja tarjoaa viestin kopioimista (käyttäjä 2026-11-25)
+                if ("mailto".equals(url.getScheme())) {
+                    view.evaluateJavascript("window.noMailApp && noMailApp(" + org.json.JSONObject.quote(url.toString()) + ")", null);
+                }
             }
             return true;
         }

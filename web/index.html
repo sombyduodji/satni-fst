@@ -261,6 +261,15 @@
       <button type="button" class="chip-btn primary" id="tts-clear-ok" data-i18n="clearHistoryOk">Tyhjennä</button>
     </div>
   </dialog>
+  <!-- Android: sähköpostisovellusta ei löytynyt (MainActivity kutsuu noMailApp) -->
+  <dialog id="no-mail-dlg" class="exp-dlg">
+    <h2 data-i18n="noMailTitle">Sähköpostisovellusta ei löytynyt</h2>
+    <p data-i18n="noMailBody"></p>
+    <div class="dialog-actions">
+      <button type="button" class="chip-btn" id="no-mail-cancel" data-i18n="cancel">Peruuta</button>
+      <button type="button" class="chip-btn primary" id="no-mail-copy" data-i18n="noMailCopy">Kopioi viesti</button>
+    </div>
+  </dialog>
   <!-- Historian tyhjennys vain vahvistuksen jälkeen -->
   <dialog id="clear-history-dlg" class="exp-dlg">
     <h2 data-i18n="clearHistoryTitle">Tyhjennetäänkö historia?</h2>

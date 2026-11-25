@@ -443,6 +443,21 @@ function openReportMail(subject, body) {
   a.click();
 }
 
+// Android ilman sähköpostisovellusta (MainActivity.shouldOverrideUrlLoading kutsuu tätä mailto-linkin kanssa,
+// käyttäjä 2026-11-25): kerrotaan, ettei sovellusta löytynyt, ja tarjotaan viestin kopioimista leikepöydälle.
+let noMailText = "";
+window.noMailApp = function (url) {
+  let to = REPORT_ADDRESS, subject = "", body = "";
+  try {
+    const u = new URL(url);
+    to = decodeURIComponent(u.pathname) || to;
+    subject = u.searchParams.get("subject") || "";
+    body = u.searchParams.get("body") || "";
+  } catch (e) { /* pelkkä osoite */ }
+  noMailText = [`${t("noMailTo")}: ${to}`, subject && `${t("noMailSubject")}: ${subject}`, "", body].filter((x, i) => x || i === 2).join("\n").trim();
+  $("no-mail-dlg").showModal();
+};
+
 // Virheilmoitus muista näkymistä (kuvahaku, lausenäkymä, lausekääntäjä, kuunteluharjoitus): sama lomake kuin
 // sanastoissa (Mikä sana? -kenttä), tiedot ctx:stä. ctx = { place, word, lines: [[nimi, arvo], …], audio }
 let reportCtx = null;
@@ -6794,6 +6809,12 @@ function bindEvents() {
   $("history").addEventListener("click", (e) => { if (histLong) { e.preventDefault(); e.stopPropagation(); histLong = false; } }, true);
   $("history").addEventListener("contextmenu", (e) => { if (e.target.closest("li a")) e.preventDefault(); });
   $("clear-history-cancel").onclick = () => $("clear-history-dlg").close();
+  $("no-mail-cancel").onclick = () => $("no-mail-dlg").close();
+  $("no-mail-copy").onclick = async () => {
+    await copyText(noMailText);
+    $("no-mail-dlg").close();
+    toast(t("noMailCopied"));
+  };
   $("clear-history-ok").onclick = () => {
     $("clear-history-dlg").close();
     settings.history = [];
