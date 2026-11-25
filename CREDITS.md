@@ -77,10 +77,13 @@ WikDict (CC BY-SA, one source); and the Spanish wordnet of the Multilingual Cent
 FinnWordNet. The dictionary itself is not changed. Result: [`spa_mt.tsv`](spa_mt.tsv).
 
 **German machine translations (BETA):** there is no North Sámi–German dictionary, so [`deu_mt.py`](deu_mt.py) keeps a
-German word only when at least three of five independent sources agree: smi-mt from Sámi; Helsinki-NLP opus-mt-fi-de and
+German word only when at least three of six independent sources agree: smi-mt from Sámi; Helsinki-NLP opus-mt-fi-de and
 opus-mt-no-de (Apache-2.0) from the word's Finnish and Norwegian translations; opus-mt-en-de (CC BY 4.0) from the
 dictionary's own English; FinnWordNet (CC BY 3.0) and Princeton WordNet 3.0 linked to OdeNet (CC BY-SA 4.0) through the
-Collaborative Interlingual Index (CC BY 4.0); and Wiktionary (CC BY-SA 4.0) counted as one source. Álgu's German was
+Collaborative Interlingual Index (CC BY 4.0); Wiktionary (CC BY-SA 4.0) counted as one source; and the bilingual dictionary
+of [apertium/apertium-sme-deu](https://github.com/apertium/apertium-sme-deu) (GPL-3.0, © Flammie A Pirinen, Francis
+Tyers, lynnda-hill and the Apertium contributors; about 2,400 word pairs, a German word counts only if OdeNet or
+Wiktionary knows it). Álgu's German was
 used only to check the result, not in the app. Result: [`deu_mt.tsv`](deu_mt.tsv).
 
 `dict-sme-fin` is included in this repository as an unmodified copy ([dict-sme-fin/SOURCE.md](dict-sme-fin/SOURCE.md));

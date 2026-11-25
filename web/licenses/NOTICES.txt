@@ -176,7 +176,7 @@ Spanish machine translations (experimental, off by default; spa_mt.py, spa_mt.ts
 
 German machine translations (BETA, off by default; deu_mt.py, deu_mt.tsv)
   There is no North Sámi–German dictionary, so every German word is a
-  machine translation, shown only when at least three of five independent
+  machine translation, shown only when at least three of six independent
   sources give the same German word. Made with smi-mt (as above),
   Helsinki-NLP opus-mt-fi-de and opus-mt-no-de (Apache-2.0.txt) and
   opus-mt-en-de (CC-BY-4.0.txt), FinnWordNet (CC-BY-3.0.txt) and
@@ -184,8 +184,11 @@ German machine translations (BETA, off by default; deu_mt.py, deu_mt.tsv)
   wordnet (CC-BY-SA-4.0.txt, https://github.com/hdaSprachtechnologie/odenet)
   through the Collaborative Interlingual Index (CC-BY-4.0.txt,
   https://github.com/globalwordnet/cili), and Wiktionary
-  (CC-BY-SA-4.0.txt, as above). Only the resulting German words are
-  included.
+  (CC-BY-SA-4.0.txt, as above), and the bilingual dictionary of
+  Apertium apertium-sme-deu (GPL-3.0.txt,
+  © Flammie A Pirinen, Francis Tyers, lynnda-hill and the Apertium
+  contributors, https://github.com/apertium/apertium-sme-deu). Only the
+  resulting German words are included.
 
 Corpus frequencies: SIKOR North Saami lemma frequency
 list 2015-10-10

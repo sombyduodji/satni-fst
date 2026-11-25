@@ -203,12 +203,13 @@ const UI_TEXTS = {
       <li>koltansaame sanakorteilla ja haussa</li><li>saksa (konekäännös, BETA)</li></ul>
       <p>Ne ovat konekäännöksiä ja voivat olla vääriä. Voit kytkeä ne pois kohdasta Asetukset → Käännöskielet, niin näet
       sovelluksen kuten tavallinen käyttäjä. Palaute auttaa!</p>`,
-    expDeuMt: "Saksa", expDeuMtDesc: "Konekäännös noin 5 500 sanalle, kun vähintään 3 lähdettä on samaa mieltä. Ei sanakirjaa.",
-    expDeuMtInfo: `<p>Pohjoissaamen ja saksan välillä ei ole avointa sanakirjaa, joten kaikki saksan sanat ovat konekäännöksiä.
-      Sana näytetään vain, jos vähintään kolme viidestä toisistaan riippumattomasta lähteestä antaa saman saksan sanan:
-      käännösmalli saamesta, sanan suomennoksesta, norjannoksesta ja sanakirjan englannista sekä Wiktionary. Noin 5 500 sanaa,
+    expDeuMt: "Saksa", expDeuMtDesc: "Konekäännös noin 5 700 sanalle, kun vähintään 3 lähdettä on samaa mieltä. Ei sanakirjaa.",
+    expDeuMtInfo: `<p>Pohjoissaamen ja saksan välillä ei ole kattavaa avointa sanakirjaa, joten saksan sanat ovat konekäännöksiä.
+      Sana näytetään vain, jos vähintään kolme kuudesta toisistaan riippumattomasta lähteestä antaa saman saksan sanan:
+      käännösmalli saamesta, sanan suomennoksesta, norjannoksesta ja sanakirjan englannista, Wiktionary sekä Apertiumin pieni
+      saame–saksa-sanalista. Noin 5 700 sanaa,
       enimmäkseen yleisiä sanoja.</p>
-      <p>Testissä Wiktionaryn saame–saksa-sanoja vasten noin 82 % kolmen lähteen ja noin 92 % neljän tai viiden lähteen sanoista
+      <p>Testissä Wiktionaryn saame–saksa-sanoja vasten noin 80 % kolmen lähteen ja noin 94 % neljän tai useamman lähteen sanoista
       oli sama tai synonyymi. Testisanoja oli vain noin 800, joten luku on suuntaa antava. Sanakortissa näkyy saksa (≈) ja
       lähteiden määrä, ja saksan sanalla voi hakea.</p>`,
     noFavourites: "Ei vielä suosikkeja", noHistory: "Ei hakuja",
@@ -536,11 +537,11 @@ const UI_TEXTS = {
       <li>skoltesamisk på ordkort og i søk</li><li>tysk (maskinoversettelse, BETA)</li></ul>
       <p>Det er maskinoversettelser og kan være feil. Du kan slå dem av under Innstillinger → Oversettelsesspråk for å se
       appen slik en vanlig bruker ser den. Tilbakemeldinger hjelper!</p>`,
-    expDeuMt: "Tysk", expDeuMtDesc: "Maskinoversettelse for rundt 5 500 ord, når minst 3 kilder er enige. Ingen ordbok.",
-    expDeuMtInfo: `<p>Det finnes ingen åpen ordbok mellom nordsamisk og tysk, så alle tyske ord er maskinoversettelser. Et ord
-      vises bare når minst tre av fem uavhengige kilder gir det samme tyske ordet: oversettelsesmodeller fra samisk, fra ordets
-      finske og norske oversettelse og fra ordbokas engelske, og Wiktionary. Rundt 5 500 ord, mest vanlige ord.</p>
-      <p>I en test mot Wiktionarys samisk–tyske ord var rundt 82 % av ordene med tre kilder og rundt 92 % med fire eller fem
+    expDeuMt: "Tysk", expDeuMtDesc: "Maskinoversettelse for rundt 5 700 ord, når minst 3 kilder er enige. Ingen ordbok.",
+    expDeuMtInfo: `<p>Det finnes ingen dekkende åpen ordbok mellom nordsamisk og tysk, så de tyske ordene er maskinoversettelser. Et ord
+      vises bare når minst tre av seks uavhengige kilder gir det samme tyske ordet: oversettelsesmodeller fra samisk, fra ordets
+      finske og norske oversettelse og fra ordbokas engelske, Wiktionary og Apertiums lille samisk–tyske ordliste. Rundt 5 700 ord, mest vanlige ord.</p>
+      <p>I en test mot Wiktionarys samisk–tyske ord var rundt 80 % av ordene med tre kilder og rundt 94 % med fire eller flere
       like eller synonymer. Testen hadde bare rundt 800 ord, så tallet er omtrentlig. Ordkortet viser tysk (≈) og antall
       kilder, og du kan søke med det tyske ordet.</p>`,
     noFavourites: "Ingen favoritter ennå", noHistory: "Ingen søk",
@@ -862,13 +863,14 @@ UI_TEXTS.en = {
     <li>Skolt Sámi on word cards and in search</li><li>German (machine translation, BETA)</li></ul>
     <p>They are machine translations and may be wrong. You can turn them off under Settings → Translation languages to see
     the app as a regular user does. Feedback helps!</p>`,
-  expDeuMt: "German", expDeuMtDesc: "Machine translation for about 5,500 words, when at least 3 sources agree. No dictionary.",
-  expDeuMtInfo: `<p>There is no open dictionary between North Sámi and German, so every German word is a machine translation.
-    A word is shown only when at least three of five independent sources give the same German word: translation models from
-    Sámi, from the word's Finnish and Norwegian translations and from the dictionary's English, and Wiktionary. About 5,500
+  expDeuMt: "German", expDeuMtDesc: "Machine translation for about 5,700 words, when at least 3 sources agree. No dictionary.",
+  expDeuMtInfo: `<p>There is no comprehensive open dictionary between North Sámi and German, so the German words are machine translations.
+    A word is shown only when at least three of six independent sources give the same German word: translation models from
+    Sámi, from the word's Finnish and Norwegian translations and from the dictionary's English, Wiktionary, and Apertium's small
+    Sámi–German word list. About 5,700
     words, mostly common ones.</p>
-    <p>In a test against Wiktionary's Sámi–German words, about 82 % of the words with three sources and about 92 % with four
-    or five were the same or a synonym. The test had only about 800 words, so the figure is approximate. The word card shows
+    <p>In a test against Wiktionary's Sámi–German words, about 80 % of the words with three sources and about 94 % with four
+    or more were the same or a synonym. The test had only about 800 words, so the figure is approximate. The word card shows
     German (≈) and the number of sources, and you can search with the German word.</p>`,
   noFavourites: "No favourites yet", noHistory: "No searches",
   addFavourite: "Add to favourites", removeFavourite: "Remove from favourites",

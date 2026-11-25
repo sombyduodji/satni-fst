@@ -1,11 +1,14 @@
 """Konekäännetty saksa (kokeellinen BETA-kieli, käyttäjä 2026-11-22). Saksalle ei ole pohjoissaamen sanakirjaa, joten
-jokainen sana on konekäännös. Hyväksytään vain, kun vähintään kolme viidestä riippumattomasta lähteestä antaa saman sanan:
+jokainen sana on konekäännös. Hyväksytään vain, kun vähintään kolme kuudesta riippumattomasta lähteestä antaa saman sanan:
   sme  saamen sana -> smi-mt (TartuNLP Smugri NLLB 1.3B, CC BY 4.0; pohjamalli NLLB-200 CC BY-NC 4.0)
   fin  sanan suomennos -> Helsinki-NLP opus-mt-fi-de (Apache-2.0) ja FinnWordNet (CC BY 3.0) -> OdeNet (CC BY-SA 4.0)
   nob  sanan norjannos -> Helsinki-NLP opus-mt-no-de (Apache-2.0)
   eng  sanakirjan oma englanti (ei konekäännöksiä) -> opus-mt-en-de (CC BY 4.0) ja WordNet -> OdeNet
   wikt Wiktionary kokonaisuutena yhtenä lähteenä (CC BY-SA 4.0, kaikki.org): suomen, norjan ja englannin
        käännöstaulukot sekä saamen omat merkinnät
+  apt  Apertium apertium-sme-deu -kaksikielinen sanakirja (GPL-3.0, ihmisen tekemä, ~2 400 paria; lisätty 2026-11-25).
+       Siinä on kirjoitusvirheitä ja vanhoja asuja (Protokol, Zuschuß), joten se on vain yksi lähde muiden joukossa
+       ja sen sanakin kelpaa vain, jos se on OdeNetissä tai Wiktionaryssa.
 Saksan sanaksi kelpaa vain OdeNetin tai Wiktionaryn sana; ei Wiktionaryn mallineita eikä numeroita; substantiivit isolla,
 muut pienellä alkukirjaimella.
 Kalibrointi 2026-11-22 (docs/englanti-testi-2026-11-21.md, kohta 7): Wiktionaryn saame–saksa-parit (kalibrointisanoille
@@ -31,6 +34,36 @@ M = json.load(open(C + "maps.json"))
 R = json.load(open(C + "recs.json"))
 SMI = json.load(open(C + "mt_sme_de.json"))
 OP = json.load(open(C + "mt_opus_de.json"))
+APT_DIX = os.path.join(HOME, "Git/sami-data-candidates/german/apertium-sme-deu/apertium-sme-deu.sme-deu.dix")
+APT_POS = {"n": "N", "vblex": "V", "adj": "A", "adv": "Adv"}
+
+
+def _apt_text(el):
+    t = el.text or ""
+    for c in el:
+        t += (" " if c.tag == "b" else _apt_text(c) if c.tag == "g" else "") + (c.tail or "")
+    return t.strip()
+
+
+def load_apertium(path=APT_DIX):
+    """(saame, sanaluokka) -> [saksa] Apertiumin sme-deu-sanakirjasta (tyhjä, jos tiedostoa ei ole)."""
+    out = collections.defaultdict(list)
+    if not os.path.exists(path):
+        return out
+    for sec in ET.parse(path).getroot().iter("section"):
+        for e in sec.iter("e"):
+            lr = e.find("p")
+            if lr is None or e.get("r") == "RL":
+                continue
+            l, r, tag = lr.find("l"), lr.find("r"), lr.find("l/s")
+            if l is None or r is None or tag is None or tag.get("n") not in APT_POS:
+                continue
+            if _apt_text(l) and _apt_text(r):
+                out[(_apt_text(l), APT_POS[tag.get("n")])].append(_apt_text(r))
+    return out
+
+
+APT = load_apertium()
 ALGU = json.load(open(os.path.join(HOME, ".cache/satni-fst-build/fincal/algu_sme_deu.json")))
 root = ET.parse(os.path.join(HOME, "Git/sami-data-candidates/german/deWordNet.xml")).getroot()
 SYN, CASE, DEPOS = collections.defaultdict(set), {}, collections.defaultdict(set)
@@ -86,6 +119,7 @@ def sources(r):
         "nob": cset([OP["nob"].get(w, "") for w in nb]) if nb else {},
         "eng": cset([OP["eng"].get(w, "") for w in en] + look("enwn_de", en)) if en else {},
         "wikt": cset(wikt),
+        "apt": cset(APT.get((r["lemma"], r["pos"]), [])),
     }
 
 
