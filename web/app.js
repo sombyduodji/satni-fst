@@ -1771,6 +1771,13 @@ function selectResult(i, pushHistory = true) {
   state.transWord = r.via ? r.via.base : r.rank > 1.2 && r.rank < 5 ? r.finStem || state.query : null;
   // Suomen liitepartikkeli haussa (tuletko): vartalo ja liite (renderInfo)
   state.finClitic = r.finClitic ? { stem: r.finStem, clitic: r.finClitic } : null;
+  // Uusi sana avautuu aina Taivutus-välilehdelle (käyttäjä 2026-11-25: edellisen sanan välilehti jäi päälle);
+  // saman sanan uudelleenpiirto (asetusmuutos) säilyttää valitun välilehden
+  if (state.word?.id !== data.word.id) {
+    state.tab = "table";
+    for (const b of $("tabs").children) b.classList.toggle("active", b.dataset.tab === "table");
+    $("tabs").scrollLeft = 0;
+  }
   state.word = data.word;
   state.paradigm = data.paradigm;
   state.grades = data.grades;
