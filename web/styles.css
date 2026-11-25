@@ -2519,3 +2519,11 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .help-ring.current { border: 2px solid #fcd34d; box-shadow: 0 0 0 3px rgb(251 191 36 / .35), 0 0 22px 6px rgb(251 191 36 / .45); }
 .help-num { opacity: .8; background: #b4862a; color: #111827; }
 .help-num.current { opacity: 1; background: #fbbf24; }
+/* Kohdevalo (käyttäjä 2026-11-25: koko sivun himmennys teki kohdasta vaikealukuisen): nykyinen kohta täysin kirkkaana,
+   muu sivu himmennetty renkaan suurella varjolla; renkaan sisällä ei taustaa */
+.help-dlg { background: transparent; }
+.help-dlg.dim { background: rgb(0 0 0 / .4); }
+.help-ring.current { background: transparent;
+  box-shadow: 0 0 0 3px rgb(251 191 36 / .35), 0 0 18px 5px rgb(251 191 36 / .4), 0 0 0 200vmax rgb(0 0 0 / .45); }
+.help-ring:not(.current) { border-color: rgb(251 191 36 / .7); }
+.help-num { z-index: 1; }

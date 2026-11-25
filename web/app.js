@@ -2157,6 +2157,9 @@ function placeHelpMarks() {
     Object.assign(num.style, { left: `${Math.min(innerWidth - 22, Math.max(2, pos.left))}px`, top: `${Math.max(2, pos.top)}px` });
     marks.append(ring, num);
   });
+  // Kohdevalo: nykyisen kohdan ympäriltä himmennetty (rengas tekee varjollaan reiän); jos kohta on vieritetty pois
+  // näkyvistä, koko sivu himmennetään kevyesti
+  $("help-dlg").classList.toggle("dim", !marks.querySelector(".help-ring.current"));
 }
 // Yksi kohta kerrallaan (käyttäjä 2026-11-25: kaikki selitykset kerralla peittivät puolet näytöstä): kohta vieritetään
 // näkyviin paneelin yläpuolelle, selitys paneelissa, Edellinen / Seuraava
