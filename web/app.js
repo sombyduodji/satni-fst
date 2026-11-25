@@ -2182,6 +2182,9 @@ function showHelpStep(i) {
   placeHelpMarks();
 }
 function openHelp() {
+  // Vain sanakortti (käyttäjä 2026-11-25: ei saa vuotaa muihin näkymiin): ei, jos jokin koko näytön näkymä tai
+  // valokuvahaku on auki tai sanakorttia ei näy
+  if (document.documentElement.classList.contains("view-open") || !$("ocr-view").hidden || $("word").hidden || !state.word) return;
   const view = "word", T = t("help")[view];
   const shown = (el) => el && !el.hidden && el.getClientRects().length > 0 && el.closest("[hidden]") === null;
   helpItems = HELP_ITEMS[view].map(([id, key]) => [$(id), key]).filter(([el]) => shown(el));

@@ -2527,3 +2527,5 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
   box-shadow: 0 0 0 3px rgb(251 191 36 / .35), 0 0 18px 5px rgb(251 191 36 / .4), 0 0 0 200vmax rgb(0 0 0 / .45); }
 .help-ring:not(.current) { border-color: rgb(251 191 36 / .7); }
 .help-num { z-index: 1; }
+/* ?-opas vain sanakortissa: piiloon, kun koko näytön näkymä (sanastot, peli, lause, asetukset) tai valokuvahaku on auki */
+html.view-open #help-btn, body:has(#ocr-view:not([hidden])) #help-btn { display: none !important; }
