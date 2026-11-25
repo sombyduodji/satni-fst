@@ -93,6 +93,8 @@ public class MainActivity extends Activity {
         if (BuildConfig.WEB_DEBUG) WebView.setWebContentsDebuggingEnabled(true);
         web.addJavascriptInterface(ocr, "SatniOcr");
         web.addJavascriptInterface(new AppBridge(), "SatniApp");
+        // sql-test vaihe 0: natiivi SQLite -silta mittauksia varten (sovellus käyttää yhä sql.js:ää)
+        web.addJavascriptInterface(new NativeDb(this), "SatniNativeDb");
         // Kuunteluharjoituksen tila sivulle (DrillService soittaa myös näytön ollessa pois päältä)
         DrillService.listener = json -> web.post(() ->
                 web.evaluateJavascript("window.satniDrill && satniDrill.event(" + json + ")", null));
