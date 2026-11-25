@@ -17,7 +17,7 @@ const PELI_TEXTS = {
     lead: "Valitse oikea käännös neljästä. Yksi väärä vastaus päättää pelin.",
     modes: { beginner: ["Aloittelija", "Yleisimmät sanat"], advanced: ["Edistynyt", "Kaikki sanat"],
       ordinals: ["Järjestysluvut", "1.–100."], time: ["Viikonpäivät, vuodenajat ja kuukaudet", "Biret sanoo oikean vastauksen"],
-      colours: ["Värit", "9 väriä"], questions: ["Kysymyssanat", "Biret sanoo oikean vastauksen"], animals: ["Eläimet", "23 eläintä"], berries: ["Marjat, hedelmät ja kasvikset", "33 sanaa"],
+      colours: ["Värit", "9 väriä"], questions: ["Kysymyssanat", "Biret sanoo oikean vastauksen"], animals: ["Eläimet", "23 eläintä"], berries: ["Marjat, hedelmät ja kasvikset", "33 sanaa"], nearfar: ["Lähellä ja kaukana", "dát, diet, duot, dot …"],
       clock: ["Kellonajat", "Tasan, puoli ja vartit"], clockAll: ["Kellonajat: kaikki", "Viiden minuutin välein, 144 aikaa"] },
     clockListen: "Kuuntele ja valitse kello", clockAsk: "Paljonko kello on?", clockAgain: "Kuuntele uudelleen", clockText: "Näytä teksti", seeList: "Katso sanasto",
     groups: { words: "Sanat", cats: "Aiheet" }, groupSub: { words: "Sanakirjan sanoja kahdella tasolla", cats: "Lyhyitä teemapelejä" },
@@ -43,7 +43,7 @@ const PELI_TEXTS = {
     lead: "Velg riktig oversettelse av fire. Ett feil svar avslutter spillet.",
     modes: { beginner: ["Nybegynner", "De vanligste ordene"], advanced: ["Viderekommen", "Alle ordene"],
       ordinals: ["Ordenstall", "1.–100."], time: ["Ukedager, årstider og måneder", "Biret sier riktig svar"],
-      colours: ["Farger", "9 farger"], questions: ["Spørreord", "Biret sier riktig svar"], animals: ["Dyr", "23 dyr"], berries: ["Bær, frukt og grønnsaker", "33 ord"],
+      colours: ["Farger", "9 farger"], questions: ["Spørreord", "Biret sier riktig svar"], animals: ["Dyr", "23 dyr"], berries: ["Bær, frukt og grønnsaker", "33 ord"], nearfar: ["Nær og fjern", "dát, diet, duot, dot …"],
       clock: ["Klokkeslett", "Hel, halv og kvarter"], clockAll: ["Klokkeslett: alle", "Hvert femte minutt, 144 tider"] },
     clockListen: "Lytt og velg klokka", clockAsk: "Hva er klokka?", clockAgain: "Lytt igjen", clockText: "Vis teksten", seeList: "Se ordlisten",
     groups: { words: "Ord", cats: "Emner" }, groupSub: { words: "Ord fra ordboka på to nivåer", cats: "Korte temaspill" },
@@ -69,7 +69,7 @@ const PELI_TEXTS = {
     lead: "Choose the right translation of four. One wrong answer ends the game.",
     modes: { beginner: ["Beginner", "The most common words"], advanced: ["Advanced", "All words"],
       ordinals: ["Ordinal numbers", "1st–100th"], time: ["Days, seasons and months", "Biret says the right answer"],
-      colours: ["Colours", "9 colours"], questions: ["Question words", "Biret says the right answer"], animals: ["Animals", "23 animals"], berries: ["Berries, fruit and vegetables", "33 words"],
+      colours: ["Colours", "9 colours"], questions: ["Question words", "Biret says the right answer"], animals: ["Animals", "23 animals"], berries: ["Berries, fruit and vegetables", "33 words"], nearfar: ["Near and far", "dát, diet, duot, dot …"],
       clock: ["Clock times", "O'clock, half and quarters"], clockAll: ["Clock times: all", "Every five minutes, 144 times"] },
     clockListen: "Listen and pick the clock", clockAsk: "What time is it?", clockAgain: "Listen again", clockText: "Show text", seeList: "See the word list",
     groups: { words: "Words", cats: "Topics" }, groupSub: { words: "Dictionary words on two levels", cats: "Short topic games" },
@@ -95,6 +95,7 @@ const PELI_MODES = [
   { id: "ordinals", group: "cats", color: "blue" }, { id: "time", group: "cats", color: "blue" },
   { id: "colours", group: "cats", color: "green" }, { id: "questions", group: "cats", color: "yellow" },
   { id: "animals", group: "cats", color: "green" }, { id: "berries", group: "cats", color: "red" },
+  { id: "nearfar", group: "cats", color: "yellow" },
   { id: "clock", group: "cats", color: "blue" }, { id: "clockAll", group: "cats", color: "blue" },
 ];
 // Pelattava saamen kieli: pohjoissaame aina, inarinsaame vain asetuksista valittuna (kokeellinen, minipeli.json: smn).
@@ -126,12 +127,12 @@ const peliModesFor = (sami) => PELI_MODES.filter((m) => m.group === "words" || (
 const PELI_MODE_ICON = {
   beginner: '<path d="M12 21v-8"/><path d="M12 13c0-4 2.5-6.5 7-6.5 0 4.2-2.6 6.5-7 6.5z"/><path d="M12 15.5C12 12 9.8 10 6 10c0 3.5 2.2 5.5 6 5.5z"/>',
   advanced: '<path d="M3 19l6.5-11 4 6.5 2.5-4 5 8.5z"/><path d="M8 10.5l1.5 1.5 1.5-1.5"/>',
-  ordinals: null, time: null, colours: null, questions: null,
+  ordinals: null, time: null, colours: null, questions: null, nearfar: null,
   clock: '<circle cx="12" cy="13" r="7.5"/><path d="M12 9.2V13l2.6 1.8"/><path d="M4.2 6.2l3-2.4M19.8 6.2l-3-2.4M7.3 19.2l-1.6 1.9M16.7 19.2l1.6 1.9"/>', clockAll: '<circle cx="12" cy="12" r="8.5"/><path d="M12 6.5V12h5"/><path d="M12 3.5v1.5M20.5 12H19M12 20.5V19M3.5 12H5"/>',
   berries: '<circle cx="8.3" cy="15.2" r="3.6"/><circle cx="15.7" cy="15.2" r="3.6"/><circle cx="12" cy="9.2" r="3.6"/><path d="M12 5.6c.3-1.6 1.4-2.6 3.2-2.9"/>',
   animals: '<circle cx="7.5" cy="9" r="1.8"/><circle cx="12" cy="6.5" r="1.8"/><circle cx="16.5" cy="9" r="1.8"/><path d="M12 11.5c-3 0-5.5 3.5-5.5 5.6 0 1.6 1.3 2.4 2.7 2.4 1.1 0 1.8-.6 2.8-.6s1.7.6 2.8.6c1.4 0 2.7-.8 2.7-2.4 0-2.1-2.5-5.6-5.5-5.6z"/>',
 };
-const PELI_MODE_SANASTO_ICON = { ordinals: "numbers", time: "month", colours: "palette", questions: "question" };
+const PELI_MODE_SANASTO_ICON = { ordinals: "numbers", time: "month", colours: "palette", questions: "question", nearfar: "pointer" };
 const peliModeIcon = (id) => PELI_MODE_ICON[id]
   ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PELI_MODE_ICON[id]}</svg>`
   : sanastoSvg(PELI_MODE_SANASTO_ICON[id]);
@@ -744,7 +745,7 @@ function peliOpenMode(mode) {
   loadPeli().then(() => { if (peliModesFor(peliMenuSami()).some((m) => m.id === mode)) peliStart(mode); }).catch(() => {});
 }
 // Pelitilan sanasto (tulossivun linkki): pelitila -> Sanastojen lista
-const PELI_LIST = { colours: "varit", questions: "kysymykset", time: "viikonpaivat", ordinals: "luvut", animals: "elaimet", berries: "marjat",
+const PELI_LIST = { colours: "varit", questions: "kysymykset", time: "viikonpaivat", ordinals: "luvut", animals: "elaimet", berries: "marjat", nearfar: "lahellajakaukana",
   clock: "kellonajat", clockAll: "kellonajat" };
 function hidePeli() { peliStopAudio(); const was = !$("peli-view").hidden; $("peli-view").hidden = true; if (was) overlayClosed(); }
 // Takaisin-ele: ensin pelistä tai tulosruudusta valikkoon (peli jää jatkettavaksi), sitten näkymä kiinni;

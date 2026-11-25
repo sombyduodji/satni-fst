@@ -92,6 +92,7 @@ def english(db, data, lists):
     for k, lids in (("time", ("viikonpaivat", "vuodenajat", "kuukaudet")), ("colours", ("varit",)), ("questions", ("kysymykset",))):
         own = {r["sme"][0]["w"][0]: first(r["en"][0], 1) for lid in lids for r in lists[lid]["rows"] if r.get("en")}
         cats[k] = {it[0]: own[it[0]] for it in data["cats"][k] if it[0] in own}
+    cats["nearfar"] = {r["sme"][0]["w"][0]: r["en"][0].split(" · ")[0] for r in lists["lahellajakaukana"]["rows"] if r.get("en")}
     data["enCats"] = cats
     print(f"Englanti: {len(en)} sanaa (sanoista {sum(src.values())} / {len(data['words'])}: sanastot {src['list']}, "
           f"sanakirja {src['dict']}, konekäännös {src['mt']})")
@@ -324,8 +325,11 @@ def main():
     # Vain perusmuoto ja sen käännös: Kysymyssanat-listan rivillä voi olla taivutusmuotoja (kuka · kenen · kenelle …)
     base = lambda t: t.split(" · ")[0]
     questions = [[r["sme"][0]["w"][0], base(r["fi"][0]), base(r["nb"][0])] for r in lists["kysymykset"]["rows"]]
+    # Lähellä ja kaukana (2026-11-25): 13 osoittavaa sanaa, merkitys sulkeineen (se (luonasi) ≠ se), jotta vaihtoehdot
+    # erottuvat; vain perusmuoto (dát, ei dán)
+    nearfar = [[r["sme"][0]["w"][0], base(r["fi"][0]), base(r["nb"][0])] for r in lists["lahellajakaukana"]["rows"]]
     data = {"words": words, "cats": {"ordinals": ordinals(), "time": time, "colours": colours, "questions": questions,
-                                     "animals": [list(a) for a in ANIMALS], "berries": [list(a) for a in marjat.WORDS]}}
+                                     "animals": [list(a) for a in ANIMALS], "berries": [list(a) for a in marjat.WORDS], "nearfar": nearfar}}
     data["en"] = english(db, data, lists)
     # Inarinsaame (asetuksista valittava, kokeellinen): samat käsitteet, sana kahdesta lähteestä tarkistettuna
     data["smn"] = inari(db, data)

@@ -524,8 +524,10 @@ function bindHarj() {
 }
 
 // Painikkeet sanastoihin (sanastot.js kutsuu): listan yläreunaan ja yleisnäkymän alkuun
+// Listat, joille ei vielä ole kuunteluharjoitusta (Harrin suomenkieliset äänet puuttuvat): ei painiketta
+const HARJ_NO_LIST = ["lahellajakaukana"];
 function harjListButton(listId) {
-  if (!harjAvailable()) return "";
+  if (!harjAvailable() || HARJ_NO_LIST.includes(listId)) return "";
   const id = listId === "luvut" ? "luvut" : listId;
   return `<button type="button" class="hj-open" data-harj="${esc(id)}">${HARJ_ICON}<span>${esc(t("harjTitle"))}</span></button>`;
 }

@@ -128,10 +128,10 @@ html.view-open { overflow: hidden; }
 .sanasto-view { --card-shadow: 0 1px 2px rgba(15, 23, 42, .05), 0 4px 14px rgba(15, 23, 42, .05); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sanasto-view { --card-shadow: none; } }
 :root[data-theme="dark"] .sanasto-view { --card-shadow: none; }
-.sanasto-tile, .sl-card, .num-table, .mrow, .colour, .compass, .kt-node, .kt-side, .cv-b.l, .cv-chip, .rd-life, .ico-tile, .q-card, .tl-step,
+.sanasto-tile, .sl-card, .num-table, .dist-table, .mrow, .colour, .compass, .kt-node, .kt-side, .cv-b.l, .cv-chip, .rd-life, .ico-tile, .q-card, .tl-step,
 .tl-now, .season, .day, .snow-card { box-shadow: var(--card-shadow); }
 .sl-card .mrow { box-shadow: none; }
-.sl-card, .num-table, .compass, .rd-life, .q-card, .colour, .ico-tile { border-radius: 16px; }
+.sl-card, .num-table, .dist-table, .compass, .rd-life, .q-card, .colour, .ico-tile { border-radius: 16px; }
 .sanasto-head h2 { margin: 0; font-size: 20px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sanasto-head .speak-btn { flex: none; }
 /* Android-sovelluksessa tilarivin tila on jo reunuksessa (kuten .topbar) */
@@ -2533,3 +2533,17 @@ html.view-open #help-btn, body:has(#ocr-view:not([hidden])) #help-btn { display:
 /* Kun Lisää-valikko (sivupaneeli/alapaneeli) tai jokin ikkuna on auki, ? jää näkyviin taustalle kuten muut sanakortin
    painikkeet, mutta ei ole napautettavissa (puhelintesti 2026-11-25; käyttäjä: ei katoa taustalta). openHelp tarkistaa saman. */
 body.sidebar-open #help-btn, body:has(dialog[open]:not(#help-dlg)) #help-btn { pointer-events: none; }
+
+/* Lähellä ja kaukana (2026-11-25): etäisyys | mikä | missä | mihin */
+.dist-table { display: grid; grid-template-columns: minmax(84px, .9fr) repeat(3, minmax(0, 1fr)); background: var(--surface);
+  border: 1px solid var(--border); padding: 4px 0 6px; flex-shrink: 0; overflow: hidden; }
+.dist-table > * { min-width: 0; padding: 8px 4px; border-top: 1px solid var(--border); }
+.dist-table > .dt-corner, .dist-table > .dt-head { border-top: 0; padding: 8px 6px 6px; }
+.dt-head { font-size: 13px; font-weight: 700; color: var(--text); }
+.dt-row { font-size: 12px; font-weight: 600; color: color-mix(in srgb, var(--tc, var(--accent)) 70%, var(--text)); padding-left: 10px !important; padding-right: 6px !important; }
+.dt-cell { display: flex; flex-direction: column; gap: 6px; }
+.dt-w { display: flex; flex-direction: column; line-height: 1.2; }
+.dt-w .sw { font-size: 16px; overflow-wrap: anywhere; }
+.dt-w .sw:not(.main) { font-size: 14.5px; }
+.dt-fi { font-size: 12px; color: var(--muted); overflow-wrap: break-word; }
+.dist-table > .zebra { background: color-mix(in srgb, var(--tc, var(--accent)) 6%, transparent); }

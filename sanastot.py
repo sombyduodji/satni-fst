@@ -415,6 +415,13 @@ def lists():
                     r["ex"] = {"sme": ex[0], "fi": ex[1], "nb": ex[2]}
                 rows.append(r)
         lst = {"id": spec["id"], "icon": spec["icon"], "title": {"fi": spec["title"][0], "nb": spec["title"][1]}, "rows": rows}
+        # Taulukkolista (Lähellä ja kaukana): sarakeotsikot kolmella kielellä; rivin sarake = sanan paikka osiossa
+        if spec.get("layout"):
+            lst["layout"] = spec["layout"]
+            lst["cols"] = {"fi": spec["cols"][0], "nb": spec["cols"][1], "en": spec["cols"][2]}
+            col = {w[0]: k for _t, ws in spec["sections"] for k, w in enumerate(ws)}
+            for r in rows:
+                r["col"] = col[r.get("key") or r["sme"][0]["w"][0]]
         if spec.get("hint"):
             lst["hint"] = {"fi": spec["hint"][0], "nb": spec["hint"][1]}
         L.append(lst)

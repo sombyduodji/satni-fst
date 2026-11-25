@@ -103,7 +103,7 @@ function hideSanastot() {
 // muutama saamen sana esimakuna ja sanojen määrä.
 const APU_LISTS = ["tamajase", "taallajatuolla", "aikasanat", "sidesanat"];
 const SANASTO_GROUPS = [
-  { id: "perus", color: "yellow", lists: ["luvut", "varit", "kysymykset", "tamajase", "sidesanat"] },
+  { id: "perus", color: "yellow", lists: ["luvut", "varit", "kysymykset", "tamajase", "lahellajakaukana", "sidesanat"] },
   { id: "aika", color: "blue", lists: ["viikonpaivat", "kuukaudet", "vuodenajat", "aika", "kellonajat", "aikasanat"] },
   { id: "ihmiset", color: "red", lists: ["suku", "pronominit", "tervehdykset"] },
   { id: "luonto", color: "green", lists: ["suunnat", "taallajatuolla", "saa", "porot", "elaimet", "marjat"] },
@@ -389,6 +389,23 @@ function renderSanasto(listId) {
           (ex ? `<span class="col-ex"><span class="sw" data-say="${esc(ex.sme)}">${esc(ex.sme)}</span> <span class="col-ex-fi">${esc(ex[lang] || ex.fi)}</span></span>` : "") +
           `</span><span class="col-fi">${esc(ui[0] || "")}</span></div>`;
       }).join("") + `</div>`;
+      return finish();
+    }
+    // Lähellä ja kaukana (2026-11-25): etäisyydet riveinä (lähellä minua, lähellä sinua, tuolla, kauempana, se) ja
+    // sarakkeina mikä / missä / mihin kuten opetusmateriaalissa. Solussa saamen muodot (dát, dán) ja kunkin merkitys alla.
+    if (l.layout === "dist") {
+      const cols = (l.cols && (l.cols[lang] || l.cols.fi)) || [];
+      html += `<div class="dist-table"><span class="dt-corner"></span>` + cols.map((c) => `<span class="dt-head">${esc(c)}</span>`).join("") +
+        (l.sections || []).map((s, i) => {
+          const z = i % 2 ? " zebra" : "";
+          return `<span class="dt-row${z}">${esc(s[lang] || s.fi)}</span>` + cols.map((_, c) => {
+            const r = l.rows.find((x) => x.sec === i && x.col === c);
+            if (!r) return `<span class="dt-cell empty${z}"></span>`;
+            const x = r.sme[0], gl = (uiOf(r)[0] || "").split(" · ");
+            return `<span class="dt-cell${z}">` + x.w.map((w, k) =>
+              `<span class="dt-w">${tapX(x, w, k === 0)}<span class="dt-fi">${esc(gl[k] || "")}</span></span>`).join("") + `</span>`;
+          }).join("");
+        }).join("") + `</div>`;
       return finish();
     }
     const nbi = { nb: 1, en: 2 }[lang] || 0;
@@ -761,7 +778,7 @@ function sanastoSpeakAll() {
 
 // Listan yläreunan painikkeet (2026-11-23): Harjoittele kuunnellen ja Pelaa (jos listalle on pelitila)
 const SANASTO_GAME = { varit: "colours", kysymykset: "questions", viikonpaivat: "time", kuukaudet: "time", vuodenajat: "time",
-  luvut: "ordinals", elaimet: "animals", marjat: "berries", kellonajat: "clock" };
+  luvut: "ordinals", elaimet: "animals", marjat: "berries", kellonajat: "clock", lahellajakaukana: "nearfar" };
 function sanastoActions(listId) {
   const harj = typeof harjListButton === "function" ? harjListButton(listId === "kellonajat" ? "kello" : listId) : "";
   const mode = SANASTO_GAME[listId];

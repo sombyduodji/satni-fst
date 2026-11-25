@@ -16,9 +16,9 @@ N, F, S, O = "nob", "fin", "spa", "own"
 LISTS = [
     {"id": "tamajase", "icon": "pointer", "group": "perus",
      "title": ("Tämä ja se", "Dette og det", "This and that"),
-     "hint": ("dát = tämä (lähellä minua) · diet = se (lähellä sinua) · dat = se · duot = tuo (kauempana)",
-              "dát = denne (nær meg) · diet = den (nær deg) · dat = den · duot = den der borte",
-              "dát = this (near me) · diet = that (near you) · dat = it, that · duot = that over there"),
+     "hint": ("dát = tämä (lähellä minua) · diet = se (lähellä sinua) · dat = se · duot = tuo · dot = tuo (kauempana)",
+              "dát = denne (nær meg) · diet = den (nær deg) · dat = den · duot = den der borte · dot = den lengst borte",
+              "dát = this (near me) · diet = that (near you) · dat = it, that · duot = that over there · dot = that one further away"),
      "sections": [
          (("Tämä ja se", "Denne og den", "This and that"), [
              # Komitatiivi ja monikko (käyttäjä 2026-11-23; lang-sme-generaattori: dát+Pron+Dem+Sg+Com = dáinna,
@@ -42,35 +42,54 @@ LISTS = [
              ("diet", "Pron", None, "se (lähellä sinua)", "den (nær deg)", "that (near you)",
               ("Mii diet lea?", "Mikä se on?", "Hva er det der?", "What's that?", {"fi": O, "nb": N})),
              ("duot", "Pron", None, "tuo", "den der borte", "that over there",
-              ("Mii duot lea?", "Mikä tuo on?", "Hva er det der?", "What's that over there?", {"fi": O, "nb": N}))]),
+              ("Mii duot lea?", "Mikä tuo on?", "Hva er det der?", "What's that over there?", {"fi": O, "nb": N})),
+             # dot (käyttäjä 2026-11-25): sanakirja dot = tuo / "det lengst borte" / "that one far over there"
+             ("dot", "Pron", None, "tuo (kauempana)", "den lengst borte", "that one further away", None)]),
          (("Tällainen ja sellainen", "Slik og sånn", "Like this and like that"), [
              ("dákkár", "Pron", None, "tällainen", "sånn her", "like this, such",
               ("Biret lea dákkár.", "Biret on tällainen.", "Biret er sånn.", "Biret is like this.", {"fi": O, "nb": N})),
              ("dakkár", "Pron", None, "sellainen", "slik", "like that, such",
               ("Váldde dakkára go áiggut.", "Ota sellainen kuin haluat.", "Ta en slik som du vil ha.", "Take one like you want.", {"fi": O, "nb": N}))])]},
 
+    # Lähellä ja kaukana (käyttäjä 2026-11-25): neljä etäisyyttä taulukkona kuten opetusmateriaalissa. Sarakkeet: mikä
+    # (nominatiivi ja genetiivi), missä (-ppe), mihin (-hko/-ike). Muodot GiellaLT lang-sme -analysaattorilla
+    # (dien, duon, don = Sg+Gen/Acc), merkitykset sanakirjasta (dict-sme-fin/-nob/-eng). Etäisyyksien järjestys sanakirjasta:
+    # dot "det lengst borte", doppe "far away over there" (do- kauimpana), duot "det der borte" (duo- tuolla).
+    # layout "dist": sanastot.js piirtää taulukon; rivin paikka osiosta (etäisyys) ja sanan järjestyksestä osiossa (sarake).
+    {"id": "lahellajakaukana", "icon": "pointer", "group": "perus", "layout": "dist",
+     "title": ("Lähellä ja kaukana", "Nær og fjern", "Near and far"),
+     "cols": (["Mikä?", "Missä?", "Mihin?"], ["Hva?", "Hvor?", "Hvor hen?"], ["What?", "Where?", "Where to?"]),
+     "hint": ("dá- = lähellä minua · die- = lähellä sinua · duo- = tuolla · do- = kauempana",
+              "dá- = nær meg · die- = nær deg · duo- = der borte · do- = lenger borte",
+              "dá- = near me · die- = near you · duo- = over there · do- = further away"),
+     "sections": [
+         (("Lähellä minua", "Nær meg", "Near me"), [
+             ("dát", "Pron", ["dát", "dán"], "tämä · tämän", "denne · dennes", "this · of this", None),
+             ("dáppe", "Adv", None, "täällä", "her", "here", None),
+             ("deike", "Adv", None, "tänne", "hit", "(to) here", None)]),
+         (("Lähellä sinua", "Nær deg", "Near you"), [
+             ("diet", "Pron", ["diet", "dien"], "se (luonasi) · sen", "den (hos deg) · dens", "that (near you) · of that", None),
+             ("dieppe", "Adv", None, "siellä (luonasi)", "der (hos deg)", "there (where you are)", None),
+             ("diehko", "Adv", None, "sinne (luoksesi)", "dit (til deg)", "(to) there, to you", None)]),
+         (("Tuolla", "Der borte", "Over there"), [
+             ("duot", "Pron", ["duot", "duon"], "tuo · tuon", "den der borte · dens", "that over there · of that", None),
+             ("duoppe", "Adv", None, "tuolla", "der borte", "over there", None),
+             ("duohko", "Adv", None, "tuonne", "dit bort", "(to) over there", None)]),
+         (("Kauempana", "Lenger borte", "Further away"), [
+             ("dot", "Pron", ["dot", "don"], "tuo (kauempana) · tuon", "den lengst borte · dens", "that one further away · of that", None),
+             ("doppe", "Adv", None, "tuolla kauempana", "lenger borte", "far over there", None),
+             ("dohko", "Adv", None, "sinne (kauemmas)", "dit (lenger bort)", "(to) further over there", None)]),
+         (("Se", "Den, det", "It, that"), [
+             ("dat", "Pron", ["dat", "dan"], "se · sen", "den, det · dens", "it, that · of it", None)])]},
+
     {"id": "taallajatuolla", "icon": "place", "group": "luonto",
      "title": ("Täällä ja tuolla", "Her og der", "Here and there"),
-     "hint": ("neljä etäisyyttä: dá- lähellä minua · die- lähellä sinua · do- tuolla · duo- kaukana",
-              "fire avstander: dá- nær meg · die- nær deg · do- der · duo- langt borte",
-              "four distances: dá- near me · die- near you · do- over there · duo- far off"),
+     # Missä/minne-sanat (dáppe, dieppe, duoppe, doppe, deike, diehko, duohko, dohko) ovat 2026-11-25 alkaen
+     # Lähellä ja kaukana -listassa. Vanha ohje oli väärin päin (do- on kauimpana: sanakirjan dot "det lengst borte").
+     "hint": ("dás = tässä (lähellä minua) · diekko = siinä (lähellä sinua) · duos = tuossa",
+              "dás = akkurat her (nær meg) · diekko = der (nær deg) · duos = akkurat der",
+              "dás = right here (near me) · diekko = there (near you) · duos = right there"),
      "sections": [
-         (("Missä", "Hvor", "Where"), [
-             ("dáppe", "Adv", None, "täällä, täältä", "her", "here",
-              ("Elle orru dáppe.", "Elle asuu täällä.", "Elle bor her omkring.", "Elle lives here.", {"fi": O, "nb": N})),
-             ("dieppe", "Adv", None, "siellä (missä sinä olet)", "der hos dere", "there (where you are)",
-              ("Leat go dieppe riššat?", "Onko siellä teillä tulitikkuja?", "Er det fyrstikker der hos dere?", "Are there matches there where you are?", {"fi": O, "nb": N})),
-             ("doppe", "Adv", None, "siellä, tuolla", "der", "there",
-              ("Doppe gávdnojit gearbmašat.", "Siellä on käärmeitä.", "Det fins slanger der.", "There are snakes there.", {"fi": O, "nb": N})),
-             ("duoppe", "Adv", None, "tuolla (kaukana)", "der borte", "over there (far)", None)]),
-         (("Minne", "Hvor hen", "Where to"), [
-             ("deike", "Adv", None, "tänne", "hit", "here (to here)",
-              ("Elle boahtá deike.", "Elle tulee tänne.", "Elle kommer hit.", "Elle is coming here.", {"fi": O, "nb": N})),
-             ("diehko", "Adv", None, "sinne (luoksesi)", "dit til dere", "there (to you)",
-              ("Mun buvttán riššaid diehko.", "Tuon tulitikut sinne teille.", "Jeg bringer fyrstikkene dit til dere.", "I'll bring the matches there to you.", {"fi": O, "nb": N})),
-             ("dohko", "Adv", None, "sinne", "dit", "there (to there)",
-              ("De gal in háliit dohko vuolgit.", "Sitten en kyllä halua lähteä sinne.", "Da vil jeg ikke dra dit.", "Then I really don't want to go there.", {"fi": O, "nb": N})),
-             ("duohko", "Adv", None, "tuonne", "dit bort", "over there (to there)", None)]),
          (("Tässä ja tuossa", "Akkurat her og der", "Right here and there"), [
              ("dás", "Adv", None, "tässä, tästä", "akkurat her", "right here",
               ("Elle orru dás.", "Elle asuu tässä.", "Elle bor akkurat her.", "Elle lives right here.", {"fi": O, "nb": N})),
