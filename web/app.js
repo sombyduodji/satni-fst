@@ -2411,7 +2411,8 @@ function renderPrincipal() {
     const f = state.paradigm.get(tag)[0];
     if (seen.has(f)) continue;
     seen.add(f);
-    const g = state.grades.get(tag + "|" + f);
+    // Astevaihtelun näyttö pois asetuksista: muodot ilman korostusta (kuten taulukossa)
+    const g = settings.showGrade ? state.grades.get(tag + "|" + f) : null;
     const cls = g === "GD" ? "gd" : g === "HD" ? "hd" : "";
     parts.push((tag === "Attr" ? `<span class="pf-label">attr.</span> ` : "") +
       `<span class="pf-form" lang="se" translate="no">${markCluster(f, cls === "gd" ? w.gd_cluster : cls === "hd" ? w.hd_cluster : "", cls)}</span>`);
