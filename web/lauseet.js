@@ -362,6 +362,18 @@ function lauseSamiTag(tokens, i) {
   return samiTagOfFinCell(cell, pos, t.pick.base, !!t.choice.human || t.choice.subtype === "Prop");
 }
 
+// Saamen verbi taipuu subjektin luvussa, suomen olla-lause ja passiivi eivät: helikopterilla oli vaikeuksia =
+// helikopteris ledje váttisvuođat, kirjoja myytiin = girjjit vuvdojuvvojedje (Pl3). Subjekti on saman lauseen
+// monikollinen substantiivi, jota tämä verbi hallitsee: olla-lauseessa suomen partitiivi (olemassaolon subjekti),
+// passiivissa partitiivi tai nominatiivi (passiivin objekti on saamessa subjekti).
+function lauseVerbPluralSubject(tokens, i, passive) {
+  const v = tokens[i];
+  if (!passive && !(v.pick?.base === "olla" && /^(Prs|Prt|Cond|Pot)\+Sg3$/.test(v.pick.cell || ""))) return false;
+  return tokens.some((x, j) => j !== i && x.choice && x.pick?.pos === "N" && x.choice.pos === "N"
+    && (x.pick.cell === "Pl+Par" || passive && x.pick.cell === "Pl+Nom")
+    && lauseGoverningVerb(tokens, j) === v && lauseSamiTag(tokens, j) === "Pl+Nom");
+}
+
 function lauseSamiForm(tokens, i) {
   const t = tokens[i];
   const clitic = t.clitic ? Object.fromEntries(LAUSE_CLITICS)[t.clitic] : "";
@@ -375,6 +387,7 @@ function lauseSamiForm(tokens, i) {
   // Käyttäjän valitsema saamen taivutusmuoto sanan valikosta (tok.smeTag, lauseFormHtml) ohittaa säännöt
   if (t.smeTag && loadWord(t.choice.id).paradigm.has(t.smeTag)) ({ tag, post, guess, passive } = { tag: t.smeTag, post: "", guess: false, passive: false });
   let form = t.choice.sme_lemma, exact = !t.pick.cell;
+  if (!t.smeTag && typeof tag === "string" && /\+Sg3$/.test(tag) && lauseVerbPluralSubject(tokens, i, passive)) tag = tag.replace(/Sg3$/, "Pl3");
   if (passive) {
     let pf = null;
     try { pf = all("SELECT surface FROM sme_passive WHERE word_id = ? AND tag = ?", [t.choice.id, tag])[0]?.surface; } catch (e) { /* vanha aineisto */ }
