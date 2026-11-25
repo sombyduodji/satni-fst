@@ -779,10 +779,14 @@ function sanastoSpeakAll() {
 // Listan yläreunan painikkeet (2026-11-23): Harjoittele kuunnellen ja Pelaa (jos listalle on pelitila)
 const SANASTO_GAME = { varit: "colours", kysymykset: "questions", viikonpaivat: "time", kuukaudet: "time", vuodenajat: "time",
   luvut: "ordinals", elaimet: "animals", marjat: "berries", kellonajat: "clock", lahellajakaukana: "nearfar" };
+const SANASTO_GAME_SMN = ["time", "colours", "questions", "animals", "berries"];
 function sanastoActions(listId) {
   const harj = typeof harjListButton === "function" ? harjListButton(listId === "kellonajat" ? "kello" : listId) : "";
   const mode = SANASTO_GAME[listId];
-  const play = mode && (sanastoSami() === "sme" || !["clock"].includes(mode)) && typeof peliOpenMode === "function"
+  // Inarinsaameksi vain pelit, joilla on inarin sanat (minipeli.json smn.cats); muuten painike avaisi vain pelivalikon
+  // (Lähellä ja kaukana, järjestysluvut, kello). Ennen pelidatan latausta tunnettu luettelo.
+  const smnOk = (m) => (typeof peli !== "undefined" && peli && peli.smn ? (peli.smn.cats[m] || []).length > 0 : SANASTO_GAME_SMN.includes(m));
+  const play = mode && (sanastoSami() === "sme" || smnOk(mode)) && typeof peliOpenMode === "function"
     ? `<button type="button" class="sanasto-play" data-peli="${mode}">${typeof PELI_ICON !== "undefined" ? PELI_ICON : ""}<span>${esc(t("sanastoPlay"))}</span></button>` : "";
   return harj || play ? `<div class="sanasto-actions">${harj}${play}</div>` : "";
 }
