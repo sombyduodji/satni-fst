@@ -2424,3 +2424,18 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .word-forms .grad-sum { color: var(--accent); }
 .word-forms .grad-sum:hover { text-decoration: underline; color: var(--accent); }
 .word-forms .grad-sum .gd, .word-forms .grad-sum .hd { font-weight: 600; }
+
+/* --- Käännöslaatikko (käyttäjä 2026-11-25): sama pyöristetty, sinertävä laatikko kuin taivutustaulukon ryhmillä --- */
+.word-head { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; }
+.word-head .word-sub { margin-top: 0; }
+.trans-box { margin: 12px 0 4px; padding: 10px 14px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.trans-box.plain { border: 0; background: none; padding: 0; }
+.word .trans-box .translation { margin: 0; font-size: 21px; line-height: 1.3; }
+.trans-box .form-translation { margin: 8px 0 0; padding-top: 7px; border-top: 1px solid color-mix(in srgb, var(--accent) 18%, transparent); font-size: 16px; }
+.trans-box .ft-form b { font-weight: 600; }
+.trans-box .ft-note { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+.more-line { margin: 4px 0 8px; font-size: 14px; }
+.more-line:has(> .more:empty) { display: none; }
+.word-top .word-title .word-head h1 { flex: 0 1 auto; }
+.more-line .more { margin-left: 0; padding-left: 0; }

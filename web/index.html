@@ -153,7 +153,13 @@
           <span id="principal" class="principal" hidden></span>
           <button type="button" id="grad-sum" class="grad-sum" hidden></button>
         </div>
-        <p class="translation"><span id="translation"></span> <a href="#" id="more-meanings" class="more"></a></p>
+        <!-- Käännös omassa pyöristetyssä laatikossaan; haetun taivutusmuodon vastine samassa laatikossa ohuen viivan alla
+             (käyttäjä 2026-11-25). Muut merkitykset -linkki laatikon alla. -->
+        <div id="trans-box" class="trans-box">
+          <p class="translation"><span id="translation"></span></p>
+          <div id="form-translation" class="form-translation" hidden></div>
+        </div>
+        <p class="more-line"><a href="#" id="more-meanings" class="more"></a></p>
         <!-- Haku ei löytänyt mitään: ilmoitus puuttuvasta sanasta (app.js: openMissingReport, 2026-11-24) -->
         <p id="missing-line" class="report-line" hidden><a href="#" id="missing-btn" class="report-link"><span aria-hidden="true">⚑</span> <span data-i18n="reportMissing">Ilmoita puuttuvasta sanasta</span></a></p>
         <!-- Haku ei löytänyt sanaa: yhdyssanan osat ja koko sanan käännös (app.js: renderSearchParts) -->
@@ -167,7 +173,6 @@
         <!-- Käännös puuttuu (2026-11-24): toisen kielen käännös varakielenä, johdoksen pohjasana ja ilmoituslinkki (app.js: renderNoTrans) -->
         <p id="fallback-line" class="translation fallback-line" hidden></p>
         <p id="notrans-line" class="report-line" hidden><a href="#" id="notrans-btn" class="report-link"><span aria-hidden="true">⚑</span> <span data-i18n="reportMissingTrans">Ilmoita puuttuvasta käännöksestä</span></a></p>
-        <p id="form-translation" class="form-translation" hidden></p>
         <p id="extra-translations" class="extra-translations" hidden></p>
         <p id="position-line" class="muted small" hidden></p>
         <p id="dialect-line" class="muted small" hidden></p>

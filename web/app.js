@@ -1521,6 +1521,7 @@ function showSearch(query, results, index = 0, pushHistory = true) {
     $("report-btn").hidden = true;
     $("word-links").hidden = true;
     $("translation").textContent = t("noHitsHint");
+    $("trans-box").classList.add("plain");
     // Ilmoita puuttuvasta sanasta (2026-11-24): ei tyhjälle eikä pelkille jokerimerkeille
     $("missing-line").hidden = !query.replace(/[*?\s]/g, "");
     renderSearchParts(query);
@@ -1777,6 +1778,7 @@ function selectResult(i, pushHistory = true) {
   const w = data.word;
   $("lemma").textContent = shownLemma(w);
   $("pos-badge").hidden = false;
+  $("trans-box").classList.remove("plain");
   $("pos-badge").textContent = wordClassLabel(w.pos, w.subtype).toLowerCase();  // kursiivisulkeissa pienellä: (substantiivi)
   $("word-sub").hidden = false;
   $("fav-btn").hidden = false;
@@ -1818,7 +1820,7 @@ function selectResult(i, pushHistory = true) {
   // Saamenkielinen selitys vain Merkitykset-välilehdellä (käyttäjä 2026-11-25: kortissa se ei auta useimpia käyttäjiä)
   void def;
   $("sme-def").hidden = true;
-  $("more-meanings").textContent = ownGroup.length > 1 ? t("moreMeanings", ownGroup.length - 1) :
+  $("more-meanings").textContent = ownGroup.length > 1 ? t("otherMeanings") + " ›" :
     groups.some(([lang]) => lang !== settings.lang) && $("extra-translations").hidden ? t("otherLangs") : "";
   $("more-meanings").hidden = !$("more-meanings").textContent;  // tyhjä linkki ei jää Tab-järjestykseen
 
@@ -2069,6 +2071,19 @@ function skoltFor(w) {
   return null;
 }
 
+// Analysaattorin merkintä luettavaksi (Ind+Prt+Sg3 -> preteriti, yks. 3. persoona; Pl+Ill -> monikon illatiivi).
+// Tuntemattomat osat jätetään pois; jos mitään ei tunnisteta, näytetään merkintä sellaisenaan.
+function describeTag(tag) {
+  const W = t("tagWords"), parts = tag.split("+");
+  const person = parts.find((x) => /^(Sg|Du|Pl)[123]$/.test(x));
+  const num = parts.find((x) => /^(Sg|Du|Pl)$/.test(x));
+  const words = parts.filter((x) => x !== person && x !== num && x !== "Ind" && W[x]).map((x) => W[x]);
+  if (person) words.push(W.person(person[0] === "S" ? "Sg" : person[0] === "D" ? "Du" : "Pl", person[2]));
+  else if (num && W.joinNum) words.unshift(W[num + "Of"]);  // monikon illatiivi
+  else if (num) words.push(W[num]);  // illative plural, illativ flertall
+  return words.length ? words.join(num && !person ? " " : ", ") : tag;
+}
+
 function renderInfo(w) {
   const info = [];
   // Liitepartikkeli: muodon tunnistus vartalosta (boađátgo -> boađát) ja selitys omalle rivilleen
@@ -2099,13 +2114,16 @@ function renderInfo(w) {
   const finClitics = state.clitic && settings.lang === "fin" && state.clitic.clitics.every((c) => FIN_CLITICS[c])
     ? state.clitic.clitics : null;
   const formLabel = state.clitic && !finClitics ? state.clitic.stem : searchedWord();
+  let formGrammar = "";
   if (matches.length && q !== fold(w.sme_lemma) && q !== fold(w.dial_same || "")) {
-    info.push(t("searchedForm", state.clitic ? state.clitic.stem : searchedWord(), [...new Set(matches)].join(", ")));
+    // Kieliopillinen kuvaus luettavassa muodossa (preteriti, yks. 3. persoona) analysaattorin merkintöjen sijaan
+    formGrammar = [...new Set(matches.map((m) => describeTag(m.split(" ")[0])))].slice(0, 2).join(" / ");
     if (FORM_PHRASES[settings.lang]) formTrans = translationOfForm(w, matches.map((m) => m.split(" ")[0]), finClitics);
   }
   // Haetun muodon käännös omalle rivilleen käännöksen alle (viesus ≈ talossa / talosta, i huset / fra huset).
   // Toiseen suuntaan: taivutettu käännös (juon = juoda ≈ jugan), jos haku ei ollut saamen muoto.
-  let html = formTrans ? t("formIn", esc(formLabel), esc(formTrans), settings.lang) : "";
+  let html = formGrammar ? `<div class="ft-form"><b>${esc(formLabel)}</b>${formTrans ? ` ≈ ${esc(formTrans)}` : ""}</div>` +
+    `<div class="ft-note">${esc(t("searchedFormShort"))} · ${esc(formGrammar)}</div>` : "";
   if (!html && state.via) {
     const tag = settings.lang === "fin" ? samiTagOfFinCell(state.via.cell, w.pos.toUpperCase(), state.via.base, w.human) : null;
     const sme = tag && (state.paradigm.get(tag) || [])[0];
