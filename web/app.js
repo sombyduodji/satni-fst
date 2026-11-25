@@ -2435,7 +2435,10 @@ function renderGradation() {
   // Tietorivillä pääsanamuotojen jälkeen: "Astevaihtelu: hčč → hč ›" (napautus avaa Aste-välilehden selityksineen).
   // Sanalla ilman näkyvää astevaihtelua riviä ei näytetä (välilehti kertoo sen).
   sum.hidden = !forms;
-  sum.innerHTML = forms ? `${esc(t("gradation").toLowerCase())} ›` : "";
+  // Linkki Aste-välilehdelle, joka selittää sanan astevaihtelun: "astevaihtelu nn → n ›" (käyttäjä 2026-11-25: pelkkä
+  // "astevaihtelu ›" ei kertonut, mitä se tarkoittaa)
+  sum.innerHTML = forms ? `${esc(t("gradation").toLowerCase())} <span class="gd">${esc(w.gd_cluster)}</span> → <span class="hd">${esc(w.hd_cluster)}</span> ›` : "";
+  sum.title = t("gradation");
   // Aste-välilehti vain, kun on näytettävää: näkyvä astevaihtelu tai taivutusluokka (vielgat: ei kumpaakaan)
   $("grade-tab").hidden = !forms && !w.inflection_class;
   if ($("grade-tab").hidden && state.tab === "grade") setTab("table");

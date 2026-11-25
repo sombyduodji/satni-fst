@@ -2418,3 +2418,9 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
   color: var(--muted); cursor: pointer; }
 .word-forms .grad-sum:hover { color: var(--accent); }
 .results-toggle { font-size: 14px; }
+/* Rivit lähemmäs toisiaan; astevaihtelulinkki linkin värillä (käyttäjä 2026-11-25) */
+.word-sub { margin-top: 1px; }
+.word-forms { margin-top: 4px; }
+.word-forms .grad-sum { color: var(--accent); }
+.word-forms .grad-sum:hover { text-decoration: underline; color: var(--accent); }
+.word-forms .grad-sum .gd, .word-forms .grad-sum .hd { font-weight: 600; }
