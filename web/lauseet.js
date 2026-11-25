@@ -248,14 +248,14 @@ function lauseParse(text) {
     }
     // Iso alkukirjain lauseen keskellä ja tuntematon sana: nimi, joka säilyy sellaisenaan (Juha)
     if (!pick && tokens.some((x) => !x.punct) && /^\p{Lu}/u.test(raw)) {
-      tokens.push({ raw, word, name: true, known: true }); continue;
+      tokens.push({ raw, word, name: true, known: true, ...lauseNameTra(raw) }); continue;
     }
     // Lauseen alussa tuntematon isolla alkava sana: nimi. Saamen kirjaimella varma (Máret, Ánne), muuten harmaana
     // arvauksena (Elsa), koska se voi olla myös kirjoitusvirhe; napautus näyttää ehdotukset
     // Pitkä sana (Unelmani, Vesiputket) on todennäköisemmin tuntematon suomen sana kuin nimi
     const samiLetters = /[áčđŋšŧžÁČĐŊŠŦŽ]/.test(raw);
-    if (!pick && /^\p{Lu}/u.test(raw) && (samiLetters || raw.length <= 6)) {
-      tokens.push({ raw, word, name: true, guess: !samiLetters, known: true }); continue;
+    if (!pick && /^\p{Lu}/u.test(raw) && (samiLetters || raw.length <= 6 || lauseNameTra(raw).nameBase?.length <= 6)) {
+      tokens.push({ raw, word, name: true, guess: !samiLetters, known: true, ...lauseNameTra(raw) }); continue;
     }
     tokens.push({ raw, word, stem, clitic, px, analyses, pick, known: !!pick });
   }
@@ -354,6 +354,13 @@ function lauseParse(text) {
     if (rel) { t.candidates = [rel, ...t.candidates.filter((c) => c.id !== rel.id)]; t.choice = rel; }
   });
   return tokens;
+}
+
+// Tuntemattoman nimen translatiivi (Juhaksi) = saamen essiivi (Juhan), arvauksena: suomen astevaihtelu voi
+// muuttaa nimen (Pekaksi = Pekka), joten vain vokaaliin päättyvä vartalo + -n
+function lauseNameTra(raw) {
+  const m = raw.match(/^(\p{Lu}\p{L}*[aeiouyäöáeo])ksi$/u);
+  return m && m[1].length >= 2 ? { nameForm: m[1] + "n", nameBase: m[1], guess: true } : {};
 }
 
 // Luku, jonka jälkeen suomessa on partitiivi ja saamessa yksikön genetiivi: numero (200 kilometriä = 200 kilomehtera)
@@ -480,6 +487,8 @@ function lauseSamiTag(tokens, i) {
     if (muoto === "means" && fcase === "Ade") return { tag: `${n}+Com`, guess };
     return guess ? { tag: `${n}+Loc`, guess } : `${n}+${fcase === "All" ? "Ill" : "Loc"}`;
   }
+  // Nimen translatiivi = saamen essiivi (nimesimme kylän Inariksi = Anárin); juhlapyhät eivät ole nimiä (jouluksi = juovllaide)
+  if (fcase === "Tra" && t.choice.subtype === "Prop") return "Ess";
   // Paikannimi kuten ihmissana: Rovaniemellä = Roavvenjárggas, Rovaniemelle = Roavvenjárgii (sijat ovat nimellä aina samat)
   return samiTagOfFinCell(cell, pos, t.pick.base, !!t.choice.human || t.choice.subtype === "Prop");
 }
@@ -513,7 +522,7 @@ function lauseSamiForm(tokens, i) {
     return { form: LAUSE_NEG[t.neg] + clitic, base: "ii", note: LAUSE_NEG_PERSON[t.neg], exact: true };
   }
   if (t.dualNum) return { form: "", base: "", tag: "Du", exact: true };
-  if (t.name || t.num) return { form: t.raw, base: t.raw, exact: !t.guess };
+  if (t.name || t.num) return { form: t.nameForm || t.raw, base: t.nameBase || t.raw, tag: t.nameForm ? "Ess" : undefined, exact: !t.guess };
   if (t.withPost) return { form: "", base: "", tag: "Com", exact: true };
   if (t.post) return { form: t.post, base: t.post, tag: "Po", exact: true };
   if (!t.choice) return null;
