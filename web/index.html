@@ -53,6 +53,9 @@
     </div>
     <!-- Kapealla näytöllä Hae on pelkkä suurennuslasi -->
     <button class="primary-btn" id="search-btn" data-i18n-aria="search" disabled><span class="sb-label" data-i18n="search">Hae</span><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></button>
+    <!-- Ohje tälle sivulle: numeroidut selitykset näkymän osien päällä (app.js: openHelp, käyttäjä 2026-11-25).
+         Näkyy vain näkymissä, joille ohje on kirjoitettu (aluksi sanakortti). -->
+    <button type="button" class="help-btn" id="help-btn" data-i18n-aria="helpBtn" data-i18n-title="helpBtn" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg></button>
   </div>
   <!-- Hidas jokerihaku (*ortnega): tila ja edistyminen; hakukenttää voi muokata sillä aikaa (app.js: wildcardSearch) -->
   <div id="search-busy" class="search-busy" role="status" hidden>
@@ -145,6 +148,9 @@
             <span class="word-actions">
             <button id="speak-btn" class="speak-btn" data-i18n-title="listen" data-i18n-aria="listen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
             <button id="fav-btn" class="star-btn">☆</button>
+            <!-- Ilmoita virheestä kuvakepainikkeena (puhekupla ja huutomerkki, käyttäjä 2026-11-25): lomake valmistelee
+                 sähköpostin käyttäjän omaan sovellukseen (app.js: openReport) -->
+            <button type="button" id="report-btn" class="report-icon" data-i18n-title="reportError" data-i18n-aria="reportError"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-7l-4.5 3.5V17H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M12 7.5v4"/><circle cx="12" cy="14.2" r=".6" fill="currentColor"/></svg></button>
             </span>
           </div>
         </div>
@@ -179,7 +185,7 @@
         <p id="word-info" class="muted small"></p>
         <!-- Virheilmoitus kortin alareunassa pienenä linkkinä (ennen iso painike otsikkorivillä): lomake valmistelee
              sähköpostin käyttäjän omaan sovellukseen (app.js: openReport) -->
-        <p class="report-foot"><a href="#" id="fam-foot" class="link-pill fam-pill" hidden></a><a href="#" id="report-btn" class="report-link"><span aria-hidden="true">⚑</span> <span data-i18n="reportError">Ilmoita virheestä</span></a></p>
+        <p class="report-foot"><a href="#" id="fam-foot" class="link-pill fam-pill" hidden></a></p>
       </article>
 
       <nav id="tabs" class="tabs" hidden>
@@ -283,6 +289,9 @@
       <button type="button" class="chip-btn primary" id="no-mail-copy" data-i18n="noMailCopy">Kopioi viesti</button>
     </div>
   </dialog>
+  <!-- Ohjetila: koko näytön dialogi, jossa renkaat ja numerot näkymän osien päällä ja selitykset alhaalla; napautus tai
+       Takaisin sulkee (dialogina Takaisin-käsittely toimii kuten muissa ikkunoissa) -->
+  <dialog id="help-dlg" class="help-dlg"><div id="help-marks" class="help-marks"></div><div class="help-panel"><h2 id="help-title"></h2><ol id="help-list" class="help-list"></ol><p class="help-close muted small" id="help-close-hint"></p></div></dialog>
   <!-- Historian tyhjennys vain vahvistuksen jälkeen -->
   <dialog id="clear-history-dlg" class="exp-dlg">
     <h2 data-i18n="clearHistoryTitle">Tyhjennetäänkö historia?</h2>

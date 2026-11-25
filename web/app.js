@@ -1471,6 +1471,7 @@ function showOnly(view) {
   }
   $("loading").hidden = view !== "loading";
   for (const id of ["results", "word", "tabs", "word-foot"]) $(id).hidden = view !== "word";
+  $("help-btn").hidden = view !== "word";  // ohje on toistaiseksi kirjoitettu vain sanakortille
   for (const t of TABS) $("panel-" + t).hidden = view !== "word" || state.tab !== t;
 }
 
@@ -1511,6 +1512,7 @@ function showSearch(query, results, index = 0, pushHistory = true) {
     $("der-of-line").hidden = true;  // edellisen sanan sanaperhe- tai johdosrivi pois
     $("principal").hidden = true;
     $("word-forms").hidden = true;
+    $("help-btn").hidden = true;
     $("fam-foot").hidden = true;
     for (const t of TABS) $("panel-" + t).hidden = true;
     $("lemma").textContent = t("noHits", query);
@@ -2111,6 +2113,42 @@ if (window.ResizeObserver) {
     const w = Math.round(entries[0].contentRect.width);
     if (w !== lastW) { lastW = w; fitWordSub(); }
   }).observe(document.documentElement);
+}
+
+// --- Ohjetila (käyttäjä 2026-11-25): ?-painike näyttää näkymän osat numeroituina ja selittää ne. Aluksi sanakortti;
+// muille näkymille lisätään oma luettelo HELP_ITEMS-tauluun. Renkaat vain näkyvissä oleville osille; selitykset kaikille.
+const HELP_ITEMS = {
+  word: [["speak-btn", "speak"], ["fav-btn", "fav"], ["report-btn", "report"], ["word-forms", "forms"], ["trans-box", "trans"],
+    ["more-meanings", "more"], ["extra-translations", "extra"], ["fam-foot", "fam"], ["tabs", "tabs"]],
+};
+function openHelp() {
+  const view = "word", T = t("help")[view];
+  const shown = (el) => el && !el.hidden && el.getClientRects().length > 0 && el.closest("[hidden]") === null;
+  const items = HELP_ITEMS[view].map(([id, key]) => [$(id), key]).filter(([el]) => shown(el));
+  const card = $("word");
+  window.scrollTo({ top: Math.max(0, card.getBoundingClientRect().top + scrollY - 76), behavior: "instant" });
+  const marks = $("help-marks");
+  marks.innerHTML = "";
+  $("help-list").innerHTML = "";
+  items.forEach(([el, key], i) => {
+    const r = el.getBoundingClientRect();
+    if (r.bottom > 0 && r.top < innerHeight * 0.55) {
+      const ring = document.createElement("div");
+      ring.className = "help-ring";
+      Object.assign(ring.style, { left: `${r.left - 4}px`, top: `${r.top - 4}px`, width: `${r.width + 8}px`, height: `${r.height + 8}px` });
+      const num = document.createElement("span");
+      num.className = "help-num";
+      num.textContent = i + 1;
+      Object.assign(num.style, { left: `${Math.min(innerWidth - 26, Math.max(2, r.right - 10))}px`, top: `${Math.max(2, r.top - 14)}px` });
+      marks.append(ring, num);
+    }
+    const li = document.createElement("li");
+    li.textContent = T.items[key];
+    $("help-list").append(li);
+  });
+  $("help-title").textContent = T.title;
+  $("help-close-hint").textContent = t("helpClose");
+  $("help-dlg").showModal();
 }
 
 function describeTag(tag) {
@@ -6844,6 +6882,8 @@ function bindEvents() {
     setSkolt(true, false);  // pohjoissaamen sanakortit omasta alakohdastaan
   };
   $("report-btn").onclick = (e) => { e.preventDefault(); openReport(); };
+  $("help-btn").onclick = openHelp;
+  $("help-dlg").onclick = () => $("help-dlg").close();
   $("notrans-btn").onclick = (e) => {
     e.preventDefault();
     openReport();
