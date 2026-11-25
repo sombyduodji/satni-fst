@@ -2396,3 +2396,25 @@ body:has(#sent-view.solo:not([hidden])) .ocr-bottom { visibility: hidden; }
 .report-foot #report-btn { margin-left: auto; }
 .fam-foot { font-size: 14px; color: var(--accent); text-decoration: none; }
 .fam-foot:hover { text-decoration: underline; }
+
+/* --- Otsikko 25.11. (2): sanaluokka ja rakenne pienellä kursiivilla sanan alla sulkeissa, pääsanamuodot omalla rivillään */
+.word-head { flex: 1 1 auto; min-width: 0; }
+.word-head h1 { overflow-wrap: anywhere; }
+.word-sub { display: flex; flex-wrap: wrap; align-items: baseline; margin-top: 3px; font-size: 13.5px; font-style: italic; color: var(--muted); line-height: 1.45; }
+.word-sub::before { content: "("; }
+.word-sub::after { content: ")"; }
+.word-sub > :not([hidden]) ~ :not([hidden])::before { content: "·"; margin: 0 6px; font-style: normal; }
+.word-sub .badge { background: none; color: inherit; padding: 0; border-radius: 0; font-size: inherit; font-weight: 400; }
+.word-sub .der-of-line { display: inline; margin: 0; }
+.word-sub .der-of-line .muted { color: inherit; }
+.word-sub a { font-style: normal; }
+.word-forms { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 10px 0 0; font-size: 16px; }
+.word-forms .principal { font-weight: 600; color: var(--text); }
+.word-forms .principal.clickable { cursor: pointer; }
+.word-forms .principal .pf-label { font-weight: 400; color: var(--muted); font-size: 13px; }
+.word-forms .principal .pf-form { color: var(--text); }
+.word-forms .principal .pf-cluster { text-decoration-line: underline; text-decoration-thickness: 2px; text-underline-offset: .2em; }
+.word-forms .grad-sum { display: inline; width: auto; margin: 0; padding: 0; border: 0; background: none; font: inherit; font-size: 13px;
+  color: var(--muted); cursor: pointer; }
+.word-forms .grad-sum:hover { color: var(--accent); }
+.results-toggle { font-size: 14px; }

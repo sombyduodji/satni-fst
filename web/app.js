@@ -1496,6 +1496,7 @@ function showSearch(query, results, index = 0, pushHistory = true) {
   renderDidYouMean(query, state.results);
   renderPlaceNames(query);
   state.showPrefix = false;
+  state.resultsOpen = false;
   state.index = index;
 
   const hash = `#/sana/${encodeURIComponent(query)}${index ? "/" + index : ""}`;
@@ -1509,10 +1510,12 @@ function showSearch(query, results, index = 0, pushHistory = true) {
     $("grad-sum").hidden = true;
     $("der-of-line").hidden = true;  // edellisen sanan sanaperhe- tai johdosrivi pois
     $("principal").hidden = true;
+    $("word-forms").hidden = true;
     $("fam-foot").hidden = true;
     for (const t of TABS) $("panel-" + t).hidden = true;
     $("lemma").textContent = t("noHits", query);
     $("pos-badge").hidden = true;
+    $("word-sub").hidden = true;
     $("fav-btn").hidden = true;
     $("speak-btn").hidden = true;
     $("report-btn").hidden = true;
@@ -1706,6 +1709,16 @@ const PREFIX_RANK = 7;
 function renderResults() {
   const box = $("results");
   box.innerHTML = "";
+  // Muut osumat tiiviinä rivinä (käyttäjä 2026-11-25: täysleveät tulosrivit työnsivät sanakortin alas); napautus avaa
+  // luettelon. Valittu sana näkyy kortissa, joten sen omaa riviä ei toisteta.
+  if (state.results.length > 1 && !state.resultsOpen) {
+    const more = document.createElement("button");
+    more.className = "more-results results-toggle";
+    more.textContent = t("moreHits", state.results.length - 1) + " ›";
+    more.onclick = () => { state.resultsOpen = true; renderResults(); [...box.children].forEach((b) => b.classList.toggle("selected", Number(b.dataset.i) === state.index)); };
+    box.appendChild(more);
+    return;
+  }
   const strong = state.results.filter((r) => r.rank < PREFIX_RANK).length;
   const prefixOnly = state.results.length - strong;
   const collapsed = strong > 0 && prefixOnly > 0 && !state.showPrefix && state.index < strong;
@@ -1764,7 +1777,8 @@ function selectResult(i, pushHistory = true) {
   const w = data.word;
   $("lemma").textContent = shownLemma(w);
   $("pos-badge").hidden = false;
-  $("pos-badge").textContent = wordClassLabel(w.pos, w.subtype);
+  $("pos-badge").textContent = wordClassLabel(w.pos, w.subtype).toLowerCase();  // kursiivisulkeissa pienellä: (substantiivi)
+  $("word-sub").hidden = false;
   $("fav-btn").hidden = false;
   $("speak-btn").hidden = false;
   $("report-btn").hidden = false;
@@ -1805,7 +1819,7 @@ function selectResult(i, pushHistory = true) {
   void def;
   $("sme-def").hidden = true;
   $("more-meanings").textContent = ownGroup.length > 1 ? t("moreMeanings", ownGroup.length - 1) :
-    groups.some(([lang]) => lang !== settings.lang) ? t("otherLangs") : "";
+    groups.some(([lang]) => lang !== settings.lang) && $("extra-translations").hidden ? t("otherLangs") : "";
   $("more-meanings").hidden = !$("more-meanings").textContent;  // tyhjä linkki ei jää Tab-järjestykseen
 
   renderGradation();
@@ -2415,13 +2429,17 @@ function renderGradation() {
   if (!any && state.tab === "grade") setTab("table");
   sum.hidden = !any;
   renderPrincipal();
+  $("word-forms").hidden = $("principal").hidden;
   if (!any) return;
   const forms = full.querySelector(".grad-cell.forms .gc-val");
   // Tietorivillä pääsanamuotojen jälkeen: "Astevaihtelu: hčč → hč ›" (napautus avaa Aste-välilehden selityksineen).
   // Sanalla ilman näkyvää astevaihtelua riviä ei näytetä (välilehti kertoo sen).
   sum.hidden = !forms;
-  sum.innerHTML = forms ? `<span class="gs-label">${esc(t("gradation"))}:</span> <span class="gs-clusters"><span class="gd">${esc(w.gd_cluster)}</span> → ` +
-    `<span class="hd">${esc(w.hd_cluster)}</span></span> <span class="gs-more">›</span>` : "";
+  sum.innerHTML = forms ? `${esc(t("gradation").toLowerCase())} ›` : "";
+  // Aste-välilehti vain, kun on näytettävää: näkyvä astevaihtelu tai taivutusluokka (vielgat: ei kumpaakaan)
+  $("grade-tab").hidden = !forms && !w.inflection_class;
+  if ($("grade-tab").hidden && state.tab === "grade") setTab("table");
+  $("word-forms").hidden = $("principal").hidden && sum.hidden;
 }
 function renderGradationFull() {
   const w = state.word;
@@ -2538,6 +2556,9 @@ function negVerbPhrase(lang, tag, person, f) {
   return null;
 }
 
+// Verbitaulukko allekkain kapealla näytöllä; taulukko piirretään uudelleen, kun leveys ylittää rajan (kääntö)
+const NARROW_TABLE = matchMedia("(max-width: 560px)");
+NARROW_TABLE.addEventListener?.("change", () => { if (state.word && state.word.pos?.toUpperCase() === "V") renderTable(); });
 function renderTable() {
   const w = state.word;
   const pos = w.pos.toUpperCase();
@@ -2577,6 +2598,21 @@ function renderTable() {
   let html = "";
   if (!p.size && !UNINFLECTED_POS.includes(pos)) {
     html = `<p class="muted">${esc(t("noForms"))}</p>`;
+  } else if (pos === "V" && NARROW_TABLE.matches) {
+    // Kapea näyttö (käyttäjä 2026-11-25: preteritin sarakkeet jäivät näytön ulkopuolelle): aikamuodot allekkain,
+    // kolme saraketta (persoona, myönteinen, kielteinen)
+    const block = (first, title, sub, aff, neg, prn = true) => verbSection(first, title, sub, "") + personRows((pp) => {
+      const pr = prn ? PRONOUNS[pp] : "";
+      return `${label(pp)}${cell(pairs(aff(pp)), pr)}${cell(pairs(neg), prn ? `${pr} ${NEG_AUX[pp]}` : NEG_AUX_IMPRT[pp], null, pp)}`;
+    });
+    let rows = block(true, t("indicative"), t("present"), (pp) => `Ind+Prs+${pp}`, "Ind+Prs+ConNeg");
+    rows += block(false, "", t("preterite"), (pp) => `Ind+Prt+${pp}`, "Ind+Prt+ConNeg");
+    rows += block(false, "", t("conditional"), (pp) => `Cond+Prs+${pp}`, "Cond+Prs+ConNeg");
+    rows += block(false, "", t("potential"), (pp) => `Pot+Prs+${pp}`, "Pot+Prs+ConNeg");
+    rows += block(false, "", t("imperative"), (pp) => `Imprt+${pp}`, "Imprt+ConNeg", false);
+    let nf = section(t("nonFinite"), "");
+    VERB_NONFINITE_TAGS.forEach((tag, i) => { nf += `<tr>${label(t("nonFiniteRows")[i])}${cell(pairs(tag))}</tr>`; });
+    html = table(["", t("affirmative"), t("negative")], rows, "grouped") + table(null, nf);
   } else if (pos === "V") {
     let rows = verbSection(true, t("indicative"), t("present"), "", t("preterite"), "");
     rows += personRows((pp) => {

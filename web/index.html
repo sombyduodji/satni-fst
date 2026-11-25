@@ -132,7 +132,15 @@
       <article id="word" class="card word" hidden>
         <div class="word-top">
           <div class="word-title">
-            <h1 id="lemma"></h1>
+            <!-- Sana ja sen alla pienellä kursiivilla sanaluokka ja rakenne: (substantiivi · yhdyssana: sápmi + mánná)
+                 (käyttäjä 2026-11-25); sulut ja erottimet CSS:stä -->
+            <div class="word-head">
+              <h1 id="lemma"></h1>
+              <div id="word-sub" class="word-sub">
+                <span id="pos-badge" class="badge"></span>
+                <p id="der-of-line" class="der-of-line" hidden></p>
+              </div>
+            </div>
             <!-- Kuuntele: pyöreä kaiutinpainike, äänen haun ajan pyörivä kehä (styles.css) -->
             <span class="word-actions">
             <button id="speak-btn" class="speak-btn" data-i18n-title="listen" data-i18n-aria="listen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
@@ -140,12 +148,9 @@
             </span>
           </div>
         </div>
-        <!-- Sanakortin selkeytys (käyttäjä 2026-11-25): sanaluokka, johdos/yhdyssana ja astevaihtelu yhtenä harmaana
-             rivinä sanan alla; erotin (·) tulee CSS:stä näkyvien osien väliin -->
-        <div id="word-meta" class="word-meta">
-          <span id="pos-badge" class="badge"></span>
+        <!-- Pääsanamuodot omalla rivillään (áhčči, áhči) ja pieni "astevaihtelu ›", joka avaa Aste-välilehden -->
+        <div id="word-forms" class="word-forms" hidden>
           <span id="principal" class="principal" hidden></span>
-          <p id="der-of-line" class="der-of-line" hidden></p>
           <button type="button" id="grad-sum" class="grad-sum" hidden></button>
         </div>
         <p class="translation"><span id="translation"></span> <a href="#" id="more-meanings" class="more"></a></p>
