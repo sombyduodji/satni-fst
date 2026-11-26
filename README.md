@@ -3,16 +3,28 @@
 **An offline North Sámi dictionary with full inflection** — for Linux, Windows, Android and the web.
 
 > **Suomeksi:** Pohjoissaamen sanakirja ja taivutin, joka toimii ilman verkkoyhteyttä. Käännökset suomeksi
-> ja norjaksi, käyttöliittymä suomeksi tai norjaksi.
+> ja norjaksi, käyttöliittymä suomeksi, norjaksi tai englanniksi.
 >
 > **På norsk:** Nordsamisk ordbok og bøyingsverktøy som virker uten nett. Oversettelser til norsk og finsk,
-> brukergrensesnitt på norsk eller finsk.
+> brukergrensesnitt på norsk, finsk eller engelsk.
 
 Sátni FST combines the open dictionaries and morphology of [GiellaLT](https://giellalt.github.io/),
 [Divvun](https://divvun.no/) and [Giellatekno](https://giellatekno.uit.no/) into one app.
 **All language data comes from them — see [CREDITS.md](CREDITS.md).**
 
 **Home page and web version:** <https://sombyduodji.github.io/satni-fst/> — try the dictionary in your browser, nothing to install.
+
+## Download
+
+- **Android:** Google Play, or `satni-fst.apk` from the [latest GitHub release](https://github.com/sombyduodji/satni-fst/releases/latest).
+  Both are the same app (same package and signing key), so you can switch between them without losing your data.
+- **Linux and Windows:** `Satni_FST-x86_64.AppImage` and `satni-fst-windows.zip` from the latest release.
+- **BETA (test versions):** GitHub *pre-releases* with `satni-fst-beta-….apk`. The BETA is a separate app,
+  *Sátni FST BETA* (`fi.somby.satnifst.beta`), that installs alongside the normal app and never replaces it.
+
+**Obtainium:** for the normal app, keep *Include prereleases* **off** and set *Filter APKs by regular expression* to
+`^satni-fst\.apk$`. To follow the BETA as well, add the repository again as a second app with *Include prereleases*
+**on** and the APK filter `beta`.
 
 ## Features
 
@@ -34,7 +46,9 @@ Sátni FST combines the open dictionaries and morphology of [GiellaLT](https://g
   Inari and Skolt Sámi photos are experimental
 - Experimental: a Finnish-to-North-Sámi sentence translator, Inari Sámi in the game and word lists, and Skolt Sámi
   translations on the word card (switch on under *More → Tools* and *Translation languages*)
-- User interface in Finnish or Norwegian, light and dark theme, history and favourites
+- Experimental translation languages (off by default): machine-translated English, Spanish and German, Finnish
+  suggestions, and search in Skolt Sámi
+- User interface in Finnish, Norwegian or English, light and dark theme, history and favourites
 
 ## Screenshots
 
@@ -107,7 +121,7 @@ because Android won't install an app signed with a different key over the old on
 
 | Device | Signing key | Install |
 |---|---|---|
-| `dev` | debug key | `./build_apk.sh --debug`, then `./emulaattori.sh asenna dev` |
+| `dev` | release key (since 2026-11-22; an older debug-key DEV must be uninstalled once) | `./build_apk.sh --debug`, then `./emulaattori.sh asenna dev` |
 | `main` | release key | `./emulaattori.sh asenna main` (the published `dist/satni-fst.apk`); to test the update, `./build_apk.sh --testi` and `./emulaattori.sh asenna main testi` |
 
 ```bash

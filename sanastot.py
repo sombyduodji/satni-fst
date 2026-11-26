@@ -236,8 +236,13 @@ def lists():
             ("keskiyö", "midnatt", "gaskaidja", ["Sg+Loc"]), ("tänään", "i dag", "odne", []), ("huomenna", "i morgen", "ihttin", []),
             ("eilen", "i går", "ikte", []), ("nyt", "nå", "dál", []), ("viikko", "uke", "vahkku", []),
             ("kello, tunti", "klokke, time", "diibmu", []), ("minuutti", "minutt", "minuhtta", []),
-            ("monelta?", "hva tid?", "galles", [])]
-    L.append({"id": "aika", "icon": "clock", "title": {"fi": "Vuorokausi ja kello", "nb": "Døgnet og klokka"},
+            ("monelta?", "hva tid?", "galles", []),
+            # Lisäsanat 2026-11-22 (käyttäjä): kaikki sanakirjassa, SIKOR-yleisyys suluissa
+            ("vuorokausi", "døgn", "jándor", []), ("sekunti", "sekund", "sekunda", []),  # 1072, 397
+            ("puoli tuntia", "halvtime", "diibmobealli", []), ("vartti", "kvarter", "kvárta", []),  # 223, 109
+            ("aikaisin", "tidlig", "árrat", []), ("myöhään", "sent", "maŋŋit", []),  # 1334, 384
+            ("kohta, pian", "snart", "fargga", []), ("äsken, vasta", "nettopp", "easkka", [])]  # 2471, 931
+    L.append({"id": "aika", "icon": "clock", "title": {"fi": "Vuorokausi", "nb": "Døgnet"},
               "rows": [row([fi] + ([fin_form(fi, "Sg+Ade")] if tags and fin_form(fi, "Sg+Ade") and fi not in ("keskipäivä", "keskiyö") else []),
                            [nb] + ([NB_WHEN[nb]] if nb in NB_WHEN else []), [sme(s, None, tags, fi=fi, nb=nb)]) for fi, nb, s, tags in time]})
 
@@ -303,17 +308,20 @@ def lists():
     L.append({"id": "saa", "icon": "snow", "title": {"fi": "Sää ja lumi", "nb": "Vær og snø"},
               "rows": [row([fi], [WEATHER_NB.get(s) or (first(entry(s)[4]) if entry(s) else "")], [sme(s, None, [], fi=fi)]) for s, fi in weather]})
 
-    prons = [("minä · minun · minulle · minulla", "jeg · min · til meg · hos meg", "mun"), ("sinä · sinun · sinulle · sinulla", "du · din · til deg · hos deg", "don"),
-             ("hän · hänen · hänelle · hänellä", "han/hun · hans/hennes · til ham/henne · hos ham/henne", "son"),
-             ("me kaksi · meidän kahden · meille kahdelle · meillä kahdella", "vi to · vår (to) · til oss to · hos oss to", "moai"),
-             ("te kaksi · teidän kahden · teille kahdelle · teillä kahdella", "dere to · deres (to) · til dere to · hos dere to", "doai"),
-             ("he kaksi · heidän kahden · heille kahdelle · heillä kahdella", "de to · deres (to) · til dem to · hos dem to", "soai"),
-             ("me · meidän · meille · meillä", "vi · vår · til oss · hos oss", "mii"), ("te · teidän · teille · teillä", "dere · deres · til dere · hos dere", "dii"),
-             ("he · heidän · heille · heillä", "de · deres · til dem · hos dem", "sii")]
+    # Komitatiivi (käyttäjä 2026-11-23: muinna, minguin …; sama kuin lang-sme-generaattori mun+Pron+Pers+Sg1+Com)
+    prons = [("minä · minun · minulle · minulla · minun kanssani", "jeg · min · til meg · hos meg · med meg", "mun"),
+             ("sinä · sinun · sinulle · sinulla · sinun kanssasi", "du · din · til deg · hos deg · med deg", "don"),
+             ("hän · hänen · hänelle · hänellä · hänen kanssaan", "han/hun · hans/hennes · til ham/henne · hos ham/henne · med ham/henne", "son"),
+             ("me kaksi · meidän kahden · meille kahdelle · meillä kahdella · meidän kahden kanssa", "vi to · vår (to) · til oss to · hos oss to · med oss to", "moai"),
+             ("te kaksi · teidän kahden · teille kahdelle · teillä kahdella · teidän kahden kanssa", "dere to · deres (to) · til dere to · hos dere to · med dere to", "doai"),
+             ("he kaksi · heidän kahden · heille kahdelle · heillä kahdella · heidän kahden kanssa", "de to · deres (to) · til dem to · hos dem to · med dem to", "soai"),
+             ("me · meidän · meille · meillä · meidän kanssamme", "vi · vår · til oss · hos oss · med oss", "mii"),
+             ("te · teidän · teille · teillä · teidän kanssanne", "dere · deres · til dere · hos dere · med dere", "dii"),
+             ("he · heidän · heille · heillä · heidän kanssaan", "de · deres · til dem · hos dem · med dem", "sii")]
     prow = []
     for fi, nb, s in prons:
         e = db.execute("SELECT id FROM dictionary WHERE sme_lemma = ? AND subtype = 'Pers'", (s,)).fetchone()
-        words = [s] + [form(e[0], t) for t in ("Gen", "Ill", "Loc")] if e else [s]
+        words = [s] + [form(e[0], t) for t in ("Gen", "Ill", "Loc", "Com")] if e else [s]
         prow.append(row([fi], [nb], [{"w": [w for w in words if w], "id": e[0] if e else None, "fi": "", "nb": ""}]))
     L.append({"id": "pronominit", "icon": "person", "title": {"fi": "Pronominit", "nb": "Pronomen"},
               "hint": {"fi": "saamessa oma muoto kahdelle · moai = me kaksi · mii = me (kolme tai useampi)",
@@ -346,6 +354,16 @@ def lists():
             r["ex"] = {"sme": e[0], "fi": e[1], "nb": e[2]}
         if r["sme"][0]["w"][0] == "galles" and not r["nb"][0]:
             r["nb"] = ["hva tid"]
+    # Taivutusmuodot kuten Pronominit-listassa (käyttäjä 2026-11-22; GiellaLT lang-sme: gii Gen/Ill/Loc, mii Acc/Ill/Loc)
+    # Komitatiivi (2026-11-24): gii+Pron+Interr+Sg+Com = geainna, mii = mainna (lang-sme-generaattori ja paradigms)
+    QFORMS = {"gii": (["gii", "gean", "geasa", "geas", "geainna"], "kuka · kenen · kenelle · keneltä, kenellä · kenen kanssa",
+                      "hvem · hvem sin · til hvem · hos hvem, fra hvem · med hvem"),
+              "mii": (["mii", "maid", "masa", "mas", "mainna"], "mikä · mitä · mihin · mistä, missä · minkä kanssa, millä",
+                      "hva · hva (objekt) · til hva · i hva, fra hva · med hva")}
+    for r in qrows:
+        f = QFORMS.get(r["sme"][0]["w"][0])
+        if f:
+            r["sme"][0]["w"], r["fi"], r["nb"] = f[0], [f[1]], [f[2]]
     L.append({"id": "kysymykset", "icon": "question", "title": {"fi": "Kysymyssanat", "nb": "Spørreord"}, "rows": qrows})
 
     greet = [("Bures!", "hei, terve", "hei"), ("Buorre iđit", "hyvää huomenta", "god morgen"), ("Buorre beaivi", "hyvää päivää", "god dag"),
@@ -362,6 +380,51 @@ def lists():
         e = db.execute("SELECT id FROM dictionary WHERE lower(sme_lemma) = ?", (lemma,)).fetchone()
         grows.append(row([fi], [nb], [{"w": [s], "id": e[0] if e else None, "fi": fi, "nb": nb}]))
     L.append({"id": "tervehdykset", "icon": "greet", "title": {"fi": "Tervehdykset", "nb": "Hilsener"}, "rows": grows})
+    # Eläimet (elaimet.py, käyttäjä 2026-11-23): samat sanat kuin minipelissä, nyt myös sanastona
+    import elaimet
+    # layout "alpha" (käyttäjä 2026-11-24): yksi taulukko saame | suomi aakkosjärjestyksessä ilman osioita (vähemmän
+    # tilaa); rivien järjestys datassa ennallaan (harjoituksen äänitiedostot ovat rivinumeron mukaan)
+    L.append({"id": "elaimet", "icon": "paw", "layout": "alpha", "title": {"fi": "Eläimet", "nb": "Dyr"},
+              "rows": [row([fi], [nb], [sme(s_, "N", [], fi=fi, nb=nb)]) for s_, fi, nb in elaimet.ANIMALS]})
+    # Marjat, hedelmät ja kasvikset (marjat.py, käyttäjä 2026-11-23): sanakirjan sanat, Sápmin omat osion alussa
+    import marjat
+    L.append({"id": "marjat", "icon": "berry", "title": {"fi": "Marjat, hedelmät ja kasvikset", "nb": "Bær, frukt og grønnsaker"},
+              "rows": [row([fi], [nb], [sme(s_, "N", [], fi=fi, nb=nb)]) for s_, fi, nb in marjat.WORDS]})
+    # Kellonajat (kello.py ja kello.json, käyttäjä 2026-11-23): kello, saame ja suomi; norjaksi ja englanniksi
+    # digitaalinen aika. Napautus soittaa Biretin lauseen (audio/w/kello-<i>-sme.ogg)
+    clock = json.load(open(os.path.join(SCRIPT_DIR, "kello.json"), encoding="utf-8"))["rows"]
+    L.append({"id": "kellonajat", "icon": "alarm", "kind": "clock", "title": {"fi": "Kellonajat", "nb": "Klokkeslett"},
+              "hint": {"fi": "beal njeallje = puoli neljä · minuutit 20–40 lasketaan puolesta tunnista: logi váile beal njeallje = kymmentä vaille puoli neljä (3.20)",
+                       "nb": "beal njeallje = halv fire · fra 20 til 40 over teller man fra halv: logi váile beal njeallje = 3.20"},
+              "rows": [dict(row([c["fiShort"]], [f'{c["h"]}.{c["m"]:02d}'], [{"w": [c["sme"]], "id": None, "fi": c["fiShort"], "nb": ""}]),
+                            clock=[c["h"], c["m"]], ci=i, sec=c["level"], d=c.get("d", [0, 0])[1]) for i, c in enumerate(clock)],
+              "sections": [{"fi": "Tasan", "nb": "Hel time"}, {"fi": "Puoli", "nb": "Halv"}, {"fi": "Vartit", "nb": "Kvarter"},
+                           {"fi": "Viiden minuutin välein", "nb": "Hvert femte minutt"}]})
+    # Apusanat (apusanat.py, käyttäjä 2026-11-22): neljä listaa, esimerkit sanakirjoista
+    import apusanat
+    for spec in apusanat.LISTS:
+        rows = []
+        for _sec, words in spec["sections"]:
+            for lemma, pos, forms, fi, nb, _en, ex in words:
+                base = lemma.split(" (")[0]  # "dát (pl.)" = dát monikossa (oma rivi, avain r["key"])
+                e = entry(base, pos)
+                r = row([fi], [nb], [{"w": forms or [lemma], "id": e[0] if e else None, "fi": fi, "nb": nb}])
+                if base != lemma:
+                    r["key"] = lemma
+                if ex:
+                    r["ex"] = {"sme": ex[0], "fi": ex[1], "nb": ex[2]}
+                rows.append(r)
+        lst = {"id": spec["id"], "icon": spec["icon"], "title": {"fi": spec["title"][0], "nb": spec["title"][1]}, "rows": rows}
+        # Taulukkolista (Lähellä ja kaukana): sarakeotsikot kolmella kielellä; rivin sarake = sanan paikka osiossa
+        if spec.get("layout"):
+            lst["layout"] = spec["layout"]
+            lst["cols"] = {"fi": spec["cols"][0], "nb": spec["cols"][1], "en": spec["cols"][2]}
+            col = {w[0]: k for _t, ws in spec["sections"] for k, w in enumerate(ws)}
+            for r in rows:
+                r["col"] = col[r.get("key") or r["sme"][0]["w"][0]]
+        if spec.get("hint"):
+            lst["hint"] = {"fi": spec["hint"][0], "nb": spec["hint"][1]}
+        L.append(lst)
     return L
 
 
@@ -371,8 +434,9 @@ SECTIONS = {
     "vuodenajat": [("Kevät", "Vår", ["giđđadálvi", "giđđa"]), ("Kesä", "Sommer", ["giđđageassi", "geassi"]),
                    ("Syksy", "Høst", ["čakčageassi", "čakča"]), ("Talvi", "Vinter", ["čakčadálvi", "dálvi"])],
     "aika": [("Vuorokauden ajat", "Tider på døgnet", ["iđit", "beaivi", "gaskabeaivi", "maŋŋelgaskabeaivi", "eahket", "idja", "gaskaidja"]),
-             ("Päivät", "Dager", ["odne", "ihttin", "ikte", "dál"]),
-             ("Kello ja aika", "Klokke og tid", ["vahkku", "diibmu", "minuhtta", "galles"])],
+             ("Päivät", "Dager", ["odne", "ihttin", "ikte", "dál", "fargga", "easkka"]),
+             ("Aikaisin ja myöhään", "Tidlig og sent", ["árrat", "maŋŋit"]),
+             ("Kello ja aika", "Klokke og tid", ["jándor", "vahkku", "diibmu", "diibmobealli", "kvárta", "minuhtta", "sekunda", "galles"])],
     # Lähiperhe pareittain rinnakkain: äiti | isä, sisar | veli, pikkusisko | pikkuveli, tytär | poika, lapsi
     "suku": [("Lähiperhe", "Nærmeste familie", ["eadni", "áhčči", "oabbá", "viellja", "oappáš", "vieljaš", "nieida", "bárdni", "mánná"]),
              # Suku pareittain: isoäiti | isoisä, äidin sisaret (vanhempi | nuorempi), isän sisar | äidin veli,
@@ -395,6 +459,17 @@ SECTIONS = {
                      ("Juhlapäivä", "Merkedag", ["Lihkku beivviin!"])],
 }
 
+# Eläinten osiot (elaimet.py)
+import elaimet as _ela
+SECTIONS["elaimet"] = [(t[0], t[1], t[3]) for t in _ela.SECTIONS]
+# Marjojen, hedelmien ja kasvisten osiot (marjat.py)
+import marjat as _mar
+SECTIONS["marjat"] = [(t[0], t[1], t[3]) for t in _mar.SECTIONS]
+# Apusanojen osiot samasta tiedostosta (apusanat.py)
+import apusanat as _apu
+for _spec in _apu.LISTS:
+    SECTIONS[_spec["id"]] = [(t[0], t[1], [w[0] for w in ws]) for t, ws in _spec["sections"]]
+
 
 def add_sections(L):
     for lst in L:
@@ -403,15 +478,15 @@ def add_sections(L):
             continue
         where = {w: i for i, (_, _, ws) in enumerate(secs) for w in ws}
         for r in lst["rows"]:
-            key = r["sme"][0]["w"][0]
+            key = r.get("key") or r["sme"][0]["w"][0]
             if key not in where:
                 problems.append(f"{lst['id']}: ei osiota sanalle {key}")
             r["sec"] = where.get(key, len(secs) - 1)
         order = {w: k for _, _, ws in secs for k, w in enumerate(ws)}
-        lst["rows"].sort(key=lambda r: (r["sec"], order.get(r["sme"][0]["w"][0], 99)))
+        lst["rows"].sort(key=lambda r: (r["sec"], order.get(r.get("key") or r["sme"][0]["w"][0], 99)))
         lst["sections"] = [{"fi": fi, "nb": nb} for fi, nb, _ in secs]
         for k, (_, _, ws) in enumerate(secs):
-            missing = set(ws) - {r["sme"][0]["w"][0] for r in lst["rows"]}
+            missing = set(ws) - {r.get("key") or r["sme"][0]["w"][0] for r in lst["rows"]}
             if missing:
                 problems.append(f"{lst['id']}: osion sanoja puuttuu listasta: {', '.join(sorted(missing))}")
 
@@ -462,7 +537,7 @@ def add_inari(L):
         return
     total = 0
     for lst in L:
-        if lst.get("kind") == "numbers":
+        if lst.get("kind") in ("numbers", "clock"):
             continue
         got = {}
         for r in lst["rows"]:
@@ -492,6 +567,8 @@ def add_inari(L):
 if __name__ == "__main__":
     L = lists()
     add_sections(L)
+    import sanastot_en  # englanti (2026-11-21)
+    sanastot_en.apply(L, problems)
     # Valmiit äänilistat (suomi + saame, Ogg Opus, web/audio/, ks. ~/Git/fi-tts): listan yläreunan kaiutin soittaa
     # <id>.ogg:n; lukutaulukon osioilla omat painikkeet perus- ja järjestysluvuille (luvut-N.ogg, jarjestysluvut-N.ogg)
     audio = lambda name: f"audio/{name}.ogg" if os.path.exists(os.path.join(os.path.dirname(OUT), "..", "audio", name + ".ogg")) else None

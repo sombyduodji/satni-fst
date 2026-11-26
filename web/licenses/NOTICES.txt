@@ -138,6 +138,58 @@ English translations from Wiktionary (where GiellaLT has no English)
   same English in Wiktionary, it is shown as an unchecked suggestion.
   Notes in brackets and "synonym of"-type explanations are left out.
 
+English machine translations (experimental, off by default; eng_mt.py, eng_mt.tsv)
+  For words with no English in the dictionaries, shown only when at least
+  two of three routes give the same English word, and marked as machine
+  translations. Made with:
+  - smi-mt: TartuNLP Smugri model nllb1.3-smugri4-v0.01 (CC BY 4.0,
+    https://huggingface.co/tartuNLP/nllb1.3-smugri4-v0.01); base model
+    Meta NLLB-200 (CC BY-NC 4.0). Used in a free, non-commercial app.
+  - Helsinki-NLP opus-mt-fi-en and opus-mt-gmq-en (Apache-2.0.txt),
+    https://huggingface.co/Helsinki-NLP
+  - FinnWordNet 2.0, © University of Helsinki (CC-BY-3.0.txt), with the
+    English words of Princeton WordNet 3.0 (WordNet licence, © Princeton
+    University, https://wordnet.princeton.edu/license-and-commercial-use)
+  - Wiktionary via kaikki.org (CC-BY-SA-4.0.txt, as above)
+  - Apertium apertium-fin-eng (GPL-3.0.txt),
+    https://github.com/apertium/apertium-fin-eng
+  Only the resulting English words are included, not the models or the
+  dictionaries.
+
+Finnish machine-translated suggestions (experimental, off by default; fin_mt.py, fin_mt.tsv)
+  For words with no Finnish, shown only when at least two independent
+  routes give the same Finnish word (Voikko-checked). Made with smi-mt
+  (as above), Helsinki-NLP opus-mt-no-fi and opus-mt-en-fi (Apache-2.0.txt),
+  Wiktionary (CC-BY-SA-4.0.txt), FinnWordNet (CC-BY-3.0.txt) and GiellaLT
+  dict-nob-fin, dict-fin-nob (Trond Trosterud and Kirsti Kuosa, UiT),
+  dict-smn-fin and dict-sma-fin (CC-BY-4.0.txt),
+  https://github.com/giellalt. Only the resulting Finnish words are included.
+
+Spanish machine translations (experimental, off by default; spa_mt.py, spa_mt.tsv)
+  For words with no Spanish in dict-sme-spa, shown only when at least three
+  of six sources give the same Spanish word. Made with Helsinki-NLP
+  opus-mt-fi-es, opus-mt-no-es and opus-mt-en-es (Apache-2.0.txt), smi-mt
+  (as above), Wiktionary and WikDict (CC-BY-SA-4.0.txt) and the Spanish
+  wordnet of the Multilingual Central Repository 3.0 (CC-BY-3.0.txt,
+  http://adimen.si.ehu.es/web/MCR/). Only the resulting Spanish words are
+  included.
+
+German machine translations (BETA, off by default; deu_mt.py, deu_mt.tsv)
+  There is no North Sámi–German dictionary, so every German word is a
+  machine translation, shown only when at least three of six independent
+  sources give the same German word. Made with smi-mt (as above),
+  Helsinki-NLP opus-mt-fi-de and opus-mt-no-de (Apache-2.0.txt) and
+  opus-mt-en-de (CC-BY-4.0.txt), FinnWordNet (CC-BY-3.0.txt) and
+  Princeton WordNet 3.0 (as above) linked to OdeNet, the open German
+  wordnet (CC-BY-SA-4.0.txt, https://github.com/hdaSprachtechnologie/odenet)
+  through the Collaborative Interlingual Index (CC-BY-4.0.txt,
+  https://github.com/globalwordnet/cili), and Wiktionary
+  (CC-BY-SA-4.0.txt, as above), and the bilingual dictionary of
+  Apertium apertium-sme-deu (GPL-3.0.txt,
+  © Flammie A Pirinen, Francis Tyers, lynnda-hill and the Apertium
+  contributors, https://github.com/apertium/apertium-sme-deu). Only the
+  resulting German words are included.
+
 Corpus frequencies: SIKOR North Saami lemma frequency
 list 2015-10-10
   © UiT The Arctic University of Norway, Giellatekno and Divvun

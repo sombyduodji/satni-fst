@@ -12,6 +12,11 @@ const LAUSE_NEG_PERSON = { en: "Sg1", et: "Sg2", ei: "Sg3", emme: "Pl1", ette: "
 const LAUSE_CLITICS = [["kään", "ge"], ["kaan", "ge"], ["kin", "nai"], ["han", "han"], ["hän", "han"], ["ko", "go"], ["kö", "go"]];
 // Suomen persoonapronomini -> saamen (mii = me on persoonapronomini, ei kysymyssana mii = mikä)
 const LAUSE_PRONOUN = { minä: "mun", sinä: "don", hän: "son", me: "mii", te: "dii", he: "sii" };
+// Duaali: suomessa ei ole duaalia, joten kahta ihmistä tarkoittava me/te/he näkyy vain, kun luku on sanottu
+// (me kaksi = moai, teille kahdelle = dudnuide, he kaksi lähtivät = soai vulge). Muuten monikko (me = mii).
+// Kaksi-sana sisältyy saamen pronominiin; samassa lauseessa saman persoonan verbi ja kieltoverbi duaalissa.
+const LAUSE_DUAL = { me: ["moai", "1"], te: ["doai", "2"], he: ["soai", "3"] };
+const LAUSE_NEG_DUAL = { 1: "ean", 2: "eahppi", 3: "eaba" };
 // Luvut, joiden jälkeen saamen substantiivi on yksikön genetiivissä (guokte gáfe); 7- ei ole vielä tarkistettu
 const LAUSE_SMALL_NUMBERS = ["kaksi", "kolme", "neljä", "viisi", "kuusi"];
 const LAUSE_POS = { N: ["N"], V: ["V"], A: ["A"], Num: ["Num"], Pron: ["Pron"] };
@@ -121,7 +126,69 @@ function lauseAnalyses(word, raw = word) {
       }
     }
   }
+  // Muodot, joita taivutustaulukossa ei ole (partisiippien sijamuodot, 2. infinitiivi, -minen): johdetaan taulukon
+  // muodosta (lauseDerived). Passiivin kieltomuoto (ei makseta, ei tehdä) myös tunnetulle sanalle, viimeiseksi.
+  if (!out.length && !clitic && !px) out = lauseDerived(word);
+  if (/[aä]$/.test(word)) {
+    for (const a of lauseFinForms(word + word.slice(-1) + "n")) {
+      if (a.cell === "Pss+Prs" && a.pos === "V") out.push({ base: a.base, cell: "Pss+ConNeg", pos: "V" });
+    }
+  }
   return { analyses: out, clitic, stem, px };
+}
+
+// Taivutustaulukon ulkopuoliset verbimuodot. Jokainen sääntö johtaa sanasta taulukon muodon (tehneet -> tehnyt,
+// tehdessään -> tehdä, tekemisestä -> tekemään, olevan -> oleva) ja hyväksyy tulkinnan vain, jos se muoto löytyy
+// saman verbin taulukosta. Säännöt tarkistettu GiellaLT lang-fin -generaattoria vastaan 2026-11-25.
+const LAUSE_CASE_ENDINGS = {
+  // [luku+sija, pääte takavokaalisena]; etuvokaalinen muoto vaihtaa a -> ä, o -> ö, u -> y
+  prfprc: [["Sg+Gen", "een"], ["Sg+Par", "utta"], ["Sg+Ine", "eessa"], ["Sg+Ela", "eesta"], ["Sg+Ill", "eeseen"],
+    ["Sg+Ade", "eella"], ["Sg+Abl", "eelta"], ["Sg+All", "eelle"], ["Sg+Ess", "eena"], ["Sg+Tra", "eeksi"],
+    ["Pl+Nom", "eet"], ["Pl+Gen", "eiden"], ["Pl+Par", "eita"], ["Pl+Ine", "eissa"], ["Pl+Ela", "eista"], ["Pl+Ill", "eisiin"],
+    ["Pl+Ill", "eihin"], ["Pl+Gen", "eitten"], ["Pl+Ade", "eilla"], ["Pl+Abl", "eilta"], ["Pl+All", "eille"], ["Pl+Ess", "eina"], ["Pl+Tra", "eiksi"]],
+  prsprc: [["Sg+Gen", "an"], ["Sg+Par", "aa"], ["Sg+Ine", "assa"], ["Sg+Ela", "asta"], ["Sg+Ill", "aan"], ["Sg+Ade", "alla"],
+    ["Sg+Abl", "alta"], ["Sg+All", "alle"], ["Sg+Ess", "ana"], ["Sg+Tra", "aksi"], ["Pl+Nom", "at"], ["Pl+Gen", "ien"],
+    ["Pl+Par", "ia"], ["Pl+Ine", "issa"], ["Pl+Ela", "ista"], ["Pl+Ill", "iin"], ["Pl+Ade", "illa"], ["Pl+Abl", "ilta"],
+    ["Pl+All", "ille"], ["Pl+Ess", "ina"], ["Pl+Tra", "iksi"]],
+  minen: [["Sg+Nom", "inen"], ["Sg+Gen", "isen"], ["Sg+Par", "ista"], ["Sg+Ine", "isessa"], ["Sg+Ela", "isesta"], ["Sg+Ill", "iseen"],
+    ["Sg+Ade", "isella"], ["Sg+Abl", "iselta"], ["Sg+All", "iselle"], ["Sg+Ess", "isena"], ["Sg+Tra", "iseksi"],
+    ["Pl+Nom", "iset"], ["Pl+Gen", "isten"], ["Pl+Par", "isia"], ["Pl+Ine", "isissa"], ["Pl+Ela", "isista"], ["Pl+Ill", "isiin"],
+    ["Pl+Ade", "isilla"], ["Pl+Abl", "isilta"], ["Pl+All", "isille"], ["Pl+Ess", "isina"], ["Pl+Tra", "isiksi"]],
+};
+const lauseFront = (s) => s.replace(/a/g, "ä").replace(/o/g, "ö").replace(/u/g, "y");
+// 2. infinitiivin inessiivin omistusliite (tehdessäni, tehdessään) ja sen persoona
+const LAUSE_INFE_PX = [["ni", "Sg1"], ["si", "Sg2"], ["mme", "Pl1"], ["nne", "Pl2"], ["nsa", "3"], ["nsä", "3"], ["an", "3"], ["än", "3"], ["", null]];
+function lauseDerived(word) {
+  const out = [], seen = new Set();
+  const add = (base, cell, extra = {}) => {
+    if (!seen.has(base + cell)) { seen.add(base + cell); out.push({ base, cell, pos: "V", derived: true, ...extra }); }
+  };
+  const verbCell = (form, cell) => lauseFinForms(form).filter((a) => a.pos === "V" && a.cell === cell);
+  for (const [family, srcCell, srcEnd] of [["prfprc", "PrfPrc", ["ut", "yt"]], ["prsprc", "PrsPrc", ["a", "ä"]], ["minen", "InfMa+Ill", ["aan", "ään"]]]) {
+    for (const [cell, back] of LAUSE_CASE_ENDINGS[family]) {
+      for (const [end, src] of [[back, srcEnd[0]], [lauseFront(back), srcEnd[1]]]) {
+        if (!word.endsWith(end) || word.length < end.length + 3) continue;
+        const stem = word.slice(0, -end.length);
+        // Partisiipin vartalo: tehn-, tull-, noss- (PrfPrc), tekev- (PrsPrc), tekem- (-minen)
+        // -minen vain yksikössä: monikko on usein vakiintunut sana (naimisissa)
+        if (family === "prfprc" && !/[nlrs]$/.test(stem) || family === "prsprc" && !/v$/.test(stem)
+          || family === "minen" && (!/m$/.test(stem) || cell.startsWith("Pl"))) continue;
+        for (const a of verbCell(stem + src, srcCell)) {
+          add(a.base, family === "prfprc" ? `PrfPrc+${cell}` : family === "prsprc" ? `PrsPrc+${cell}` : `Minen+${cell}`);
+        }
+      }
+    }
+  }
+  // 2. infinitiivin inessiivi: tehdessä(än) <- tehdä, lukiessa <- lukea, lähtiessäni <- lähteä
+  for (const [suf, per] of LAUSE_INFE_PX) {
+    const m = word.match(new RegExp(`^(.+)ess([aä])${suf}$`));
+    if (!m || (suf === "an" && m[2] !== "a") || (suf === "än" && m[2] !== "ä")) continue;
+    const st = m[1], v = m[2];
+    for (const inf of [st + v, ...(st.endsWith("i") ? [st.slice(0, -1) + "e" + v] : [])]) {
+      for (const a of verbCell(inf, "Inf")) add(a.base, "InfE+Ine", per ? { vpx: per } : {});
+    }
+  }
+  return out;
 }
 
 function lauseSuggestions(word) {
@@ -181,22 +248,25 @@ function lauseParse(text) {
     }
     // Iso alkukirjain lauseen keskellä ja tuntematon sana: nimi, joka säilyy sellaisenaan (Juha)
     if (!pick && tokens.some((x) => !x.punct) && /^\p{Lu}/u.test(raw)) {
-      tokens.push({ raw, word, name: true, known: true }); continue;
+      tokens.push({ raw, word, name: true, known: true, ...lauseNameTra(raw) }); continue;
     }
     // Lauseen alussa tuntematon isolla alkava sana: nimi. Saamen kirjaimella varma (Máret, Ánne), muuten harmaana
     // arvauksena (Elsa), koska se voi olla myös kirjoitusvirhe; napautus näyttää ehdotukset
     // Pitkä sana (Unelmani, Vesiputket) on todennäköisemmin tuntematon suomen sana kuin nimi
     const samiLetters = /[áčđŋšŧžÁČĐŊŠŦŽ]/.test(raw);
-    if (!pick && /^\p{Lu}/u.test(raw) && (samiLetters || raw.length <= 6)) {
-      tokens.push({ raw, word, name: true, guess: !samiLetters, known: true }); continue;
+    if (!pick && /^\p{Lu}/u.test(raw) && (samiLetters || raw.length <= 6 || lauseNameTra(raw).nameBase?.length <= 6)) {
+      tokens.push({ raw, word, name: true, guess: !samiLetters, known: true, ...lauseNameTra(raw) }); continue;
     }
     tokens.push({ raw, word, stem, clitic, px, analyses, pick, known: !!pick });
   }
   // Kiellon jälkeen verbi on kieltomuodossa (en saa = in oaččo)
   tokens.forEach((t, i) => {
     if (t.neg) {
-      const v = tokens.slice(i + 1).find((x) => x.analyses?.some((a) => a.cell === "Prs+ConNeg"));
-      if (v) v.pick = v.analyses.find((a) => a.cell === "Prs+ConNeg");
+      // Passiivin kieltomuoto vain ei-sanan jälkeen (ei makseta = ii máksojuvvo, ei tehdä = ii dahkkojuvvo)
+      // (vain heti kiellon perässä: ei tiennyt, mitä pitäisi tehdä = bargat)
+      const conNeg = (x) => x.analyses?.find((a) => a.cell === "Prs+ConNeg") || (t.neg === "ei" && x === tokens[i + 1] && x.analyses?.find((a) => a.cell === "Pss+ConNeg"));
+      const v = tokens.slice(i + 1).find(conNeg);
+      if (v) v.pick = conNeg(v);
     }
   });
   // Luvun jälkeen substantiivi partitiivissa, ei samannäköinen verbi (kaksi palaa = pala, ei palaa "polttaa")
@@ -243,13 +313,35 @@ function lauseParse(text) {
     const gen = t.analyses.find((a) => a.base === t.pick.base && a.cell === t.pick.cell.replace("Nom", "Gen"));
     if (verbBefore && gen) t.pick = gen;
   });
+  // me kaksi, meidän kahden, teille kahdelle: pronomini ja kaksi-sana samassa sijassa peräkkäin
+  tokens.forEach((t, i) => {
+    if (!t.pick || !LAUSE_DUAL[t.pick.base] || !(t.pick.pos === "Pron" || !t.pick.cell) || t.clitic || t.px) return;
+    const next = tokens[i + 1], cell = t.pick.cell || "Nom";
+    // Persoonapronominin nominatiivi on sanakirjan sana (pick.cell tyhjä); kahden on myös oma sanansa (guovttá)
+    if (next && !next.clitic && !next.px && (next.analyses || []).some((a) => a.base === "kaksi" && a.cell === "Sg+" + cell)) {
+      t.dual = LAUSE_DUAL[t.pick.base][1];
+      next.dualNum = true;
+    }
+  });
   for (const t of tokens) {
     if (!t.pick) continue;
-    const pron = LAUSE_PRONOUN[t.pick.base];
+    const pron = t.dual ? LAUSE_DUAL[t.pick.base][0] : LAUSE_PRONOUN[t.pick.base];
     t.candidates = pron ? all("SELECT id, sme_lemma, pos, freq FROM dictionary WHERE sme_lemma = ? AND subtype = 'Pers'", [pron])
       : lauseCandidates(t.pick.base, t.pick.pos);
     t.choice = t.candidates[0] || null;
   }
+  // Saamen postpositio tarvitsee viereensä nominin (talon luona = viesu luhtte, läpi vuoden, häntä vastaan) tai
+  // paikan adverbin (täällä päin = dáppe guvlui). Heti verbin jälkeen ilman nominia perässä sana on itse adverbi:
+  // adverbikäännös ensin (olen kotona = lean ruovttus, ei postpositio geahčen)
+  const nominal = (x) => x && !x.punct && (!x.known || x.name || x.num || ["N", "A", "Num", "Pron"].includes(x.pick?.pos)
+    || !!LAUSE_PRONOUN[x.pick?.base] || ["N", "A", "Num", "Pron"].includes(x.choice?.pos));
+  tokens.forEach((t, i) => {
+    if (t.choice?.pos !== "Po" || t.pick?.cell) return;
+    const prev = tokens[i - 1], next = tokens[i + 1];
+    if (!(prev?.neg || prev?.pick?.pos === "V") || nominal(next)) return;
+    const other = t.candidates.find((c) => c.pos === "Adv");
+    if (other) t.choice = other;
+  });
   // joka: substantiivin edellä "jokainen" (joka päivä = juohke beaivi), muuten relatiivipronomini: ihmisen jälkeen gii
   // (mies, joka tuli = olmmái, gii bođii), muuten mii (talo, jonka näin = viessu, man/maid oidnen)
   tokens.forEach((t, i) => {
@@ -264,6 +356,13 @@ function lauseParse(text) {
   return tokens;
 }
 
+// Tuntemattoman nimen translatiivi (Juhaksi) = saamen essiivi (Juhan), arvauksena: suomen astevaihtelu voi
+// muuttaa nimen (Pekaksi = Pekka), joten vain vokaaliin päättyvä vartalo + -n
+function lauseNameTra(raw) {
+  const m = raw.match(/^(\p{Lu}\p{L}*[aeiouyäöáeo])ksi$/u);
+  return m && m[1].length >= 2 ? { nameForm: m[1] + "n", nameBase: m[1], guess: true } : {};
+}
+
 // Luku, jonka jälkeen suomessa on partitiivi ja saamessa yksikön genetiivi: numero (200 kilometriä = 200 kilomehtera)
 // tai lukusana (kaksi, seitsemän, sata), ei yksi
 // Suomen -lla/-lta/-lle substantiivin oletusmuoto saameksi (ks. lauseSamiTag): place, means tai top
@@ -274,7 +373,10 @@ const LAUSE_PROGRESSIVE = { tulossa: "tulla", menossa: "mennä", lähdössä: "l
 // Olla-apuverbin jälkeen partisiippi hallitsee (on viettänyt elämää = eallima). Minulla on jano, voisinko saada vettä = saada (čázi), ei olla
 function lauseGoverningVerb(tokens, i) {
   const isBreak = (x) => x.punct && /[,.;:!?]/.test(x.punct);
-  const isVerb = (x) => x.pick?.pos === "V";
+  // Taivutettu partisiippi on attribuutti (saatavilla olevia palveluita), ei lauseen verbi; perfektin monikko
+  // (ovat tehneet) ja referatiivi (kuuluvat olevan) ovat
+  const isVerb = (x) => x.pick?.pos === "V" && !(/^(PrsPrc|PrfPrc)\+/.test(x.pick.cell || "")
+    && !["PrfPrc+Pl+Nom", "PrsPrc+Sg+Gen"].includes(x.pick.cell));
   let a0 = i; while (a0 > 0 && !isBreak(tokens[a0 - 1])) a0--;
   let b0 = i; while (b0 < tokens.length - 1 && !isBreak(tokens[b0 + 1])) b0++;
   return tokens.slice(a0, i).reverse().find(isVerb) || tokens.slice(i + 1, b0 + 1).find(isVerb) || null;
@@ -318,8 +420,35 @@ function lauseSamiTag(tokens, i) {
     // olla + partisiippi on perfekti (olen tehnyt = lean dahkan, on tehty = lea dahkkojuvvon); muuten partisiipin
     // käännös vaihtelee (johdokset, progressiivi), joten se näkyy arvauksena
     const afterOlla = prev?.pick?.base === "olla" || prev?.neg;
-    if (cell === "PrfPrc") return afterOlla ? "PrfPrc" : { tag: "PrfPrc", guess: true };
-    if (cell === "PrsPrc") return { tag: "PrsPrc", guess: true };
+    // Kieltoverbin jälkeen partisiippi on imperfektin kieltomuoto (en ollut = in lean, emme tehneet = eat dahkan)
+    const prfNom = cell === "PrfPrc" || cell === "PrfPrc+Pl+Nom";
+    if (prfNom && prev?.neg) return "Ind+Prt+ConNeg";
+    if (prfNom) return afterOlla ? "PrfPrc" : { tag: "PrfPrc", guess: true };
+    // Taivutettu partisiippi (tehneen, olevan, olevia): saamen partisiippi ei taivu, käännös vaihtelee: arvaus
+    if (cell.startsWith("PrfPrc+")) return { tag: "PrfPrc", guess: true };
+    // Referatiivi (kuuluvat olevan, ei tahdo vieraiden päättävän) on saamessa infinitiivi (leat, mearridit; sanakirjan
+    // esimerkit), attribuutti (myöntävän vastauksen) partisiippi; molemmat arvauksena
+    if (cell === "PrsPrc+Sg+Gen") {
+      const nx = tokens[i + 1];
+      const attr = nx?.pick && ["N", "A"].includes(nx.pick.pos) && /Gen$/.test(nx.pick.cell || "");
+      return { tag: attr ? "PrsPrc" : "Inf", guess: true };
+    }
+    if (cell === "PrsPrc" || cell.startsWith("PrsPrc+")) return { tag: "PrsPrc", guess: true };
+    // Passiivin kieltomuoto: ei makseta = ii máksojuvvo
+    if (cell === "Pss+ConNeg") return { tag: "Ind+Prs+ConNeg", passive: true };
+    // 2. infinitiivin inessiivi = saamen gerundi (tehdessään = dahkadettiin), kun tekijä on sama kuin päälauseen
+    // (omistusliitteen persoona = lauseen finiittiverbin persoona); muuten voi olla eri tekijä (isän tullessa): arvaus
+    if (cell === "InfE+Ine") {
+      const per = t.pick.vpx;
+      const same = per && tokens.some((x) => x !== t && x.pick?.pos === "V" && /^(Prs|Prt|Cond|Pot)\+/.test(x.pick.cell || "")
+        && (per === "3" ? /(Sg3|Pl3)$/ : new RegExp(per + "$")).test(x.pick.cell));
+      return same ? "Ger" : { tag: "Ger", guess: true };
+    }
+    // -minen = saamen teonnimi (lukeminen = lohkan, lukemisesta = lohkamis); muut sijat arvauksena perusmuodossa
+    if (cell.startsWith("Minen+")) {
+      const mc = { "Sg+Nom": "Actio+Nom", "Sg+Ine": "Actio+Loc", "Sg+Ela": "Actio+Loc", "Sg+Ess": "Actio+Ess" }[cell.slice(6)];
+      return mc || { tag: "Actio+Nom", guess: true };
+    }
     // Passiivi: saamen -juvvo-passiivi (maksetaan = máksojuvvo); intransitiiviverbillä monikon 3. persoona (lauseSamiForm)
     if (cell === "Pss+Prs") return { tag: "Ind+Prs+Sg3", passive: true };
     if (cell === "Pss+Prt") return { tag: "Ind+Prt+Sg3", passive: true };
@@ -358,15 +487,42 @@ function lauseSamiTag(tokens, i) {
     if (muoto === "means" && fcase === "Ade") return { tag: `${n}+Com`, guess };
     return guess ? { tag: `${n}+Loc`, guess } : `${n}+${fcase === "All" ? "Ill" : "Loc"}`;
   }
+  // Nimen translatiivi = saamen essiivi (nimesimme kylän Inariksi = Anárin); juhlapyhät eivät ole nimiä (jouluksi = juovllaide)
+  if (fcase === "Tra" && t.choice.subtype === "Prop") return "Ess";
   // Paikannimi kuten ihmissana: Rovaniemellä = Roavvenjárggas, Rovaniemelle = Roavvenjárgii (sijat ovat nimellä aina samat)
   return samiTagOfFinCell(cell, pos, t.pick.base, !!t.choice.human || t.choice.subtype === "Prop");
+}
+
+// Saamen verbi taipuu subjektin luvussa, suomen olla-lause ja passiivi eivät: helikopterilla oli vaikeuksia =
+// helikopteris ledje váttisvuođat, kirjoja myytiin = girjjit vuvdojuvvojedje (Pl3). Subjekti on saman lauseen
+// monikollinen substantiivi, jota tämä verbi hallitsee: olla-lauseessa suomen partitiivi (olemassaolon subjekti),
+// passiivissa partitiivi tai nominatiivi (passiivin objekti on saamessa subjekti).
+function lauseVerbPluralSubject(tokens, i, passive) {
+  const v = tokens[i];
+  if (!passive && !(v.pick?.base === "olla" && /^(Prs|Prt|Cond|Pot)\+Sg3$/.test(v.pick.cell || ""))) return false;
+  return tokens.some((x, j) => j !== i && x.choice && x.pick?.pos === "N" && x.choice.pos === "N"
+    && (x.pick.cell === "Pl+Par" || passive && x.pick.cell === "Pl+Nom")
+    && lauseGoverningVerb(tokens, j) === v && lauseSamiTag(tokens, j) === "Pl+Nom");
+}
+
+// Saman lauseen (pilkkujen välissä) duaalisubjektin persoona ("1", "2", "3") tai null
+function lauseDualPerson(tokens, i) {
+  const isBreak = (x) => x.punct && /[,.;:!?]/.test(x.punct);
+  let a0 = i; while (a0 > 0 && !isBreak(tokens[a0 - 1])) a0--;
+  let b0 = i; while (b0 < tokens.length - 1 && !isBreak(tokens[b0 + 1])) b0++;
+  return tokens.slice(a0, b0 + 1).find((x) => x.dual && (x.pick.cell || "Nom") === "Nom")?.dual || null;
 }
 
 function lauseSamiForm(tokens, i) {
   const t = tokens[i];
   const clitic = t.clitic ? Object.fromEntries(LAUSE_CLITICS)[t.clitic] : "";
-  if (t.neg) return { form: LAUSE_NEG[t.neg] + clitic, base: "ii", note: LAUSE_NEG_PERSON[t.neg], exact: true };
-  if (t.name || t.num) return { form: t.raw, base: t.raw, exact: !t.guess };
+  const du = lauseDualPerson(tokens, i);
+  if (t.neg) {
+    if (du && LAUSE_NEG_PERSON[t.neg] === "Pl" + du) return { form: LAUSE_NEG_DUAL[du] + clitic, base: "ii", note: "Du" + du, exact: true };
+    return { form: LAUSE_NEG[t.neg] + clitic, base: "ii", note: LAUSE_NEG_PERSON[t.neg], exact: true };
+  }
+  if (t.dualNum) return { form: "", base: "", tag: "Du", exact: true };
+  if (t.name || t.num) return { form: t.nameForm || t.raw, base: t.nameBase || t.raw, tag: t.nameForm ? "Ess" : undefined, exact: !t.guess };
   if (t.withPost) return { form: "", base: "", tag: "Com", exact: true };
   if (t.post) return { form: t.post, base: t.post, tag: "Po", exact: true };
   if (!t.choice) return null;
@@ -375,6 +531,8 @@ function lauseSamiForm(tokens, i) {
   // Käyttäjän valitsema saamen taivutusmuoto sanan valikosta (tok.smeTag, lauseFormHtml) ohittaa säännöt
   if (t.smeTag && loadWord(t.choice.id).paradigm.has(t.smeTag)) ({ tag, post, guess, passive } = { tag: t.smeTag, post: "", guess: false, passive: false });
   let form = t.choice.sme_lemma, exact = !t.pick.cell;
+  if (!t.smeTag && typeof tag === "string" && /\+Sg3$/.test(tag) && lauseVerbPluralSubject(tokens, i, passive)) tag = tag.replace(/Sg3$/, "Pl3");
+  if (!t.smeTag && du && !passive && typeof tag === "string" && tag.endsWith("+Pl" + du)) tag = tag.slice(0, -3) + "Du" + du;
   if (passive) {
     let pf = null;
     try { pf = all("SELECT surface FROM sme_passive WHERE word_id = ? AND tag = ?", [t.choice.id, tag])[0]?.surface; } catch (e) { /* vanha aineisto */ }
@@ -561,12 +719,12 @@ const LAUSE_LABELS = {
         Ela: "elatiivi", Ill: "illatiivi", Loc: "lokatiivi", Com: "komitatiivi", Du: "duaali", Ade: "adessiivi", Abl: "ablatiivi", All: "allatiivi", Ess: "essiivi", Tra: "translatiivi",
         Prs: "preesens", Prt: "imperfekti", Cond: "konditionaali", Pot: "potentiaali", Imprt: "imperatiivi", ConNeg: "kieltomuoto",
         Inf: "perusmuoto", PrfPrc: "perfektin partisiippi", PrsPrc: "preesensin partisiippi", PssPrfPrc: "passiivin partisiippi",
-        Pss: "passiivi", InfMa: "3. infinitiivi", Comp: "komparatiivi", Superl: "superlatiivi", person: (n, p) => `${p}. persoona ${n}` },
+        Pss: "passiivi", InfMa: "3. infinitiivi", InfE: "2. infinitiivi", Minen: "-minen-muoto", Comp: "komparatiivi", Superl: "superlatiivi", person: (n, p) => `${p}. persoona ${n}` },
   nb: { Sg: "ent.", Pl: "fl.", Nom: "nominativ", Gen: "genitiv", Acc: "akkusativ", Par: "partitiv", Ine: "inessiv", Ela: "elativ",
         Ill: "illativ", Loc: "lokativ", Com: "komitativ", Du: "dual", Ade: "adessiv", Abl: "ablativ", All: "allativ", Ess: "essiv", Tra: "translativ", Prs: "presens",
         Prt: "preteritum", Cond: "kondisjonalis", Pot: "potensialis", Imprt: "imperativ", ConNeg: "nektende form", Inf: "infinitiv",
         PrfPrc: "perfektum partisipp", PrsPrc: "presens partisipp", PssPrfPrc: "passiv partisipp", Pss: "passiv",
-        InfMa: "3. infinitiv", Comp: "komparativ", Superl: "superlativ", person: (n, p) => `${p}. person ${n}` },
+        InfMa: "3. infinitiv", InfE: "2. infinitiv", Minen: "-minen-form", Comp: "komparativ", Superl: "superlativ", person: (n, p) => `${p}. person ${n}` },
 };
 function lauseCellLabel(cell) {
   if (!cell) return "";
