@@ -51,6 +51,25 @@ LISTS = [
 ]
 
 
+# Esimerkkilauseet (käyttäjä 2026-11-26): vain sanakirjan omia, ihmisen kirjoittamia esimerkkejä (examples-taulu),
+# tarkistettu jäsentimellä, oikoluvulla ja takaisinkäännöksellä. Norja sanakirjasta; suomi ja englanti norjasta
+# käännettyinä, käyttäjä tarkisti suomen (Koutokeino = sanakirjan Guovdageaidnu). (saame, suomi, norja, englanti)
+EX = {
+ "máksit": ("Mun mávssán dan.", "Maksan sen.", "Jeg betaler den.", "I pay for it."),
+ "gáffe": ("Mun jugan gáfe.", "Juon kahvia.", "Jeg drikker kaffe.", "I drink coffee."),
+ "deadja": ("Mun jugan deaja.", "Juon teetä.", "Jeg drikker te.", "I drink tea."),
+ "juhkat": ("Boađe sisa gáfe juhkat!", "Tule sisään juomaan kahvia!", "Kom inn og drikk kaffe!", "Come in and have some coffee!"),
+ "borrat": ("Mii borrat láibbi iđitbiebmun.", "Syömme leipää aamiaiseksi.", "Vi spiser brød til frokost.", "We eat bread for breakfast."),
+ "iđitborramuš": ("Son borrá buvrru iđitborramuššan.", "Hän syö puuroa aamiaiseksi.", "Han spiser grøt til frokost.", "He eats porridge for breakfast."),
+ "lunša": ("Son oastá lunšša kantiinnas.", "Hän ostaa lounaan ruokalasta.", "Hun kjøper lunsj i kantina.", "She buys lunch in the canteen."),
+ "mállásat": ("Mii borrat mállásiid.", "Syömme päivällistä.", "Vi spiser middag.", "We are having dinner."),
+ "biila": ("Mun vuoján biilla.", "Ajan autoa.", "Jeg kjører bil.", "I drive a car."),
+ "vuodjit": ("Son vuodjá Guovdageidnui.", "Hän ajaa Koutokeinoon.", "Hun kjører til Kautokeino.", "She drives to Kautokeino."),
+ "busse": ("Busse lea maŋŋonan.", "Bussi on myöhässä.", "Bussen er forsinka.", "The bus is late."),
+ "vázzit": ("Son váccii, ja gaskkohagaid viegai.", "Hän käveli ja välillä juoksi.", "Hun gikk, og innimellom sprang hun.", "She walked, and now and then she ran."),
+}
+
+
 def words(lst):
     return [w for sec in lst[3] for w in sec[3]]
 

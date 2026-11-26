@@ -392,9 +392,31 @@ def lists():
               "rows": [row([fi], [nb], [sme(s_, "N", [], fi=fi, nb=nb)]) for s_, fi, nb in marjat.WORDS]})
     # Arki (arki.py, käyttäjä 2026-11-26): kauppa, pankki, liikkuminen, syöminen; aluksi vain sanoja
     import arki
+    import kasvit
+
+    # Sama sana voi olla sanakirjassa kahdesti (beassi = pesä ja tuohi): sanakortti sille, jonka suomi täsmää
+    def sme_fi(s_, pos, fi, nb):
+        out = sme(s_, pos, [], fi=fi, nb=nb)
+        for wid, fis in db.execute("SELECT id, finnish_translation FROM dictionary WHERE sme_lemma = ? AND pos = ?", (s_, pos)):
+            if fi.lower() in [x.strip().lower() for x in re.split(r"[,;]", fis or "")]:
+                out["id"] = wid
+                break
+        return out
     for lst in arki.LISTS:
+        rows = [row([fi], [nb], [sme_fi(s_, pos, fi, nb)]) for s_, pos, fi, nb, _en in arki.words(lst)]
+        for r in rows:
+            e = arki.EX.get(r["sme"][0]["w"][0])
+            if e:
+                r["ex"] = {"sme": e[0], "fi": e[1], "nb": e[2]}
+        lst_d = {"id": lst[0], "icon": lst[1], "title": {"fi": lst[2][0], "nb": lst[2][1]}, "rows": rows}
+        # Esimerkkilauseellinen lista apusanojen tapaan: sana ja merkitys, alla esimerkki (sanastot.js: layout "ex")
+        if any(r.get("ex") for r in rows):
+            lst_d["layout"] = "ex"
+        L.append(lst_d)
+    # Puut ja kasvit (kasvit.py, 2026-11-26), Luonto-ryhmään
+    for lst in kasvit.LISTS:
         L.append({"id": lst[0], "icon": lst[1], "title": {"fi": lst[2][0], "nb": lst[2][1]},
-                  "rows": [row([fi], [nb], [sme(s_, pos, [], fi=fi, nb=nb)]) for s_, pos, fi, nb, _en in arki.words(lst)]})
+                  "rows": [row([fi], [nb], [sme_fi(s_, pos, fi, nb)]) for s_, pos, fi, nb, _en in kasvit.words(lst)]})
     # Kellonajat (kello.py ja kello.json, käyttäjä 2026-11-23): kello, saame ja suomi; norjaksi ja englanniksi
     # digitaalinen aika. Napautus soittaa Biretin lauseen (audio/w/kello-<i>-sme.ogg)
     clock = json.load(open(os.path.join(SCRIPT_DIR, "kello.json"), encoding="utf-8"))["rows"]
@@ -472,7 +494,8 @@ import marjat as _mar
 SECTIONS["marjat"] = [(t[0], t[1], t[3]) for t in _mar.SECTIONS]
 # Arjen sanastojen osiot (arki.py)
 import arki as _arki
-for _l in _arki.LISTS:
+import kasvit as _kasvit
+for _l in _arki.LISTS + _kasvit.LISTS:
     SECTIONS[_l[0]] = [(sec[0], sec[1], [w[0] for w in sec[3]]) for sec in _l[3]]
 # Apusanojen osiot samasta tiedostosta (apusanat.py)
 import apusanat as _apu

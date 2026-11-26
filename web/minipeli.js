@@ -18,7 +18,7 @@ const PELI_TEXTS = {
     modes: { beginner: ["Aloittelija", "Yleisimmät sanat"], advanced: ["Edistynyt", "Kaikki sanat"],
       ordinals: ["Järjestysluvut", "1.–100."], time: ["Viikonpäivät, vuodenajat ja kuukaudet", "Biret sanoo oikean vastauksen"],
       colours: ["Värit", "9 väriä"], questions: ["Kysymyssanat", "Biret sanoo oikean vastauksen"], animals: ["Eläimet", "23 eläintä"], berries: ["Marjat, hedelmät ja kasvikset", "33 sanaa"], nearfar: ["Lähellä ja kaukana", "dát, diet, duot, dot …"],
-      daytime: ["Vuorokausi", "23 sanaa"], beforeafter: ["Ennen ja jälkeen", "12 sanaa"], family: ["Perhe ja suku", "18 sanaa"], pronouns: ["Pronominit", "9 sanaa"], greetings: ["Tervehdykset", "14 sanaa"], reindeer: ["Porot", "9 sanaa"], weather: ["Sää ja lumi", "18 sanaa"], herethere: ["Täällä ja tuolla", "17 sanaa"], thisthat: ["Tämä ja se", "7 sanaa"], smallwords: ["Sidesanat ja pikkusanat", "38 sanaa"], shop: ["Kaupassa", "14 sanaa"], bank: ["Pankissa", "14 sanaa"], travel: ["Liikkeellä", "12 sanaa"], meals: ["Syöminen ja juominen", "14 sanaa"],
+      daytime: ["Vuorokausi", "23 sanaa"], beforeafter: ["Ennen ja jälkeen", "12 sanaa"], family: ["Perhe ja suku", "18 sanaa"], pronouns: ["Pronominit", "9 sanaa"], greetings: ["Tervehdykset", "14 sanaa"], reindeer: ["Porot", "9 sanaa"], weather: ["Sää ja lumi", "18 sanaa"], herethere: ["Täällä ja tuolla", "17 sanaa"], thisthat: ["Tämä ja se", "7 sanaa"], smallwords: ["Sidesanat ja pikkusanat", "38 sanaa"], shop: ["Kaupassa", "14 sanaa"], bank: ["Pankissa", "14 sanaa"], travel: ["Liikkeellä", "12 sanaa"], meals: ["Syöminen ja juominen", "14 sanaa"], plants: ["Puut ja kasvit", "27 sanaa"],
       clock: ["Kellonajat", "Tasan, puoli ja vartit"], clockAll: ["Kellonajat: kaikki", "Viiden minuutin välein, 144 aikaa"] },
     clockListen: "Kuuntele ja valitse kello", clockAsk: "Paljonko kello on?", clockAgain: "Kuuntele uudelleen", clockText: "Näytä teksti", seeList: "Katso sanasto",
     groups: { words: "Sanat", cats: "Aiheet" }, groupSub: { words: "Sanakirjan sanoja kahdella tasolla", cats: "Lyhyitä teemapelejä" },
@@ -46,7 +46,7 @@ const PELI_TEXTS = {
     modes: { beginner: ["Nybegynner", "De vanligste ordene"], advanced: ["Viderekommen", "Alle ordene"],
       ordinals: ["Ordenstall", "1.–100."], time: ["Ukedager, årstider og måneder", "Biret sier riktig svar"],
       colours: ["Farger", "9 farger"], questions: ["Spørreord", "Biret sier riktig svar"], animals: ["Dyr", "23 dyr"], berries: ["Bær, frukt og grønnsaker", "33 ord"], nearfar: ["Nær og fjern", "dát, diet, duot, dot …"],
-      daytime: ["Døgnet", "23 ord"], beforeafter: ["Før og etter", "12 ord"], family: ["Familie og slekt", "18 ord"], pronouns: ["Pronomen", "9 ord"], greetings: ["Hilsener", "14 ord"], reindeer: ["Rein", "9 ord"], weather: ["Vær og snø", "18 ord"], herethere: ["Her og der", "17 ord"], thisthat: ["Dette og det", "7 ord"], smallwords: ["Bindeord og småord", "38 ord"], shop: ["I butikken", "14 ord"], bank: ["I banken", "14 ord"], travel: ["På vei", "12 ord"], meals: ["Mat og drikke", "14 ord"],
+      daytime: ["Døgnet", "23 ord"], beforeafter: ["Før og etter", "12 ord"], family: ["Familie og slekt", "18 ord"], pronouns: ["Pronomen", "9 ord"], greetings: ["Hilsener", "14 ord"], reindeer: ["Rein", "9 ord"], weather: ["Vær og snø", "18 ord"], herethere: ["Her og der", "17 ord"], thisthat: ["Dette og det", "7 ord"], smallwords: ["Bindeord og småord", "38 ord"], shop: ["I butikken", "14 ord"], bank: ["I banken", "14 ord"], travel: ["På vei", "12 ord"], meals: ["Mat og drikke", "14 ord"], plants: ["Trær og planter", "27 ord"],
       clock: ["Klokkeslett", "Hel, halv og kvarter"], clockAll: ["Klokkeslett: alle", "Hvert femte minutt, 144 tider"] },
     clockListen: "Lytt og velg klokka", clockAsk: "Hva er klokka?", clockAgain: "Lytt igjen", clockText: "Vis teksten", seeList: "Se ordlisten",
     groups: { words: "Ord", cats: "Emner" }, groupSub: { words: "Ord fra ordboka på to nivåer", cats: "Korte temaspill" },
@@ -74,7 +74,7 @@ const PELI_TEXTS = {
     modes: { beginner: ["Beginner", "The most common words"], advanced: ["Advanced", "All words"],
       ordinals: ["Ordinal numbers", "1st–100th"], time: ["Days, seasons and months", "Biret says the right answer"],
       colours: ["Colours", "9 colours"], questions: ["Question words", "Biret says the right answer"], animals: ["Animals", "23 animals"], berries: ["Berries, fruit and vegetables", "33 words"], nearfar: ["Near and far", "dát, diet, duot, dot …"],
-      daytime: ["Times of day", "23 words"], beforeafter: ["Before and after", "12 words"], family: ["Family and relatives", "18 words"], pronouns: ["Pronouns", "9 words"], greetings: ["Greetings", "14 words"], reindeer: ["Reindeer", "9 words"], weather: ["Weather and snow", "18 words"], herethere: ["Here and there", "17 words"], thisthat: ["This and that", "7 words"], smallwords: ["Linking and little words", "38 words"], shop: ["In the shop", "14 words"], bank: ["At the bank", "14 words"], travel: ["Getting around", "12 words"], meals: ["Eating and drinking", "14 words"],
+      daytime: ["Times of day", "23 words"], beforeafter: ["Before and after", "12 words"], family: ["Family and relatives", "18 words"], pronouns: ["Pronouns", "9 words"], greetings: ["Greetings", "14 words"], reindeer: ["Reindeer", "9 words"], weather: ["Weather and snow", "18 words"], herethere: ["Here and there", "17 words"], thisthat: ["This and that", "7 words"], smallwords: ["Linking and little words", "38 words"], shop: ["In the shop", "14 words"], bank: ["At the bank", "14 words"], travel: ["Getting around", "12 words"], meals: ["Eating and drinking", "14 words"], plants: ["Trees and plants", "27 words"],
       clock: ["Clock times", "O'clock, half and quarters"], clockAll: ["Clock times: all", "Every five minutes, 144 times"] },
     clockListen: "Listen and pick the clock", clockAsk: "What time is it?", clockAgain: "Listen again", clockText: "Show text", seeList: "See the word list",
     groups: { words: "Words", cats: "Topics" }, groupSub: { words: "Dictionary words on two levels", cats: "Short topic games" },
@@ -117,6 +117,7 @@ const PELI_MODES = [
   { id: "bank", group: "cats", color: "blue" },
   { id: "travel", group: "cats", color: "blue" },
   { id: "meals", group: "cats", color: "blue" },
+  { id: "plants", group: "cats", color: "green" },
   { id: "clock", group: "cats", color: "blue" }, { id: "clockAll", group: "cats", color: "blue" },
 ];
 // Pelattava saamen kieli: pohjoissaame aina, inarinsaame vain asetuksista valittuna (kokeellinen, minipeli.json: smn).
@@ -154,7 +155,7 @@ const PELI_MODE_ICON = {
   animals: '<circle cx="7.5" cy="9" r="1.8"/><circle cx="12" cy="6.5" r="1.8"/><circle cx="16.5" cy="9" r="1.8"/><path d="M12 11.5c-3 0-5.5 3.5-5.5 5.6 0 1.6 1.3 2.4 2.7 2.4 1.1 0 1.8-.6 2.8-.6s1.7.6 2.8.6c1.4 0 2.7-.8 2.7-2.4 0-2.1-2.5-5.6-5.5-5.6z"/>',
 };
 const PELI_MODE_SANASTO_ICON = { ordinals: "numbers", time: "month", colours: "palette", questions: "question", nearfar: "pointer",
-  daytime: "clock", beforeafter: "hourglass", family: "family", pronouns: "person", greetings: "greet", reindeer: "deer", weather: "snow", herethere: "place", thisthat: "pointer", smallwords: "link", shop: "bag", bank: "card", travel: "car", meals: "cup" };
+  daytime: "clock", beforeafter: "hourglass", family: "family", pronouns: "person", greetings: "greet", reindeer: "deer", weather: "snow", herethere: "place", thisthat: "pointer", smallwords: "link", shop: "bag", bank: "card", travel: "car", meals: "cup", plants: "tree" };
 const peliModeIcon = (id) => PELI_MODE_ICON[id]
   ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PELI_MODE_ICON[id]}</svg>`
   : sanastoSvg(PELI_MODE_SANASTO_ICON[id]);
@@ -878,7 +879,7 @@ function peliOpenMode(mode) {
 }
 // Pelitilan sanasto (tulossivun linkki): pelitila -> Sanastojen lista
 const PELI_LIST = { colours: "varit", questions: "kysymykset", time: "viikonpaivat", ordinals: "luvut", animals: "elaimet", berries: "marjat", nearfar: "lahellajakaukana",
-  clock: "kellonajat", clockAll: "kellonajat", daytime: "aika", beforeafter: "aikasanat", family: "suku", pronouns: "pronominit", greetings: "tervehdykset", reindeer: "porot", weather: "saa", herethere: "taallajatuolla", thisthat: "tamajase", smallwords: "sidesanat", shop: "kaupassa", bank: "pankissa", travel: "liikkeella", meals: "syominen" };
+  clock: "kellonajat", clockAll: "kellonajat", daytime: "aika", beforeafter: "aikasanat", family: "suku", pronouns: "pronominit", greetings: "tervehdykset", reindeer: "porot", weather: "saa", herethere: "taallajatuolla", thisthat: "tamajase", smallwords: "sidesanat", shop: "kaupassa", bank: "pankissa", travel: "liikkeella", meals: "syominen", plants: "kasvit" };
 function hidePeli() { peliStopAudio(); const was = !$("peli-view").hidden; $("peli-view").hidden = true; if (was) overlayClosed(); }
 // Takaisin-ele: ensin pelistä tai tulosruudusta valikkoon (peli jää jatkettavaksi), sitten näkymä kiinni;
 // Sanastojen Pelaa-reitillä suoraan listaan

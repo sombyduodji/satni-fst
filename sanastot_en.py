@@ -198,7 +198,12 @@ ROWS["marjat"] = {a[0]: [_mar.EN[a[0]]] for a in _mar.WORDS}
 
 # Arki (arki.py, 2026-11-26): englanti käsin listan omista tiedoista
 import arki as _arki
-for _l in _arki.LISTS:
+import kasvit as _kasvit
+for _l in _arki.LISTS + _kasvit.LISTS:
+    _w = _arki.words if _l in _arki.LISTS else _kasvit.words
     TITLES[_l[0]] = _l[2][2]
     SECTIONS[_l[0]] = [sec[2] for sec in _l[3]]
-    ROWS[_l[0]] = {w[0]: [w[4]] for w in _arki.words(_l)}
+    ROWS[_l[0]] = {w[0]: [w[4]] for w in _w(_l)}
+# Arjen sanastojen esimerkit (arki.EX)
+for _e in _arki.EX.values():
+    EXAMPLES[_e[0]] = _e[3]

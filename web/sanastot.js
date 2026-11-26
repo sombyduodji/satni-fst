@@ -13,6 +13,7 @@ const SANASTO_ICON = {
   alarm: '<circle cx="12" cy="13" r="7.5"/><path d="M12 9.2V13l2.6 1.8"/><path d="M4.2 6.2l3-2.4M19.8 6.2l-3-2.4M7.3 19.2l-1.6 1.9M16.7 19.2l1.6 1.9"/>',
   paw: '<circle cx="7.5" cy="9" r="1.8"/><circle cx="12" cy="6.5" r="1.8"/><circle cx="16.5" cy="9" r="1.8"/><path d="M12 11.5c-3 0-5.5 3.5-5.5 5.6 0 1.6 1.3 2.4 2.7 2.4 1.1 0 1.8-.6 2.8-.6s1.7.6 2.8.6c1.4 0 2.7-.8 2.7-2.4 0-2.1-2.5-5.6-5.5-5.6z"/>',
   // Marjat, hedelmät ja kasvikset (2026-11-24): marjarypäs
+  tree: '<path d="M12 3l5.5 7.5h-3l4 5.5h-13l4-5.5h-3z"/><path d="M12 16v5"/>',
   bag: '<path d="M5 8.5h14l-1.2 11.5H6.2z"/><path d="M9 8.5V6.8a3 3 0 0 1 6 0v1.7"/>',
   card: '<rect x="3" y="6" width="18" height="12.5" rx="2.2"/><path d="M3 10.2h18M7 15h4"/>',
   car: '<path d="M4 15.5V12l2.2-4.5h11.6L20 12v3.5z"/><path d="M4 12h16"/><circle cx="7.5" cy="17" r="1.7"/><circle cx="16.5" cy="17" r="1.7"/>',
@@ -110,7 +111,7 @@ const SANASTO_GROUPS = [
   { id: "perus", color: "yellow", lists: ["luvut", "varit", "kysymykset", "tamajase", "lahellajakaukana", "sidesanat"] },
   { id: "aika", color: "blue", lists: ["viikonpaivat", "kuukaudet", "vuodenajat", "aika", "kellonajat", "aikasanat"] },
   { id: "ihmiset", color: "red", lists: ["suku", "pronominit", "tervehdykset"] },
-  { id: "luonto", color: "green", lists: ["suunnat", "taallajatuolla", "saa", "porot", "elaimet", "marjat"] },
+  { id: "luonto", color: "green", lists: ["suunnat", "taallajatuolla", "saa", "porot", "elaimet", "marjat", "kasvit"] },
   // Arki (käyttäjä 2026-11-26): arjen tilanteet, aluksi vain sanoja (arki.py)
   { id: "arki", color: "blue", lists: ["kaupassa", "pankissa", "liikkeella", "syominen"] },
 ];
@@ -630,7 +631,8 @@ function renderSanasto(listId) {
         }).join("") + `</div></section>`;
       }
       // Apusanat (2026-11-22): sana ja merkitys, alla sanakirjan esimerkkilause; dat/dát-muodot rinnakkain kuten pronomineissa
-      if (APU_LISTS.includes(l.id)) {
+      // Arki-listat esimerkkilauseineen (layout "ex", 2026-11-26) samalla tavalla
+      if (APU_LISTS.includes(l.id) || l.layout === "ex") {
         return `<section class="sl-sec">${sec[lang] ? `<h3>${esc(sec[lang])}</h3>` : ""}<div class="sl-card apu">` + rows.map((r) => {
           const x = r.sme[0], ui = (r[lang] || r.fi).filter(Boolean)[0] || "";
           const head = x.w.length >= 4
@@ -785,7 +787,7 @@ function sanastoSpeakAll() {
 // Listan yläreunan painikkeet (2026-11-23): Harjoittele kuunnellen ja Pelaa (jos listalle on pelitila)
 const SANASTO_GAME = { varit: "colours", kysymykset: "questions", viikonpaivat: "time", kuukaudet: "time", vuodenajat: "time",
   luvut: "ordinals", elaimet: "animals", marjat: "berries", kellonajat: "clock", lahellajakaukana: "nearfar",
-  aika: "daytime", aikasanat: "beforeafter", suku: "family", pronominit: "pronouns", tervehdykset: "greetings", porot: "reindeer", saa: "weather", taallajatuolla: "herethere", tamajase: "thisthat", sidesanat: "smallwords", kaupassa: "shop", pankissa: "bank", liikkeella: "travel", syominen: "meals" };
+  aika: "daytime", aikasanat: "beforeafter", suku: "family", pronominit: "pronouns", tervehdykset: "greetings", porot: "reindeer", saa: "weather", taallajatuolla: "herethere", tamajase: "thisthat", sidesanat: "smallwords", kaupassa: "shop", pankissa: "bank", liikkeella: "travel", syominen: "meals", kasvit: "plants" };
 const SANASTO_GAME_SMN = ["time", "colours", "questions", "animals", "berries"];
 function sanastoActions(listId) {
   const harj = typeof harjListButton === "function" ? harjListButton(listId === "kellonajat" ? "kello" : listId) : "";
