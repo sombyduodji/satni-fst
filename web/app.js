@@ -3714,8 +3714,6 @@ function renderSettingsSummary() {
   const tools = [settings.game ? t("minipeli") : "", t("sanastot"), settings.exp.ocr && window.SatniOcr ? t("expOcr") : "",
     settings.exp.lause && fi ? t("lauseTitle") : "", settings.gameSmn ? capitalize(langName("smn")) : ""].filter(Boolean);
   set("sum-tools", tools.join(", "));
-  const expKeys = { fi: ["tableTr", "pivotFin"], nb: ["tableTr", "apertium"], en: ["engMt"] }[settings.uiLang] || [];
-  set("sum-exp", t("sumExp", expKeys.filter((k) => settings.exp[k]).length));
   set("sum-history", t("sumHistory", settings.history.length));
   set("sum-clear", t("sumHistory", settings.history.length));
   set("sum-about", $("about-version").textContent);
