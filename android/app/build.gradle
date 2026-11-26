@@ -86,6 +86,8 @@ android {
             // R8: pienempi APK (ML Kit, androidx). JS-sillan keep-säännöt: proguard-rules.pro. Testattava puhelimella
             // tekstintunnistus (SatniOcr) ennen julkaisua: virheet näkyvät vasta ajossa.
             minifyEnabled true
+            // Käyttämättömät resurssit pois paketista (Play Consolen R8-suositus 2026-11-26); assets-kansio (web/) ei muutu
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             if (signingProps?.exists()) {
                 signingConfig signingConfigs.release
