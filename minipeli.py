@@ -206,8 +206,16 @@ def inari(db, data):
             seen.add(w[0])
             words.append(w)
     cats = {}
-    for k in ("time", "colours", "questions", "animals", "berries"):
-        lst = conv(data["cats"][k])
+    # Kaikki aiheet paitsi järjestysluvut (ei inarin generaattoria) ja kello (vain pohjoissaame); sanastojen pelit
+    # samalla kahden lähteen tarkistuksella kuin sanastojen inarin sanat (käyttäjä 2026-11-26: vain sanoja, ei lauseita)
+    for k in [k for k in data["cats"] if k not in ("ordinals",)]:
+        lst, seen_k = [], set()
+        # Sama inarin sana kahdelle pohjoissaamen sanalle (nuuvt = návt ja nu, tondiet = danne ja danin): vain kerran,
+        # muuten kysymyksessä olisi kaksi oikeaa vastausta
+        for w in conv(data["cats"][k]):
+            if w[0] not in seen_k:
+                seen_k.add(w[0])
+                lst.append(w)
         if len(lst) >= SMN_MIN_CAT:
             cats[k] = lst
     picker.save()
