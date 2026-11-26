@@ -2810,7 +2810,9 @@ function renderTable() {
       const cls = g === "GD" ? "gd" : g === "HD" ? "hd" : "";
       const speak = (prefix ? prefix + " " : "") + v;
       return `<span class="form ${cls}" data-speak="${esc(speak)}" title="${esc(t("listenTo", speak))}">${esc(v)}</span>`;
-    }).join('<span class="sep"> / </span>');
+    // Kauttaviiva kiinni edelliseen muotoon (sitova välilyönti): rivi katkeaa vasta sen jälkeen, eikä yksinäinen "/"
+    // jää omalle rivilleen kapealla näytöllä (nuorraláganiin / nuorralágániin, Kom)
+    }).join('<span class="sep">\u00a0/ </span>');
     const tr = translate ? translate(trTags || items.map(([tag]) => tag), neg) : "";
     return `<td>${prefix ? `<span class="pron">${esc(prefix)}</span> ` : ""}${forms}${tr ? `<span class="form-tr">${tr.split(" / ").map(esc).join("<br>")}</span>` : ""}</td>`;
   };
