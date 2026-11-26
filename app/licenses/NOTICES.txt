@@ -1,0 +1,517 @@
+Sátni FST — copyright and licence notices
+==========================================
+
+Sátni FST
+---------
+Copyright (C) 2026 Juha Somby <satni@somby.fi>
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the Free
+Software Foundation, version 3 (GPL-3.0.txt), with the additional
+permission below. This program is distributed in the hope that it will be
+useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+Public License for more details.
+
+Source code: https://github.com/sombyduodji/satni-fst
+(each release has a tag, e.g. v0.8)
+
+Additional permission under GNU GPL version 3 section 7:
+If you modify this Program, or any covered work, by linking or combining
+it with Google ML Kit (including ML Kit Text Recognition and the libraries
+it depends on, or a modified version of them), containing parts covered by
+the terms of the ML Kit Terms of Service, the licensor of this Program
+grants you additional permission to convey the resulting work.
+Corresponding Source for a non-source form of such a combination shall
+include the source code of the covered work, but need not include the
+source code for the parts of Google ML Kit used.
+
+
+Language data (all versions)
+----------------------------
+Dictionaries: GiellaLT dict-sme-fin, dict-sme-nob, dict-sme-eng,
+dict-sme-smn, dict-sme-smj, dict-sme-sma, dict-fin-sme, dict-nob-sme,
+dict-smn-sme, dict-smj-sme, dict-sma-sme, dict-smn-fin, dict-fin-smn,
+dict-sme-spa and dict-spa-sme (Spanish), and the monolingual North Sámi
+dictionary dict-sme (North Sámi definitions)
+  © GiellaLT / Divvun / Giellatekno, UiT The Arctic University of Norway,
+  and contributors. The North Sámi–Spanish dictionaries are written by
+  Ángel Díaz de Rada (UNED) and Kjell Kemi.
+  As the dictionaries' own attribution texts specify, they are also the
+  work of Nils Jernsletten (North Sámi–Norwegian and Norwegian–North Sámi,
+  and part of North Sámi–Finnish), Kotus – Institute for the Languages of
+  Finland (Finnish–North Sámi and North Sámi–Finnish), Marja-Liisa Olthuis
+  and Taarna Valtonen (Finnish–Inari Sámi and Inari Sámi–Finnish), and of
+  members of the language communities.
+  Licence: Creative Commons Attribution 4.0 International
+  (CC-BY-4.0.txt, https://creativecommons.org/licenses/by/4.0/)
+  Source: https://github.com/giellalt
+  Changes: the dictionaries were merged into one database and extended
+  with words recognised by the North Sámi FST, inflection tables,
+  consonant gradation and hand-made corrections (korjaukset.tsv in the
+  source code); Norwegian letters in Finnish translations were fixed.
+  Missing Inari, Lule and Southern Sámi translations are filled from the
+  Inari, Lule and Southern Sámi to North Sámi dictionaries. Experimental
+  Finnish suggestions are made through Inari Sámi (dict-smn-sme,
+  dict-smn-fin, dict-fin-smn) or through Norwegian, marked as unchecked.
+  The Spanish dictionaries are read from their Excel sources; synonym rows
+  are merged and grammar notes are kept apart from the translations.
+  From dict-sme, the definitions, synonyms and examples are shown; examples
+  already shown with a translation are left out.
+
+Skolt Sámi (experimental): GiellaLT dict-sms-mul, dict-fin-sms and
+dict-nob-sms
+  © GiellaLT / Divvun / Giellatekno, UiT The Arctic University of Norway,
+  and contributors; dict-fin-sms and dict-nob-sms are also the work of
+  AKU and the Kone Foundation and members of the language communities.
+  Licence: CC BY 4.0 (CC-BY-4.0.txt); dict-fin-sms: Creative Commons
+  Attribution 3.0 Unported (CC-BY-3.0.txt,
+  https://creativecommons.org/licenses/by/3.0/)
+  Source: https://github.com/giellalt
+  Changes: for each Finnish and Norwegian word, at most three Skolt Sámi
+  words are kept (same word class, main meaning, both sources agreeing).
+  For a North Sámi word they are found through its Finnish translation.
+  Word order uses counts of dictionary words in the texts marked free in
+  GiellaLT corpus-sms (https://github.com/giellalt/corpus-sms); no corpus
+  text is included.
+
+Norwegian translations (experimental): Apertium apertium-sme-nob
+  © 2010-2019 Francis M. Tyers, Kevin Brubeck Unhammer, Trond Trosterud
+  and the Apertium contributors; most of the bilingual dictionary comes
+  from Giellatekno (UiT).
+  Licence: GPL-2.0-or-later, used here under GPL-3.0 (GPL-3.0.txt).
+  https://github.com/apertium/apertium-sme-nob
+  Changes: only the bilingual dictionary is used, for nouns, verbs,
+  adjectives and adverbs with no Norwegian translation in GiellaLT.
+
+North Sámi morphology: GiellaLT lang-sme
+  Authors: Linda Wiechetek, Katri Hiovain-Asikainen, Inga Lill Sigga
+  Mikkelsen, Sjur N. Moshagen, Flammie A Pirinen, Trond Trosterud,
+  Børre Gaup and the lang-sme contributors.
+  Licence: GNU GPL version 3 (GPL-3.0.txt)
+  Source: https://github.com/giellalt/lang-sme
+  The inflection tables were generated with it.
+
+Inari Sámi inflection (photos, experimental): GiellaLT lang-smn
+(Giellatekno, UiT)
+  Licence: GNU GPL version 3 (GPL-3.0.txt)
+  Source: https://github.com/giellalt/lang-smn
+  Inari Sámi word forms for photo recognition were generated with it;
+  Inari Sámi translations come from dict-smn-fin, dict-fin-smn and
+  dict-smn-sme (above). Norwegian is reached through North Sámi and is
+  approximate.
+
+Skolt Sámi inflection (photos, experimental): GiellaLT lang-sms
+(Giellatekno, UiT)
+  Licence: GNU GPL version 3 (GPL-3.0.txt)
+  Source: https://github.com/giellalt/lang-sms
+  Skolt Sámi word forms for photo recognition were generated with it;
+  translations come from dict-sms-mul, dict-fin-sms and dict-nob-sms
+  (above). North Sámi mostly goes through Finnish and is approximate.
+
+Finnish and Norwegian word pairs (photo sentence view, experimental):
+Leipzig Corpora Collection, Finnish corpora (news 2020 and 2022, Wikipedia
+2021) and Norwegian corpora (bokmål newscrawl 2019, Wikipedia 2021),
+Wortschatz Leipzig, Universität Leipzig
+  Licence: Creative Commons Attribution (CC BY), see
+  https://wortschatz.uni-leipzig.de/en/usage (CC-BY-4.0.txt)
+  Source: https://wortschatz.uni-leipzig.de/en/download/fin and /nob
+  Only counts are included: word pairs that occur at least three times
+  and how often single words occur (at least five times); no sentences. Goldhahn, Eckart & Quasthoff (2012), LREC 2012.
+
+Finnish inflection: GiellaLT lang-fin, based on the Omorfi lexicon
+(Tommi A. Pirinen, Inari Listenmaa, Ryan Johnson, Francis M. Tyers and
+others)
+  Licence: GNU GPL version 3 (GPL-3.0.txt)
+  Source: https://github.com/giellalt/lang-fin
+
+English translations from Wiktionary (where GiellaLT has no English)
+  © Wiktionary contributors, https://en.wiktionary.org
+  Machine-readable extract from kaikki.org (wiktextract, Tatu Ylönen)
+  Licence: Creative Commons Attribution-ShareAlike 4.0 International
+  (CC-BY-SA-4.0.txt, https://creativecommons.org/licenses/by-sa/4.0/),
+  The adapted data is licensed under GPL-3.0, which CC BY-SA 4.0 allows
+  as a compatible licence.
+  Changes: only words without English get one: Wiktionary's own North
+  Sámi entries and English entries that list a Northern Sámi
+  translation. Where the Finnish and the Norwegian translation give the
+  same English in Wiktionary, it is shown as an unchecked suggestion.
+  Notes in brackets and "synonym of"-type explanations are left out.
+
+English machine translations (experimental, off by default; eng_mt.py, eng_mt.tsv)
+  For words with no English in the dictionaries, shown only when at least
+  two of three routes give the same English word, and marked as machine
+  translations. Made with:
+  - smi-mt: TartuNLP Smugri model nllb1.3-smugri4-v0.01 (CC BY 4.0,
+    https://huggingface.co/tartuNLP/nllb1.3-smugri4-v0.01); base model
+    Meta NLLB-200 (CC BY-NC 4.0). Used in a free, non-commercial app.
+  - Helsinki-NLP opus-mt-fi-en and opus-mt-gmq-en (Apache-2.0.txt),
+    https://huggingface.co/Helsinki-NLP
+  - FinnWordNet 2.0, © University of Helsinki (CC-BY-3.0.txt), with the
+    English words of Princeton WordNet 3.0 (WordNet licence, © Princeton
+    University, https://wordnet.princeton.edu/license-and-commercial-use)
+  - Wiktionary via kaikki.org (CC-BY-SA-4.0.txt, as above)
+  - Apertium apertium-fin-eng (GPL-3.0.txt),
+    https://github.com/apertium/apertium-fin-eng
+  Only the resulting English words are included, not the models or the
+  dictionaries.
+
+Finnish machine-translated suggestions (experimental, off by default; fin_mt.py, fin_mt.tsv)
+  For words with no Finnish, shown only when at least two independent
+  routes give the same Finnish word (Voikko-checked). Made with smi-mt
+  (as above), Helsinki-NLP opus-mt-no-fi and opus-mt-en-fi (Apache-2.0.txt),
+  Wiktionary (CC-BY-SA-4.0.txt), FinnWordNet (CC-BY-3.0.txt) and GiellaLT
+  dict-nob-fin, dict-fin-nob (Trond Trosterud and Kirsti Kuosa, UiT),
+  dict-smn-fin and dict-sma-fin (CC-BY-4.0.txt),
+  https://github.com/giellalt. Only the resulting Finnish words are included.
+
+Spanish machine translations (experimental, off by default; spa_mt.py, spa_mt.tsv)
+  For words with no Spanish in dict-sme-spa, shown only when at least three
+  of six sources give the same Spanish word. Made with Helsinki-NLP
+  opus-mt-fi-es, opus-mt-no-es and opus-mt-en-es (Apache-2.0.txt), smi-mt
+  (as above), Wiktionary and WikDict (CC-BY-SA-4.0.txt) and the Spanish
+  wordnet of the Multilingual Central Repository 3.0 (CC-BY-3.0.txt,
+  http://adimen.si.ehu.es/web/MCR/). Only the resulting Spanish words are
+  included.
+
+German machine translations (BETA, off by default; deu_mt.py, deu_mt.tsv)
+  There is no North Sámi–German dictionary, so every German word is a
+  machine translation, shown only when at least three of six independent
+  sources give the same German word. Made with smi-mt (as above),
+  Helsinki-NLP opus-mt-fi-de and opus-mt-no-de (Apache-2.0.txt) and
+  opus-mt-en-de (CC-BY-4.0.txt), FinnWordNet (CC-BY-3.0.txt) and
+  Princeton WordNet 3.0 (as above) linked to OdeNet, the open German
+  wordnet (CC-BY-SA-4.0.txt, https://github.com/hdaSprachtechnologie/odenet)
+  through the Collaborative Interlingual Index (CC-BY-4.0.txt,
+  https://github.com/globalwordnet/cili), and Wiktionary
+  (CC-BY-SA-4.0.txt, as above), and the bilingual dictionary of
+  Apertium apertium-sme-deu (GPL-3.0.txt,
+  © Flammie A Pirinen, Francis Tyers, lynnda-hill and the Apertium
+  contributors, https://github.com/apertium/apertium-sme-deu). Only the
+  resulting German words are included.
+
+Corpus frequencies: SIKOR North Saami lemma frequency
+list 2015-10-10
+  © UiT The Arctic University of Norway, Giellatekno and Divvun
+  Licence: Creative Commons Attribution 3.0 Unported (CC-BY-3.0.txt)
+  Source: http://hdl.handle.net/11509/106 (CLARINO Bergen)
+  Changes: used only for words without a frequency; letters and
+  abbreviations are left out.
+
+Related words in other Sámi languages: Álgu, the
+Etymological Database of the Saami Languages, XML version 16.3.2023
+  © Kotimaisten kielten keskus (Institute for the Languages of Finland),
+  https://kaino.kotus.fi/algu
+  Licence: Creative Commons Attribution 4.0 (CC-BY-4.0.txt)
+  Changes: only the links between related words are used, and a related
+  word is shown only when it is in the current Inari, Skolt, Lule or
+  South Sámi dictionary. Álgu's Finnish and German meanings are not used.
+
+Sámi place names in Norway: Stedsnavn
+  © Kartverket, https://kartkatalog.geonorge.no/metadata/30caed2f-454e-44be-b5cc-26bb5c0110ca
+  Licence: Creative Commons Attribution 4.0 (CC-BY-4.0.txt)
+  Changes: only places with both a North Sámi and a Norwegian name
+  (main and side names, not historical) are kept, with Lule and South
+  Sámi names where they exist.
+
+Norwegian inflection: Norsk ordbank – bokmål 2005 (dump of 2022-02-01)
+  © Språkbanken / Nasjonalbiblioteket
+  Licence: CC BY 4.0 (CC-BY-4.0.txt)
+  Source: https://www.nb.no/sprakbanken/ressurskatalog/oai-nb-no-sbr-5/
+  Changes: only the forms of words used as translations are kept;
+  compounds missing from the word bank are inflected by their last part.
+
+Consonant gradation groups: Oahpa (Giellatekno, UiT)
+  https://oahpa.no/sme/gramm/tabell_stadieveksling.html
+
+Pronunciation: speech synthesis of Divvun and Giellatekno (UiT The Arctic
+University of Norway), voices Biret, Máhtte and Sunná
+  Used through the network service api-giellalt.uit.no with Divvun's
+  permission. The voice samples in voices/ were generated with the same
+  service and are included with Divvun's permission.
+
+Spoken word lists (audio/: every list in Word lists): Finnish word followed by
+the North Sámi word; the Norwegian interface plays the North Sámi words only.
+  Finnish: synthesised offline with Chatterbox Finnish (Finnish-NLP, MIT
+  licence; fine-tuned from Resemble AI's Chatterbox, MIT licence). The model's
+  training data and its attribution are listed in the model card (Common
+  Voice CC0, Filmot/YouTube CC BY, Finnish Parliament recordings under the
+  CLARIN PUB +BY licence). The voice is modelled on a LibriVox recording read
+  by Harri Tapani Ylilammi (Olli Wuorinen: Salmelan heinätalkoot, public
+  domain). The generated audio carries Resemble AI's inaudible Perth
+  watermark.
+  https://huggingface.co/Finnish-NLP/Chatterbox-Finnish
+  https://archive.org/details/salmelan_heinatalkoot_1509_librivox
+  North Sámi: Divvun's and Giellatekno's speech synthesis, voices Biret and
+  Máhtte (the greetings conversation), with Divvun's permission (see
+  Pronunciation above).
+
+Mini game (data/minipeli.json): the everyday word list was chosen from the
+dictionary by ranking words that are common both in the North Sámi corpus
+and in Finnish film and TV subtitles. The ranking used FrequencyWords
+(Hermit Dave, OpenSubtitles 2018 frequency lists, content CC BY-SA 4.0);
+the lists themselves are not included.
+  https://github.com/hermitdave/FrequencyWords
+  The animal words are the same as in the Máhtte learning game. The spoken
+  feedback for weekdays, seasons and months is Divvun's and Giellatekno's
+  speech synthesis, voice Biret, with Divvun's permission.
+
+Logo: the Sámi flag (designed by Astrid Båhl, 1986) drawn as a drop.
+
+
+Software in all versions
+------------------------
+sql.js 1.10.3 (SQLite compiled to WebAssembly)
+  Licence: MIT (vendor/LICENSE-sql.js.txt). SQLite itself is in the
+  public domain.
+  Source: https://github.com/sql-js/sql.js
+
+
+Desktop apps (Linux and Windows) only
+-------------------------------------
+Qt 6.9.3 and Qt for Python (PySide6, Shiboken6) 6.9.3, incl. Qt WebEngine
+  © The Qt Company Ltd and other contributors.
+  Licence: GNU LGPL version 3 (LGPL-3.0.txt, which builds on the GPL,
+  GPL-3.0.txt). The Qt libraries are included as separate, unmodified
+  library files and can be replaced.
+  Source: https://download.qt.io/official_releases/qt/6.9/6.9.3/
+  and https://download.qt.io/official_releases/QtForPython/pyside6/
+  Qt WebEngine contains Chromium and its third-party components, each
+  under its own licence: https://doc.qt.io/qt-6/qtwebengine-licensing.html
+  Qt includes ICU (International Components for Unicode), © Unicode, Inc.,
+  under the Unicode License: https://www.unicode.org/license.txt
+
+Python 3.12
+  © Python Software Foundation.
+  Licence: PSF License Agreement and the licences of the third-party
+  software included with Python (python-LICENSE.txt)
+
+certifi (Mozilla's CA certificate bundle)
+  © Kenneth Reitz and Mozilla contributors.
+  Licence: Mozilla Public License 2.0 (MPL-2.0.txt)
+  Source: https://github.com/certifi/python-certifi
+
+PyInstaller bootloader
+  © PyInstaller Development Team.
+  Licence: GNU GPL version 2 with an exception that allows it to be used
+  with programs under any licence.
+  Source: https://github.com/pyinstaller/pyinstaller
+
+Linux app only: system libraries from Debian 11 (bullseye), such as
+GLib, OpenSSL, NSS, Cairo, HarfBuzz, FriBidi and Kerberos
+  Their copyright and licence files are listed after python-LICENSE.txt,
+  one per Debian package.
+  Source: https://sources.debian.org/
+
+
+Android app only
+----------------
+Google ML Kit Text Recognition v2 16.0.1 (experimental photo search)
+  Closed source, used under the ML Kit Terms of Service:
+  https://developers.google.com/ml-kit/terms
+  It runs on the phone and photos are not sent anywhere. ML Kit's upload of
+  usage statistics to Google (its datatransport CCT backend) is removed from
+  the app, so no statistics are sent.
+
+AndroidX libraries (incl. AndroidX Core 1.13.1) and the Kotlin standard
+library
+  © The Android Open Source Project and JetBrains s.r.o.
+  Licence: Apache License 2.0 (Apache-2.0.txt)
+
+Google Play services base libraries (dependencies of ML Kit)
+  Android Software Development Kit License:
+  https://developer.android.com/studio/terms
+
+Tesseract4Android 4.9.0 (second reading of unknown Sámi words in the
+experimental photo search)
+  © 2019 Adaptech s.r.o., Robert Pösel
+  Licence: Apache License 2.0 (Apache-2.0.txt)
+  https://github.com/adaptech-cz/Tesseract4Android
+  It bundles these native libraries:
+
+  Tesseract OCR 5.5.1
+    © Google Inc. and the Tesseract contributors
+    Licence: Apache License 2.0 (Apache-2.0.txt)
+    https://github.com/tesseract-ocr/tesseract
+
+  Leptonica 1.85.0
+    https://github.com/DanBloomberg/leptonica
+
+/*====================================================================*
+ -  Copyright (C) 2001-2020 Leptonica.  All rights reserved.
+ -
+ -  Redistribution and use in source and binary forms, with or without
+ -  modification, are permitted provided that the following conditions
+ -  are met:
+ -  1. Redistributions of source code must retain the above copyright
+ -     notice, this list of conditions and the following disclaimer.
+ -  2. Redistributions in binary form must reproduce the above
+ -     copyright notice, this list of conditions and the following
+ -     disclaimer in the documentation and/or other materials
+ -     provided with the distribution.
+ -
+ -  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ -  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ -  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ -  A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL ANY
+ -  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ -  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ -  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ -  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ -  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ -  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ -  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *====================================================================*/
+
+  libpng 1.6.48
+    https://github.com/pnggroup/libpng
+
+COPYRIGHT NOTICE, DISCLAIMER, and LICENSE
+=========================================
+
+PNG Reference Library License version 2
+---------------------------------------
+
+ * Copyright (c) 1995-2025 The PNG Reference Library Authors.
+ * Copyright (c) 2018-2025 Cosmin Truta.
+ * Copyright (c) 2000-2002, 2004, 2006-2018 Glenn Randers-Pehrson.
+ * Copyright (c) 1996-1997 Andreas Dilger.
+ * Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
+
+The software is supplied "as is", without warranty of any kind,
+express or implied, including, without limitation, the warranties
+of merchantability, fitness for a particular purpose, title, and
+non-infringement.  In no event shall the Copyright owners, or
+anyone distributing the software, be liable for any damages or
+other liability, whether in contract, tort or otherwise, arising
+from, out of, or in connection with the software, or the use or
+other dealings in the software, even if advised of the possibility
+of such damage.
+
+Permission is hereby granted to use, copy, modify, and distribute
+this software, or portions hereof, for any purpose, without fee,
+subject to the following restrictions:
+
+ 1. The origin of this software must not be misrepresented; you
+    must not claim that you wrote the original software.  If you
+    use this software in a product, an acknowledgment in the product
+    documentation would be appreciated, but is not required.
+
+ 2. Altered source versions must be plainly marked as such, and must
+    not be misrepresented as being the original software.
+
+ 3. This Copyright notice may not be removed or altered from any
+    source or altered source distribution.
+
+
+PNG Reference Library License version 1 (for libpng 0.5 through 1.6.35)
+-----------------------------------------------------------------------
+
+libpng versions 1.0.7, July 1, 2000, through 1.6.35, July 15, 2018 are
+Copyright (c) 2000-2002, 2004, 2006-2018 Glenn Randers-Pehrson, are
+derived from libpng-1.0.6, and are distributed according to the same
+disclaimer and license as libpng-1.0.6 with the following individuals
+added to the list of Contributing Authors:
+
+    Simon-Pierre Cadieux
+    Eric S. Raymond
+    Mans Rullgard
+    Cosmin Truta
+    Gilles Vollant
+    James Yu
+    Mandar Sahastrabuddhe
+    Google Inc.
+    Vadim Barkov
+
+and with the following additions to the disclaimer:
+
+    There is no warranty against interference with your enjoyment of
+    the library or against infringement.  There is no warranty that our
+    efforts or the library will fulfill any of your particular purposes
+    or needs.  This library is provided with all faults, and the entire
+    risk of satisfactory quality, performance, accuracy, and effort is
+    with the user.
+
+Some files in the "contrib" directory and some configure-generated
+files that are distributed with libpng have other copyright owners, and
+are released under other open source licenses.
+
+libpng versions 0.97, January 1998, through 1.0.6, March 20, 2000, are
+Copyright (c) 1998-2000 Glenn Randers-Pehrson, are derived from
+libpng-0.96, and are distributed according to the same disclaimer and
+license as libpng-0.96, with the following individuals added to the
+list of Contributing Authors:
+
+    Tom Lane
+    Glenn Randers-Pehrson
+    Willem van Schaik
+
+libpng versions 0.89, June 1996, through 0.96, May 1997, are
+Copyright (c) 1996-1997 Andreas Dilger, are derived from libpng-0.88,
+and are distributed according to the same disclaimer and license as
+libpng-0.88, with the following individuals added to the list of
+Contributing Authors:
+
+    John Bowler
+    Kevin Bracey
+    Sam Bushell
+    Magnus Holmgren
+    Greg Roelofs
+    Tom Tanner
+
+Some files in the "scripts" directory have other copyright owners,
+but are released under this license.
+
+libpng versions 0.5, May 1995, through 0.88, January 1996, are
+Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
+
+For the purposes of this copyright and license, "Contributing Authors"
+is defined as the following set of individuals:
+
+    Andreas Dilger
+    Dave Martindale
+    Guy Eric Schalnat
+    Paul Schmidt
+    Tim Wegner
+
+The PNG Reference Library is supplied "AS IS".  The Contributing
+Authors and Group 42, Inc. disclaim all warranties, expressed or
+implied, including, without limitation, the warranties of
+merchantability and of fitness for any purpose.  The Contributing
+Authors and Group 42, Inc. assume no liability for direct, indirect,
+incidental, special, exemplary, or consequential damages, which may
+result from the use of the PNG Reference Library, even if advised of
+the possibility of such damage.
+
+Permission is hereby granted to use, copy, modify, and distribute this
+source code, or portions hereof, for any purpose, without fee, subject
+to the following restrictions:
+
+ 1. The origin of this source code must not be misrepresented.
+
+ 2. Altered versions must be plainly marked as such and must not
+    be misrepresented as being the original source.
+
+ 3. This Copyright notice may not be removed or altered from any
+    source or altered source distribution.
+
+The Contributing Authors and Group 42, Inc. specifically permit,
+without fee, and encourage the use of this source code as a component
+to supporting the PNG file format in commercial products.  If you use
+this source code in a product, acknowledgment is not required but would
+be appreciated.
+
+  libjpeg 9f
+    © Thomas G. Lane, Guido Vollbeding
+    This software is based in part on the work of the Independent JPEG Group.
+    https://ijg.org/
+
+Sámi Tesseract model synth_base (photo search, second reading)
+  © Nasjonalbiblioteket (National Library of Norway), Språkbanken
+  Licence: CC BY 4.0 (CC-BY-4.0.txt)
+  Source: https://www.nb.no/sbfil/samisk_ocr/
+  Changes: converted to Tesseract's integer format (combine_tessdata -c).
+  Enstad T, Trosterud T, Røsok MI, Beyer Y, Roald M. Comparative analysis of
+  optical character recognition methods for Sámi texts from the National
+  Library of Norway. Proceedings of the 25th Nordic Conference on
+  Computational Linguistics (NoDaLiDa) 2025. https://arxiv.org/abs/2501.07300
