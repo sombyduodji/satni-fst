@@ -2598,3 +2598,18 @@ body.sidebar-open #help-btn, body:has(dialog[open]:not(#help-dlg)) #help-btn { p
 
 /* Lause kuvasta: sovelluksen osista kokoama yhdyssana (kyttyrälohipadossa), ei suomen sanastossa */
 #sent-text .sent-cmp { text-decoration: underline dotted; text-decoration-color: var(--muted); text-underline-offset: 0.2em; }
+
+/* Lause-välilehti (2026-11-26): suunnan valitsin, osat, saamen lauseen käännös ensin kortissa */
+.lause-dir { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); align-self: flex-start; max-width: 100%; }
+.lause-dir[hidden] { display: none; }
+.lause-dir button { flex: 1 1 auto; border: 0; border-radius: 9px; padding: 8px 14px; font: inherit; font-size: 15px; font-weight: 600;
+  background: transparent; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.lause-dir button[aria-pressed="true"] { background: var(--accent, #2563eb); color: #fff; }
+.lause-part { display: flex; flex-direction: column; gap: 12px; }
+.lause-part[hidden] { display: none; }
+.lause-smeui .sent-body { padding: 0; overflow: visible; }
+.lause-smeui .lause-sme-res .sent-tr { margin: 0; }
+.lause-smeui #sent-text { font-size: 20px; line-height: 1.4; }
+/* Sanan valikko Lause-välilehdellä: alhaalla alapalkin päällä kuten kuvan lausenäkymässä */
+.lause-smeui .sent-sheet { position: fixed; left: 0; right: 0; bottom: var(--nav-h, 0px); z-index: 48; max-height: 55vh;
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, .25); border-radius: 14px 14px 0 0; }

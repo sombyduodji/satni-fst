@@ -38,11 +38,13 @@ const UI_TEXTS = {
     experimental: "Kokeelliset käännökset", experimentalOn: "Käytössä", experimentalOff: "Pois käytöstä",
     experimentalHint: "Konekäännöksiä ja ehdotuksia sanoille, joilla ei ole käännöstä sanakirjoissa. Ne ovat vielä kehitteillä, ja niissä voi olla virheitä. Palaute auttaa!",
     // Lausekääntäjä (test-lauseet, lauseet.js)
-    lauseTitle: "Lausekääntäjä", lauseBadge: "kokeilu", lauseShort: "Lause", ocrShort: "Kuva", expLauseDesc: "Lyhyt suomenkielinen lause saameksi. Avataan Lause-painikkeesta.",
+    lauseTitle: "Lausekääntäjä", lauseBadge: "kokeilu", lauseShort: "Lause", ocrShort: "Kuva", expLauseDesc: "Lyhyt lause suomesta saameksi tai saamesta suomeksi. Avataan Lause-painikkeesta.", lauseDirLabel: "Käännöksen suunta", lauseDirFi: "suomi → saame", lauseDirSme: "saame → suomi", lauseHintSme: "Kirjoita pohjoissaamenkielinen lause. Napauta sanaa nähdäksesi merkitykset tai korjataksesi sanan.", lausePlaceholderSme: "Mun boađán ihttin.", lauseWordsSme: "Sanat · napauta muuttaaksesi",
     expLauseInfo: `<p>Alapalkkiin (leveällä näytöllä yläpalkkiin) tulee <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg> Lause-painike, joka avaa lausekääntäjän: kirjoita lyhyt suomenkielinen lause, niin sovellus
       tekee siitä pohjoissaamenkielisen lauseen sanakirjan sanoista ja taivutusmuodoista.</p>
       <p>Jokainen sana näkyy omana laatikkonaan; napauttamalla voit vaihtaa tulkinnan tai saamen sanan. Lause on
-      likimääräinen: se sopii lyhyisiin arkilauseisiin, ei pitkiin tai vaikeisiin.</p>`,
+      likimääräinen: se sopii lyhyisiin arkilauseisiin, ei pitkiin tai vaikeisiin.</p>
+      <p>Suunnan voi vaihtaa: saame → suomi kääntää pohjoissaamenkielisen lauseen suomeksi samoilla säännöillä kuin kuvahaku
+      (sana sanalta, suuntaa antava). Myös ilman saamen näppäimistöä kirjoitettu sana löytyy (cahci = čáhci).</p>`,
     lauseHint: "Kirjoita lyhyt suomenkielinen lause. Napauta sanaa nähdäksesi tulkinnan tai vaihtaaksesi saamen sanan.",
     lausePlaceholder: "saisinko yhden kahvin ja voileivän?", lauseUnknown: "tuntematon", lauseDidYouMean: "tarkoititko",
     lauseSkip: "Ohita sana", lauseResult: "Saameksi (likimääräinen, tarkista sanat)",
@@ -396,11 +398,12 @@ const UI_TEXTS = {
     ocrFix: "Rett", ocrReportShort: "Meld feil", ocrBackToSugs: "Tilbake til forslag", sentSelectShort: "Velg selv", sentSelect: "Velg ordene selv", selHint: "Mal over ordene med fingeren eller tegn en ring rundt dem · to fingre flytter", selCount: (n) => `${n} ord valgt`, ocrTargetAdded: (n) => `${n} lagt til som oversettelsesspråk`, ocrSourceAdded: (n) => `${n} lagt til som bildespråk`, ocrNoSugs: "Ingen forslag.",
     experimental: "Eksperimentelle oversettelser", experimentalOn: "På", experimentalOff: "Av",
     experimentalHint: "Maskinoversettelser og forslag for ord som ikke har oversettelse i ordbøkene. De er fortsatt under utvikling og kan inneholde feil. Tilbakemeldinger hjelper!",
-    lauseTitle: "Setningsoversetter", lauseBadge: "prøve", lauseShort: "Setning", ocrShort: "Bilde", expLauseDesc: "Kort finsk setning til samisk. Åpnes med Setning-knappen.",
-    expLauseInfo: `<p>I bunnlinjen (på bred skjerm i topplinjen) kommer en <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg> Setning-knapp som åpner setningsoversetteren: skriv en kort setning på finsk, så
-      lager appen en nordsamisk setning av ordboksordene og bøyningsformene.</p>
-      <p>Hvert ord vises i sin egen boks; trykk for å bytte tolkning eller samisk ord. Setningen er omtrentlig: den passer
-      for korte hverdagssetninger, ikke lange eller vanskelige.</p>`,
+    lauseTitle: "Setningsoversetter", lauseBadge: "prøve", lauseShort: "Setning", ocrShort: "Bilde", expLauseDesc: "Kort nordsamisk setning til norsk. Åpnes med Setning-knappen.", lauseDirLabel: "Retning", lauseDirFi: "finsk → samisk", lauseDirSme: "samisk → norsk", lauseHintSme: "Skriv en nordsamisk setning. Trykk på et ord for å se betydningene eller rette ordet.", lausePlaceholderSme: "Mun boađán ihttin.", lauseWordsSme: "Ordene · trykk for å endre",
+    expLauseInfo: `<p>I bunnlinjen (på bred skjerm i topplinjen) kommer en <svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 10h6"/><path d="M12 7.5l2.5 2.5-2.5 2.5"/></svg> Setning-knapp som åpner setningsoversetteren: skriv en kort nordsamisk setning, så
+      får du den på norsk, ord for ord med de samme reglene som bildesøket (veiledende).</p>
+      <p>Hvert ord vises i sin egen boks; trykk for å se betydningene eller rette ordet. Ord skrevet uten samisk tastatur
+      blir også funnet (cahci = čáhci). Setningen passer for korte hverdagssetninger, ikke lange eller vanskelige.
+      Finsk → samisk finnes bare med finsk brukergrensesnitt.</p>`,
     lauseHint: "Skriv en kort setning på finsk. Trykk på et ord for å se tolkningen eller bytte det samiske ordet.",
     lausePlaceholder: "saisinko yhden kahvin ja voileivän?", lauseUnknown: "ukjent", lauseDidYouMean: "mente du",
     lauseSkip: "Hopp over ordet", lauseResult: "På samisk (omtrentlig, sjekk ordene)",
@@ -747,8 +750,8 @@ UI_TEXTS.en = {
   ocrFix: "Fix", ocrReportShort: "Report", ocrBackToSugs: "Back to suggestions", sentSelectShort: "Choose words", sentSelect: "Choose words yourself", selHint: "Paint the words with a finger or draw a circle around them · two fingers move the photo", selCount: (n) => `${n} words selected`, ocrTargetAdded: (n) => `${n} added to translation languages`, ocrSourceAdded: (n) => `${n} added to photo languages`, ocrNoSugs: "No suggestions.",
   experimental: "Experimental translations", experimentalOn: "On", experimentalOff: "Off",
   experimentalHint: "Machine translations and suggestions for words that have no translation in the dictionaries. They are still being developed and may contain mistakes. Feedback helps!",
-  lauseTitle: "Sentence translator", lauseBadge: "trial", lauseShort: "Sentence", ocrShort: "Photo", expLauseDesc: "A short Finnish sentence into Sámi. Opened from the Sentence button (Finnish user interface only).",
-  expLauseInfo: `<p>The sentence translator turns a short Finnish sentence into North Sámi. It works only in the Finnish user interface.</p>`,
+  lauseTitle: "Sentence translator", lauseBadge: "trial", lauseShort: "Sentence", ocrShort: "Photo", expLauseDesc: "A short North Sámi sentence into English (rough). Opened from the Sentence button.", lauseDirLabel: "Direction", lauseDirFi: "Finnish → Sámi", lauseDirSme: "Sámi → English", lauseHintSme: "Write a North Sámi sentence. Tap a word to see its meanings or correct it. The English is rough: many words have only machine-translated English.", lausePlaceholderSme: "Mun boađán ihttin.", lauseWordsSme: "Words · tap to change",
+  expLauseInfo: `<p>The sentence translator turns a short North Sámi sentence into English, word by word, using the same rules as the photo search. The English is rough, because many words have only machine-translated English. With the Finnish user interface it also translates Finnish into North Sámi.</p>`,
   lauseHint: "Write a short Finnish sentence. Tap a word to see how it was read or to change the Sámi word.",
   lausePlaceholder: "saisinko yhden kahvin ja voileivän?", lauseUnknown: "unknown", lauseDidYouMean: "did you mean",
   lauseSkip: "Skip word", lauseResult: "In Sámi (approximate, check the words)",

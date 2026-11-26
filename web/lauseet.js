@@ -35,7 +35,51 @@ const LAUSE_POSTPOS = {
 const LAUSE_PX = [["nsa", "3"], ["nsä", "3"], ["mme", "Pl1"], ["nne", "Pl2"], ["ni", "Sg1"], ["si", "Sg2"]];
 const LAUSE_PX_PRONOUN = { Sg1: "mu", Sg2: "du", 3: "su", Pl1: "min", Pl2: "din" };
 
-let lause = { tokens: [] };
+let lause = { tokens: [], dir: null, smeText: null, smeChoice: {} };
+
+// Suunta (käyttäjä 2026-11-26): suomi -> saame (oma kääntäjä) tai saame -> käyttöliittymän kieli (Lause kuvasta -kone,
+// app.js: lauseSmeBuild). Norjaksi ja englanniksi vain saame -> käyttöliittymän kieli (suomi -> saame tuntee vain suomen).
+function lauseDir() {
+  if (settings.uiLang !== "fi") return "sme";
+  if (lause.dir == null) { try { lause.dir = localStorage.getItem("satni-lause-dir") || "fi"; } catch (e) { lause.dir = "fi"; } }
+  return lause.dir;
+}
+const lauseKey = (dir) => (dir === "sme" ? "satni-lause-sme" : "satni-lause");
+function renderLauseDir() {
+  const d = lauseDir(), fi = settings.uiLang === "fi";
+  $("lause-dir").hidden = !fi;
+  for (const b of $("lause-dir").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.dir === d));
+  $("lause-hint").textContent = t(d === "fi" ? "lauseHint" : "lauseHintSme");
+  $("lause-input").placeholder = t(d === "fi" ? "lausePlaceholder" : "lausePlaceholderSme");
+  $("lause-input").lang = d === "fi" ? "fi" : "se";
+  $("lause-fi").hidden = d !== "fi";
+  $("lause-smeui").hidden = d === "fi";
+}
+// Saame -> käyttöliittymän kieli: lausenäkymän osat (sirut, käännös, sanan valikko) lainataan tälle välilehdelle
+function renderLauseSme() {
+  const text = $("lause-input").value;
+  $("lause-clear").hidden = !text;
+  lauseGrow();
+  const host = $("lause-smeui");
+  if ($("sent-body").parentElement !== host) {
+    if (!$("sent-view").hidden) $("sent-view").hidden = true;  // kuvan lausenäkymä ei voi olla yhtä aikaa auki
+    host.append($("sent-body"), $("sent-sheet"));
+  }
+  if (text !== lause.smeText) { lause.smeText = text; lause.smeChoice = {}; }
+  if (!text.trim()) { if (sent?.lause) sent = null; $("sent-body").innerHTML = ""; $("sent-sheet").hidden = true; return; }
+  const { ctx, toks } = lauseSmeBuild(text, lause.smeChoice);
+  sent = { toks, sheet: null, rIndex: 0, lause: ctx };
+  renderSentView();
+}
+// Sanan valikosta sanakirjaan; takaisin-ele palaa lauseeseen
+function lauseToDictionary(q) {
+  if (!q) return;
+  $("lause-view").hidden = true;
+  $("search").value = q;
+  search(q);
+  lauseReturnHash = location.hash;
+}
+function lauseRender() { renderLauseDir(); if (lauseDir() === "sme") renderLauseSme(); else renderLause(); }
 
 // Välimuisti: lause luetaan uudelleen jokaisen näppäilyn jälkeen, ja haut ovat lähes koko ajan (2026-11-10 profiloitu:
 // 94 % ajasta SQL-kyselyissä). Sama sana haetaan vain kerran; palautetaan kopio, koska tulkintoja järjestetään ja täydennetään.
@@ -643,16 +687,21 @@ function lauseParseRestoring(text) {
 }
 
 function openLause() {
-  const typed = $("search").value.trim(), input = $("lause-input");
+  const typed = $("search").value.trim(), input = $("lause-input"), dir = lauseDir();
   // Haussa kirjoitettu lause tulee mukaan vain kerran: palatessa oma muokattu lause säilyy
   if (typed.includes(" ") && typed !== lause.carried) { input.value = typed; lause.carried = typed; }
-  else if (!input.value) {
-    try { input.value = localStorage.getItem("satni-lause") || ""; } catch (e) { /* yksityinen tila */ }
+  else if (!input.value || input.dataset.dir !== dir) {
+    try { input.value = localStorage.getItem(lauseKey(dir)) || ""; } catch (e) { /* yksityinen tila */ }
   }
+  input.dataset.dir = dir;
   $("lause-view").hidden = false;
   overlayOpened();  // verkkoversion Takaisin sulkee lauseen (app.js)
-  if (input.value !== lause.parsedText || !lause.tokens.length) lause.tokens = lauseParseRestoring(input.value);
-  renderLause();
+  renderLauseDir();
+  if (dir === "sme") renderLauseSme();
+  else {
+    if (input.value !== lause.parsedText || !lause.tokens.length) lause.tokens = lauseParseRestoring(input.value);
+    renderLause();
+  }
   // Valmiin lauseen kohdalla ei avata näppäimistöä sanojen päälle
   if (!input.value.trim()) input.focus();
 }
@@ -660,6 +709,7 @@ function openLause() {
 // Takaisin-ele ja Esc: ensin pieni sanakortti, sitten sanan valikko, sitten näkymä (MainActivity.goBackOrFinish kutsuu closeOcr:ia)
 function closeLause() {
   if ($("lause-view").hidden) return false;
+  if (sent?.lause && sent.sheet != null) { sent.sheet = null; sent.split = null; renderSentView(); return true; }
   if (!$("lause-card").hidden) $("lause-card").hidden = true;
   else if (!$("lause-pop").hidden) lauseClosePop();
   else { $("lause-view").hidden = true; overlayClosed(); }
@@ -861,7 +911,19 @@ let lauseReturnHash = null;  // lauseesta avatun sanakortin osoite: takaisin-ele
 function bindLause() {
   if (!$("lause-view")) return;
   $("lause-btn").onclick = openLause;
-  $("lause-close").onclick = () => { $("lause-view").hidden = true; overlayClosed(); };
+  bindSentView();  // saame -> käyttöliittymän kieli käyttää lausenäkymän siruja ja valikkoa myös ilman kuvahakua
+  // Suunnan vaihto: kummallakin suunnalla oma tallennettu teksti
+  $("lause-dir").onclick = (e) => {
+    const b = e.target.closest("[data-dir]");
+    if (!b || b.dataset.dir === lauseDir()) return;
+    const input = $("lause-input");
+    try { localStorage.setItem(lauseKey(lauseDir()), input.value); localStorage.setItem("satni-lause-dir", b.dataset.dir); } catch (err) { /* yksityinen tila */ }
+    lause.dir = b.dataset.dir;
+    try { input.value = localStorage.getItem(lauseKey(lause.dir)) || ""; } catch (err) { input.value = ""; }
+    input.dataset.dir = lause.dir;
+    if (lause.dir === "fi") lause.tokens = lauseParseRestoring(input.value);
+    lauseRender();
+  };
   // Virheilmoitus koko lauseesta: suomi, saame ja sanojen valinnat
   $("lause-report").onclick = (e) => {
     e.preventDefault();
@@ -871,7 +933,7 @@ function bindLause() {
       ["words", toks.map((tok) => `${tok.raw} = ${tok.choice ? tok.choice.sme_lemma : tok.skip ? "–" : "?"}`).join("; ")],
     ] });
   };
-  overlayLayerFns.push(() => ($("lause-view").hidden ? 0 : (!$("lause-pop").hidden) + (!$("lause-card").hidden)));  // sanan valikko ja kortti (app.js)
+  overlayLayerFns.push(() => ($("lause-view").hidden ? 0 : (!$("lause-pop").hidden) + (!$("lause-card").hidden) + (sent?.lause && sent.sheet != null ? 1 : 0)));  // sanan valikko ja kortti (app.js)
   const closeOcrBase = window.closeOcr;
   window.closeOcr = () => closeLause() || (closeOcrBase ? closeOcrBase() : false);
   const backToOcrBase = window.backToOcr;
@@ -883,7 +945,7 @@ function bindLause() {
     if (lauseReturnHash && location.hash === lauseReturnHash) {
       lauseReturnHash = null;
       $("lause-view").hidden = false;
-      renderLause();
+      lauseRender();
       return true;
     }
     return backToOcrBase ? backToOcrBase() : false;
@@ -895,7 +957,7 @@ function bindLause() {
       lauseReturnHash = null;
       if (!back) return;
       $("lause-view").hidden = false;
-      renderLause();
+      lauseRender();
     }
   });
   $("lause-pop").addEventListener("click", (e) => {
@@ -921,6 +983,12 @@ function bindLause() {
     timer = setTimeout(() => {
       // Tekstikentän change-tapahtuma (kentästä poistuttaessa) ilman muutosta ei saa lukea lausetta uudelleen:
       // muuten sanan napautus heti kirjoittamisen jälkeen avaa valikon, jonka uudelleenpiirto heti sulkee
+      if (lauseDir() === "sme") {
+        if ($("lause-input").value === lause.smeText) return;
+        renderLauseSme();
+        try { localStorage.setItem(lauseKey("sme"), $("lause-input").value); } catch (e) { /* yksityinen tila */ }
+        return;
+      }
       if ($("lause-input").value === lause.parsedText) return;
       lause.tokens = lauseParseRestoring($("lause-input").value);
       renderLause();
@@ -933,9 +1001,14 @@ function bindLause() {
   $("lause-clear").onclick = () => {
     clearTimeout(timer);
     $("lause-input").value = "";
-    lause.tokens = [];
-    renderLause();
-    lauseSave();
+    if (lauseDir() === "sme") {
+      renderLauseSme();
+      try { localStorage.setItem(lauseKey("sme"), ""); } catch (e) { /* yksityinen tila */ }
+    } else {
+      lause.tokens = [];
+      renderLause();
+      lauseSave();
+    }
     $("lause-input").focus();
   };
   $("lause-input").addEventListener("compositionend", reparse);

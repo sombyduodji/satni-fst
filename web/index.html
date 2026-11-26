@@ -565,27 +565,37 @@
   <div id="lause-view" class="lause-view" hidden>
     <div class="lause-head">
       <h2 data-i18n="lauseTitle">Lausekääntäjä</h2>
-      <button type="button" class="chip-btn" id="lause-close" data-i18n="close">Sulje</button>
     </div>
-    <p class="muted small" data-i18n="lauseHint"></p>
+    <!-- Suunta (2026-11-26): suomi -> saame (lauseet.js) tai saame -> käyttöliittymän kieli (app.js: lauseSmeBuild).
+         Norjaksi ja englanniksi vain saame -> käyttöliittymän kieli, valitsin piilossa. -->
+    <div id="lause-dir" class="lause-dir" role="group" data-i18n-aria="lauseDirLabel">
+      <button type="button" data-dir="fi" aria-pressed="true" data-i18n="lauseDirFi">suomi → saame</button>
+      <button type="button" data-dir="sme" aria-pressed="false" data-i18n="lauseDirSme">saame → suomi</button>
+    </div>
+    <p class="muted small" id="lause-hint"></p>
     <!-- × tyhjentää lauseen ja sanojen valinnat (lauseet.js: lauseClear); näkyy vain, kun kentässä on tekstiä -->
     <div class="lause-input-wrap">
       <textarea id="lause-input" rows="2" data-i18n-placeholder="lausePlaceholder"></textarea>
       <button type="button" id="lause-clear" class="lause-clear" data-i18n-title="lauseClear" data-i18n-aria="lauseClear" hidden>×</button>
     </div>
-    <div id="lause-chips" class="lause-chips"></div>
-    <div id="lause-pop" class="lause-pop" hidden></div>
-    <div id="lause-card" class="lause-card" hidden></div>
-    <div id="lause-result" class="lause-result" hidden>
-      <p class="muted small" data-i18n="lauseResult">Saameksi (likimääräinen, tarkista sanat)</p>
-      <div class="lause-sme-row">
-        <p id="lause-sme" class="lause-sme"></p>
-        <!-- Lause ääneen Divvunin puhesynteesillä (app.js: speak), samalla äänellä kuin sanat -->
-        <button id="lause-speak" class="speak-btn" data-i18n-title="listen" data-i18n-aria="listen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
+    <!-- Suomi -> saame: käännös ensin, sanat sen alla -->
+    <div id="lause-fi" class="lause-part">
+      <div id="lause-result" class="lause-result" hidden>
+        <p class="muted small" data-i18n="lauseResult">Saameksi (likimääräinen, tarkista sanat)</p>
+        <div class="lause-sme-row">
+          <p id="lause-sme" class="lause-sme"></p>
+          <!-- Lause ääneen Divvunin puhesynteesillä (app.js: speak), samalla äänellä kuin sanat -->
+          <button id="lause-speak" class="speak-btn" data-i18n-title="listen" data-i18n-aria="listen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
+        </div>
+        <p class="report-line lause-report"><a href="#" class="report-link" id="lause-report"><span aria-hidden="true">⚑</span>
+          <span data-i18n="reportError">Ilmoita virheestä</span></a></p>
       </div>
-      <p class="report-line lause-report"><a href="#" class="report-link" id="lause-report"><span aria-hidden="true">⚑</span>
-        <span data-i18n="reportError">Ilmoita virheestä</span></a></p>
+      <div id="lause-chips" class="lause-chips"></div>
+      <div id="lause-pop" class="lause-pop" hidden></div>
+      <div id="lause-card" class="lause-card" hidden></div>
     </div>
+    <!-- Saame -> käyttöliittymän kieli: Lause kuvasta -näkymän osat (sent-body, sent-sheet) lainataan tähän -->
+    <div id="lause-smeui" class="lause-part lause-smeui" hidden></div>
   </div>
 
   <!-- Lause kuvasta: sanat siruina, käännös alla, sanan korjaus alapaneelissa (app.js: renderSentView) -->

@@ -5448,6 +5448,41 @@ function ocrRepairs(word, capital = false) {
 // Käännös kootaan sana sanalta: taivutettu sana muotonsa käännöksenä (bálválusain -> palveluissa), nimet sellaisinaan.
 // Suuntaa antava; käyttäjän valinnat säilyvät kuvan ajan (ocr.sentChoice).
 let sent = null;  // { toks: [{ t, clean, cx, cy, w, h, punct, word, unknown, name, opts, choice }], sheet: index }
+// --- Lause-välilehti, pohjoissaame -> käyttöliittymän kieli (käyttäjä 2026-11-26): kirjoitettu lause samalla koneella
+// kuin Lause kuvasta (korjaus, merkitykset, lauseyhteyden säännöt, sirut ja valikko). Kuvan tila (ocr) ja kuvan
+// asetukset säilyvät: lauseen oma tila vaihdetaan paikalleen vain laskennan ja lausenäkymän käsittelijöiden ajaksi.
+function sentCtx(fn) {
+  if (!sent?.lause) return fn();
+  const keep = { ocr, from: settings.ocrFrom, to: settings.ocrTo, fixed: ocrFixedCompoundsBy };
+  ocr = sent.lause.ocr; settings.ocrFrom = "sme"; settings.ocrTo = ""; ocrFixedCompoundsBy = sent.lause.fixed;
+  try { return fn(); } finally { ocr = keep.ocr; settings.ocrFrom = keep.from; settings.ocrTo = keep.to; ocrFixedCompoundsBy = keep.fixed; }
+}
+// Kirjoitettu lause "kuvan sanoiksi" (yksi rivi, ei leveyttä: kirjoitettuja sanoja ei yhdistetä toisiinsa)
+function lauseSmeBuild(text, choice) {
+  const words = []; let x = 20;
+  for (const t of text.split(/\s+/).filter(Boolean)) {
+    words.push({ t, clean: t.replace(/^[^\p{L}\d]+|[^\p{L}\d]+$/gu, ""), cx: x, cy: 100, w: 0, h: 40, a: 0 });
+    x += 100;
+  }
+  const r = { words, width: x + 20, height: 200, image: "" };
+  const fake = { r, words: [], sentChoice: choice, status: "" };
+  const keep = { ocr, from: settings.ocrFrom, to: settings.ocrTo, fixed: ocrFixedCompoundsBy };
+  ocr = fake; settings.ocrFrom = "sme"; settings.ocrTo = ""; ocrFixedCompoundsBy = {};
+  try {
+    const matched = ocrMatches(r, "sme"), at = new Set(matched.map((w) => `${w.cx},${w.cy}`));
+    const unknown = words.filter((w) => !at.has(`${w.cx},${w.cy}`) && /\p{L}{2}/u.test(w.clean)).map((w) => {
+      const f = ocrFixedCompound(w);
+      return { ...w, word: f ? f.word : w.clean.toLowerCase(), unknown: true, ...(f ? { fuzzyParts: f.parts, fuzzyIds: f.ids } : {}) };
+    });
+    fake.words = [...matched, ...unknown];
+    return { ctx: { ocr: fake, fixed: ocrFixedCompoundsBy }, toks: words.length ? sentTokens(words) : [] };
+  } finally { ocr = keep.ocr; settings.ocrFrom = keep.from; settings.ocrTo = keep.to; ocrFixedCompoundsBy = keep.fixed; }
+}
+// Lausenäkymän osat (sirut, käännös, alapaneeli) takaisin kuvan lausenäkymään (Lause-välilehti lainaa ne)
+function sentHome() {
+  const v = $("sent-view");
+  if ($("sent-body").parentElement !== v) { v.append($("sent-body"), $("sent-sheet")); }
+}
 function ocrSentenceAround(rIndex) {
   const ws = ocr.r.words, end = (t) => /[.!?:]["”»)]*$/.test(t || "");
   // Raja myös otsikon ja leipätekstin välillä (ei pistettä): rivien väli yli 1,65 kertaa korkeamman rivin korkeus
@@ -6249,6 +6284,7 @@ function sentTranslation() {
 }
 // Tuntemattoman sanan kuva: leikataan kuvasta sanan laatikon kohdalta (canvas)
 function sentCutout(tok, scale = 1) {
+  if (sent?.lause) return "";
   const img = $("ocr-photo").querySelector("img");
   if (!img || !img.naturalWidth || !tok.w) return "";
   const k = img.naturalWidth / ocr.r.width, pad = (tok.h || 20) * 0.25;
@@ -6259,6 +6295,7 @@ function sentCutout(tok, scale = 1) {
   try { c.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height); return c.toDataURL("image/png"); } catch (e) { return ""; }
 }
 function openSentView(rIndex, words = null) {
+  sentHome();
   ocr.sentChoice ||= {};
   sent = { toks: sentTokens(words || ocrSentenceAround(rIndex)), sheet: null, rIndex };
   renderSentView();
@@ -6325,7 +6362,8 @@ function sentShownWord(tok) {
   if (read.length > 1 && read === read.toUpperCase()) return tok.word.toUpperCase();
   return /^\p{Lu}/u.test(read) ? tok.word.charAt(0).toUpperCase() + tok.word.slice(1) : tok.word;
 }
-function renderSentView() {
+function renderSentView() { return sentCtx(renderSentViewIn); }
+function renderSentViewIn() {
   const chip = (tok, i) => {
     const cls = tok.fixed ? "" : tok.unknown ? " unk" : tok.name ? " name" : "";
     const src = tok.unknown && !tok.fixed ? sentCutout(tok) : "";
@@ -6334,10 +6372,12 @@ function renderSentView() {
     return `<button class="sent-chip${cls}${sent.sheet === i ? " on" : ""}" data-i="${i}"><b>${top}</b><span>${esc(sub)}</span></button>`;
   };
   const from = ocrLangName(settings.ocrFrom), to = ocrLangName(ocrTo());
-  $("sent-body").innerHTML = `<p class="sent-lab">${esc(t("sentWords"))}</p><div class="sent-chips">${sent.toks.map(chip).join("")}</div>` +
-    `<div class="sent-tr"><div class="sent-tr-head"><span>${esc(from)} → ${esc(to)}</span>` +
+  const chipsHtml = `<p class="sent-lab">${esc(t(sent.lause ? "lauseWordsSme" : "sentWords"))}</p><div class="sent-chips">${sent.toks.map(chip).join("")}</div>`;
+  const trHtml = `<div class="sent-tr"><div class="sent-tr-head"><span>${esc(from)} → ${esc(to)}</span>` +
     `<button class="link-btn" id="sent-copy">${esc(t("sentCopy"))}</button></div><p id="sent-text">${esc(sentTranslation()).replace(/\uE000/g, '<span class="sent-cmp" title="' + esc(t("sentCmpHint")) + '">').replace(/\uE001/g, "</span>")}</p>` +
     `<small>${esc(t("sentGist"))}</small></div>` + reportLinkHtml("sent-report");
+  // Lause-välilehdellä käännös ensin ja sanat sen alla; kuvan lausenäkymässä sanat ensin (kuten ennen)
+  $("sent-body").innerHTML = sent.lause ? `<div class="lause-sme-res">${trHtml}</div>${chipsHtml}` : chipsHtml + trHtml;
   const sheet = $("sent-sheet");
   if (sent.sheet == null) { sheet.hidden = true; return; }
   const tok = sent.toks[sent.sheet];
@@ -6359,7 +6399,7 @@ function renderSentView() {
     else renderSentSugs(guess);
     if (typing) setTimeout(() => { const i = $("sent-input"); if (i && sent && sent.typing === sent.sheet) { i.focus(); i.select(); } }, 30);
   } else {
-    sheet.innerHTML = `<div class="sent-sh-head"><p class="sent-lab">${esc(tok.clean || tok.t)}${tok.lemma ? ` <span class="muted">(${esc(tok.lemma)})</span>` : ""}</p>` +
+    sheet.innerHTML = `<div class="sent-sh-head"><p class="sent-lab">${esc(tok.fixed ? tok.fixed.word : sentShownWord(tok))}${tok.lemma ? ` <span class="muted">(${esc(tok.lemma)})</span>` : ""}</p>` +
       `<button class="chip-btn" data-act="edit">${esc(t("sentEditWord"))}</button><button class="chip-btn" data-act="open">${esc(t("sentOpen"))}</button></div>` +
       `<div class="sent-opts">${(tok.opts || []).map((o, k) => `<button class="sent-opt${k === (tok.choice || 0) ? " sel" : ""}" data-opt="${k}">${esc(o)}</button>`).join("")}</div>`;
   }
@@ -6443,6 +6483,9 @@ function renderSentSugs(text) {
   show(kept);
 }
 function bindSentView() {
+  // Kerran: kuvanäkymä (Android) ja Lause-välilehti (kaikki alustat) kutsuvat tätä
+  if (bindSentView.done) return;
+  bindSentView.done = true;
   $("sent-back").onclick = () => { if (sent) { sent.sheet = null; } closeSentView(); };
   $("sent-body").onclick = (e) => {
     if (e.target.closest("#sent-copy")) { copyText($("sent-text").textContent); toast(t("sentCopied"), 1500); return; }
@@ -6495,6 +6538,8 @@ function bindSentView() {
     if (sug) { $("sent-sugs").querySelectorAll(".sent-opt").forEach((b) => b.classList.toggle("sel", b === sug)); return; }
     if (act === "cancel") { if (sent.solo != null) { closeSentView(); return; } sent.sheet = null; sent.split = null; renderSentView(); return; }
     if (act === "edit") { save({ fixed: { word: tok.clean || tok.t, trans: sentWordText(tok), edited: true } }); renderSentView(); return; }
+    // Lause-välilehdeltä sanakirjaan; takaisin-ele palaa lauseeseen (lauseet.js: lauseReturnHash)
+    if (act === "open" && sent.lause) { const q = (tok.lemma || tok.word || "").split(" + ").pop(); sent.sheet = null; renderSentView(); lauseToDictionary(q); return; }
     if (act === "open") { const q = tok.lemma || tok.word; closeSentView(); closeSentView(); $("ocr-view").hidden = true; search(q); ocrReturnHash = location.hash; return; }
     if (act === "done" && sent.split) {
       const info = sent.split.info, text = sent.split.text;
@@ -6515,6 +6560,11 @@ function bindSentView() {
       sent.sheet = null; renderSentView();
     }
   };
+  // Lause-välilehdellä samat käsittelijät lauseen omassa tilassa (sentCtx)
+  for (const [id, prop] of [["sent-body", "onclick"], ["sent-sheet", "onclick"], ["sent-sheet", "oninput"]]) {
+    const f = $(id)[prop];
+    $(id)[prop] = (e) => sentCtx(() => f(e));
+  }
 }
 // Kuvan tuntemattoman sanan korjaus suoraan kuvanäkymässä (ilman lausenäkymää): sama korjauspaneeli kuin Poimi lause
 // -näkymässä (kenttä, ehdotukset, jokerit, + -jako, Jaa osiin), kuvan päällä alhaalla. Valmis merkitsee sanan kuvaan
@@ -6530,6 +6580,7 @@ function openOcrFix(split = false, type = false) {
   // Kirjoita sana itse / Korjaa: kenttä heti auki (typing = paneelin sanan indeksi)
   sent = { toks: [tok], sheet: 0, solo: idx, split: split ? { text, cuts: sentDefaultCuts(text) } : null, typing: type && !split ? 0 : null };
   $("ocr-bubble").hidden = true;
+  sentHome();
   $("sent-view").classList.add("solo");
   $("sent-view").hidden = false;
   renderSentView();
@@ -6876,12 +6927,14 @@ function applyExperimental() {
   if ($("exp-engmt-row")) $("exp-engmt-row").hidden = settings.lang !== "eng";  // muuten alakohtana englannin alla
   if ($("lause-btn")) {
     const fi = settings.uiLang === "fi";
-    $("exp-lause-row").hidden = !fi;
+    // Lause kaikilla kielillä (2026-11-26): saame -> käyttöliittymän kieli; suomi -> saame vain suomeksi (lauseet.js: lauseDir)
+    $("exp-lause-row").hidden = false;
     // Suomennosehdotukset vain suomeksi ja Apertiumin norjannokset vain norjaksi (muuten ne eivät vaikuta mihinkään)
     $("exp-pivotfin-row").hidden = !fi;
     $("exp-apertium-row").hidden = settings.uiLang !== "nb";
-    $("lause-btn").hidden = !(fi && settings.exp.lause);
-    if (!(fi && settings.exp.lause) && !$("lause-view").hidden) { $("lause-view").hidden = true; overlayClosed(); }
+    $("lause-btn").hidden = !settings.exp.lause;
+    if (!settings.exp.lause && !$("lause-view").hidden) { $("lause-view").hidden = true; overlayClosed(); }
+    else if (!$("lause-view").hidden && typeof lauseRender === "function") lauseRender();  // kieli vaihtui: suunta ja tekstit
   }
 }
 function bindExperimental() {
