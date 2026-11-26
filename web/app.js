@@ -4303,9 +4303,9 @@ function ocrCorrector() {
     // Pohjoissaamessa ei ole å:ta eikä ä:tä, mutta tunnistus lukee á:n usein niiksi (ráđđádallan -> råđđádallan,
     // käyttäjän kuva 2026-11-26). Sana itse ensin, koska nimissä ne ovat oikein (Håkon, Borås, Gävle); sitten kaikki
     // å/ä -> á. Vain vähintään 4 kirjaimen sanat eikä muita korjauksia samaan, muuten norjan sanoista tuli saamea
-    // (må -> má, nå -> ná, både -> báđe)
+    // (må -> má, nå -> ná, både -> báđe); ä vasta 5 kirjaimesta (suomen äiti -> áiti)
     const aw = w.replace(/[åä]/g, "á");
-    if (aw !== w && [...w].length >= 4) cands.push(aw);
+    if (aw !== w && [...w].length >= (w.includes("ä") ? 5 : 4)) cands.push(aw);
     const spots = [...w].map((c, i) => (OCR_DIACRITICS[c] ? i : -1)).filter((i) => i >= 0).slice(0, 10);
     const variant = (picked) => [...w].map((c, i) => (picked.includes(i) ? OCR_DIACRITICS[c] : c)).join("");
     const combos = (k, from = 0) => (k === 0 ? [[]] : spots.slice(from).flatMap((sp, j) =>
@@ -4376,10 +4376,12 @@ function ocrCorrector() {
 // alkuosan (sme_cmp) jälkeen haku jatkuu uutena sanana, joten myös väärin luettu yhdyssana löytyy. Halvin korjaus
 // ensin (hinta lukuvirheen yleisyyden mukaan, FUZZY_COST; yhdyssanaraja 0,3; sitten osien määrä, lyhyet osat ja korpusfrekvenssi), enintään 4. Ei lisätietoa sovellukseen: käyttää olemassa olevia
 // hakemistoja (paradigms.surface, dictionary.sme_lemma, sme_passive.surface, sme_cmp.stem).
-const FUZZY_ALTS = { a: "á", c: "č", d: "đ", n: "ŋ", s: "š", t: "ŧ", z: "ž" };
+// å ja ä -> á: pohjoissaamessa ei ole niitä, tunnistus lukee á:n niiksi (råđđádallan, käyttäjän kuva 2026-11-26).
+// Halpa vaihto, mutta nimen alkuperäinen asu (Håkon) löytyy ilman hintaa ja voittaa.
+const FUZZY_ALTS = { a: "á", c: "č", d: "đ", n: "ŋ", s: "š", t: "ŧ", z: "ž", å: "á", ä: "á" };
 // Hinta testikuvien lukuvirheistä (docs/kuvatunnistus-testipenkki-2026-11-18.md: 121 kallistettua ja sumennettua kuvaa
 // ML Kitin läpi): đ -> d ja ŋ -> n yleisiä, á, č ja š luetaan lähes aina oikein
-const FUZZY_COST = { a: 1.2, c: 0.9, d: 0.4, n: 0.5, s: 0.9, t: 0.9, z: 0.9 };
+const FUZZY_COST = { a: 1.2, c: 0.9, d: 0.4, n: 0.5, s: 0.9, t: 0.9, z: 0.9, å: 0.3, ä: 0.5 };
 function ocrFuzzySearch() {
   const tables = [["paradigms", "surface"], ["dictionary", "sme_lemma"], ["sme_passive", "surface"], ["sme_cmp", "stem"]];
   const pre = [], exact = [];
