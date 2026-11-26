@@ -48,7 +48,13 @@ def form(word_id, tag):
     return sorted(forms, key=lambda f: (f == lemma and len(forms) > 1, -SEEN[f.lower()]))[0]
 
 
+# Muodot, joita lang-fin ei tuota (fin_forms puuttuu); Voikon analyysi vahvistaa sanan ja sijan (yötesti 2026-11-26)
+FIN_FORM_EXTRA = {("syystalvi", "Sg+Ade"): "syystalvella"}
+
+
 def fin_form(word, cell):
+    if (word, cell) in FIN_FORM_EXTRA:
+        return FIN_FORM_EXTRA[(word, cell)]
     row = db.execute("SELECT forms FROM fin_forms WHERE word = ?", (word,)).fetchone()
     if not row:
         return None

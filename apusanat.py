@@ -166,7 +166,7 @@ LISTS = [
              ("muhto", "CC", None, "mutta", "men", "but",
               ("Mun sáhtán áinnas veahkehit du, muhto odne in astta.", "Autan sinua mielelläni, mutta tänään minulla ei ole aikaa.", "Jeg kan godt hjelpe deg, men i dag har jeg ikke tid.", "I'd gladly help you, but today I don't have time.", {"fi": O, "nb": N})),
              ("dahje", "CC", None, "tai, taikka", "eller", "or", None),
-             ("vai", "CC", None, "vai", "eller", "or (in questions)",
+             ("vai", "CC", None, "vai", "eller (i spørsmål)", "or (in questions)",
               ("Siđat go gáfe vai deaja?", "Haluatko kahvia vai teetä?", "Vil du ha kaffe eller te?", "Do you want coffee or tea?", {"fi": O, "nb": N})),
              ("juogo", "Adv", None, "joko", "enten", "either",
               ("juogo ... dahje", "joko ... tai", "enten ... eller", "either ... or", {"fi": O, "nb": N})),
@@ -189,7 +189,7 @@ LISTS = [
               ("Don boađát ovdalgo mun vuolggán.", "Tulet ennen kuin minä lähden.", "Du kommer før jeg drar.", "You come before I leave.", {"fi": O, "nb": O})),
              ("danne", "Adv", None, "siksi", "derfor", "that's why",
               ("Danne mii leat maŋŋonan.", "Siksi olemme myöhässä.", "Derfor er vi forsinket.", "That's why we're late.", {"fi": O, "nb": N})),
-             ("danin", "Adv", None, "sen takia, siksi", "derfor", "because of that", None),
+             ("danin", "Adv", None, "sen takia, siksi", "på grunn av det, derfor", "because of that", None),
              ("nappo", "Adv", None, "siis", "altså", "so, thus", None)]),
          (("Pikkusanat", "Småord", "Little words"), [
              ("maiddái", "Adv", None, "myös", "også", "also, too",
