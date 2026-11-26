@@ -29,6 +29,11 @@ LISTS = [
 
 
 # Sanakirjan oma esimerkki (käyttäjä hyväksyi 2026-11-26); suomi norjasta käännetty
+# Lyhyt vinkki listan yläpuolelle (fi, nb, en); rássi sanakirjassa ruoho, heinä, kukka
+HINTS = {"kasvit": ("rássi = kukka yhdyssanoissa · biellorássi (kello + kukka) = kissankello · gollerássi (kulta + kukka) = rentukka",
+                    "rássi = blomst i sammensetninger · biellorássi (bjelle + blomst) = blåklokke · gollerássi (gull + blomst) = bekkeblom",
+                    "rássi = flower in compounds · biellorássi (bell + flower) = harebell · gollerássi (gold + flower) = marsh marigold")}
+
 EX = {"beassi": ("Mun gaikon beassi muoras cahkkehahkan.", "Revin tuohta puusta sytykkeeksi.", "Jeg flerret never av treet til opptenning.",
                  "I tore birch bark off the tree for kindling.")}
 

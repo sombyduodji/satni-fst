@@ -14,7 +14,12 @@ HINTS = {"viikonpaivat": "vuossárga = Monday · vuossárgga = on Monday",
          "kuukaudet": "ođđajagemánnu = January · ođđajagemánu = January's · ođđajagemánus = in January",
          "suunnat": "davvi = north · davvin = in the north · davás = northwards",
          "suku": "Sámi has different words for the father's and the mother's siblings",
-         "pronominit": "Sámi has its own form for two · moai = we two · mii = we (three or more)"}
+         "pronominit": "Sámi has its own form for two · moai = we two · mii = we (three or more)",
+         "vuodenajat": "the Sámi year has eight seasons · giđđadálvi = late winter · giđđadálvvis = in late winter",
+         "aika": "iđit = morning · iđđes = in the morning · eahket = evening · eahkes = in the evening",
+         "porot": "reindeer have their own words by age and sex · áldu = doe · vuonjal = doe in its second year",
+         "kysymykset": "the question word inflects · gii = who · gean = whose · geasa = to whom",
+         "varit": "adjectives have their own form before a noun · vielgat = white · vilges muohta = white snow"}
 
 SECTIONS = {
     "vuodenajat": ["Spring", "Summer", "Autumn", "Winter"],
@@ -198,7 +203,11 @@ ROWS["marjat"] = {a[0]: [_mar.EN[a[0]]] for a in _mar.WORDS}
 
 # Arki (arki.py, 2026-11-26): englanti käsin listan omista tiedoista
 import arki as _arki
+for _k, _h in _arki.HINTS.items():
+    HINTS[_k] = _h[2]
 import kasvit as _kasvit
+for _k, _h in _kasvit.HINTS.items():
+    HINTS[_k] = _h[2]
 for _l in _arki.LISTS + _kasvit.LISTS:
     _w = _arki.words if _l in _arki.LISTS else _kasvit.words
     TITLES[_l[0]] = _l[2][2]

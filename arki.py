@@ -54,6 +54,11 @@ LISTS = [
 # Esimerkkilauseet (käyttäjä 2026-11-26): vain sanakirjan omia, ihmisen kirjoittamia esimerkkejä (examples-taulu),
 # tarkistettu jäsentimellä, oikoluvulla ja takaisinkäännöksellä. Norja sanakirjasta; suomi ja englanti norjasta
 # käännettyinä, käyttäjä tarkisti suomen (Koutokeino = sanakirjan Guovdageaidnu). (saame, suomi, norja, englanti)
+# Lyhyet vinkit listan yläpuolelle (fi, nb, en); sanan toinen merkitys sanakirjasta (satni.db)
+HINTS = {"kaupassa": ("vuostá = juusto (sama sana myös: vastaan)", "vuostá = ost (samme ord også: mot)", "vuostá = cheese (the same word also: against)"),
+         "liikkeella": ("busse = bussi (sama sana myös: pussi)", "busse = buss (samme ord også: pose)", "busse = bus (the same word also: bag)"),
+         "syominen": ("lássa = lasi (sama sana myös: lukko)", "lássa = glass (samme ord også: lås)", "lássa = glass (the same word also: lock)")}
+
 EX = {
  "máksit": ("Mun mávssán dan.", "Maksan sen.", "Jeg betaler den.", "I pay for it."),
  "gáffe": ("Mun jugan gáfe.", "Juon kahvia.", "Jeg drikker kaffe.", "I drink coffee."),

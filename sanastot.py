@@ -226,6 +226,7 @@ def lists():
                ("syystalvi", "høstvinter", "čakčadálvi", ["Sg+Loc"], "loka–marraskuu"),
                ("talvi", "vinter", "dálvi", ["=dálvet"], None)]
     L.append({"id": "vuodenajat", "icon": "season", "title": {"fi": "Vuodenajat (8)", "nb": "Årstider (8)"},
+              "hint": {"fi": "saamelaisessa vuodessa kahdeksan vuodenaikaa · giđđadálvi = kevättalvi · giđđadálvvis = kevättalvella", "nb": "åtte årstider i det samiske året · giđđadálvi = vårvinter · giđđadálvvis = på vårvinteren"},
               "rows": [row([fi, fin_form(fi, "Sg+Ade")], [nb, NB_WHEN[nb]], [sme(s, "N", tags, fi=fi, nb=nb)],
                            {"fi": note, "nb": NB_MONTHS[note]} if note else None)
                        for fi, nb, s, tags, note in seasons]})
@@ -243,6 +244,7 @@ def lists():
             ("aikaisin", "tidlig", "árrat", []), ("myöhään", "sent", "maŋŋit", []),  # 1334, 384
             ("kohta, pian", "snart", "fargga", []), ("äsken, vasta", "nettopp", "easkka", [])]  # 2471, 931
     L.append({"id": "aika", "icon": "clock", "title": {"fi": "Vuorokausi", "nb": "Døgnet"},
+              "hint": {"fi": "iđit = aamu · iđđes = aamulla · eahket = ilta · eahkes = illalla", "nb": "iđit = morgen · iđđes = om morgenen · eahket = kveld · eahkes = om kvelden"},
               "rows": [row([fi] + ([fin_form(fi, "Sg+Ade")] if tags and fin_form(fi, "Sg+Ade") and fi not in ("keskipäivä", "keskiyö") else []),
                            [nb] + ([NB_WHEN[nb]] if nb in NB_WHEN else []), [sme(s, None, tags, fi=fi, nb=nb)]) for fi, nb, s, tags in time]})
 
@@ -291,6 +293,7 @@ def lists():
     COLOUR_EX = {k: {"sme": a, "fi": b, "nb": c} for k, (a, b, c) in COLOUR_EX.items()}
     colours = ["vielgat", "čáhppat", "ruoksat", "alit", "ruoná", "fiskat", "ruškat", "ránis", "oránša"]
     L.append({"id": "varit", "icon": "palette", "title": {"fi": "Värit", "nb": "Farger"},
+              "hint": {"fi": "adjektiivilla oma muoto substantiivin edessä · vielgat = valkoinen · vilges muohta = valkoinen lumi", "nb": "adjektivet har egen form foran substantivet · vielgat = kvit · vilges muohta = kvit snø"},
               "rows": [dict(row([first(entry(s, "A")[3])], [first(entry(s, "A")[4])], [sme(s, "A", ["Attr"])]), ex=COLOUR_EX[s]) for s in colours]})
 
     deer = [("boazu", None), ("eallu", "tokka, porokarja"), ("áldu", None), ("sarvvis", "hirvas, kuohitsematon urosporo"),
@@ -298,6 +301,7 @@ def lists():
             ("vuonjal", "vuonelo, naarasporo toisella ikävuodella"), ("varit", "urakka, urosporo toisella ikävuodella"), ("rotnu", "maho vaadin"),
             ("gárdi", "aitaus, poroerotusaita")]
     L.append({"id": "porot", "icon": "deer", "title": {"fi": "Porot", "nb": "Rein"},
+              "hint": {"fi": "poroille omat sanat iän ja sukupuolen mukaan · áldu = vaadin · vuonjal = vuonelo (toinen ikävuosi)", "nb": "egne ord for rein etter alder og kjønn · áldu = simle · vuonjal = simle i toårsalderen"},
               "rows": [row([fi or first(entry(s, "N")[3])], [first(entry(s, "N")[4])], [sme(s, "N", [])]) for s, fi in deer]})
 
     weather = [("dálki", "sää"), ("muohta", "lumi"), ("vahca", "vitilumi, uusi lumi"), ("cuoŋu", "hanki"), ("oppas", "umpilumi"),
@@ -364,7 +368,9 @@ def lists():
         f = QFORMS.get(r["sme"][0]["w"][0])
         if f:
             r["sme"][0]["w"], r["fi"], r["nb"] = f[0], [f[1]], [f[2]]
-    L.append({"id": "kysymykset", "icon": "question", "title": {"fi": "Kysymyssanat", "nb": "Spørreord"}, "rows": qrows})
+    L.append({"id": "kysymykset", "icon": "question", "title": {"fi": "Kysymyssanat", "nb": "Spørreord"},
+              "hint": {"fi": "kysymyssana taipuu · gii = kuka · gean = kenen · geasa = kenelle", "nb": "spørreordet bøyes · gii = hvem · gean = hvem sin · geasa = til hvem"},
+              "rows": qrows})
 
     greet = [("Bures!", "hei, terve", "hei"), ("Buorre iđit", "hyvää huomenta", "god morgen"), ("Buorre beaivi", "hyvää päivää", "god dag"),
              ("Buorre eahket", "hyvää iltaa", "god kveld"), ("Mo manná?", "mitä kuuluu?", "hvordan går det?"),
@@ -409,6 +415,8 @@ def lists():
             if e:
                 r["ex"] = {"sme": e[0], "fi": e[1], "nb": e[2]}
         lst_d = {"id": lst[0], "icon": lst[1], "title": {"fi": lst[2][0], "nb": lst[2][1]}, "rows": rows}
+        if lst[0] in arki.HINTS:
+            lst_d["hint"] = {"fi": arki.HINTS[lst[0]][0], "nb": arki.HINTS[lst[0]][1]}
         # Esimerkkilauseellinen lista apusanojen tapaan: sana ja merkitys, alla esimerkki (sanastot.js: layout "ex")
         if any(r.get("ex") for r in rows):
             lst_d["layout"] = "ex"
@@ -421,6 +429,8 @@ def lists():
             if e:
                 r["ex"] = {"sme": e[0], "fi": e[1], "nb": e[2]}
         lst_d = {"id": lst[0], "icon": lst[1], "title": {"fi": lst[2][0], "nb": lst[2][1]}, "rows": rows}
+        if lst[0] in kasvit.HINTS:
+            lst_d["hint"] = {"fi": kasvit.HINTS[lst[0]][0], "nb": kasvit.HINTS[lst[0]][1]}
         if any(r.get("ex") for r in rows):
             lst_d["layout"] = "ex"
         L.append(lst_d)
