@@ -253,6 +253,14 @@ function showMenuTip() {
   for (const type of ["pointerdown", "keydown", "input"]) document.addEventListener(type, onUse, true);
 }
 
+// Android-sovelluksen takaisin-ele sulkee ensin avoimen ikkunan (MainActivity.goBackOrFinish). Kielen valinta jää auki.
+function closeOpenDialog() {
+  const dialog = [...document.querySelectorAll("dialog[open]")].pop();
+  if (!dialog || dialog.id === "first-run") return false;
+  dialog.close();
+  return true;
+}
+
 // Valikon sulkeminen: taustan napautus, Esc tai Android-sovelluksen takaisin-ele (MainActivity.goBackOrFinish)
 function closeDrawer() {
   const open = document.body.classList.contains("sidebar-open");

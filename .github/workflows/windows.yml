@@ -21,13 +21,13 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0  # bump_version.py needs the full history
           persist-credentials: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -54,7 +54,7 @@ jobs:
         shell: pwsh
         run: (Get-FileHash build-windows\satni-fst-windows.zip -Algorithm SHA256).Hash.ToLower() + "  satni-fst-windows.zip" | Tee-Object build-windows\SHA256SUMS-windows.txt
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         id: upload
         with:
           name: satni-fst-windows

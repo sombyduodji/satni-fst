@@ -149,7 +149,9 @@ public class MainActivity extends Activity {
         }
         int top, bottom, left, right;
         if (Build.VERSION.SDK_INT >= 30) {
-            android.graphics.Insets bars = lastInsets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.ime());
+            // Kameran reikä mukana: Android 16 voi ilmoittaa tilarivin sitä matalammaksi (63 px, reikä 128 px)
+            android.graphics.Insets bars = lastInsets.getInsets(
+                    WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout() | WindowInsets.Type.ime());
             top = bars.top; bottom = bars.bottom; left = bars.left; right = bars.right;
         } else {
             top = lastInsets.getSystemWindowInsetTop(); bottom = lastInsets.getSystemWindowInsetBottom();
@@ -288,11 +290,11 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** Takaisin: ensin suljetaan avoin tekstintunnistusnäkymä tai valikko (☰); kuvasta avatusta sanasta palataan
+    /** Takaisin: ensin suljetaan avoin ikkuna, tekstintunnistusnäkymä tai valikko (☰); kuvasta avatusta sanasta palataan
      *  kuvaan; sitten edellinen haku (#/sana/...) tai aloitussivu;
      *  vasta sen jälkeen sovellus suljetaan. */
     private void goBackOrFinish() {
-        web.evaluateJavascript("(window.closeFormPop && closeFormPop()) || (window.closeOcr && closeOcr())"
+        web.evaluateJavascript("(window.closeOpenDialog && closeOpenDialog()) || (window.closeFormPop && closeFormPop()) || (window.closeOcr && closeOcr())"
                 + " || (window.backToOcr && backToOcr())"
                 + " || (window.closeDrawer ? closeDrawer() : false)", result -> {
             if ("true".equals(result)) {
