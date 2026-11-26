@@ -4538,7 +4538,7 @@ const uiRows = (word) => {
 
 // Kuplan teksti. Saamesta: perusmuoto ja käännös käyttöliittymän kielellä; kuuntele lausuu kuvan sanan.
 // Suomesta/norjasta: saamennokset; kuuntele lausuu ensimmäisen saamennoksen.
-function ocrGloss(word, original = "") {
+function ocrGloss(word, original = "", pick = null) {
   if (isMinor(settings.ocrFrom)) {
     const lang = settings.ocrFrom, to = ocrTo(), rows = minorRows(lang, word);
     const row = rows.find((r) => minorTranslation(lang, r, to)) || rows[0];
@@ -4578,10 +4578,24 @@ function ocrGloss(word, original = "") {
   if (isHead(row) && ["N", "A", "V"].includes(row.pos)) {
     const form = translated.filter(common).sort((a, b) => b.freq - a.freq)[0];
     if (form && (row.freq || 0) < form.freq * 0.05) row = form;
+    // Hakusana, jota ei ole korpuksessa lainkaan (buođus "patoutuma"), ei peitä yleisemmän sanan muotoa
+    // (buođus = buođđu "pato" lokatiivissa; käyttäjän kuva 2026-11-26)
+    else if (!row.freq) {
+      // Vain saman sanaluokan sana: adjektiivi ei vaihdu substantiivin muodoksi (rossui "puuskainen" ei "poropeukaloon")
+      // Ja vain, jos muoto on paikallissija, komitatiivi tai essiivi (buođus = buođđu lokatiivissa): nominatiivi, genetiivi
+      // ja akkusatiivi ovat usein saman sanan kirjoitusasuja, vertailumuoto eri sana (váibasat ei váibbas-vertailumuoto)
+      // (linjjá ei linnja-genetiivi "linjan", gáhta ei "kadun")
+      const marked = (r) => all(`SELECT t.tag FROM paradigms p JOIN tags t ON t.id = p.tag_id WHERE p.word_id = ? AND p.surface = ?`, [r.id, word])
+        .some((x) => /^(Sg|Pl)\+(Loc|Ill|Com|Ess)$|^Ess$/.test(x.tag));
+      const known = translated.filter((r) => !isHead(r) && r.pos === row.pos && (r.freq || 0) >= 100 && marked(r)).sort((a, b) => b.freq - a.freq)[0];
+      if (known) row = known;
+    }
   }
+  // Lauseyhteys valitsee rivin (leat + partisiippi: ráđđádallan = neuvotellut, ei neuvottelu)
+  if (pick) { const p = pick(translated); if (p) row = p; }
   const lemma = fold(row.sme_lemma) !== fold(word) ? row.sme_lemma : "";
   const gloss = { lemma, form: lemma && tl === settings.lang ? ocrFormTranslation(row, word) : "", trans: translationOf(row, 2, tl) || (mtOf(row.id, tl) ? "≈ " + splitList(Object.values(mtOf(row.id, tl))[0]).slice(0, 2).join(", ") : ""), say: word, query, id: row.id,
-    prop: row.subtype === "Prop" };
+    prop: row.subtype === "Prop", pos: row.pos };
   // Ei suomennosta: johdettu (der_fin.py, váralašvuohta ≈ vaarallisuus), merkitty ≈:llä
   if (!gloss.trans && tl === "fin" && !window.NO_DER_BASES) { const d = derFinOf(row.id) || cmpFinOf(row.id); if (d) gloss.trans = "≈ " + d.fin; }
   // Toinen yleinen merkitys pienemmällä rivillä (maid = myös · tai: minkä (mii); mii = me · tai: mikä): eri suomennos
@@ -5465,6 +5479,12 @@ function sentTokens(raw) {
     const pw2 = n > 1 ? ocr.words.find((x) => x.cx === rows[n - 2].cx && x.cy === rows[n - 2].cy) : null;
     const lem = (x) => x?.gloss?.lemma || x?.word || "";
     const prevLemma = SME_MODAL.has(lem(pw2)) && !SME_MODAL.has(lem(pw)) ? lem(pw2) : pw?.gloss?.lemma || pw?.word || prev;
+    // Kieltoverbi subjektin yli (iige Norga leat = eikä Norja ole): kaksi sanaa taaempana, välissä ei verbiä
+    const prev2 = n > 1 ? (rows[n - 2].clean || "").toLowerCase() : "";
+    const negFar = (smeNeg(pw2?.word || prev2) && !smeNeg(pw?.word || prev) && !!pw?.gloss?.pos && pw.gloss.pos !== "V") || (smeNeg(pw?.word || "") && !smeNeg(prev));
+    // leat enintään kolme sanaa ennen (eaba leat vel ráđđádallan = eivät ole vielä neuvotelleet)
+    const pw3 = n > 2 ? ocr.words.find((x) => x.cx === rows[n - 3].cx && x.cy === rows[n - 3].cy) : null;
+    const afterLeat = [pw, pw2, pw3].some((x) => x && SME_LEAT.has(lem(x)));
     const punct = (r.t.match(/[.,!?:;)"”»]+$/) || [""])[0];
     const tok = { t: r.t, clean: r.clean, cx: r.cx, cy: r.cy, w: r.w, h: r.h, a: r.a, punct, word: w ? w.word : (r.clean || r.t).toLowerCase() };
     // Versaali (SÁMEDIGGI) tunnistetaan kuin pienaakkosin; tuntematon versaali (TV, CD, NRK) jää sellaisenaan kuten nimi
@@ -5495,8 +5515,17 @@ function sentTokens(raw) {
     } else if (w.unknown) { tok.unknown = true; tok.capKeep = cap || allCaps; }
     else {
       // Persoonapronomini lauseen alussa (Don leat = Sinä olet, ei nimi Don)
-      const g = n === 0 && SME_PRON[(w.word || "").toLowerCase()] && settings.ocrFrom === "sme" ? ocrGloss(w.word.toLowerCase())
+      let g = n === 0 && SME_PRON[(w.word || "").toLowerCase()] && settings.ocrFrom === "sme" ? ocrGloss(w.word.toLowerCase())
         : w.gloss || (w.gloss = ocrGloss(w.word, ocrOrig(w)));
+      // leat-verbin jälkeen sana, joka voi olla verbin partisiippi (ráđđádallan: myös substantiivi "neuvottelu"): verbinä
+      const prevGen = !!prev && all(`SELECT 1 FROM paradigms p JOIN tags t ON t.id = p.tag_id WHERE p.surface = ? AND t.tag IN ('Sg+Gen', 'Pl+Gen', 'Attr') LIMIT 1`, [prev]).length;
+      if (afterLeat && !prevGen && g.pos && g.pos !== "V" && settings.ocrFrom === "sme") {
+        const prc = (rs) => rs.find((x) => x.pos === "V" && all(`SELECT 1 FROM paradigms p JOIN tags t ON t.id = p.tag_id
+          WHERE p.word_id = ? AND p.surface = ? AND t.tag = 'PrfPrc' LIMIT 1`, [x.id, w.word]).length);
+        const vg = ocrGloss(w.word, ocrOrig(w), prc);
+        const vf = vg.pos === "V" ? sentVerbForms(vg, w.word, prev, prevLemma, negFar) : null;
+        if (vf?.tagOf && [...vf.tagOf.values()].includes("PrfPrc")) g = vg;
+      }
       // Henkilön nimi sellaisenaan (Máhte = "miehen nimi"); paikannimi käännetään (Ohcejoga = Utsjoen, Romssa = Tromssan)
       // (nimi|navn|name) myös yhdyssanan lopussa: norjan mannsnavn / kvinnenavn (ennen "Ánte ja Sárá" -> "Mannsnavn og kvinnenavn"; 2026-11-21)
       const personName = g.prop && (!g.trans || /(nimi|navn|name)\b/i.test(g.trans));
@@ -5505,7 +5534,7 @@ function sentTokens(raw) {
       const strip = (x) => x.replace(/\s*\([^)]*\)/g, "").trim();
       const opts = [...(g.form ? g.form.split(" / ") : []), ...splitList(g.trans).map(strip), ...(g.alt ? [g.alt.text] : [])]
         .map((x) => x.trim()).filter(Boolean);
-      const verb = settings.ocrFrom === "sme" && settings.lang === ocrTo() ? sentVerbForms(g, w.word, prev, prevLemma) : null;
+      const verb = settings.ocrFrom === "sme" && settings.lang === ocrTo() ? sentVerbForms(g, w.word, prev, prevLemma, negFar) : null;
       tok.opts = verb ? [...new Set([...verb, ...opts.filter((o) => !g.form || !g.form.split(" / ").includes(o))])] : sentNegOrder([...new Set(opts)], prev);
       tok.lemma = g.lemma || "";
       if (!verb && settings.ocrFrom === "sme" && g.id && ["fin", "nob"].includes(settings.lang) && ocrTo() === settings.lang) tok.ctx = sentWordCtx(g, w.word);
@@ -5552,10 +5581,14 @@ function sentTokens(raw) {
 // Kieltoverbin jälkeinen muoto (ii álgán = ei alkanut): "(ei) …" vain, kun edellinen sana on kieltoverbi; muuten
 // sama muoto on partisiippi (leat álgán = ovat alkaneet), joten "(ei)"-vaihtoehdot pois tai viimeisiksi
 const SME_NEG = new Set(["in", "it", "ii", "ean", "eahppi", "eaba", "eat", "ehpet", "eai", "ale", "allet", "alli", "allo", "allos", "allot"]);
+// Monikon ja duaalin kieltoverbit (eat mii = emme me, eaba soai = eivät he kaksi), myös -ge-liitteellä
+const SME_NEG_PL = /^(eat|ehpet|eai|eaba|eahppi|ean)(ge)?$/;
+// Myös -ge-liitteellä (iige = eikä, inge = enkä, eaige = eivätkä)
+const smeNeg = (x) => SME_NEG.has(x) || (/ge$/.test(x || "") && SME_NEG.has(x.slice(0, -2)));
 function sentNegOrder(opts, prev) {
   const neg = opts.filter((o) => /^\(ei\)\s/.test(o)), other = opts.filter((o) => !/^\(ei\)\s/.test(o));
   if (!neg.length) return opts;
-  if (settings.ocrFrom === "sme" && SME_NEG.has(prev)) return [...neg.map((o) => o.replace(/^\(ei\)\s+/, "")), ...other];
+  if (settings.ocrFrom === "sme" && smeNeg(prev)) return [...neg.map((o) => o.replace(/^\(ei\)\s+/, "")), ...other];
   return other.length ? other : opts;
 }
 // Verbin muoto lauseyhteyden mukaan (leat = olet / olemme / ovat / ei ole / olla): kieltoverbin jälkeen kieltomuoto
@@ -5563,7 +5596,7 @@ function sentNegOrder(opts, prev) {
 // (sáhttá leat = voi olla), muuten ensin 3. persoona, infinitiivi ja partisiippi (leat álgán = alkanut)
 const SME_PRON = { mun: "Sg1", don: "Sg2", son: "Sg3", moai: "Du1", doai: "Du2", soai: "Du3", mii: "Pl1", dii: "Pl2", sii: "Pl3" };
 const SME_MODAL = new Set(["sáhttit", "galgat", "áigut", "berret", "fertet", "háliidit", "oažžut", "máhttit", "viggat", "dárbbašit", "lohpidit"]);
-function sentVerbForms(g, word, prev, prevLemma) {
+function sentVerbForms(g, word, prev, prevLemma, negFar = false) {
   if (!g.id || !FORM_PHRASES[settings.lang]) return null;
   const data = loadWord(g.id);
   if (data.word.pos !== "V") return null;
@@ -5574,10 +5607,11 @@ function sentVerbForms(g, word, prev, prevLemma) {
   const own = data.meanings.find((m) => m.lang === settings.lang && m.translations);
   const base = (own ? splitList(own.translations) : splitList(data.word[LANGUAGES[settings.lang].col]))[0];
   if (!base) return null;
-  const neg = SME_NEG.has(prev), person = SME_PRON[prev], modal = SME_MODAL.has(prevLemma);
+  const neg = smeNeg(prev) || negFar, person = SME_PRON[prev], modal = SME_MODAL.has(prevLemma);
   const score = (tag) => {
     if (/ConNeg/.test(tag)) return neg ? 0 : 9;
-    if (neg) return 5;
+    // Kieltomuotoa ei ole: kiellon jälkeen ensin infinitiivi (eai máhte hupmat eaige čállit: apuverbi jää pois)
+    if (neg) return tag === "Inf" ? 4 : 5;
     if (person) return tag.endsWith(person) ? 0 : /(Sg|Pl|Du)\d$/.test(tag) ? 6 : 4;
     if (modal) return tag === "Inf" ? 0 : 5;
     if (/^Imprt|Pot/.test(tag)) return 7;
@@ -5778,6 +5812,8 @@ function sentContext(toks) {
       const prc = tagged.find(([, tag]) => tag === "PrfPrc");
       if (prc) put(tok, prc[0]);
     } else if (isLeat(tok) && toks.slice(i + 1, i + 4).some((t) => t.ctx?.tagOf && [...t.ctx.tagOf.values()].includes("PrfPrc"))) {
+      // Kieltoverbin jälkeen kieltomuoto pysyy (ii son leat boahtán = ei hän ole tullut, ei "olet")
+      if (/ConNeg/.test(c.tagOf.get(tok.opts?.[0]) || "")) return;
       const fin = tagged.find(([, tag]) => /^Ind\+(Prs|Prt)\+(Sg|Pl)\d$/.test(tag || ""));
       if (fin) put(tok, fin[0]);
     }
@@ -5889,7 +5925,8 @@ function sentPluralParticiples(toks) {
     const o = tok.opts?.[tok.choice || 0];
     if (!o || tok.fixed || isLeat(tok) || tok.ctx?.tagOf?.get(o) !== "PrfPrc" || !/(nut|nyt|lut|lyt|rut|ryt|sut|syt|tut|tyt)$/.test(o)) return;
     const aux = toks.slice(Math.max(0, i - 3), i).filter(isLeat).pop(), ao = aux?.opts?.[aux.choice || 0] || "";
-    if (!/^(olemme|olette|ovat|olimme|olitte|olivat)$/.test(ao) && !(/^(ole|olleet)$/.test(ao) && /^(eivät|emme|ette)$/.test(toks[toks.indexOf(aux) - 1]?.opts?.[0] || ""))) return;
+    const ai = toks.indexOf(aux), plNeg = (t) => /^(eivät|emme|ette)$/.test(t?.opts?.[0] || "") || SME_NEG_PL.test((t?.clean || "").toLowerCase());
+    if (!/^(olemme|olette|ovat|olimme|olitte|olivat)$/.test(ao) && !(/^(ole|olleet)$/.test(ao) && (plNeg(toks[ai - 1]) || plNeg(toks[ai - 2])))) return;
     const pl = o.replace(/[uy]t$/, "eet");
     tok.ctx.tagOf.set(pl, "PrfPrc");
     tok.opts = [pl, ...tok.opts.filter((x) => x !== pl)]; tok.choice = 0;
