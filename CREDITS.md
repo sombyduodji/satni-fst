@@ -76,7 +76,7 @@ and opus-mt-en-es (Apache-2.0) from the word's Finnish, Norwegian and English tr
 WikDict (CC BY-SA, one source); and the Spanish wordnet of the Multilingual Central Repository 3.0 (CC BY 3.0) through
 FinnWordNet. The dictionary itself is not changed. Result: [`spa_mt.tsv`](spa_mt.tsv).
 
-**German machine translations (BETA):** there is no North Sámi–German dictionary, so [`deu_mt.py`](deu_mt.py) keeps a
+**German machine translations (experimental):** there is no North Sámi–German dictionary, so [`deu_mt.py`](deu_mt.py) keeps a
 German word only when at least three of six independent sources agree: smi-mt from Sámi; Helsinki-NLP opus-mt-fi-de and
 opus-mt-no-de (Apache-2.0) from the word's Finnish and Norwegian translations; opus-mt-en-de (CC BY 4.0) from the
 dictionary's own English; FinnWordNet (CC BY 3.0) and Princeton WordNet 3.0 linked to OdeNet (CC BY-SA 4.0) through the

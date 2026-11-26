@@ -3,10 +3,10 @@
 **An offline North Sámi dictionary with full inflection** — for Linux, Windows, Android and the web.
 
 > **Suomeksi:** Pohjoissaamen sanakirja ja taivutin, joka toimii ilman verkkoyhteyttä. Käännökset suomeksi
-> ja norjaksi, käyttöliittymä suomeksi tai norjaksi.
+> ja norjaksi, käyttöliittymä suomeksi, norjaksi tai englanniksi.
 >
 > **På norsk:** Nordsamisk ordbok og bøyingsverktøy som virker uten nett. Oversettelser til norsk og finsk,
-> brukergrensesnitt på norsk eller finsk.
+> brukergrensesnitt på norsk, finsk eller engelsk.
 
 Sátni FST combines the open dictionaries and morphology of [GiellaLT](https://giellalt.github.io/),
 [Divvun](https://divvun.no/) and [Giellatekno](https://giellatekno.uit.no/) into one app.
@@ -46,7 +46,9 @@ Sátni FST combines the open dictionaries and morphology of [GiellaLT](https://g
   Inari and Skolt Sámi photos are experimental
 - Experimental: a Finnish-to-North-Sámi sentence translator, Inari Sámi in the game and word lists, and Skolt Sámi
   translations on the word card (switch on under *More → Tools* and *Translation languages*)
-- User interface in Finnish or Norwegian, light and dark theme, history and favourites
+- Experimental translation languages (off by default): machine-translated English, Spanish and German, Finnish
+  suggestions, and search in Skolt Sámi
+- User interface in Finnish, Norwegian or English, light and dark theme, history and favourites
 
 ## Screenshots
 

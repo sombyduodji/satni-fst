@@ -2535,7 +2535,9 @@ html.view-open #help-btn, body:has(#ocr-view:not([hidden])) #help-btn { display:
 body.sidebar-open #help-btn, body:has(dialog[open]:not(#help-dlg)) #help-btn { pointer-events: none; }
 
 /* Lähellä ja kaukana (2026-11-25): etäisyys | mikä | missä | mihin */
-.dist-table { display: grid; grid-template-columns: minmax(84px, .9fr) repeat(3, minmax(0, 1fr)); background: var(--surface);
+/* Selitteet eivät katkea kesken sanan ("(kauempana" + ")" omalle rivilleen 360 px:n näytöllä): sarakkeet vähintään
+   pisimmän selitesanan levyisiä, kapeimmilla näytöillä pienempi teksti */
+.dist-table { display: grid; grid-template-columns: minmax(84px, .9fr) repeat(3, minmax(min-content, 1fr)); background: var(--surface);
   border: 1px solid var(--border); padding: 4px 0 6px; flex-shrink: 0; overflow: hidden; }
 .dist-table > * { min-width: 0; padding: 8px 4px; border-top: 1px solid var(--border); }
 .dist-table > .dt-corner, .dist-table > .dt-head { border-top: 0; padding: 8px 6px 6px; }
@@ -2545,5 +2547,6 @@ body.sidebar-open #help-btn, body:has(dialog[open]:not(#help-dlg)) #help-btn { p
 .dt-w { display: flex; flex-direction: column; line-height: 1.2; }
 .dt-w .sw { font-size: 16px; overflow-wrap: anywhere; }
 .dt-w .sw:not(.main) { font-size: 14.5px; }
-.dt-fi { font-size: 12px; color: var(--muted); overflow-wrap: break-word; }
+.dt-fi { font-size: 12px; color: var(--muted); overflow-wrap: normal; }
+@media (max-width: 350px) { .dt-fi, .dt-row { font-size: 11px; } .dist-table { grid-template-columns: minmax(74px, .8fr) repeat(3, minmax(min-content, 1fr)); } .dist-table > * { padding-left: 3px; padding-right: 3px; } .dt-row { padding-left: 6px !important; padding-right: 3px !important; } }
 .dist-table > .zebra { background: color-mix(in srgb, var(--tc, var(--accent)) 6%, transparent); }
