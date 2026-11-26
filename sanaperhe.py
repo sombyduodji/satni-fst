@@ -88,6 +88,9 @@ def rows(src):
         # Yksiselitteinen pohjasana: kaksi eri pohjaa (homonymia) -> ei linkkiä
         if len({b for b, *_ in ok}) != 1:
             continue
+        # Sama pohjasana eri sanaluokissa (nuorra A ja N): ensin sama sanaluokka kuin johdoksella, sitten aakkosjärjestys,
+        # jotta tulos on joka ajolla sama (joukon järjestys vaihteli: nuorralágan -> nuorra N tai A)
+        ok.sort(key=lambda x: (x[1] != x[3], x[1], x[2], x[3]))
         b, bp, tag, cp = ok[0]
         if w[0].isupper() and not b[0].isupper():
             continue  # Addi (nimi) ei ole addit-verbin tekijä
