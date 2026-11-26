@@ -6842,7 +6842,10 @@ function bindSentView() {
     if (!c) return;
     const i = +c.dataset.i, tok = sent.toks[i];
     if (tok.num) return;  // luku sellaisenaan
+    // Tuplanapautus sanaan: toinen napautus ei sulje juuri avattua valikkoa (yötesti 27.11)
+    if (sent.sheet === i && performance.now() - (sent.sheetAt || 0) < 400) return;
     sent.sheet = sent.sheet === i ? null : i;
+    if (sent.sheet != null) sent.sheetAt = performance.now();
     sent.split = null;
     renderSentView();
   };

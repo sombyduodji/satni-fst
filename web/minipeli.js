@@ -353,6 +353,13 @@ function peliModeSub(id, sami) {
   return id === "advanced" ? T.allWords(n) : T.count(n);
 }
 
+// Ruudunlukijan sääntöteksti: kolmella elämällä viimeinen lause "kolmas väärä vastaus päättää pelin" (näkyvä lista
+// vaihtoi sen jo, aria-label sanoi yhä "Yksi väärä vastaus päättää pelin"; yötesti 27.11)
+function peliRulesLead(T) {
+  const lead = peliWrite ? T.leadWrite : T.lead;
+  if (peliLives() !== 3) return lead;
+  return lead.replace(/[^.]+\.$/, ` ${T.livesRule.charAt(0).toUpperCase()}${T.livesRule.slice(1)}.`).replace(/\s+/g, " ").trim();
+}
 function renderPeliMenu() {
   if (!peli) return;  // vasta loadPeli:n jälkeen (openPeli piirtää valikon, kun data on ladattu; yötesti 2026-11-24)
   peliHead(pt().title, false);
@@ -378,7 +385,7 @@ function renderPeliMenu() {
   $("peli-body").innerHTML = peliSamiSwitch(sami) +
     `<div class="pm-stats">${stat(Math.max(0, ...bests), T.statStreak)}${stat(`${bests.filter(Boolean).length} / ${modes.length}`, T.statModes)}` +
     `${stat(peliStore.get("satni-peli-games", 0), T.statGames)}</div>` + peliStyleSwitch() + peliLivesSwitch() +
-    `<ul class="peli-rules" aria-label="${esc(peliWrite ? T.leadWrite : T.lead)}"${$("peli-rules-btn").getAttribute("aria-expanded") === "true" ? "" : " hidden"}>${rules}</ul>` +
+    `<ul class="peli-rules" aria-label="${esc(peliRulesLead(T))}"${$("peli-rules-btn").getAttribute("aria-expanded") === "true" ? "" : " hidden"}>${rules}</ul>` +
     `<div class="pm-list">${modes.map(row).join("")}</div>` +
     (run ? `<p class="pm-fresh"><button type="button" class="link-btn" data-act="fresh">${esc(T.restart)}</button></p>` : "");
 }

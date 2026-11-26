@@ -146,15 +146,21 @@ function harjRenderSetup(o) {
     `<button type="button" class="hj-start" data-act="start">${PLAY_ICON_HJ}<span></span></button>` +
     (harjNative() ? `<p class="hj-note">${HJ_MOON}<span>${esc(t("harjScreenOff"))}</span></p>` : "") + `</div></div>`;
   el.dataset.mode = "setup";
+  const opening = el.hidden;
+  if (opening) el._openedAt = performance.now();
   el.hidden = false;
   el._opts = o;
   harjSyncSetup(o);
+  // Verkkoversio: oma historiamerkintä, jotta Takaisin sulkee vain harjoituksen eikä samalla listaa (yötesti 27.11)
+  if (opening && typeof overlayOpened === "function") overlayOpened();
 }
 const PLAY_ICON_HJ = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>';
 
 function harjSetupClick(e) {
   const el = $("harj"), o = el._opts;
-  if (e.target === el) return closeHarj();  // napautus taustaan sulkee asetukset
+  // Napautus taustaan sulkee asetukset, mutta ei heti avaamisen jälkeen: tuplanapautus "Harjoittele kuunnellen"
+  // -painikkeeseen avasi ja sulki ikkunan (toinen napautus osui taustaan ennen kuin ikkuna nousi; yötesti 27.11)
+  if (e.target === el) return performance.now() - (el._openedAt || 0) < 500 ? undefined : closeHarj();
   const b = e.target.closest("button");
   if (!b) return;
   if (b.dataset.act === "close") return closeHarj();
@@ -458,6 +464,7 @@ function closeHarj() {
   el.hidden = true;
   el.innerHTML = "";
   delete el.dataset.mode;
+  if (typeof overlayClosed === "function") overlayClosed();
   return true;
 }
 
