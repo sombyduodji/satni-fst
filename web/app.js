@@ -3791,7 +3791,7 @@ function renderRecent() {
 // vähiten korjauksia ensin).
 // Myös vietnamin yhdistelmäkirjaimet (ávvudii -> ấvvudii) ja q (gudnin -> qudnin): saamessa ei ole q:ta (Yle-koe 2026-11-18)
 const OCR_LOOKALIKES = { "ð": "d", "ɖ": "d", "η": "n", "ţ": "t", "ş": "s", "ș": "s", "ć": "c", "ż": "z",
-  "ấ": "á", "ắ": "á", "ầ": "á", "ạ": "a", "ą": "a", "q": "g", "ı": "i", "ņ": "ŋ", "ü": "ii" };
+  "ấ": "á", "ắ": "á", "ầ": "á", "ả": "á", "ẩ": "á", "ẳ": "á", "ạ": "a", "ą": "a", "q": "g", "ı": "i", "ņ": "ŋ", "ü": "ii" };
 const OCR_DIACRITICS = { a: "á", c: "č", d: "đ", n: "ŋ", s: "š", t: "ŧ", z: "ž" };
 
 // Kaksoiskirjaimen kokeilujärjestys: ensin i ja j (yleisimmät: sámiid, lijjii), sitten konsonantit, viimeisenä muut
