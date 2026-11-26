@@ -5381,7 +5381,8 @@ function splitCompound(word) {
                          UNION SELECT lemma_fold FROM dictionary WHERE lemma_fold IN (${marks})`, [...part, ...part])) known.add(r.v);
     for (const r of all(`SELECT lemma_fold AS v FROM dictionary WHERE pos IN ('N', 'A') AND lemma_fold IN (${marks})
         UNION SELECT p.surface FROM paradigms p JOIN dictionary d ON d.id = p.word_id JOIN tags t ON t.id = p.tag_id
-        WHERE p.surface IN (${marks}) AND ((d.pos = 'N' AND t.tag = 'Sg+Gen') OR (d.pos = 'A' AND t.tag IN ('Attr', 'Sg+Gen')))`,
+        WHERE p.surface IN (${marks}) AND ((d.pos = 'N' AND t.tag = 'Sg+Gen') OR (d.pos = 'A' AND t.tag IN ('Attr', 'Sg+Gen'))
+          OR (d.pos = 'V' AND t.tag = 'Actio+Nom'))`,
       [...part, ...part])) left.add(r.v);
     if (hasTable("sme_cmp")) {
       for (const r of all(`SELECT stem, lemma FROM sme_cmp WHERE stem IN (${marks})`, part)) { left.add(r.stem); cmpLemma.set(r.stem, r.lemma); }
@@ -5616,7 +5617,7 @@ function sentTokens(raw) {
         // Yhdeksi sanaksi vain substantiiveista (suomen yhdyssana; verbi tai adjektiivi osana tuotti uusihylätä,
         // puolue-edistää) eikä monikkoisesta alkuosasta (alkuperäisasukkaatnaiset)
         tok.cmpJoin = settings.lang === "fin" && ocrTo() === "fin" && !info.separate && !capWord(r.clean || "") &&
-          (info.parts || []).every((x) => ocrGloss(x.base || x.word).pos === "N") &&
+          (info.parts || []).every((x) => x.vnoun || ocrGloss(x.base || x.word).pos === "N") &&
           info.trans.split(" + ").slice(0, -1).every((x) => !/t$/.test(x));
         // Yhdyssana taipuu viimeisen osansa mukaan: alkuosat + viimeisen osan muoto lauseyhteydestä (uuden kokouspalvelun)
         if (info.separate) tok.lemma = parts.join(" ");
@@ -6091,6 +6092,14 @@ function lastNoun(g, word, last) {
 }
 const hasCompTag = (surface) => all(`SELECT 1 FROM paradigms p JOIN tags t ON t.id = p.tag_id WHERE p.surface = ? AND (t.tag LIKE '%Comp%' OR t.tag LIKE '%Superl%') LIMIT 1`, [surface]).length > 0
   && !all(`SELECT 1 FROM paradigms p JOIN tags t ON t.id = p.tag_id JOIN dictionary d ON d.id = p.word_id WHERE p.surface = ? AND d.pos = 'N' LIMIT 1`, [surface]).length;
+// Suomen verbistä -minen-substantiivi taivutustaulun 3. infinitiivin illatiivista (valmistautumaan -> valmistautuminen)
+function finMinen(verb) {
+  if (!verb || /\s/.test(verb)) return null;
+  const row = all("SELECT forms FROM fin_forms WHERE word = ?", [verb])[0];
+  const m = row && (row.forms.split(";").find((c) => c.startsWith("InfMa+Ill=")) || "").split("=")[1];
+  const f = m && m.split("/")[0];
+  return f && /m[aä][aä]n$/.test(f) ? f.replace(/m[aä][aä]n$/, "minen") : null;
+}
 function compoundPartsInfo(parts, opts = {}) {
   const lang = settings.ocrFrom;
   if (isMinor(lang)) {
@@ -6113,7 +6122,7 @@ function compoundPartsInfo(parts, opts = {}) {
       const f = fz.search(p, 3, 3);
       if (f && !f.parts) { p = f.word; base = last ? null : cmpOf(p); g = lastNoun(ocrGloss(base || p), base || p, last); }
     }
-    const trans = ((last && g.form ? g.form.split(" / ").pop() : g.trans) || "").split(", ")[0].replace(/\s*\([^)]*\)/g, "").replace(/^≈\s*/, "").trim();
+    let trans = ((last && g.form ? g.form.split(" / ").pop() : g.trans) || "").split(", ")[0].replace(/\s*\([^)]*\)/g, "").replace(/^≈\s*/, "").trim();
     let cands = splitList(g.trans || "").map((x) => x.replace(/\s*\([^)]*\)/g, "").replace(/^≈\s*/, "").trim()).filter(Boolean).slice(0, 3);
     // Alkuosan pohjasanat (der_base): váralašvuođa -> váralaš (vaarallinen), várra (vaara); valinta korpuksen mukaan
     // (vaara + tiedote = vaaratiedote). Vain, jos osalla ei ole omaa suomennosta: vertailussa sanakirjan 10 624
@@ -6131,7 +6140,20 @@ function compoundPartsInfo(parts, opts = {}) {
     }
     // Vertailu- tai yläaste viimeisenä osana (ahkidat = ikävämpi) ei ole yhdyssanan pääsana: ei koota
     const comp = last && hasCompTag(p);
-    return { word: p, trans, cands, base: base || g.lemma || "", comp };
+    // Alkuosa on verbin tekemisen muoto (ráhkkanan = ráhkkaneapmi "valmistautuminen"; ráhkkanan + barggut): suomeksi
+    // -minen-substantiivi (valmistautua -> valmistautuminen), jolloin yhdyssanan voi koota (valmistautumistyöt;
+    // käyttäjän kuva 2026-11-26). Muoto suomen taivutustaulusta (InfMa+Ill: tekemään -> tekeminen), ei arvata.
+    let vnoun = false;
+    if (!last && settings.lang === "fin" && g.pos === "V") {
+      // Ensin sanakirjan oma tekemisen substantiivi (ráhkkanit -> ráhkkaneapmi "valmistautuminen"), sitten -minen-muoto
+      const vl = g.lemma || p, stem = vl.replace(/(it|at|ut|ot|et)$/, "");
+      const own = stem !== vl ? all(`SELECT finnish_translation AS f FROM dictionary WHERE pos = 'N' AND sme_lemma IN (?, ?, ?) AND finnish_translation != '' LIMIT 1`,
+        [stem + "eapmi", stem + "apmi", stem + "upmi"])[0] : null;
+      const mi = own ? splitList(own.f).map((x) => x.replace(/\s*\([^)]*\)/g, "").trim()).filter((x) => /minen$/.test(x)) : [];
+      const gen = mi.length ? mi : cands.map(finMinen).filter(Boolean);
+      if (gen.length) { trans = gen[0]; cands = gen.slice(0, 3); vnoun = true; }
+    }
+    return { word: p, trans, cands, base: base || g.lemma || "", comp, vnoun };
   });
   fz?.free();
   // Kaksi sanaa ilman väliä (ML Kit: golmmasámegillii = golmma sámegillii; käyttäjän kuva 2026-11-20): vain kaksi osaa,
@@ -6239,7 +6261,9 @@ const sentKey = (tok) => `${tok.cx},${tok.cy}`;
 // (koottu sovelluksessa); kopioitavassa tekstissä ei merkkejä.
 function sentCmpJoin(text) {
   const ps = text.split(" + ");
-  if (ps.length < 2 || !ps.every((x) => /^[\p{L}-]+$/u.test(x)) || ps.slice(0, -1).some((x) => /nen$/.test(x))) return null;
+  if (ps.length < 2 || !ps.every((x) => /^[\p{L}-]+$/u.test(x)) || ps.slice(0, -1).some((x) => /nen$/.test(x) && !/minen$/.test(x))) return null;
+  // -minen alkuosana: valmistautuminen + työt = valmistautumistyöt
+  for (let k = 0; k < ps.length - 1; k++) ps[k] = ps[k].replace(/minen$/, "mis");
   let out = ps[0].toLowerCase();
   for (const x of ps.slice(1)) {
     const a = out.slice(-1), b = x[0].toLowerCase();
