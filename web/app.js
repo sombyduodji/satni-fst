@@ -6291,11 +6291,19 @@ function closeSentView() {
   sent = null;
   return true;
 }
+// Sirun sana: sovelluksen tunnistama (korjattu) sana, ei kuvan lukema (ige -> iige, råđđádallan -> ráđđádallan;
+// käyttäjä 2026-11-26), kirjainkoko kuten kuvassa. Nimet, luvut ja tuntemattomat sellaisinaan.
+function sentShownWord(tok) {
+  const read = tok.clean || tok.t;
+  if (tok.unknown || tok.name || tok.num || !tok.word || /[\s+]/.test(tok.word) || tok.word.toLowerCase() === read.toLowerCase()) return read;
+  if (read.length > 1 && read === read.toUpperCase()) return tok.word.toUpperCase();
+  return /^\p{Lu}/u.test(read) ? tok.word.charAt(0).toUpperCase() + tok.word.slice(1) : tok.word;
+}
 function renderSentView() {
   const chip = (tok, i) => {
     const cls = tok.fixed ? "" : tok.unknown ? " unk" : tok.name ? " name" : "";
     const src = tok.unknown && !tok.fixed ? sentCutout(tok) : "";
-    const top = src ? `<img src="${src}" alt="${esc(tok.clean || tok.t)}">` : esc(tok.fixed ? tok.fixed.word : tok.clean || tok.t);
+    const top = src ? `<img src="${src}" alt="${esc(tok.clean || tok.t)}">` : esc(tok.fixed ? tok.fixed.word : sentShownWord(tok));
     const sub = tok.fixed ? tok.fixed.trans || "" : tok.unknown ? t("sentUnknown") : tok.num ? "" : tok.name ? t("sentName") : sentWordText(tok) + (tok.opts?.length > 1 ? "…" : "");
     return `<button class="sent-chip${cls}${sent.sheet === i ? " on" : ""}" data-i="${i}"><b>${top}</b><span>${esc(sub)}</span></button>`;
   };
