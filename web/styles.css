@@ -2550,3 +2550,32 @@ body.sidebar-open #help-btn, body:has(dialog[open]:not(#help-dlg)) #help-btn { p
 .dt-fi { font-size: 12px; color: var(--muted); overflow-wrap: normal; }
 @media (max-width: 350px) { .dt-fi, .dt-row { font-size: 11px; } .dist-table { grid-template-columns: minmax(74px, .8fr) repeat(3, minmax(min-content, 1fr)); } .dist-table > * { padding-left: 3px; padding-right: 3px; } .dt-row { padding-left: 6px !important; padding-right: 3px !important; } }
 .dist-table > .zebra { background: color-mix(in srgb, var(--tc, var(--accent)) 6%, transparent); }
+
+/* Minipelin elämät (2026-11-26): sydämet yläpalkissa, valinta valikossa, pelin sanat tulossivulla */
+.peli-pill.lives svg { color: var(--flag-red); width: 15px; height: 15px; }
+.peli-pill.lives.empty svg { color: var(--border); }
+.peli-pill.lives.shake { animation: peli-shake .35s ease-in-out; }
+@keyframes peli-shake { 25% { transform: translateX(-3px); } 50% { transform: translateX(3px); } 75% { transform: translateX(-2px); } }
+@media (prefers-reduced-motion: reduce) { .peli-pill.lives.shake { animation: none; } }
+.peli-lives { display: flex; gap: 8px; margin: 10px 0 2px; }
+.pli-opt { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 6px 10px;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--muted); font: inherit; font-weight: 600; cursor: pointer; }
+.pli-opt[aria-checked="true"] { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 9%, var(--surface)); }
+.pli-h { display: inline-flex; color: var(--flag-red); }
+.pli-h svg { width: 14px; height: 14px; }
+.pli-opt[aria-checked="false"] .pli-h { opacity: .55; }
+.peli-played { margin: 14px 0 4px; text-align: left; border-top: 1px solid var(--border); padding-top: 8px; }
+.peli-played summary { cursor: pointer; font-weight: 700; font-size: 14px; padding: 6px 2px; color: var(--muted); }
+.peli-played ul { list-style: none; margin: 4px 0 0; padding: 0; max-height: 40vh; overflow-y: auto; }
+.peli-played li { display: grid; grid-template-columns: 22px minmax(0, auto) minmax(0, 1fr) 36px; align-items: center; gap: 8px;
+  padding: 4px 2px; border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }
+.peli-played .pp-mark svg { width: 18px; height: 18px; }
+.peli-played li.ok .pp-mark { color: var(--flag-green); }
+.peli-played li.no .pp-mark { color: var(--flag-red); }
+.peli-played li.retry .pp-mark { color: #ea580c; }
+.peli-played .pp-w { font-weight: 700; text-align: left; overflow-wrap: anywhere; }
+.peli-played .pp-t { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+.pp-say { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 10px;
+  background: transparent; color: var(--accent); cursor: pointer; }
+.pp-say svg { width: 20px; height: 20px; }
+.pp-say:disabled { opacity: .5; }
