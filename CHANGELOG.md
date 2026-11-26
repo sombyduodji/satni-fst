@@ -3,6 +3,28 @@
 All releases of Sátni FST. Downloads: [GitHub releases](https://github.com/sombyduodji/satni-fst/releases).
 [Suomi](CHANGELOG.fi.md) · [Norsk](CHANGELOG.nb.md)
 
+## 1.1.0 — 2026-11-26
+
+Much less memory and a faster start on Android, an English user interface, a redesigned word card, and new word lists and games.
+
+- **Much less memory, faster start (Android).** The dictionary is now read with the phone's own SQLite database engine instead of being loaded into the app's memory. The app uses about 70–80 MB instead of about 400 MB, is ready to search in 0.4–0.8 s instead of 1.2–3.3 s, and wildcard searches are up to 4 times faster. The first start after the update copies the dictionary to the phone's storage (about 165 MB, under a second); if that fails, for example when storage is full, the app uses the old way. 330 test searches gave identical results with both engines.
+- **English user interface.** The app, the word lists and the game can be used in English as well as Finnish and Norwegian (choose in the menu). Search works with English words and their inflected forms (*dogs*, *went*).
+- **Redesigned word card.**
+  - Principal forms under the word, as in printed dictionaries: *áhčči, áhči*; *vielgat, vielgada, attr. vilges*; *dahkat, dagan*. The consonants that change in gradation are coloured, with a link to the full explanation.
+  - The translation has its own box. For an inflected form it also says the grammar in plain words (*manai ≈ meni, kulki · preteriti, yks. 3. persoona*).
+  - Listen, favourite and report are icons side by side; other meanings and other languages are tidier; other search results collapse into one line; tabs with nothing to show are hidden; on phones the verb tenses are shown one below the other.
+- **Word family.** A new tab shows words derived from the word and compounds that contain it, where the GiellaLT analyser links them and both words are in the dictionary.
+- **Guide.** The **?** button at the end of the search row explains the parts of the word card one at a time; you can also tap any part of the card.
+- **Smarter search for inflected words.** A form like *lohkamin* or *guliid* now shows the word it belongs to first (*lohkat*, *guolli*).
+- **No dead ends.** A word with no translation in your language shows the translation in another language (marked as such) or, for a derived word, the word it comes from, with a link to report the missing translation. *No results* has *Report a missing word*.
+- **Clock times.** A game with an analog clock (*Ollugo diibmu lea?*): choose or write the time, or listen to Biret and pick the right clock; full hours, halves and quarters, or every five minutes. *Times of day → Clock times* shows all times as clocks. Sámi counts minutes 20–40 from the half hour (*logi badjel beal vihtta* = 4:40), and the Finnish now does the same. The time expressions come from GiellaLT's clock generator.
+- **New word lists.** *Animals*; *Berries, fruit and vegetables*; *Near and far* (*dát* near me, *diet* near you, *duot* over there, *dot* further away, with their where and where-to words) with its own game; and helper words: *This and that*, *Here and there*, *Before and after* and *Linking and little words*, with example sentences. *Times of day* has eight more words, and question words, pronouns and demonstratives show more case forms (*gii · gean · geasa · geas*, *muinna*). Lists that have a game have a *Play* button.
+- **Better audio.** All word audio was remade so short words no longer lose sounds, and every clip in all four voices was listened through by ear; 145 words now use a better recording.
+- **Photo search: choose words yourself** right away, by painting or circling them, next to *Pick sentence*.
+- **Experimental translation languages** (off by default, *Settings → Translation languages*): machine-translated English for about 17,000 more words, Spanish for about 6,300 and German for about 5,750 (there is no open North Sámi–German dictionary), and Finnish suggestions for about 2,200 words without Finnish. Each is shown only when several independent sources agree, marked as a machine translation with the number of sources. Skolt Sámi words can be searched too (*põrtt*, also without special letters).
+- **Inari Sámi:** more words that are certain; uncertain ones were removed. *Play* is shown only on lists whose game has Inari words.
+- **Fixes:** if Android froze the app while the dictionary was loading, it could stay on "Loading the dictionary…" – loading now restarts by itself; reporting an error on a phone without an email app offers to copy the message; Back from a word list returns to the card you came from; switching dark mode no longer reloads the app; the notice about an outdated system WebView appears in the phone's language; the experimental sentence builder handles plural and dual subjects, participles and passive negation better.
+
 ## 1.0.0 — 2026-11-21
 
 The first full release. Besides the dictionary, the app now has word lists with pronunciation, a listening practice, a word game and a much better photo search.

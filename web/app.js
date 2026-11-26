@@ -57,7 +57,7 @@ const DEFAULT_SETTINGS = {
   skolt: false, skoltViaSme: false,
   // Kokeelliset ominaisuudet (valikon lopussa), kukin erikseen: ocr = kuvasta haku (Android-sovellus),
   // tableTr = muotojen käännökset taivutustaulukossa, apertium = Apertiumin norjan käännökset, pivotFin = suomennosehdotukset. experimental: vanha yhteinen kytkin (= ocr), siirretään exp.ocr:ään.
-  exp: { ocr: false, lause: false, tableTr: false, apertium: false, pivotFin: false },
+  exp: { ocr: false, lause: false, tableTr: false, apertium: false, pivotFin: false, engMt: false, spaMt: false, deuMt: false },
   // Kuvasta haku: suunta ("sme" = saamen teksti, "ui" = käyttöliittymän kielen teksti), merkintätapa ja väri
   ocrFrom: "sme", ocrTo: "", ocrStyle: "frame",
   // Valokuvahaun omat kielet (asetukset → Työkalut → Valokuvahaku): kuvan lisäkielet (inari, koltta) ja käännöskielet
@@ -83,6 +83,22 @@ function loadSettings() {
 }
 function saveSettings() {
   try { localStorage.setItem("satni-settings", JSON.stringify(settings)); } catch (e) { /* yksityinen tila */ }
+  // Android: suosikit ja historia talteen, jotta BETA voi tuoda ne (ShareProvider; vain julkaistu sovellus tarjoaa)
+  try { window.SatniApp?.shareSave?.(JSON.stringify({ favourites: settings.favourites, history: settings.history })); } catch (e) { /* vanha sovellus */ }
+}
+
+// BETA: suosikit ja historia Play-versiosta, vain yhteen suuntaan (käyttäjä 2026-11-22). Mitään ei poisteta:
+// Play-version sanat lisätään BETA:n omien perään.
+function importFromMain() {
+  let data = null;
+  try { data = JSON.parse(window.SatniApp?.importFromMain?.() || "null"); } catch (e) { data = null; }
+  if (!data || !Array.isArray(data.favourites)) { toast(t("importMainNone"), 6000); return; }
+  const fav0 = settings.favourites.length, hist0 = settings.history.length;
+  settings.favourites = [...settings.favourites, ...data.favourites.filter((w) => typeof w === "string" && !settings.favourites.includes(w))];
+  settings.history = [...settings.history, ...(data.history || []).filter((w) => typeof w === "string" && !settings.history.includes(w))].slice(0, 30);
+  saveSettings();
+  renderSidebar();
+  toast(t("importMainDone", settings.favourites.length - fav0, Math.max(0, settings.history.length - hist0)), 5000);
 }
 
 // --- Käyttöliittymän kieli (i18n.js) ---
@@ -131,12 +147,25 @@ function applyStaticTexts() {
   $("about-version").textContent = !version ? t("aboutWeb", webVersion)
     : window.SATNI_PLATFORM === "android" ? t("aboutAndroid", version) : t("aboutDesktop", version);
   $("menu-version").textContent = $("about-version").textContent;
-  // Kehitysversio (build_apk.sh --debug: versio päättyy -DEV): nimeen "DEV", ettei sitä sekoita julkaistuun
-  const dev = /-DEV$/.test(version || "");
+  // Kehitysversio (build_apk.sh --debug: versio päättyy -dev.N): nimeen "DEV", ettei sitä sekoita julkaistuun
+  // Testiversio (build_apk.sh --beta: versio päättyy -beta.N, GitHubin pre-release): nimeen "BETA" samaan tapaan
+  const tag = channelTag(version);
   for (const el of document.querySelectorAll(".brand-name, .menu-name")) {
-    el.innerHTML = `Sátni FST${dev ? ' <span class="dev-tag">DEV</span>' : ""}`;
+    el.innerHTML = `Sátni FST${tag ? ` <span class="dev-tag${tag === "BETA" ? " beta" : ""}">${tag}</span>` : ""}`;
   }
-  if (dev && !document.title.endsWith(" DEV")) document.title = document.title.replace("Sátni FST", "Sátni FST DEV");
+  if (tag && !document.title.endsWith(" " + tag)) document.title = document.title.replace("Sátni FST", "Sátni FST " + tag);
+  // Puhelimessa yläpalkki on piilossa: kapea merkkinauha saamen värijuovan yläpuolelle (käyttäjä 2026-11-22)
+  // Vain BETA: suosikkien ja historian tuonti Play-versiosta (Asetukset → Historia ja suosikit)
+  if ($("import-main")) {
+    $("import-main").hidden = !(tag === "BETA" && window.SatniApp?.importFromMain);
+    $("import-main").onclick = importFromMain;
+  }
+  if (tag && !document.querySelector(".channel-strip")) {
+    const strip = document.createElement("div");
+    strip.className = "channel-strip" + (tag === "BETA" ? " beta" : "");
+    strip.textContent = tag;
+    document.querySelector("body > .stripe")?.before(strip);
+  }
   // Sähköpostin aiheessa versio, jotta palautteesta näkee, mitä versiota se koskee
   $("feedback-mail").href = "mailto:satni@somby.fi?subject=" +
     encodeURIComponent(`${t("feedbackSubject")} (${$("about-version").textContent})`);
@@ -247,14 +276,17 @@ const afterOverlayPop = [];
 const overlayLayerFns = [];   // näkymäkohtaiset kerrokset (sanastot.js, minipeli.js, lauseet.js)
 const isOverlayState = (s) => !!(s && s.satniOverlay);
 const overlayDepth = (s) => (isOverlayState(s) ? s.satniDepth || 1 : 0);
-const overlayViewOpen = () => ["peli-view", "sanasto-view", "lause-view", "settings-view"].some((id) => $(id) && !$(id).hidden);
+const OVERLAY_VIEWS = ["peli-view", "sanasto-view", "lause-view", "settings-view"];
+const overlayViewOpen = () => OVERLAY_VIEWS.some((id) => $(id) && !$(id).hidden);
 // Myös valikko (drawer) ja aloitussivun ikkunat (Tietoa, palaute, tuki) ovat kerroksia: ilman omaa merkintää Takaisin
 // valikon ollessa auki poistui Chromessa sovelluksesta (yötesti 2026-11-15)
 const drawerOpen = () => document.body.classList.contains("sidebar-open");
 const overlayOpen = () => overlayViewOpen() || drawerOpen() || !!document.querySelector("dialog[open]");
 function overlayLayers() {
   if (!overlayOpen()) return 0;
-  return (overlayViewOpen() ? 1 : 0) + overlayLayerFns.reduce((n, f) => n + f(), 0) + (formPopTarget ? 1 : 0) +
+  // Jokainen avoin näkymä on oma kerroksensa: Pelaa-painike avaa pelin Sanastojen päälle (yötesti 2026-11-24: yksi
+  // Takaisin sulki sekä pelin että listan, kun kaksi näkymää laskettiin yhdeksi)
+  return OVERLAY_VIEWS.filter((id) => $(id) && !$(id).hidden).length + overlayLayerFns.reduce((n, f) => n + f(), 0) + (formPopTarget ? 1 : 0) +
     (document.querySelector("dialog[open]") ? 1 : 0) + (drawerOpen() ? 1 : 0);
 }
 // Päällimmäinen avoin ikkuna kiinni (Takaisin verkkoversiossa)
@@ -315,19 +347,33 @@ function onPopState(e) {
 // Muut kielet valikossa: valittujen kielten käännökset näytetään sanakortissa (renderExtraTranslations)
 // Koltansaame eteläsaamen jälkeen omana kytkimenään: merkintä "tarkistamaton", ja päällä ollessa sen alla valinta
 // pohjoissaamen sanakorteille (suomennoksen kautta)
+// Muut kielet nykyisellä käyttöliittymän kielellä: suomeksi ja norjaksi muut kuin pääkielet, englanniksi myös suomi
+// ja norja (englanti on käännöskieli). Tallennettu valinta säilyy, vaikka kieli ei juuri nyt ole valittavissa.
+const extraLangOk = (l) => !!LANGUAGES[l] && l !== settings.lang && (!LANGUAGES[l].main || settings.lang === "eng");
+const activeExtraLangs = () => settings.extraLangs.filter(extraLangOk);
+
 function renderExtraLangs() {
   // Kielen nimen alla käännösten lähde (Asetukset → Käännöskielet)
   const src = (l) => (t("langSource") || {})[l] ? `<span class="muted small">${esc(t("langSource")[l])}</span>` : "";
+  // Espanjan konekäännökset (kokeellinen) alakohtana espanjan alla, vain kun espanja on valittu (käyttäjä 2026-11-21)
+  // Englannin konekäännökset samoin englannin alla (suomeksi ja norjaksi; englanniksi kytkin on BETA-kytkinten joukossa)
+  const MT_SUB = { spa: ["spaMt", "spa_mt", "expSpaMtShort", "expSpaMtSub"], eng: ["engMt", "eng_mt", "expEngMtShort", "expEngMtSub"] };
+  const sub = (l) => {
+    const m = MT_SUB[l];
+    if (!m || !settings.extraLangs.includes(l) || !hasTable(m[1])) return "";
+    return `<label class="switch-row lang-sub"><span class="switch-text"><span class="set-title"><span>${esc(t(m[2]))}</span>` +
+      `<span class="beta-tag">BETA</span></span><span class="muted small">${esc(t(m[3]))}</span></span>` +
+      `<input type="checkbox" class="switch" role="switch" data-exp="${m[0]}"${settings.exp[m[0]] ? " checked" : ""}></label>`;
+  };
   const row = (l) => `<label class="switch-row"><span class="switch-text"><span>${esc(capitalize(langName(l)))}</span>${src(l)}</span>` +
-    `<input type="checkbox" class="switch" role="switch" value="${l}"${settings.extraLangs.includes(l) ? " checked" : ""}></label>`;
+    `<input type="checkbox" class="switch" role="switch" value="${l}"${settings.extraLangs.includes(l) ? " checked" : ""}></label>` + sub(l);
   const skolt = `<label class="switch-row"><span class="switch-text"><span>${esc(capitalize(langName("sms")))}` +
-    `<span class="unchecked-badge">${esc(t("smsUnchecked"))}</span></span>${src("sms")}</span>` +
+    `<span class="beta-tag">BETA</span></span>${src("sms")}</span>` +
     `<input type="checkbox" class="switch" role="switch" data-skolt="on"${settings.skolt ? " checked" : ""}></label>` +
-    (settings.skolt ? `<label class="skolt-sub"><input type="checkbox" data-skolt="via"${settings.skoltViaSme ? " checked" : ""}>` +
-      `<span>${esc(t("skoltViaShort"))}</span></label>` : "");
-  const langs = Object.keys(LANGUAGES).filter((l) => !LANGUAGES[l].main);
-  const at = langs.includes("sma") ? langs.indexOf("sma") + 1 : langs.length;
-  $("extra-langs").innerHTML = [...langs.slice(0, at).map(row), skolt, ...langs.slice(at).map(row)].join("");
+    "";  // Yksi BETA-kytkin (käyttäjä 2026-11-22): päällä = sanakorteilla aina (myös suomen kautta) ja haku koltaksi
+  // Koltansaame kokeellisten (BETA) joukossa sivun alaosassa (käyttäjä 2026-11-21), muut kielet ylhäällä
+  $("extra-langs").innerHTML = Object.keys(LANGUAGES).filter(extraLangOk).map(row).join("");
+  if ($("skolt-exp")) $("skolt-exp").innerHTML = skolt;
 }
 
 // --- Virheilmoitus sanakortista ---
@@ -340,7 +386,7 @@ const PUBLIC_APP_URL = "https://sombyduodji.github.io/satni-fst/app/";
 function reportLanguages() {
   const w = state.word;
   const out = [[settings.lang, $("translation").textContent.trim()]];
-  for (const l of settings.extraLangs) {
+  for (const l of activeExtraLangs()) {
     const text = LANGUAGES[l] && w[LANGUAGES[l].col];
     if (text) out.push([l, text]);
   }
@@ -362,6 +408,7 @@ function openReport() {
 }
 
 function sendReport() {
+  if ($("report-dlg").classList.contains("missing-mode")) return missingSendReport();  // haku ei löytänyt sanaa
   if ($("report-dlg").classList.contains("game-mode")) return peliSendReport();  // minipeli (minipeli.js)
   if ($("report-dlg").classList.contains("ctx-mode")) return ctxSendReport();  // kuva, lauseet, harjoitus
   if ($("report-dlg").classList.contains("list-mode")) return sanastoSendReport();  // sanastolista (sanastot.js)
@@ -369,10 +416,10 @@ function sendReport() {
   const kind = $("report-dlg").querySelector('input[name="report-kind"]:checked').value;
   const lang = $("report-lang").value || settings.lang;
   const shown = Object.fromEntries(reportLanguages())[lang] || "";
-  const kindText = { trans: t("reportKindTrans"), word: t("reportKindWord"), form: t("reportKindForm"), other: t("reportKindOther") }[kind];
+  const kindText = { trans: t("reportKindTrans"), missing: t("reportKindMissing"), word: t("reportKindWord"), form: t("reportKindForm"), other: t("reportKindOther") }[kind];
   const lemma = shownLemma(w);
   const subject = `${t("reportSubject")} – ${lemma} (${t("reportSubjectKind")[kind]}${kind === "trans" ? ", " + langName(lang) : ""})`;
-  const others = [...settings.extraLangs.filter((l) => LANGUAGES[l]), ...(settings.skolt ? ["sms"] : [])].map(langName);
+  const others = [...activeExtraLangs(), ...(settings.skolt ? ["sms"] : [])].map(langName);
   const link = `${PUBLIC_APP_URL}#/sana/${encodeURIComponent(state.query)}${state.index ? "/" + state.index : ""}`;
   const body = [
     $("report-text").value.trim().slice(0, 1200), "",
@@ -396,6 +443,21 @@ function openReportMail(subject, body) {
   a.click();
 }
 
+// Android ilman sähköpostisovellusta (MainActivity.shouldOverrideUrlLoading kutsuu tätä mailto-linkin kanssa,
+// käyttäjä 2026-11-25): kerrotaan, ettei sovellusta löytynyt, ja tarjotaan viestin kopioimista leikepöydälle.
+let noMailText = "";
+window.noMailApp = function (url) {
+  let to = REPORT_ADDRESS, subject = "", body = "";
+  try {
+    const u = new URL(url);
+    to = decodeURIComponent(u.pathname) || to;
+    subject = u.searchParams.get("subject") || "";
+    body = u.searchParams.get("body") || "";
+  } catch (e) { /* pelkkä osoite */ }
+  noMailText = [`${t("noMailTo")}: ${to}`, subject && `${t("noMailSubject")}: ${subject}`, "", body].filter((x, i) => x || i === 2).join("\n").trim();
+  $("no-mail-dlg").showModal();
+};
+
 // Virheilmoitus muista näkymistä (kuvahaku, lausenäkymä, lausekääntäjä, kuunteluharjoitus): sama lomake kuin
 // sanastoissa (Mikä sana? -kenttä), tiedot ctx:stä. ctx = { place, word, lines: [[nimi, arvo], …], audio }
 let reportCtx = null;
@@ -414,7 +476,7 @@ function openCtxReport(ctx) {
 function ctxSendReport() {
   const c = reportCtx || { place: "photo", lines: [] }, L = t("reportLabels"), place = t("reportPlaces")[c.place];
   const kind = $("report-dlg").querySelector('input[name="report-kind"]:checked').value;
-  const kindText = { trans: t("reportKindTrans"), sme: t("reportKindSme"), audio: t("reportKindAudio"), other: t("reportKindOther") }[kind];
+  const kindText = { trans: t("reportKindTrans"), missing: t("reportKindMissing"), sme: t("reportKindSme"), audio: t("reportKindAudio"), other: t("reportKindOther") }[kind];
   const word = $("report-word").value.trim().slice(0, 80);
   const subject = `${t("reportSubject")} – ${place}${word ? ": " + word : ""} (${t("reportSubjectKind")[kind]})`;
   const body = [
@@ -431,13 +493,45 @@ function ctxSendReport() {
   reportCtx = null;
   openReportMail(subject, body);
 }
+// Ilmoitus puuttuvasta sanasta (2026-11-24): haku ei löytänyt mitään. Sana valmiina, hakusuunta ja käyttöliittymä
+// viestiin; käyttäjä voi kertoa, mitä sana tarkoittaa tai missä hän näki sen. Sama lomake ilman virhetyyppejä.
+function openMissingReport() {
+  const q = (state.query || "").trim();
+  if (!q) return;
+  const dlg = $("report-dlg");
+  dlg.classList.remove("game-mode", "ctx-mode");
+  dlg.classList.add("list-mode", "missing-mode");
+  $("report-about").textContent = `${t("reportLabels").search}: ${q} · ${t("missingDir", langName(settings.lang))}`;
+  $("report-word").value = q.slice(0, 80);
+  $("report-text").value = "";
+  dlg.querySelector('input[value="other"]').checked = true;
+  dlg.showModal();
+}
+function missingSendReport() {
+  const L = t("reportLabels"), q = (state.query || "").trim();
+  const word = $("report-word").value.trim().slice(0, 80) || q;
+  const subject = `${t("reportMissingSubject")} – ${word}`;
+  const body = [
+    $("report-text").value.trim().slice(0, 1200), "",
+    `--- ${t("reportDetails")} ---`,
+    `${L.place}: ${t("reportPlaces").missing}`,
+    `${L.word}: ${word}`,
+    `${L.search}: ${q}`,
+    `${L.dir}: ${t("missingDir", langName(settings.lang))}`,
+    `${L.ui}: ${UI_LANGUAGES[settings.uiLang].name}`,
+    `${L.version}: ${$("about-version").textContent}`,
+    `${L.link}: ${PUBLIC_APP_URL}#/sana/${encodeURIComponent(q)}`,
+  ].filter((line, i) => line !== "" || i === 1).join("\n");
+  openReportMail(subject, body);
+}
+
 // Virheilmoituksen linkki näkymän loppuun (sama ulkoasu kuin sanakortissa)
 const reportLinkHtml = (cls) => `<p class="report-line ${cls}"><a href="#" class="report-link" data-report="1">` +
   `<span aria-hidden="true">⚑</span> <span>${esc(t("reportError"))}</span></a></p>`;
 
 function setSkolt(on, viaSme) {
   settings.skolt = on;
-  settings.skoltViaSme = on && viaSme;  // pois kytkettäessä molemmat pois
+  settings.skoltViaSme = on;  // vanha erillinen valinta: nyt sama kuin koltansaame päällä
   saveSettings();
   renderExtraLangs();
   if (state.results.length) searchAgainKeepingWord();
@@ -445,7 +539,6 @@ function setSkolt(on, viaSme) {
 
 // Päälle vasta, kun käyttäjä hyväksyy varoituksen; valinta pohjoissaamen sanakorteille alkaa tyhjänä
 function openSkoltDialog() {
-  $("skolt-via").checked = false;
   $("skolt-dlg").showModal();
 }
 
@@ -513,7 +606,10 @@ function labelledList(text, lang) {
   }).join(", ");
 }
 
+// IN-listan pala: kahdesti käytettynä alle 999 parametria (Androidin vanhan SQLiten raja)
+const SQL_IN_CHUNK = 400;
 function all(sql, params = []) {
+  if (db && db.native) return db.all(sql, params);
   const stmt = db.prepare(sql);
   stmt.bind(params);
   const rows = [];
@@ -532,6 +628,7 @@ function toast(text, ms = 3500) {
 
 // Vain valitun kielen käännös (muut kielet näkyvät Merkitykset-välilehdellä omina ryhminään)
 function translationOf(row, max, lang = settings.lang) {
+  if (!LANGUAGES[lang]) return "";  // saksa: vain konekäännös (deu_mt), ei sanakirjan saraketta
   return splitList(row[LANGUAGES[lang].col]).slice(0, max).join(", ");
 }
 
@@ -550,15 +647,112 @@ function wordClassLabel(pos, subtype) {
 // --- Tietokannan lataus ---
 
 let sqlModule = null;  // sql.js: myös inarin ja koltan erillisille tietokannoille (loadMinor)
-async function loadDatabase() {
-  const SQL = sqlModule = await initSqlJs({ locateFile: (f) => "vendor/" + f });
-  const response = await fetch(DATA_URL);
+// Lataus voi jäädä jumiin ilman virhettä: Android jäädyttää taustalle jääneen sovelluksen kesken latauksen, eikä
+// sovelluksen omasta paketista luettu virta aina jatku jäädytyksen jälkeen (Pixel 9 Pro 25.11.: "Ladataan sanakirjaa…"
+// jäi näkyviin pysyvästi, uudelleenlataus toimi heti). Vahtikoira: jos uusia tavuja ei tule DB_STALL_MS:n aikana
+// sivun ollessa näkyvissä, lataus perutaan ja aloitetaan alusta (enintään DB_ATTEMPTS kertaa). Piilossa ollessa aika
+// ei kulu, joten hidas puhelin tai taustalla odottaminen ei aiheuta turhaa uutta yritystä.
+const DB_STALL_MS = 10000, DB_ATTEMPTS = 3;
+async function loadDatabaseWithRetry() {
+  for (let attempt = 1; ; attempt++) {
+    const ctrl = new AbortController();
+    let last = Date.now(), timer = null;
+    const tick = () => { last = Date.now(); };
+    const stalled = new Promise((_, reject) => {
+      timer = setInterval(() => {
+        if (document.visibilityState !== "visible") { last = Date.now(); return; }
+        if (Date.now() - last > DB_STALL_MS) { ctrl.abort(); reject(Object.assign(new Error("stalled"), { stalled: true })); }
+      }, 1000);
+    });
+    try {
+      return await Promise.race([loadDatabase(ctrl.signal, tick), stalled]);
+    } catch (e) {
+      if (!e.stalled || attempt >= DB_ATTEMPTS) throw e;
+      $("progress-bar").style.width = "0%";
+      $("loading-text").textContent = t("loadRetrying");
+    } finally {
+      clearInterval(timer);
+    }
+  }
+}
+
+// --- Natiivi SQLite Androidilla (haara sql-test) ---
+// Android-sovelluksessa sanakirja luetaan laitteen omalla SQLitellä (window.SatniNativeDb, NativeDb.java): tiedosto
+// kopioidaan APK:sta sovelluksen kansioon kerran versiota kohden, eikä 165 Mt:n tiedostoa pidetä WebViewin muistissa.
+// NativeDatabase ja NativeStatement toteuttavat sen osan sql.js:n rajapinnasta, jota sovellus käyttää (prepare, bind,
+// step, get, getAsObject, reset, free), joten kyselykohdat pysyvät ennallaan. JavascriptInterface-kutsu on
+// synkroninen; step() hakee koko tuloksen yhdellä kutsulla. Virhe avauksessa -> sql.js kuten ennen.
+// Testaus: localStorage satniForceSqlJs = "1" pakottaa sql.js:n (A/B-vertailu).
+function nativeQuery(sql, params) {
+  const r = JSON.parse(window.SatniNativeDb.query(sql, JSON.stringify(params || [])));
+  if (r.error) throw new Error(r.error);
+  return r;
+}
+class NativeStatement {
+  constructor(sql) { this.sql = sql; this.params = []; this.res = null; this.i = -1; }
+  bind(params = []) { this.params = Array.isArray(params) ? params : []; this.res = null; this.i = -1; return true; }
+  step() {
+    if (!this.res) { this.res = nativeQuery(this.sql, this.params); this.i = -1; }
+    return ++this.i < this.res.rows.length;
+  }
+  get() { return this.res.rows[this.i].slice(); }
+  getAsObject() { const o = {}, row = this.res.rows[this.i]; this.res.cols.forEach((c, k) => { o[c] = row[k]; }); return o; }
+  getColumnNames() { return this.res ? this.res.cols.slice() : []; }
+  // sql.js: reset() tyhjentää myös sidotut arvot; sovellus sitoo aina uudelleen
+  reset() { this.res = null; this.i = -1; this.params = []; return true; }
+  free() { this.res = null; return true; }
+}
+class NativeDatabase {
+  get native() { return true; }
+  // sql.js heittää virheen jo prepare-vaiheessa (puuttuva taulu, syntaksi); sovellus käyttää sitä varakyselyihin
+  prepare(sql) {
+    const err = window.SatniNativeDb.check(sql);
+    if (err) throw new Error(err);
+    return new NativeStatement(sql);
+  }
+  all(sql, params) {
+    const r = nativeQuery(sql, params);
+    return r.rows.map((row) => { const o = {}; r.cols.forEach((c, k) => { o[c] = row[k]; }); return o; });
+  }
+}
+async function openNativeDatabase() {
+  const N = window.SatniNativeDb;
+  if (!N || typeof N.open !== "function") return null;
+  try { if (localStorage.getItem("satniForceSqlJs") === "1") return null; } catch (e) { /* ei tallennusta */ }
+  try {
+    N.open();
+    const total = N.size() || 1;
+    for (;;) {
+      const st = N.status();
+      if (st === "ready") break;
+      if (st.startsWith("error")) { console.warn("NativeDb:", st); return null; }
+      if (st === "copying") {
+        $("loading-text").textContent = t("unpacking");
+        $("progress-bar").style.width = `${Math.min(100, Math.round((N.copied() / total) * 100))}%`;
+      }
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    // Inarin, koltan ja sanaparien tiedostot luetaan yhä sql.js:llä (vaihe 4)
+    sqlModule = sqlModule || await initSqlJs({ locateFile: (f) => "vendor/" + f });
+    $("progress-bar").style.width = "100%";
+    return new NativeDatabase();
+  } catch (e) {
+    console.warn("NativeDb:", e);
+    return null;
+  }
+}
+
+async function loadDatabase(signal, tick = () => {}) {
+  const SQL = sqlModule = sqlModule || await initSqlJs({ locateFile: (f) => "vendor/" + f });
+  tick();
+  const response = await fetch(DATA_URL, { signal });
   if (!response.ok) throw new Error(t("loadFailed", response.status));
 
   // Ladataan ja puretaan virtana: pakattua tiedostoa (~49 Mt) ei pidetä muistissa kokonaisena, joten latauksen
   // muistihuippu on puretut palat + yhdistetty tietokanta (~2 × 156 Mt) eikä ~410 Mt. Edistymispalkki seuraa
   // pakattuja tavuja (content-length).
-  const total = Number(response.headers.get("content-length")) || 0;
+  // Android-sovelluksessa otsake voi tulla kahdesti ("165142528, 165142528"): ensimmäinen luku riittää
+  const total = parseInt(response.headers.get("content-length") || "", 10) || 0;
   const reader = response.body.getReader();
   const first = await reader.read();
   if (first.done) throw new Error(t("loadFailed", 0));
@@ -567,6 +761,7 @@ async function loadDatabase() {
     start(ctrl) { ctrl.enqueue(first.value); received = first.value.length; },
     async pull(ctrl) {
       const { done, value } = await reader.read();
+      tick();
       if (done) { $("loading-text").textContent = t("unpacking"); ctrl.close(); return; }
       received += value.length;
       if (total) $("progress-bar").style.width = `${Math.round((received / total) * 90)}%`;
@@ -581,6 +776,7 @@ async function loadDatabase() {
   for (;;) {
     const { done, value } = await out.read();
     if (done) break;
+    tick();
     chunks.push(value);
     size += value.length;
   }
@@ -730,6 +926,91 @@ async function wildcardSearch(query, index, pushHistory, run) {
   if (typed !== query) { $("search").value = typed; syncSearchClear(); }
 }
 
+// Englannin taivutusmuodon mahdolliset perusmuodot haussa (dogs -> dog, cities -> city, running -> run, went -> go).
+// Väärät ehdokkaat eivät haittaa: niillä ei ole osumia, ja osumat tulevat suorien osumien jälkeen.
+const ENG_IRREGULAR = { went: "go", gone: "go", was: "be", were: "be", been: "be", is: "be", are: "be", am: "be", did: "do", done: "do",
+  had: "have", has: "have", saw: "see", seen: "see", ate: "eat", eaten: "eat", took: "take", taken: "take", gave: "give", given: "give",
+  came: "come", made: "make", said: "say", got: "get", knew: "know", known: "know", thought: "think", found: "find", told: "tell",
+  bought: "buy", brought: "bring", ran: "run", sat: "sit", stood: "stand", wrote: "write", written: "write", spoke: "speak",
+  drank: "drink", swam: "swim", sang: "sing", slept: "sleep", left: "leave", felt: "feel", kept: "keep", met: "meet", paid: "pay",
+  sold: "sell", taught: "teach", caught: "catch", fell: "fall", flew: "fly", froze: "freeze", frozen: "freeze", grew: "grow",
+  hid: "hide", held: "hold", lost: "lose", rode: "ride", rose: "rise", shook: "shake", threw: "throw", woke: "wake", wore: "wear",
+  won: "win", began: "begin", begun: "begin", broke: "break", broken: "break", chose: "choose", drove: "drive", fought: "fight",
+  forgot: "forget", heard: "hear", led: "lead", meant: "mean", sent: "send", spent: "spend", understood: "understand",
+  children: "child", men: "man", women: "woman", feet: "foot", teeth: "tooth", mice: "mouse", geese: "goose", people: "person",
+  better: "good", best: "good", worse: "bad", worst: "bad", leaves: "leaf", wolves: "wolf", knives: "knife", wives: "wife",
+  lives: "life", halves: "half", calves: "calf", shelves: "shelf", loaves: "loaf" };
+function engBasesOf(q) {
+  if (!q || q.includes(" ")) return [];
+  const out = new Set();
+  if (ENG_IRREGULAR[q]) out.add(ENG_IRREGULAR[q]);
+  const cut = (suf, add = "") => { if (q.length > suf.length + 2 && q.endsWith(suf)) out.add(q.slice(0, -suf.length) + add); };
+  cut("ies", "y"); cut("es"); cut("s"); cut("ied", "y"); cut("ed"); cut("ed", "e"); cut("ing"); cut("ing", "e");
+  cut("er"); cut("est"); cut("ier", "y"); cut("iest", "y"); cut("ly");
+  // Kaksinkertainen loppukonsonantti (running -> run, stopped -> stop, bigger -> big)
+  for (const suf of ["ing", "ed", "er", "est"]) {
+    const m = q.endsWith(suf) && q.slice(0, -suf.length).match(/^(.*[aeiou])([bdgklmnprt])\2$/);
+    if (m) out.add(m[1] + m[2]);
+  }
+  out.delete(q);
+  return [...out].filter((b) => b.length >= 2);
+}
+
+// Koltan sana ilman erikoismerkkejä (export_web_data.py: sms_plain): haku koltaksi tavallisella näppäimistöllä
+const SMS_PLAIN = { "õ": "o", "ǩ": "k", "ǥ": "g", "ʒ": "z", "ǯ": "z", "â": "a", "đ": "d", "š": "s", "č": "c", "ž": "z", "ŋ": "n" };
+const smsPlain = (s) => (s || "").toLowerCase().replace(/[ʹ'’ʼ]/g, "").replace(/[õǩǥʒǯâđščžŋ]/g, (c) => SMS_PLAIN[c]);
+
+// Testiversioiden oletukset (käyttäjä 2026-11-22), kerran per versiokanava ja oletussarja (satni-channel-defaults):
+// DEV: kaikki kokeelliset päälle. BETA: uudet ominaisuudet päälle ja kerran ilmoitus; testaaja voi kytkeä ne pois,
+// eikä niitä kytketä uudelleen. Julkaistussa versiossa ei mitään.
+const CHANNEL_DEFAULTS = "v1";
+// Myöhemmin lisätyt ominaisuudet: kytketään päälle kerran myös testaajille, joilla v1 on jo käytetty (satni-channel-features)
+const CHANNEL_FEATURES = { deuMt: ["DEV", "BETA"] };
+function applyChannelFeatures(tag) {
+  let seen = [];
+  try { seen = JSON.parse(localStorage.getItem("satni-channel-features") || "[]"); } catch (e) { return false; }
+  const add = Object.keys(CHANNEL_FEATURES).filter((f) => CHANNEL_FEATURES[f].includes(tag) && !seen.includes(f));
+  if (!add.length) return false;
+  for (const f of add) settings.exp = { ...settings.exp, [f]: true };
+  try { localStorage.setItem("satni-channel-features", JSON.stringify([...seen, ...add])); } catch (e) { /* yksityinen tila */ }
+  saveSettings();
+  return tag === "BETA";
+}
+function applyChannelDefaults() {
+  const tag = channelTag(window.SATNI_VERSION);
+  if (!tag) return false;
+  let done = null;
+  try { done = localStorage.getItem("satni-channel-defaults"); } catch (e) { return false; }
+  if (done === tag + "-" + CHANNEL_DEFAULTS) return applyChannelFeatures(tag);
+  const addLang = (l) => { if (!settings.extraLangs.includes(l)) settings.extraLangs = [...settings.extraLangs, l]; };
+  if (tag === "DEV") {
+    settings.exp = { ...settings.exp, ocr: true, lause: true, tableTr: true, apertium: true, pivotFin: true, engMt: true, spaMt: true };
+    ["eng", "smn", "smj", "sma", "spa"].forEach(addLang);
+    settings.skolt = true; settings.skoltViaSme = true; settings.gameSmn = true;
+  } else {
+    settings.exp = { ...settings.exp, pivotFin: true, engMt: true, spaMt: true };
+    addLang("eng"); addLang("spa");
+    settings.skolt = true; settings.skoltViaSme = true;
+  }
+  try { localStorage.setItem("satni-channel-defaults", tag + "-" + CHANNEL_DEFAULTS); } catch (e) { /* yksityinen tila */ }
+  saveSettings();
+  applyChannelFeatures(tag);
+  return tag === "BETA";
+}
+function showChannelNotice() {
+  $("exp-dlg-title").textContent = t("betaOnTitle");
+  $("exp-dlg-body").innerHTML = t("betaOnBody");
+  $("exp-cancel").hidden = true;
+  const ok = $("exp-ok"), label = ok.textContent;
+  ok.textContent = t("betaOnOk");
+  $("exp-dlg").addEventListener("close", () => { $("exp-cancel").hidden = false; ok.textContent = label; }, { once: true });
+  $("exp-dlg").showModal();
+}
+
+// Versiokanava versionimestä: 1.1.0-dev.42 (DEV), 1.1.0-beta.3 (BETA, GitHubin pre-release); vanhat 1.0.0.1-DEV ja -BETA myös
+// Androidin DEV lisää perään koontinumeron ("1.1.0-dev.20 · 2026112215"), joten kanava voi olla myös ennen " · "
+const channelTag = (v) => { const m = /-(dev|beta)(?:\.\d+)?(?=\s|$)/i.exec(v || ""); return m ? m[1].toUpperCase() : null; };
+
 function queryDatabase(query) {
   if (isWildcard(query)) return wildcardQuery(query);
   const q = fold(query.trim());
@@ -762,14 +1043,38 @@ function queryDatabase(query) {
     add(r, r.nr === -1 ? 4.2 : r.nr !== null ? (r.fold === q ? 1.5 + Math.min(r.nr, 9) / 100 : 4)
       : r.fold === q ? 2 : r.fold.startsWith(`${q},`) ? 3 : 4);
   }
+  // Englanti (2026-11-21): taivutettu hakusana perusmuotoon (dogs -> dog, went -> go) sanakirjan englannista, ja
+  // konekäännetty englanti (kokeellinen, trans_search lang = engmt) vasta sanakirjan omien käännösten jälkeen
+  const mtSel = `SELECT d.${cols.split(", ").join(", d.")}, t.fold FROM trans_search t JOIN dictionary d ON d.id = t.word_id
+       WHERE t.lang = ? AND ${TRANS_MATCH} ORDER BY t.rowid`;
+  if (searchLang === "eng") {
+    const bases = engBasesOf(q);
+    for (const b of bases) for (const r of all(mtSel, ["eng", ...transMatchParams(b)])) add(r, r.fold === b ? 4.5 : 4.55);
+    if (settings.exp.engMt && hasTable("eng_mt")) {
+      for (const b of [q, ...bases]) for (const r of all(mtSel, ["engmt", ...transMatchParams(b)])) add(r, (r.fold === b ? 4.6 : 4.65) + (b === q ? 0 : 0.02));
+    }
+  }
+  // Suomennosehdotukset hakuun (kokeellinen, fin_mt): sanakirjan omien suomennosten jälkeen
+  if (searchLang === "fin" && settings.exp.pivotFin && hasTable("fin_mt")) {
+    for (const r of all(mtSel, ["finmt", ...transMatchParams(q)])) add(r, r.fold === q ? 4.6 : 4.65);
+  }
   // 5 = taivutusmuoto (manan -> mannat); hyvin yleisen sanan muoto 1.2 eli käännösten edelle
   // (lei = leahkit eikä norjan "lei", mus = mun eikä norjan "mus")
   // Myös kirjoitettu asu sellaisenaan: lyhenteellä alkavan yhdyssanan muodot (PP-bálvalusat, TV-fálaldaga)
   const forms = [q, capitalize(q), nordic(q), capitalize(nordic(q)), query.trim()];
-  for (const r of all(
-    `SELECT DISTINCT d.${cols.split(", ").join(", d.")}
-     FROM paradigms p JOIN dictionary d ON d.id = p.word_id WHERE p.surface IN (?, ?, ?, ?, ?)`, forms
-  )) add(r, r.freq >= COMMON_WORD ? 1.2 : 5);
+  // Verbinominit ja partisiipit (Actio, PrsPrc, PrfPrc, Ger, VAbess, VGen; käyttäjä 2026-11-23): jos haettu muoto on
+  // jonkin toisen sanan tavallinen taivutusmuoto (geahččaleamis = geahččaleapmi Sg+Loc), se ensin ja verbin
+  // johdosmuoto (geahččalit Actio+Loc) sen jälkeen, eikä yleisen verbin 1.2 nosta sitä. Ilman tavallista osumaa ennallaan.
+  // Progressiivi -min (Actio+Ess: lohkamin, bargamin) on tavallista verbin taivutusta (käyttäjä 2026-11-24): verbi ensin.
+  const formHits = all(
+    `SELECT d.${cols.split(", ").join(", d.")}, MIN(CASE WHEN (t.tag LIKE 'Actio%' AND t.tag <> 'Actio+Ess') OR t.tag IN ('PrsPrc', 'PrfPrc', 'Ger', 'VAbess', 'VGen')
+       THEN 1 ELSE 0 END) AS derived
+     FROM paradigms p JOIN dictionary d ON d.id = p.word_id JOIN tags t ON t.id = p.tag_id WHERE p.surface IN (?, ?, ?, ?, ?) GROUP BY d.id`, forms);
+  // Tavallinen osuma voittaa vain, jos sillä on käännös käyttöliittymän kielellä (heaitimis: heaitin "frafall" ilman
+  // suomennosta ei nouse heaitit "lakata" edelle suomeksi; norjaksi nousee). Vertailu 2026-11-24, kuvien lauseet.
+  const uiCol = LANGUAGES[settings.lang] && LANGUAGES[settings.lang].col;
+  const plainForm = formHits.some((r) => !r.derived && (!uiCol || (r[uiCol] || "").trim()));
+  for (const r of formHits) add(r, plainForm && r.derived ? 5.05 : r.freq >= COMMON_WORD ? 1.2 : 5);
   // Passiivimuoto (máksojuvvo -> máksit), sme_passive.py; vanhassa aineistossa taulua ei ole
   try {
     for (const r of all(
@@ -810,6 +1115,28 @@ function queryDatabase(query) {
       [...extra, q, `${likeEsc(q)},%`, `%, ${likeEsc(q)},%`, `%, ${likeEsc(q)}`]
     )) {
       add({ ...r, extraLang: r.lang }, r.fold === q ? 6.5 : r.fold.startsWith(`${q},`) ? 6.51 : 6.52);
+    }
+    // Konekäännetty espanja (kokeellinen): sanakirjan espanjan jälkeen
+    if (extra.includes("spa") && settings.exp.spaMt && hasTable("spa_mt")) {
+      for (const r of all(`SELECT d.${cols.split(", ").join(", d.")}, t.fold FROM trans_search t JOIN dictionary d ON d.id = t.word_id
+         WHERE t.lang = 'spamt' AND (t.fold = ? OR t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\' OR t.fold LIKE ? ESCAPE '\\')`,
+        [q, `${likeEsc(q)},%`, `%, ${likeEsc(q)},%`, `%, ${likeEsc(q)}`])) add({ ...r, extraLang: "spa" }, r.fold === q ? 6.6 : 6.62);
+    }
+  }
+  // Haku saksaksi (BETA-kieli, konekäännös): kaikkien muiden osumien jälkeen
+  if (settings.exp.deuMt && hasTable("deu_mt")) {
+    for (const r of all(`SELECT d.${cols.split(", ").join(", d.")}, t.fold FROM trans_search t JOIN dictionary d ON d.id = t.word_id
+       WHERE t.lang = 'deumt' AND t.fold = ?`, [q])) add({ ...r, extraLang: "deu" }, 6.8);
+  }
+  // Haku koltansaameksi (BETA): koltan sana suomen tai norjan sanan kautta (export_web_data.py: trans_search smsvia)
+  if (settings.skolt) {
+    for (const r of all(`SELECT d.${cols.split(", ").join(", d.")}, t.fold FROM trans_search t JOIN dictionary d ON d.id = t.word_id
+       WHERE t.lang = 'smsvia' AND t.fold = ?`, [q])) add({ ...r, extraLang: "sms", smsWord: r.fold }, 6.7);
+    // Ilman koltan erikoismerkkejä kirjoitettu (kue'll, kuell, piannai): näytetään oikea kirjoitusasu
+    const sp = smsPlain(q);
+    for (const r of all(`SELECT d.${cols.split(", ").join(", d.")}, v.fold FROM trans_search t JOIN trans_search v ON v.word_id = t.word_id
+       AND v.lang = 'smsvia' JOIN dictionary d ON d.id = t.word_id WHERE t.lang = 'smsplain' AND t.fold = ?`, [sp])) {
+      if (smsPlain(r.fold) === sp) add({ ...r, extraLang: "sms", smsWord: r.fold }, 6.75);
     }
   }
   // 7 = perusmuoto alkaa hakusanalla; monisanaiset ilmaukset (dahkat iežas ...) vain, jos haussa on välilyönti
@@ -864,23 +1191,57 @@ function queryDatabase(query) {
 let skipExtraSearch = false;
 function extraSearchLangs() {
   if (skipExtraSearch) return [];
-  return settings.extraLangs.filter((l) => LANGUAGES[l] && !LANGUAGES[l].main && l !== settings.lang);
+  return activeExtraLangs();
 }
+
+// Konekäännetty englanti (kokeellinen, taulu eng_mt, eng_mt.py): sanoille ilman sanakirjan englantia, kun asetus on päällä
+// ja englanti on käännöskieli tai Muut kielet -kohdassa. level 3 = kolme käännösreittiä samaa mieltä, 2 = kaksi.
+function engMtOf(id) {
+  if (!settings.exp.engMt || !hasTable("eng_mt")) return null;
+  return all("SELECT eng, level FROM eng_mt WHERE word_id = ?", [id])[0] || null;
+}
+// Konekäännetty suomennosehdotus (Suomennosehdotukset-asetus, taulu fin_mt, fin_mt.py): kaksi tai useampi riippumaton
+// reitti samaa mieltä. Ennen vanhoja yhden reitin ehdotuksia (pivot_fin).
+function finMtOf(id) {
+  if (!settings.exp.pivotFin || !hasTable("fin_mt")) return null;
+  return all("SELECT fin, level FROM fin_mt WHERE word_id = ?", [id])[0] || null;
+}
+// Konekäännetty espanja (kokeellinen, taulu spa_mt, spa_mt.py): vähintään kolme lähdettä samaa mieltä; vain kun espanja on
+// valittu Muut kielet -kohdassa. Ángelin ja Kjell Kemin sanakirjaan ei kosketa.
+function spaMtOf(id) {
+  if (!settings.exp.spaMt || !hasTable("spa_mt")) return null;
+  return all("SELECT spa, level FROM spa_mt WHERE word_id = ?", [id])[0] || null;
+}
+// Konekäännetty saksa (BETA-kieli, taulu deu_mt, deu_mt.py): saksalle ei ole sanakirjaa, joten kaikki on konekäännöstä
+function deuMtOf(id) {
+  if (!settings.exp.deuMt || !hasTable("deu_mt")) return null;
+  return all("SELECT deu, level FROM deu_mt WHERE word_id = ?", [id])[0] || null;
+}
+const mtOf = (id, lang) => (lang === "eng" ? engMtOf(id) : lang === "fin" ? finMtOf(id) : lang === "spa" ? spaMtOf(id)
+  : lang === "deu" ? deuMtOf(id) : null);
+const mtText = (mt) => (mt ? mt.eng || mt.fin || mt.spa || mt.deu || "" : "");
 
 // Hakutuloksen tai ehdotuksen käännösteksti: muun kielen osumassa myös sen kielen käännös (koira · Espanjaksi: perro)
 function resultTrans(r, max) {
-  const own = translationOf(r, max);
+  const own = translationOf(r, max) || (mtOf(r.id, settings.lang) ? "≈ " + Object.values(mtOf(r.id, settings.lang))[0] : "");
   if (!r.extraLang) return own;
-  const other = `${t("langIn")[r.extraLang]}: ${translationOf(r, max, r.extraLang)}`;
+  const other = r.extraLang === "sms" ? `${t("langIn").sms}: ≈ ${r.smsWord} (${t("smsVia")})`
+    : `${t("langIn")[r.extraLang]}: ${translationOf(r, max, r.extraLang) || "≈ " + mtText(mtOf(r.id, r.extraLang))}`;
   return own ? `${own} · ${other}` : other;
 }
 
 // Sama HTML:nä tyylimerkintöineen (tuloslista ja hakuehdotukset): "pylly, perse (alatyylinen)"
 function resultTransHtml(r, max) {
   const own = translationOf(r, max);
-  const ownHtml = own ? labelledList(own, settings.lang) : "";
+  const mt = !own ? mtOf(r.id, settings.lang) : null;
+  const ownHtml = own ? labelledList(own, settings.lang) : mt ? `≈ ${esc(splitList(mt.eng || mt.fin).slice(0, max).join(", "))}` : "";
   if (!r.extraLang) return ownHtml;
-  const other = `${esc(t("langIn")[r.extraLang])}: ${labelledList(translationOf(r, max, r.extraLang), r.extraLang)}`;
+  if (r.extraLang === "sms") {
+    const o = `${esc(t("langIn").sms)}: ≈ ${esc(r.smsWord)} <span class="muted small">(${esc(t("smsVia"))})</span>`;
+    return ownHtml ? `${ownHtml} · ${o}` : o;
+  }
+  const otherTr = translationOf(r, max, r.extraLang);
+  const other = `${esc(t("langIn")[r.extraLang])}: ${otherTr ? labelledList(otherTr, r.extraLang) : "≈ " + esc(mtText(mtOf(r.id, r.extraLang)))}`;
   return ownHtml ? `${ownHtml} · ${other}` : other;
 }
 
@@ -1179,6 +1540,7 @@ function showOnly(view) {
   }
   $("loading").hidden = view !== "loading";
   for (const id of ["results", "word", "tabs", "word-foot"]) $(id).hidden = view !== "word";
+  $("help-btn").hidden = view !== "word";  // ohje on toistaiseksi kirjoitettu vain sanakortille
   for (const t of TABS) $("panel-" + t).hidden = view !== "word" || state.tab !== t;
 }
 
@@ -1204,6 +1566,7 @@ function showSearch(query, results, index = 0, pushHistory = true) {
   renderDidYouMean(query, state.results);
   renderPlaceNames(query);
   state.showPrefix = false;
+  state.resultsOpen = false;
   state.index = index;
 
   const hash = `#/sana/${encodeURIComponent(query)}${index ? "/" + index : ""}`;
@@ -1215,18 +1578,28 @@ function showSearch(query, results, index = 0, pushHistory = true) {
     $("tabs").hidden = true;
     $("word-foot").hidden = true;
     $("grad-sum").hidden = true;
+    $("der-of-line").hidden = true;  // edellisen sanan sanaperhe- tai johdosrivi pois
+    $("principal").hidden = true;
+    $("word-forms").hidden = true;
+    $("help-btn").hidden = true;
+    $("fam-foot").hidden = true;
     for (const t of TABS) $("panel-" + t).hidden = true;
     $("lemma").textContent = t("noHits", query);
     $("pos-badge").hidden = true;
+    $("word-sub").hidden = true;
     $("fav-btn").hidden = true;
     $("speak-btn").hidden = true;
     $("report-btn").hidden = true;
     $("word-links").hidden = true;
     $("translation").textContent = t("noHitsHint");
+    $("trans-box").classList.add("plain");
+    // Ilmoita puuttuvasta sanasta (2026-11-24): ei tyhjälle eikä pelkille jokerimerkeille
+    $("missing-line").hidden = !query.replace(/[*?\s]/g, "");
     renderSearchParts(query);
     $("form-translation").hidden = true;  // edellisen sanan rivit pois
     $("extra-translations").hidden = true;
-    $("more-meanings").textContent = "";
+    $("more-meanings").innerHTML = "";
+    $("more-meanings").hidden = true;
     $("gradation").innerHTML = "";
     $("word-info").textContent = "";
     return;
@@ -1234,6 +1607,8 @@ function showSearch(query, results, index = 0, pushHistory = true) {
   $("search-parts").hidden = true;
   renderResults();
   selectResult(Math.min(index, state.results.length - 1), pushHistory);
+  // Yksi tulos: sama sana ja käännös näkyvät kortissa, joten tulosriviä ei toisteta (käyttäjä 2026-11-25)
+  $("results").hidden = state.results.length <= 1;
 }
 
 // Haku ei löytänyt sanaa: yhdyssanan osat kuten kuvahaussa (váralašvuođadieđáhusaid = váralašvuođa + dieđáhusaid),
@@ -1310,12 +1685,17 @@ function didYouMean(query, results) {
   // myös isolla alkukirjaimella (erisnimet: danmarkun -> Dánmárkun)
   for (const [v, c] of [...cands]) if (!cands.has(capitalize(v))) cands.set(capitalize(v), c);
   const words = [...cands.keys()];
-  const marks = words.map(() => "?").join(",");
   const col = LANGUAGES[settings.lang].col;
-  const rows = all(`SELECT p.surface AS v, d.id, d.sme_lemma, d.pos, d.freq, d.${col} AS tr FROM paradigms p
+  // Paloina: pitkästä sanasta tulee yli 1 000 vaihtoehtoa, ja Androidin vanha SQLite (ennen 3.32, esim. Android 11)
+  // hyväksyy enintään 999 parametria kyselyssä (sql.js ja uudet 32 766)
+  const rows = [];
+  for (let i = 0; i < words.length; i += SQL_IN_CHUNK) {
+    const part = words.slice(i, i + SQL_IN_CHUNK), marks = part.map(() => "?").join(",");
+    rows.push(...all(`SELECT p.surface AS v, d.id, d.sme_lemma, d.pos, d.freq, d.${col} AS tr FROM paradigms p
                     JOIN dictionary d ON d.id = p.word_id WHERE p.surface IN (${marks})
                     UNION SELECT d.sme_lemma, d.id, d.sme_lemma, d.pos, d.freq, d.${col} FROM dictionary d
-                    WHERE d.lemma_fold IN (${marks})`, [...words, ...words]);
+                    WHERE d.lemma_fold IN (${marks})`, [...part, ...part]));
+  }
   const current = Math.max(0, ...sami.map((r) => r.freq || 0));
   const shown = new Set(sami.map((r) => r.id));
   const best = new Map();  // ehdotettu sana -> yleisin perusmuoto
@@ -1407,6 +1787,16 @@ const PREFIX_RANK = 7;
 function renderResults() {
   const box = $("results");
   box.innerHTML = "";
+  // Muut osumat tiiviinä rivinä (käyttäjä 2026-11-25: täysleveät tulosrivit työnsivät sanakortin alas); napautus avaa
+  // luettelon. Valittu sana näkyy kortissa, joten sen omaa riviä ei toisteta.
+  if (state.results.length > 1 && !state.resultsOpen) {
+    const more = document.createElement("button");
+    more.className = "more-results results-toggle";
+    more.textContent = t("moreHits", state.results.length - 1) + " ›";
+    more.onclick = () => { state.resultsOpen = true; renderResults(); [...box.children].forEach((b) => b.classList.toggle("selected", Number(b.dataset.i) === state.index)); };
+    box.appendChild(more);
+    return;
+  }
   const strong = state.results.filter((r) => r.rank < PREFIX_RANK).length;
   const prefixOnly = state.results.length - strong;
   const collapsed = strong > 0 && prefixOnly > 0 && !state.showPrefix && state.index < strong;
@@ -1457,6 +1847,13 @@ function selectResult(i, pushHistory = true) {
   state.transWord = r.via ? r.via.base : r.rank > 1.2 && r.rank < 5 ? r.finStem || state.query : null;
   // Suomen liitepartikkeli haussa (tuletko): vartalo ja liite (renderInfo)
   state.finClitic = r.finClitic ? { stem: r.finStem, clitic: r.finClitic } : null;
+  // Uusi sana avautuu aina Taivutus-välilehdelle (käyttäjä 2026-11-25: edellisen sanan välilehti jäi päälle);
+  // saman sanan uudelleenpiirto (asetusmuutos) säilyttää valitun välilehden
+  if (state.word?.id !== data.word.id) {
+    state.tab = "table";
+    for (const b of $("tabs").children) b.classList.toggle("active", b.dataset.tab === "table");
+    $("tabs").scrollLeft = 0;
+  }
   state.word = data.word;
   state.paradigm = data.paradigm;
   state.grades = data.grades;
@@ -1465,10 +1862,13 @@ function selectResult(i, pushHistory = true) {
   const w = data.word;
   $("lemma").textContent = shownLemma(w);
   $("pos-badge").hidden = false;
-  $("pos-badge").textContent = wordClassLabel(w.pos, w.subtype);
+  $("trans-box").classList.remove("plain");
+  $("pos-badge").textContent = wordClassLabel(w.pos, w.subtype).toLowerCase();  // kursiivisulkeissa pienellä: (substantiivi)
+  $("word-sub").hidden = false;
   $("fav-btn").hidden = false;
   $("speak-btn").hidden = false;
   $("report-btn").hidden = false;
+  $("missing-line").hidden = true;
   $("word-links").hidden = false;
   $("gt-link").href = SANIT_URL.replace("{lang}", settings.lang === "nob" ? "nob" : "fin")
     .replace("{word}", encodeURIComponent(w.sme_lemma));
@@ -1477,7 +1877,7 @@ function selectResult(i, pushHistory = true) {
 
   // Merkitykset vain käyttöliittymän kielellä ja Muut kielet -asetuksessa valituilla kielillä; muita kieliä
   // ei näytetä missään (sanakortti, Merkitykset-välilehti), ennen kuin ne valitaan valikosta.
-  const meanings = data.meanings.filter((m) => m.lang === settings.lang || settings.extraLangs.includes(m.lang));
+  const meanings = data.meanings.filter((m) => m.lang === settings.lang || activeExtraLangs().includes(m.lang));
   // Ensimmäinen merkitys käyttörajoituksineen (esim. hyppiä – paksussa lumessa, porosta) käyttöliittymän
   // kielellä; jos sitä ei ole, "(ei suomennosta)" ja valittujen muiden kielten käännökset sen alla
   const groups = meaningsByLanguage(meanings);
@@ -1491,19 +1891,27 @@ function selectResult(i, pushHistory = true) {
   if (trans) $("translation").innerHTML = labelledList(trans, settings.lang);
   else $("translation").textContent = t("noTranslationIn")[settings.lang] + note;
   renderApertium(w, trans);
+  renderEngMt(w, trans);
   renderPivotFin(w, trans);
   renderDerFin(w, trans);
   renderExtraTranslations(w, groups);
+  renderNoTrans(w, trans);
   // Ensimmäinen saamenkielinen määritelmä kortissa, kaikki Merkitykset-välilehdellä
   state.definitions = data.definitions || [];
   state.alsoFin = data.alsoFin || "";
   state.related = data.related || [];
   const def = state.definitions[0];
-  $("sme-def").hidden = !def;
-  $("sme-def").innerHTML = def ? `<b>${esc(t("smeDef"))}</b>${esc(def.definition)}` : "";
-  $("more-meanings").textContent = ownGroup.length > 1 ? t("moreMeanings", ownGroup.length - 1) :
-    groups.some(([lang]) => lang !== settings.lang) ? t("otherLangs") : "";
-  $("more-meanings").hidden = !$("more-meanings").textContent;  // tyhjä linkki ei jää Tab-järjestykseen
+  // Saamenkielinen selitys vain Merkitykset-välilehdellä (käyttäjä 2026-11-25: kortissa se ei auta useimpia käyttäjiä)
+  void def;
+  $("sme-def").hidden = true;
+  // Muut merkitykset (tai muut kielet) kuvakepainikkeena käännösrivin oikeassa reunassa; nimi saavutettavuutta varten
+  const moreLabel = ownGroup.length > 1 ? t("otherMeanings") :
+    groups.some(([lang]) => lang !== settings.lang) && $("extra-translations").hidden ? t("otherLangs") : "";
+  const mm = $("more-meanings");
+  mm.hidden = !moreLabel;
+  mm.title = moreLabel;
+  mm.setAttribute("aria-label", moreLabel);
+  mm.innerHTML = !moreLabel ? "" : ownGroup.length > 1 ? ICON_LIST : ICON_GLOBE;
 
   renderGradation();
   renderInfo(w);
@@ -1512,6 +1920,9 @@ function selectResult(i, pushHistory = true) {
   renderTable();
   renderMeanings(meanings);
   renderRaw();
+  state.familyOpen = new Set();
+  try { renderFamily(); } catch (e) { $("family-tab").hidden = true; console.warn("sanaperhe", e); }
+  fitWordSub();
   if (pushHistory) addHistory(w.sme_lemma);
 }
 
@@ -1590,6 +2001,19 @@ function renderApertium(w, trans) {
   line.hidden = false;
 }
 
+// Konekäännetty englanti sanakortissa (kokeellinen): vain englanninkielisessä käyttöliittymässä ja vain, jos sanalla ei
+// ole sanakirjan englantia. Merkitään konekäännökseksi ja lähteiden määrällä.
+function renderEngMt(w, trans) {
+  const line = $("eng-mt-line");
+  if (!line) return;
+  line.hidden = true;
+  if (trans || settings.lang !== "eng") return;
+  const mt = engMtOf(w.id);
+  if (!mt) return;
+  line.innerHTML = `≈ ${esc(mt.eng)} <span class="muted small">(${esc(t("engMtNote", mt.level))})</span>`;
+  line.hidden = false;
+}
+
 // Suomennosehdotus (kokeellinen, tietokannan taulu pivot_fin, pivot_fin.py): inarinsaamen tai norjan kautta
 // muodostettu suomennos, vain jos sanalla ei ole suomennosta. Ei vaikuta hakuun, ja rivi merkitään tarkistamattomaksi.
 // Johdokset (der_fin.py): pohjasanat (der_base) ja johdettu suomennos (der_fin). Vanhassa tietokannassa tauluja ei ole.
@@ -1626,10 +2050,48 @@ function renderDerFin(w, trans) {
   line.hidden = false;
 }
 
+// Käännös puuttuu käyttöliittymän kielellä (käyttäjä 2026-11-24): sana näytetään silti, jotta sen voi ilmoittaa.
+// 1) Toisen kielen sanakirjakäännös varakielenä, vaikka kieli ei olisi valittuna (ei kieliä, jotka jo näkyvät).
+// 2) Johdos sanasta X (der_of, der_fin.py): analysaattorin yksiselitteinen pohjasana ja sen oma käännös; sanan omaa
+//    merkitystä ei arvata. 3) Ilmoita puuttuvasta käännöksestä -linkki (Ilmoita virheestä -lomake, "Käännös puuttuu").
+const FALLBACK_LANGS = { fin: ["nob", "eng", "spa", "smn", "smj", "sma"], nob: ["fin", "eng", "spa", "smn", "smj", "sma"],
+                         eng: ["nob", "fin", "spa", "smn", "smj", "sma"] };
+function renderNoTrans(w, trans) {
+  const fb = $("fallback-line"), der = $("der-of-line");
+  fb.hidden = der.hidden = $("notrans-line").hidden = true;
+  if (trans) return;
+  const shown = new Set([settings.lang, ...activeExtraLangs()]);
+  for (const lang of FALLBACK_LANGS[settings.lang] || []) {
+    if (shown.has(lang)) continue;
+    const text = translationOf(w, 4, lang);
+    if (!text) continue;
+    fb.innerHTML = `<span class="muted">${esc(t("langIn")[lang])}:</span> ${labelledList(text, lang)} ` +
+      `<span class="fallback-badge">${esc(t("fallbackLang"))}</span>`;
+    fb.hidden = false;
+    break;
+  }
+  let d = null;
+  try { d = hasTable("der_of") && all("SELECT base, base_id FROM der_of WHERE word_id = ?", [w.id])[0]; } catch (e) { /* vanha tietokanta */ }
+  if (d) {
+    const col = LANGUAGES[settings.lang] && LANGUAGES[settings.lang].col;
+    const bt = col ? splitList((all(`SELECT ${col} AS t FROM dictionary WHERE id = ?`, [d.base_id])[0] || {}).t).slice(0, 3).join(", ") : "";
+    der.innerHTML = `<span class="muted">${esc(t("derOf"))}</span> <a href="#/sana/${encodeURIComponent(d.base)}">${esc(d.base)}</a>` +
+      (bt ? ` <span class="muted">– ${esc(bt)}</span>` : "");
+    der.hidden = false;
+  }
+  $("notrans-line").hidden = false;
+}
+
 function renderPivotFin(w, trans) {
   const line = $("pivot-fin-line");
   line.hidden = true;
   if (trans || !settings.exp.pivotFin || settings.lang !== "fin") return;
+  const mt = finMtOf(w.id);
+  if (mt) {
+    line.innerHTML = `≈ ${esc(mt.fin)} <span class="muted small">(${esc(t("engMtNote", mt.level))})</span>`;
+    line.hidden = false;
+    return;
+  }
   let rows = [];
   try {
     rows = all("SELECT fin, via FROM pivot_fin WHERE word_id = ?", [w.id]);
@@ -1642,23 +2104,34 @@ function renderPivotFin(w, trans) {
 }
 
 function renderExtraTranslations(w, groups) {
-  const lines = settings.extraLangs.filter((l) => LANGUAGES[l]).map((lang) => {
+  // Muut kielet kaksipalstaisena luettelona (käyttäjä 2026-11-25): kielen nimi vasemmalla, sana oikealla. Konekäännös
+  // ja tarkistamaton lähde lyhyenä tunnisteena; napautus näyttää selityksen (bindCard: .xl-tag).
+  const tag = (note, cls = "") => ` <button type="button" class="xl-tag${cls}" data-note="${esc(note)}">${esc(t("mtTag"))}</button>`;
+  const row = (lang, html) => `<span class="xl-lang">${esc(langName(lang) || lang)}</span><span class="xl-val">${html}</span>`;
+  const lines = activeExtraLangs().map((lang) => {
     const own = (groups.find(([l]) => l === lang) || [lang, []])[1][0];
     const text = own ? splitList(own.translations || own.explanations).slice(0, 4).join(", ") : translationOf(w, 3, lang);
     if (!text && lang === "eng") {
       // Wiktionaryn englanti suomen ja norjan kautta (taulu wikt_eng, wiktionary_eng.py): tarkistamaton, ei hakuun
-      let row = null;
-      try { row = all("SELECT eng FROM wikt_eng WHERE word_id = ?", [w.id])[0]; } catch (e) { /* vanha tietokanta */ }
-      if (row) return `<span class="muted">${esc(t("langIn").eng)}:</span> ${labelledList(splitList(row.eng).slice(0, 3).join(", "), "eng")} ` +
-        `<span class="muted small">(${esc(t("wiktEngNote"))})</span>`;
+      let r = null;
+      try { r = all("SELECT eng FROM wikt_eng WHERE word_id = ?", [w.id])[0]; } catch (e) { /* vanha tietokanta */ }
+      if (r) return row("eng", labelledList(splitList(r.eng).slice(0, 3).join(", "), "eng") + tag(t("wiktEngNote")));
+      const mt = engMtOf(w.id);
+      if (mt) return row("eng", esc(mt.eng) + tag(t("engMtNote", mt.level)));
     }
-    return text && `<span class="muted">${esc(t("langIn")[lang])}:</span> ${labelledList(text, lang)}`;
+    if (!text && lang === "spa") {
+      const mt = spaMtOf(w.id);
+      if (mt) return row("spa", esc(mt.spa) + tag(t("engMtNote", mt.level)));
+    }
+    return text && row(lang, labelledList(text, lang));
   }).filter(Boolean);
+  const deu = deuMtOf(w.id);
+  if (deu) lines.push(row("deu", esc(deu.deu) + tag(t("engMtNote", deu.level))));
   const sms = skoltFor(w);
-  if (sms) lines.push(`<span class="muted">${esc(t("langIn").sms)}${sms.via ? ` (${esc(t("smsVia"))})` : ""}:</span> ${esc(sms.text)}` +
-    ` <span class="unchecked-badge">${esc(t("smsUnchecked"))}</span>`);
+  if (sms) lines.push(row("sms", esc(sms.text) + (sms.via ? ` <span class="muted small">(${esc(t("smsVia"))})</span>` : "") +
+    ` <span class="unchecked-badge">${esc(t("smsUnchecked"))}</span>`));
   $("extra-translations").hidden = !lines.length;
-  $("extra-translations").innerHTML = lines.join("<br>");
+  $("extra-translations").innerHTML = lines.join("");
 }
 
 // Koltansaame (kokeellinen, tietokannan taulu sms, export_web_data.py / skolt_data.py). Pohjoissaamen ja
@@ -1678,7 +2151,7 @@ function skoltFor(w) {
     const own = lookup(settings.lang, state.transWord);
     if (own.length) return { text: own.join(", ") };
   }
-  if (!settings.skoltViaSme) return null;
+  if (!settings.skolt) return null;
   // Ensimmäinen suomennos, jolle löytyy koltan sana (pääkäännös; muut suomennokset toisi muita merkityksiä:
   // oabbá = sisar, sisko -> vain sisar = vuäʹbb, ei "sisko"-tätisanoja)
   for (const f of splitList(w.finnish_translation).slice(0, 3)) {
@@ -1686,6 +2159,128 @@ function skoltFor(w) {
     if (viaFin.length) return { text: viaFin.join(", "), via: true };
   }
   return null;
+}
+
+// Analysaattorin merkintä luettavaksi (Ind+Prt+Sg3 -> preteriti, yks. 3. persoona; Pl+Ill -> monikon illatiivi).
+// Tuntemattomat osat jätetään pois; jos mitään ei tunnisteta, näytetään merkintä sellaisenaan.
+const ICON_LIST = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor"/></svg>`;
+const ICON_GLOBE = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>`;
+const ICON_FAMILY = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="2.2"/><circle cx="5" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/><path d="M12 7.2V12M12 12H5v4.8M12 12h7v4.8"/></svg>`;
+
+// Sanaluokkarivi: mahtuessaan yhdellä rivillä "(substantiivi · yhdyssana: sápmi + mánná)", muuten jokainen osa omissa
+// sulkeissaan omalla rivillään (käyttäjä 2026-11-25: kapealla näytöllä tai isolla fontilla "· yhdyssana" alkoi riviltä
+// yksin). Tarkistetaan sanan vaihtuessa ja leveyden muuttuessa (kääntö, fonttikoko).
+function fitWordSub() {
+  const el = $("word-sub");
+  if (!el || el.hidden) return;
+  el.classList.remove("wrapped");
+  const parts = [...el.children].filter((c) => !c.hidden && c.textContent.trim());
+  if (parts.length < 2) return;
+  const lineH = parseFloat(getComputedStyle(el).lineHeight) || 20;
+  const tops = parts.map((c) => c.getBoundingClientRect().top);
+  const tall = parts.some((c) => c.getBoundingClientRect().height > lineH * 1.5);
+  if (tall || Math.max(...tops) - Math.min(...tops) > 2) el.classList.add("wrapped");
+}
+if (window.ResizeObserver) {
+  let lastW = 0;
+  new ResizeObserver((entries) => {
+    const w = Math.round(entries[0].contentRect.width);
+    if (w !== lastW) { lastW = w; fitWordSub(); }
+  }).observe(document.documentElement);
+}
+
+// --- Ohjetila (käyttäjä 2026-11-25): ?-painike näyttää näkymän osat numeroituina ja selittää ne. Aluksi sanakortti;
+// muille näkymille lisätään oma luettelo HELP_ITEMS-tauluun. Renkaat vain näkyvissä oleville osille; selitykset kaikille.
+const HELP_ITEMS = {
+  word: [["speak-btn", "speak"], ["fav-btn", "fav"], ["report-btn", "report"], ["word-forms", "forms"], ["trans-box", "trans"],
+    ["more-meanings", "more"], ["extra-translations", "extra"], ["fam-foot", "fam"], ["tabs", "tabs"]],
+};
+let helpItems = [], helpStep = 0, helpOpenedAt = -1e9;
+// Nykyinen kohta hehkuvalla korostuksella elementin omaan muotoon (pyöristys elementin mukaan), muille vain pieni
+// himmeä numero yläpuolelle (käyttäjä 2026-11-25: eri kokoiset laatikot menivät päällekkäin). Seuraa vieritystä.
+function placeHelpMarks() {
+  const marks = $("help-marks");
+  marks.innerHTML = "";
+  const rects = helpItems.map(([el]) => el.getBoundingClientRect());
+  // Kaikilla kohdilla oma ääriviiva, jotta numero liittyy selvästi alueeseen (käyttäjä 2026-11-25); nykyinen hehkuu.
+  // Pienet painikkeet: samankokoiset ympyrät, numerot samalle korkeudelle. Leveät osat: elementin muotoinen ohut viiva,
+  // numero sen vasemmassa yläkulmassa.
+  const small = (r) => r.width < 64;
+  const D = Math.max(46, ...rects.filter(small).map((r) => Math.max(r.width, r.height) + 6));
+  const rowTop = (r) => Math.min(...rects.filter((q) => small(q) && Math.abs((q.top + q.bottom) / 2 - (r.top + r.bottom) / 2) < 14)
+    .map((q) => (q.top + q.bottom) / 2 - D / 2));
+  helpItems.forEach(([el], i) => {
+    const r = rects[i];
+    if (r.bottom < 0 || r.top > innerHeight || !r.width) return;
+    const cur = i === helpStep;
+    let box;
+    if (small(r)) {
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      box = { left: cx - D / 2, top: cy - D / 2, width: D, height: D, radius: D / 2 };
+    } else {
+      const rad = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0;
+      box = { left: r.left - 5, top: r.top - 5, width: r.width + 10, height: r.height + 10, radius: Math.min(Math.max(rad + 5, 10), 18) };
+    }
+    const ring = document.createElement("div");
+    ring.className = "help-ring" + (cur ? " current" : "");
+    Object.assign(ring.style, { left: `${box.left}px`, top: `${box.top}px`, width: `${box.width}px`, height: `${box.height}px`, borderRadius: `${box.radius}px` });
+    const num = document.createElement("span");
+    num.className = "help-num" + (cur ? " current" : "");
+    num.textContent = i + 1;
+    const pos = small(r) ? { left: box.left + D / 2 - 10, top: rowTop(r) - 14 } : { left: box.left - 9, top: box.top - 10 };
+    Object.assign(num.style, { left: `${Math.min(innerWidth - 22, Math.max(2, pos.left))}px`, top: `${Math.max(2, pos.top)}px` });
+    marks.append(ring, num);
+  });
+  // Kohdevalo: nykyisen kohdan ympäriltä himmennetty (rengas tekee varjollaan reiän); jos kohta on vieritetty pois
+  // näkyvistä, koko sivu himmennetään kevyesti
+  $("help-dlg").classList.toggle("dim", !marks.querySelector(".help-ring.current"));
+}
+// Yksi kohta kerrallaan (käyttäjä 2026-11-25: kaikki selitykset kerralla peittivät puolet näytöstä): kohta vieritetään
+// näkyviin paneelin yläpuolelle, selitys paneelissa, Edellinen / Seuraava
+function showHelpStep(i) {
+  const T = t("help").word;
+  helpStep = Math.max(0, Math.min(helpItems.length - 1, i));
+  const [el, key] = helpItems[helpStep];
+  $("help-pos").textContent = `${helpStep + 1} / ${helpItems.length}`;
+  $("help-text").textContent = T.items[key];
+  $("help-close-btn").textContent = t("helpCloseBtn");
+  $("help-tip").textContent = t("helpTapTip");
+  $("help-prev").textContent = "‹ " + t("helpPrev");
+  $("help-prev").hidden = helpStep === 0;
+  const last = helpStep === helpItems.length - 1;
+  $("help-next").textContent = last ? t("helpDone") : t("helpNext") + " ›";
+  const panelTop = innerHeight - $("help-dlg").querySelector(".help-panel").offsetHeight;
+  const r = el.getBoundingClientRect();
+  const want = Math.max(70, (panelTop - Math.min(r.height, panelTop - 90)) / 2);
+  if (r.top < 60 || r.bottom > panelTop - 10) window.scrollTo({ top: Math.max(0, scrollY + r.top - want), behavior: "smooth" });
+  placeHelpMarks();
+}
+function openHelp() {
+  // Vain sanakortti (käyttäjä 2026-11-25: ei saa vuotaa muihin näkymiin): ei, jos jokin koko näytön näkymä tai
+  // valokuvahaku on auki tai sanakorttia ei näy
+  if (document.documentElement.classList.contains("view-open") || !$("ocr-view").hidden || $("word").hidden || !state.word ||
+      drawerOpen() || document.querySelector("dialog[open]:not(#help-dlg)")) return;
+  const view = "word", T = t("help")[view];
+  const shown = (el) => el && !el.hidden && el.getClientRects().length > 0 && el.closest("[hidden]") === null;
+  helpItems = HELP_ITEMS[view].map(([id, key]) => [$(id), key]).filter(([el]) => shown(el));
+  if (!helpItems.length) return;
+  $("help-title").textContent = T.title;
+  helpOpenedAt = performance.now();
+  $("help-dlg").show();  // ei modaalinen: kosketus läpi, joten sivua voi vierittää ja renkaat seuraavat
+  // Kohdistus paneeliin (ei ensimmäiseen painikkeeseen, jolloin "Sulje opas" näytti valitulta)
+  $("help-dlg").querySelector(".help-panel").focus({ preventScroll: true });
+  showHelpStep(0);
+}
+
+function describeTag(tag) {
+  const W = t("tagWords"), parts = tag.split("+");
+  const person = parts.find((x) => /^(Sg|Du|Pl)[123]$/.test(x));
+  const num = parts.find((x) => /^(Sg|Du|Pl)$/.test(x));
+  const words = parts.filter((x) => x !== person && x !== num && x !== "Ind" && W[x]).map((x) => W[x]);
+  if (person) words.push(W.person(person[0] === "S" ? "Sg" : person[0] === "D" ? "Du" : "Pl", person[2]));
+  else if (num && W.joinNum) words.unshift(W[num + "Of"]);  // monikon illatiivi
+  else if (num) words.push(W[num]);  // illative plural, illativ flertall
+  return words.length ? words.join(num && !person ? " " : ", ") : tag;
 }
 
 function renderInfo(w) {
@@ -1718,13 +2313,16 @@ function renderInfo(w) {
   const finClitics = state.clitic && settings.lang === "fin" && state.clitic.clitics.every((c) => FIN_CLITICS[c])
     ? state.clitic.clitics : null;
   const formLabel = state.clitic && !finClitics ? state.clitic.stem : searchedWord();
+  let formGrammar = "";
   if (matches.length && q !== fold(w.sme_lemma) && q !== fold(w.dial_same || "")) {
-    info.push(t("searchedForm", state.clitic ? state.clitic.stem : searchedWord(), [...new Set(matches)].join(", ")));
+    // Kieliopillinen kuvaus luettavassa muodossa (preteriti, yks. 3. persoona) analysaattorin merkintöjen sijaan
+    formGrammar = [...new Set(matches.map((m) => describeTag(m.split(" ")[0])))].slice(0, 2).join(" / ");
     if (FORM_PHRASES[settings.lang]) formTrans = translationOfForm(w, matches.map((m) => m.split(" ")[0]), finClitics);
   }
   // Haetun muodon käännös omalle rivilleen käännöksen alle (viesus ≈ talossa / talosta, i huset / fra huset).
   // Toiseen suuntaan: taivutettu käännös (juon = juoda ≈ jugan), jos haku ei ollut saamen muoto.
-  let html = formTrans ? t("formIn", esc(formLabel), esc(formTrans), settings.lang) : "";
+  let html = formGrammar ? `<div class="ft-form"><b>${esc(formLabel)}</b>${formTrans ? ` ≈ ${esc(formTrans)}` : ""}</div>` +
+    `<div class="ft-note">${esc(t("searchedFormShort"))} · ${esc(formGrammar)}</div>` : "";
   if (!html && state.via) {
     const tag = settings.lang === "fin" ? samiTagOfFinCell(state.via.cell, w.pos.toUpperCase(), state.via.base, w.human) : null;
     const sme = tag && (state.paradigm.get(tag) || [])[0];
@@ -2002,6 +2600,45 @@ function inflectionClassCell(w) {
 }
 
 // Kortissa tiivis rivi (viessu → viesu · ss → s), täydet tiedot Astevaihtelu-välilehdellä (kokeilu B, test-fable)
+// Sanakirjan tapaan pääsanamuodot tietorivillä (käyttäjä 2026-11-25): substantiivi nominatiivi ja genetiivi
+// (áhčči, áhči; beana, beatnaga), adjektiivi lisäksi attribuuttimuoto (vielgat, vielgada, attr. vilges), verbi
+// infinitiivi ja preesensin yksikön 1. persoona (dahkat, dagan). Väri asteen mukaan (vahva vihreä, heikko oranssi);
+// napautus avaa Aste-välilehden, jos sanalla on astevaihtelu.
+const PRINCIPAL_TAGS = { N: [["Sg+Nom", "Pl+Nom"], ["Sg+Gen", "Pl+Gen"]], A: [["Sg+Nom"], ["Sg+Gen"], ["Attr"]], V: [["Inf"], ["Ind+Prs+Sg1"]] };
+// Astevaihtelun konsonanttiaines korostettuna muodossa (áhčči: hčč vihreänä ja alleviivattuna, áhči: hč oranssina).
+// Kohta valitaan vokaalien välistä (painollisen tavun jälkeen); yhdyssanassa viimeinen osuma (sámemánná). Jos
+// kohtaa ei löydy varmasti, muotoa ei korosteta.
+const VOWELS = /[aáâeiouyäöåæø]/i;
+function markCluster(form, cluster, cls) {
+  if (!cluster || !cls) return esc(form);
+  let at = -1;
+  for (let i = form.indexOf(cluster); i >= 0; i = form.indexOf(cluster, i + 1)) {
+    if (i > 0 && VOWELS.test(form[i - 1]) && (i + cluster.length >= form.length || VOWELS.test(form[i + cluster.length]))) at = i;
+  }
+  if (at < 0) return esc(form);
+  return esc(form.slice(0, at)) + `<span class="${cls} pf-cluster">${esc(cluster)}</span>` + esc(form.slice(at + cluster.length));
+}
+function renderPrincipal() {
+  const el = $("principal"), w = state.word;
+  const tags = PRINCIPAL_TAGS[(w.pos || "").toUpperCase()] || [];
+  const seen = new Set(), parts = [];
+  for (const alts of tags) {
+    const tag = alts.find((x) => state.paradigm.get(x)?.length);
+    if (!tag) continue;
+    const f = state.paradigm.get(tag)[0];
+    if (seen.has(f)) continue;
+    seen.add(f);
+    // Astevaihtelun näyttö pois asetuksista: muodot ilman korostusta (kuten taulukossa)
+    const g = settings.showGrade ? state.grades.get(tag + "|" + f) : null;
+    const cls = g === "GD" ? "gd" : g === "HD" ? "hd" : "";
+    parts.push((tag === "Attr" ? `<span class="pf-label">attr.</span> ` : "") +
+      `<span class="pf-form" lang="se" translate="no">${markCluster(f, cls === "gd" ? w.gd_cluster : cls === "hd" ? w.hd_cluster : "", cls)}</span>`);
+  }
+  el.hidden = parts.length < 2;
+  el.innerHTML = parts.join(", ");
+  el.classList.toggle("clickable", !$("grade-tab").hidden);
+}
+
 function renderGradation() {
   renderGradationFull();
   const w = state.word, full = $("gradation"), sum = $("grad-sum");
@@ -2009,11 +2646,21 @@ function renderGradation() {
   $("grade-tab").hidden = !any;
   if (!any && state.tab === "grade") setTab("table");
   sum.hidden = !any;
+  renderPrincipal();
+  $("word-forms").hidden = $("principal").hidden;
   if (!any) return;
   const forms = full.querySelector(".grad-cell.forms .gc-val");
-  sum.innerHTML = (forms
-    ? `<span class="gs-forms" lang="se" translate="no">${forms.innerHTML}</span><span class="gs-clusters"><span class="gd">${esc(w.gd_cluster)}</span> → <span class="hd">${esc(w.hd_cluster)}</span></span>`
-    : `<span class="muted"><i>${esc(t("noGradation"))}</i></span>`) + `<span class="gs-more">${esc(t("gradation"))} ›</span>`;
+  // Tietorivillä pääsanamuotojen jälkeen: "Astevaihtelu: hčč → hč ›" (napautus avaa Aste-välilehden selityksineen).
+  // Sanalla ilman näkyvää astevaihtelua riviä ei näytetä (välilehti kertoo sen).
+  sum.hidden = !forms;
+  // Linkki Aste-välilehdelle, joka selittää sanan astevaihtelun: "astevaihtelu nn → n ›" (käyttäjä 2026-11-25: pelkkä
+  // "astevaihtelu ›" ei kertonut, mitä se tarkoittaa)
+  sum.innerHTML = forms ? `${esc(t("gradation").toLowerCase())} <span class="gd">${esc(w.gd_cluster)}</span> → <span class="hd">${esc(w.hd_cluster)}</span> ›` : "";
+  sum.title = t("gradation");
+  // Aste-välilehti vain, kun on näytettävää: näkyvä astevaihtelu tai taivutusluokka (vielgat: ei kumpaakaan)
+  $("grade-tab").hidden = !forms && !w.inflection_class;
+  if ($("grade-tab").hidden && state.tab === "grade") setTab("table");
+  $("word-forms").hidden = $("principal").hidden && sum.hidden;
 }
 function renderGradationFull() {
   const w = state.word;
@@ -2130,6 +2777,9 @@ function negVerbPhrase(lang, tag, person, f) {
   return null;
 }
 
+// Verbitaulukko allekkain kapealla näytöllä; taulukko piirretään uudelleen, kun leveys ylittää rajan (kääntö)
+const NARROW_TABLE = matchMedia("(max-width: 560px)");
+NARROW_TABLE.addEventListener?.("change", () => { if (state.word && state.word.pos?.toUpperCase() === "V") renderTable(); });
 function renderTable() {
   const w = state.word;
   const pos = w.pos.toUpperCase();
@@ -2154,7 +2804,7 @@ function renderTable() {
       return `<span class="form ${cls}" data-speak="${esc(speak)}" title="${esc(t("listenTo", speak))}">${esc(v)}</span>`;
     }).join('<span class="sep"> / </span>');
     const tr = translate ? translate(trTags || items.map(([tag]) => tag), neg) : "";
-    return `<td>${prefix ? `<span class="pron">${esc(prefix)}</span> ` : ""}${forms}${tr ? `<span class="form-tr">${esc(tr)}</span>` : ""}</td>`;
+    return `<td>${prefix ? `<span class="pron">${esc(prefix)}</span> ` : ""}${forms}${tr ? `<span class="form-tr">${tr.split(" / ").map(esc).join("<br>")}</span>` : ""}</td>`;
   };
   const label = (t) => `<td class="label">${esc(t)}</td>`;
   const section = (...cells) => `<tr class="section">${cells.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`;
@@ -2169,6 +2819,21 @@ function renderTable() {
   let html = "";
   if (!p.size && !UNINFLECTED_POS.includes(pos)) {
     html = `<p class="muted">${esc(t("noForms"))}</p>`;
+  } else if (pos === "V" && NARROW_TABLE.matches) {
+    // Kapea näyttö (käyttäjä 2026-11-25: preteritin sarakkeet jäivät näytön ulkopuolelle): aikamuodot allekkain,
+    // kolme saraketta (persoona, myönteinen, kielteinen)
+    const block = (first, title, sub, aff, neg, prn = true) => verbSection(first, title, sub, "") + personRows((pp) => {
+      const pr = prn ? PRONOUNS[pp] : "";
+      return `${label(pp)}${cell(pairs(aff(pp)), pr)}${cell(pairs(neg), prn ? `${pr} ${NEG_AUX[pp]}` : NEG_AUX_IMPRT[pp], null, pp)}`;
+    });
+    let rows = block(true, t("indicative"), t("present"), (pp) => `Ind+Prs+${pp}`, "Ind+Prs+ConNeg");
+    rows += block(false, "", t("preterite"), (pp) => `Ind+Prt+${pp}`, "Ind+Prt+ConNeg");
+    rows += block(false, "", t("conditional"), (pp) => `Cond+Prs+${pp}`, "Cond+Prs+ConNeg");
+    rows += block(false, "", t("potential"), (pp) => `Pot+Prs+${pp}`, "Pot+Prs+ConNeg");
+    rows += block(false, "", t("imperative"), (pp) => `Imprt+${pp}`, "Imprt+ConNeg", false);
+    let nf = section(t("nonFinite"), "");
+    VERB_NONFINITE_TAGS.forEach((tag, i) => { nf += `<tr>${label(t("nonFiniteRows")[i])}${cell(pairs(tag))}</tr>`; });
+    html = table(["", t("affirmative"), t("negative")], rows, "grouped") + table(null, nf);
   } else if (pos === "V") {
     let rows = verbSection(true, t("indicative"), t("present"), "", t("preterite"), "");
     rows += personRows((pp) => {
@@ -2212,8 +2877,8 @@ function renderTable() {
 
   $("panel-table").innerHTML =
     (legend ? `<p class="legend">${t("gradeLegend")}</p>` : "") +
-    (settings.exp.tableTr && html.includes("form-tr") ? `<p class="hint form-tr-note">${esc(t("tableTrNote"))}</p>` : "") +
-    html + `<p class="hint">${esc(t("tapHint"))}</p>`;
+    html + (settings.exp.tableTr && html.includes("form-tr") ? `<p class="hint form-tr-note">${esc(t("tableTrNote"))}</p>` : "") +
+    `<p class="hint">${esc(t("tapHint"))}</p>`;
   boxTables($("panel-table"));
 }
 
@@ -2292,8 +2957,11 @@ function renderMeanings(meanings) {
   }
   if (!meanings.length && !defs.length && !rel.length) html += `<p class="muted">${esc(t("noMeanings"))}</p>`;
   $("panel-meanings").innerHTML = html;
-  const examples = meanings.reduce((n, m) => n + m.examples.length, 0);
-  $("meanings-tab").textContent = t("tabMeanings", meanings.length, examples);
+  // Välilehti ilman lukumäärää ja piiloon, kun näytettävää ei ole (käyttäjä 2026-11-25: tiiviimpi välilehtirivi)
+  $("meanings-tab").textContent = t("tabMeanings");
+  const empty = !meanings.length && !defs.length && !rel.length;
+  $("meanings-tab").hidden = empty;
+  if (empty && state.tab === "meanings") setTab("table");
 }
 
 function renderRaw() {
@@ -2307,11 +2975,89 @@ function renderRaw() {
   $("panel-raw").innerHTML = `<div class="raw">${html || esc(state.word.sme_lemma)}</div>`;
 }
 
-const TABS = ["table", "grade", "meanings", "raw"];
+// Sanaperhe (family, sanaperhe.py): pohjasana, yhdyssanan osat, johdokset, yhdyssanat ja saman pohjan johdokset.
+// Vain analysaattorin varmat linkit sanakirjan hakusanojen välillä. Välilehti näkyy vain, kun sanalla on sukulaisia.
+const FAMILY_SHOW = 12;
+function familyOf(id) {
+  const empty = { base: null, parts: [], derived: [], compounds: [], siblings: [] };
+  if (!hasTable("family")) return empty;
+  const col = (LANGUAGES[settings.lang] || {}).col || "finnish_translation";
+  const sel = `d.id, d.sme_lemma, d.pos, d.${col} AS tr`;
+  const up = all(`SELECT f.kind, f.nr, f.tag, ${sel} FROM family f JOIN dictionary d ON d.id = f.parent_id WHERE f.child_id = ? ORDER BY f.kind, f.nr`, [id]);
+  const down = all(`SELECT f.kind, ${sel} FROM family f JOIN dictionary d ON d.id = f.child_id WHERE f.parent_id = ?
+                    GROUP BY f.kind, d.id ORDER BY COALESCE(d.freq, 0) DESC, d.sme_lemma`, [id]);
+  const base = up.find((r) => r.kind === "der") || null;
+  const siblings = base ? all(`SELECT ${sel} FROM family f JOIN dictionary d ON d.id = f.child_id
+                    WHERE f.parent_id = ? AND f.kind = 'der' AND f.child_id != ? ORDER BY COALESCE(d.freq, 0) DESC, d.sme_lemma LIMIT 30`, [base.id, id]) : [];
+  return { base, parts: up.filter((r) => r.kind === "cmp"), derived: down.filter((r) => r.kind === "der"),
+           compounds: down.filter((r) => r.kind === "cmp"), siblings };
+}
+function familyRow(r) {
+  const tr = splitList(r.tr).slice(0, 3).join(", ");
+  return `<a class="fam-row" href="#/sana/${encodeURIComponent(r.sme_lemma)}"><span class="fam-w">${esc(r.sme_lemma)}</span>` +
+    `<span class="fam-t">${esc(tr)}</span></a>`;
+}
+function familyList(head, rows, key) {
+  if (!rows.length) return "";
+  const open = state.familyOpen && state.familyOpen.has(key);
+  const shown = open ? rows : rows.slice(0, FAMILY_SHOW);
+  return `<h3 class="lang-head">${esc(head)}${rows.length > FAMILY_SHOW ? ` (${rows.length})` : ""}</h3><div class="fam-list">` +
+    shown.map(familyRow).join("") + `</div>` +
+    (rows.length > shown.length ? `<button type="button" class="fam-more link-btn" data-fam="${key}">${esc(t("famShowAll", rows.length))}</button>` : "");
+}
+function renderFamily() {
+  const w = state.word, f = state.family = familyOf(w.id);
+  let html = "";
+  if (f.base) html += familyList(t("famBase"), [f.base], "base");
+  if (f.parts.length) {
+    html += `<h3 class="lang-head">${esc(t("famParts"))}</h3><p class="fam-parts">` +
+      f.parts.map((r) => `<a href="#/sana/${encodeURIComponent(r.sme_lemma)}">${esc(r.sme_lemma)}</a>`).join(" + ") + `</p>` +
+      `<div class="fam-list">${f.parts.map(familyRow).join("")}</div>`;
+  }
+  html += familyList(t("famDerived"), f.derived, "der");
+  html += familyList(t("famCompounds"), f.compounds, "cmp");
+  html += familyList(t("famSiblings", f.base ? f.base.sme_lemma : ""), f.siblings, "sib");
+  const any = html !== "";
+  if (any) html += `<p class="muted small fam-note">${esc(t("famNote"))}</p>`;
+  $("panel-family").innerHTML = html;
+  $("family-tab").hidden = !any;
+  if (!any && state.tab === "family") setTab("table");
+  // Kortissa johdoksen pohjasana: "sanasta čakča – syksy" (myös kun käännös on; käännöksettömän sanan der_of-rivin tilalle).
+  // Muuten yhdyssanan osat tai yhteenveto, joka avaa välilehden (välilehti voi olla kapealla näytöllä piilossa oikealla).
+  // Yhteenveto ("Sanaperhe: 2 johdosta, 13 yhdyssanaa ›") kortin alareunassa virheilmoituksen vieressä (käyttäjä
+  // 2026-11-25: tietorivillä se peitti pääsanamuodot); tietorivillä vain sanan oma rakenne (osat tai pohjasana).
+  const line = $("der-of-line"), foot = $("fam-foot");
+  foot.hidden = !(f.derived.length || f.compounds.length);
+  // Pilleri "Sanasta muualla" -linkkien tyyliin: kuvake, nimi ja lukumäärät (käyttäjä 2026-11-25: pelkkä sininen teksti ei riittänyt)
+  const [famName, famCounts] = t("famSum", f.derived.length, f.compounds.length).split(": ");
+  foot.innerHTML = foot.hidden ? "" : `<span class="lp-mark">${ICON_FAMILY}</span><span class="fp-text"><b>${esc(famName)}</b>` +
+    ` <span class="fp-count">${esc(famCounts || "")}</span></span><span class="lp-arrow">›</span>`;
+  if (!f.base && f.parts.length) {
+    line.innerHTML = `<span class="muted">${esc(t("famPartsLine"))}</span> ` +
+      f.parts.map((r) => `<a href="#/sana/${encodeURIComponent(r.sme_lemma)}">${esc(r.sme_lemma)}</a>`).join(" + ");
+    line.hidden = false;
+  }
+  if (f.base) {
+    const tr = splitList(f.base.tr).slice(0, 3).join(", ");
+    $("der-of-line").innerHTML = `<span class="muted">${esc(t("derFrom"))}</span> <a href="#/sana/${encodeURIComponent(f.base.sme_lemma)}">` +
+      `${esc(f.base.sme_lemma)}</a>` + (tr ? ` <span class="muted">– ${esc(tr)}</span>` : "");
+    $("der-of-line").hidden = false;
+  }
+}
+
+const TABS = ["table", "grade", "meanings", "raw", "family"];
 function setTab(tab) {
   closeFormPop();
   state.tab = tab;
   for (const b of $("tabs").children) b.classList.toggle("active", b.dataset.tab === tab);
+  const act = $("tabs").querySelector(`[data-tab="${tab}"]`);
+  // Valittu välilehti näkyviin vaakavierityksessä (vain välilehtirivi vierii, ei sivu)
+  const bar = $("tabs");
+  if (act && !bar.hidden && bar.scrollWidth > bar.clientWidth) {
+    const a = act.getBoundingClientRect(), r = bar.getBoundingClientRect();
+    if (a.right > r.right) bar.scrollLeft += a.right - r.right;
+    else if (a.left < r.left) bar.scrollLeft -= r.left - a.left;
+  }
   for (const t of TABS) $("panel-" + t).hidden = t !== tab;
 }
 
@@ -2472,8 +3218,8 @@ async function ttsStoreApplyLimit() {
 // URIError-virheen, jolloin käynnistys jäi Puretaan…-tilaan (julkaisutesti 2026-11-19)
 const safeDecode = (s) => { try { return decodeURIComponent(s); } catch (e) { return s; } };
 const fmtBytes = (b) => {
-  const nb = settings.uiLang === "nb", loc = nb ? "nb-NO" : "fi-FI";
-  const [v, u] = b >= 1073741824 ? [b / 1073741824, nb ? "GB" : "Gt"] : b >= 1048576 ? [b / 1048576, nb ? "MB" : "Mt"] : [b / 1024, nb ? "kB" : "kt"];
+  const fi = settings.uiLang === "fi", loc = { nb: "nb-NO", en: "en-GB" }[settings.uiLang] || "fi-FI";
+  const [v, u] = b >= 1073741824 ? [b / 1073741824, fi ? "Gt" : "GB"] : b >= 1048576 ? [b / 1048576, fi ? "Mt" : "MB"] : [b / 1024, fi ? "kt" : "kB"];
   return `${v.toLocaleString(loc, { maximumFractionDigits: v < 10 ? 1 : 0 })} ${u}`;
 };
 
@@ -2818,6 +3564,7 @@ let settingsPage = "main";
 function showSettingsPage(page) {
   settingsPage = page;
   if (page === "card") renderTtsStore();
+  if (page === "langs") { renderExtraLangs(); applyExperimental(); }  // espanjan alakohta tarvitsee ladatun tietokannan
   for (const el of document.querySelectorAll("#settings-view .set-page")) el.hidden = el.dataset.page !== page;
   $("settings-title").textContent = t(page === "main" ? "settings" : SETTINGS_PAGES[page]);
   $("settings-back").setAttribute("aria-label", t("back"));
@@ -2890,13 +3637,19 @@ function renderSettingsSummary() {
   const gradeSum = settings.showGrade ? `${colors[settings.gradeGd]}/${colors[settings.gradeHd]}` +
     (settings.gradeUnderline ? `, ${t("sumUnderline")}` : "") : "";
   set("sum-card", [t(settings.showGrade ? "sumGradeOn" : "sumGradeOff") + (gradeSum ? ` (${gradeSum})` : ""), settings.voice].join(" · "));
-  const langs = [...settings.extraLangs.map((l) => capitalize(langName(l))), ...(settings.skolt ? [capitalize(langName("sms"))] : [])];
-  set("sum-langs", langs.length ? langs.join(", ") : t("sumNone"));
+  const langs = [...activeExtraLangs().map((l) => capitalize(langName(l))), ...(settings.skolt ? [capitalize(langName("sms"))] : [])];
+  // Kokeelliset käännökset ovat Käännöskielet-sivulla (2026-11-21): päällä olevien määrä yhteenvetoon
+  const expOn = [...({ fi: ["tableTr", "pivotFin"], nb: ["tableTr", "apertium"], en: ["engMt"] }[settings.uiLang] || []),
+    ...(activeExtraLangs().includes("spa") ? ["spaMt"] : []), "deuMt",
+    // Englannin konekäännökset näkyvät ja vaikuttavat myös, kun englanti on muissa kielissä (exp-engmt-row)
+    ...(settings.uiLang !== "en" && activeExtraLangs().includes("eng") ? ["engMt"] : [])].filter((k) => settings.exp[k]).length;
+  set("sum-langs", (langs.length ? langs.join(", ") : t("sumNone")) + (expOn ? ` · ${t("experimental")}: ${expOn}` : ""));
   const fi = settings.uiLang === "fi";
   const tools = [settings.game ? t("minipeli") : "", t("sanastot"), settings.exp.ocr && window.SatniOcr ? t("expOcr") : "",
     settings.exp.lause && fi ? t("lauseTitle") : "", settings.gameSmn ? capitalize(langName("smn")) : ""].filter(Boolean);
   set("sum-tools", tools.join(", "));
-  set("sum-exp", t("sumExp", ["tableTr", fi ? "pivotFin" : "apertium"].filter((k) => settings.exp[k]).length));
+  const expKeys = { fi: ["tableTr", "pivotFin"], nb: ["tableTr", "apertium"], en: ["engMt"] }[settings.uiLang] || [];
+  set("sum-exp", t("sumExp", expKeys.filter((k) => settings.exp[k]).length));
   set("sum-history", t("sumHistory", settings.history.length));
   set("sum-clear", t("sumHistory", settings.history.length));
   set("sum-about", $("about-version").textContent);
@@ -3714,7 +4467,7 @@ function ocrGloss(word, original = "") {
     if (form && (row.freq || 0) < form.freq * 0.05) row = form;
   }
   const lemma = fold(row.sme_lemma) !== fold(word) ? row.sme_lemma : "";
-  const gloss = { lemma, form: lemma && tl === settings.lang ? ocrFormTranslation(row, word) : "", trans: translationOf(row, 2, tl), say: word, query, id: row.id,
+  const gloss = { lemma, form: lemma && tl === settings.lang ? ocrFormTranslation(row, word) : "", trans: translationOf(row, 2, tl) || (mtOf(row.id, tl) ? "≈ " + splitList(Object.values(mtOf(row.id, tl))[0]).slice(0, 2).join(", ") : ""), say: word, query, id: row.id,
     prop: row.subtype === "Prop" };
   // Ei suomennosta: johdettu (der_fin.py, váralašvuohta ≈ vaarallisuus), merkitty ≈:llä
   if (!gloss.trans && tl === "fin" && !window.NO_DER_BASES) { const d = derFinOf(row.id) || cmpFinOf(row.id); if (d) gloss.trans = "≈ " + d.fin; }
@@ -4162,6 +4915,7 @@ async function swapOcrLangs() {
     }
     return setOcrLangs("smn", "sme");
   }
+  if (settings.lang === "eng" && from === "sme") return to === "smn" ? setOcrLangs("smn", "sme") : undefined;
   if (from === "sme") return to === "smn" ? setOcrLangs("smn", "sme") : setOcrLangs("ui", "sme");
   if (from === "ui") return setOcrLangs("sme", settings.lang);
   return to === "sme" ? setOcrLangs("sme", from === "smn" ? "smn" : settings.lang) : setOcrLangs("ui", "sme");
@@ -4193,10 +4947,12 @@ function openOcrSettings() {
 // (settings.ocrTargets; käyttöliittymän kieli aina mukana)
 const minorOn = (lang) => hasMinor(lang) && settings.ocrLangs.includes(lang);
 const smnOn = () => minorOn("smn");
-const ocrSources = () => ["sme", ...MINOR.filter(minorOn), "ui"];
+// Englanniksi (2026-11-21): ei englanninkielisen kuvan hakua eikä lauseen kääntämistä (sanaparit ovat vain suomeksi ja
+// norjaksi); pohjoissaamen kuvan sanat käännetään englanniksi
+const ocrSources = () => ["sme", ...MINOR.filter(minorOn), ...(settings.lang === "eng" ? [] : ["ui"])];
 const targetOn = (c) => c === settings.lang || settings.ocrTargets.includes(c);
 function ocrTargets(from) {
-  const all = from === "sme" ? ["fin", "nob", "smn"] : from === "smn" ? ["fin", "sme", "nob"] : from === "sms" ? ["fin", "nob", "sme"] : ["sme"];
+  const all = from === "sme" ? [...(settings.lang === "eng" ? ["eng"] : []), "fin", "nob", "smn"] : from === "smn" ? ["fin", "sme", "nob"] : from === "sms" ? ["fin", "nob", "sme"] : ["sme"];
   const ts = all.filter(targetOn).sort((a, b) => (b === settings.lang) - (a === settings.lang));
   return ts.length ? ts : [all[0]];
 }
@@ -4209,6 +4965,9 @@ const ocrLangName = (code) => (code === "ui" ? t("ocrLangs")[settings.lang] : t(
 function applyOcrLook() {
   // Inari poistettu käytöstä asetuksista: kuvan kieli takaisin pohjoissaameksi (vain kun tietokanta on ladattu)
   if (db && isMinor(settings.ocrFrom) && !minorOn(settings.ocrFrom)) { settings.ocrFrom = "sme"; saveSettings(); }
+  if (settings.lang === "eng" && settings.ocrFrom === "ui") { settings.ocrFrom = "sme"; saveSettings(); }
+  // Lauseen kääntäminen vain suomeksi ja norjaksi: Poimi lause ja Valitse itse piiloon englanniksi
+  $("ocr-pick").style.visibility = $("ocr-selfsel").style.visibility = settings.lang === "eng" ? "hidden" : "";
   // Yläreunan kielipainike: Pohjoissaame → Suomi ▾ (avaa ⋯-paneelin)
   const arrow = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`;
   const chev = `<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
@@ -5569,6 +6328,7 @@ function applyOcrFix(idx, tok) {
 }
 // Poimi lause -painike: valitun sanan lause; ilman valintaa seuraava napautettu sana valitsee lauseen
 function pickSentence() {
+  if (settings.lang === "eng") return;  // lauseen kääntäminen vain suomeksi ja norjaksi
   if (!ocr?.words?.length) return;
   if (ocr.picked == null) { ocr.pickMode = true; $("ocr-status").textContent = t("sentTapWord"); return; }
   const w = ocr.words[ocr.picked], i = ocr.r.words.findIndex((r) => r.cx === w.cx && r.cy === w.cy);
@@ -5816,7 +6576,8 @@ const LICENSE_FILES = ["NOTICES.txt", "GPL-3.0.txt", "LGPL-3.0.txt", "CC-BY-4.0.
   "../vendor/LICENSE-sql.js.txt"];
 async function showLicenses() {
   let files = LICENSE_FILES;
-  try {
+  // Vain työpöytäversio (versionumero eikä Android): muualla tiedostoa ei ole, ja haku näkyi 404-virheenä (1.1.0-testi)
+  if (window.SATNI_VERSION && window.SATNI_PLATFORM !== "android") try {
     const r = await fetch("licenses/desktop/files.txt");
     // Ilman verkkoa vanha service worker voi palauttaa index.html:n puuttuvan tiedoston tilalle
     if (r.ok && !(r.headers.get("content-type") || "").includes("text/html")) files = files.concat((await r.text()).split("\n").map((f) => f.trim()).filter(Boolean).map((f) => "desktop/" + f));
@@ -5893,12 +6654,16 @@ function applyExperimental() {
   if (!settings.exp.ocr) $("ocr-view").hidden = true;
   // Lausekääntäjä (lauseet.js): painike yläpalkkiin kameran ja sanastojen viereen. Toimii vain suomeksi, joten
   // norjankielisessä käyttöliittymässä se piilotetaan kokonaan (asetus säilyy, palaa suomeksi vaihdettaessa).
+  // Englanniksi (2026-11-21): taivutusmuotojen käännöksiä ei ole (FORM_PHRASES vain suomi ja norja); englannin
+  // konekäännökset näkyvät englanniksi tai kun englanti on Muut kielet -kohdassa
+  if ($("exp-tabletr-row")) $("exp-tabletr-row").hidden = !FORM_PHRASES[settings.lang];
+  if ($("exp-engmt-row")) $("exp-engmt-row").hidden = settings.lang !== "eng";  // muuten alakohtana englannin alla
   if ($("lause-btn")) {
     const fi = settings.uiLang === "fi";
     $("exp-lause-row").hidden = !fi;
     // Suomennosehdotukset vain suomeksi ja Apertiumin norjannokset vain norjaksi (muuten ne eivät vaikuta mihinkään)
     $("exp-pivotfin-row").hidden = !fi;
-    $("exp-apertium-row").hidden = fi;
+    $("exp-apertium-row").hidden = settings.uiLang !== "nb";
     $("lause-btn").hidden = !(fi && settings.exp.lause);
     if (!(fi && settings.exp.lause) && !$("lause-view").hidden) { $("lause-view").hidden = true; overlayClosed(); }
   }
@@ -5913,6 +6678,7 @@ function bindExperimental() {
     if (name === "tableTr" && state.word) renderTable();
     if (name === "apertium" && state.results.length) searchAgainKeepingWord();
     if (name === "pivotFin" && state.results.length) searchAgainKeepingWord();
+    if (["engMt", "spaMt", "deuMt"].includes(name) && state.results.length) searchAgainKeepingWord();
   };
   // Kokeelliset kytkimet ovat kahdella asetussivulla (Työkalut: valokuvahaku ja lausekääntäjä; Kokeelliset käännökset)
   $("settings-view").addEventListener("change", (e) => {
@@ -5921,7 +6687,7 @@ function bindExperimental() {
     if (!e.target.checked) { set(name, false); return; }
     e.target.checked = false;  // päälle vasta, kun käyttäjä hyväksyy
     pending = name;
-    const key = { ocr: "expOcr", lause: "lauseTitle", tableTr: "expTableTr", apertium: "expApertium", pivotFin: "expPivotFin" }[name];
+    const key = { ocr: "expOcr", lause: "lauseTitle", tableTr: "expTableTr", apertium: "expApertium", pivotFin: "expPivotFin", engMt: "expEngMt", spaMt: "expSpaMt", deuMt: "expDeuMt" }[name];
     $("exp-dlg-title").textContent = t(key);
     $("exp-dlg-body").innerHTML = t(name === "lause" ? "expLauseInfo" : key + "Info");
     $("exp-dlg").showModal();
@@ -5952,6 +6718,8 @@ function bindOcr() {
   }).observe($("ocr-view"), { attributes: true, attributeFilter: ["hidden", "class"] });
   $("ocr-close").onclick = () => { if (ocr) pickOcrWord(null); $("ocr-settings").hidden = true; $("ocr-view").hidden = true; };
   $("ocr-pick").onclick = (e) => { e.stopPropagation(); pickSentence(); };
+  // Valitse itse suoraan kuvasta (käyttäjä 2026-11-23: ennen vain Poimi lause -> lausenäkymä -> Valitse sanat itse)
+  $("ocr-selfsel").onclick = (e) => { e.stopPropagation(); if (settings.lang !== "eng") startWordSelect(); };
   $("ocr-sel-cancel").onclick = () => endWordSelect(false);
   $("ocr-sel-done").onclick = () => endWordSelect(true);
   // Lausenäkymästä takaisin kuvaan valitsemaan: nykyisen lauseen sanat valmiiksi valittuina
@@ -6214,23 +6982,57 @@ function bindEvents() {
     const b = e.target.closest("[data-lang]");
     if (b) setUiLanguage(b.dataset.lang);
   });
-  $("extra-langs").onchange = (e) => {
+  $("skolt-exp").onchange = (e) => {
     if (e.target.dataset.skolt === "on") {
       if (e.target.checked) { e.target.checked = false; openSkoltDialog(); } else setSkolt(false, false);
       return;
     }
-    if (e.target.dataset.skolt === "via") { setSkolt(true, e.target.checked); return; }
+    if (e.target.dataset.skolt === "via") setSkolt(true, e.target.checked);
+  };
+  $("extra-langs").onchange = (e) => {
+    if (e.target.dataset.exp) return;  // espanjan konekäännökset: bindExperimental (hyväksyntäikkuna)
     const lang = e.target.value;
     settings.extraLangs = e.target.checked ? [...settings.extraLangs, lang] : settings.extraLangs.filter((l) => l !== lang);
     saveSettings();
+    renderExtraLangs();  // espanjan konekäännösten alakohta näkyy, kun espanja on valittu
+    applyExperimental();
     if (state.results.length) searchAgainKeepingWord();
   };
   $("skolt-ok").onclick = () => {
     $("skolt-dlg").close();
-    setSkolt(true, $("skolt-via").checked);
+    setSkolt(true, false);  // pohjoissaamen sanakortit omasta alakohdastaan
   };
   $("report-btn").onclick = (e) => { e.preventDefault(); openReport(); };
+  $("help-btn").onclick = openHelp;
+  // Ohjeen aikana: napautus selitettävään kohtaan näyttää sen selityksen (ei käytä painiketta); napautus muualle sulkee
+  // ohjeen. Vieritys ei ole napautus.
+  document.addEventListener("click", (e) => {
+    if (!$("help-dlg").open || e.target.closest(".help-panel")) return;
+    e.preventDefault(); e.stopPropagation();
+    // Tuplanapautus ?-painikkeeseen: toinen napautus ei sulje juuri avattua opasta (yötesti 26.11)
+    if (performance.now() - helpOpenedAt < 500) return;
+    const i = helpItems.findIndex(([el]) => el.contains(e.target));
+    if (i >= 0) showHelpStep(i); else $("help-dlg").close();
+  }, true);
+  $("help-close-btn").onclick = () => $("help-dlg").close();
+  $("help-x").onclick = () => $("help-dlg").close();
+  $("help-prev").onclick = () => showHelpStep(helpStep - 1);
+  $("help-next").onclick = () => (helpStep >= helpItems.length - 1 ? $("help-dlg").close() : showHelpStep(helpStep + 1));
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("help-dlg").open) { e.preventDefault(); $("help-dlg").close(); } }, true);
+  // Sivu vierii ohjeen alla (kaikki osat eivät mahdu kerralla näkyviin): renkaat seuraavat vieritystä ja koon muutosta
+  let helpRaf = 0;
+  const followHelp = () => { if ($("help-dlg").open && !helpRaf) helpRaf = requestAnimationFrame(() => { helpRaf = 0; placeHelpMarks(); }); };
+  addEventListener("scroll", followHelp, { passive: true });
+  addEventListener("resize", followHelp);
+  $("notrans-btn").onclick = (e) => {
+    e.preventDefault();
+    openReport();
+    $("report-dlg").querySelector('input[value="missing"]').checked = true;
+  };
   $("report-cancel").onclick = () => $("report-dlg").close();
+  $("missing-btn").onclick = (e) => { e.preventDefault(); openMissingReport(); };
+  // Puuttuvan sanan tila vain sille avaukselle (muut lomakkeen avaajat eivät tunne sitä)
+  $("report-dlg").addEventListener("close", () => $("report-dlg").classList.remove("missing-mode"));
   $("report-send").onclick = sendReport;
   // Kielivalinta koskee vain käännösvirhettä: valinnan muutos valitsee sen
   $("report-lang").onchange = () => { $("report-dlg").querySelector('input[value="trans"]').checked = true; };
@@ -6239,8 +7041,25 @@ function bindEvents() {
   bindBottomNav();
 
   $("tabs").onclick = (e) => { if (e.target.dataset.tab) setTab(e.target.dataset.tab); };
+  $("extra-translations").addEventListener("click", (e) => {
+    const b = e.target.closest(".xl-tag");
+    if (b) toast(b.dataset.note);
+  });
+  $("principal").onclick = () => { if (!$("grade-tab").hidden) { setTab("grade"); $("tabs").scrollIntoView({ block: "start", behavior: "smooth" }); } };
   $("grad-sum").onclick = () => { setTab("grade"); $("tabs").scrollIntoView({ block: "start", behavior: "smooth" }); };
   $("more-meanings").onclick = (e) => { e.preventDefault(); setTab("meanings"); };
+  $("fam-foot").onclick = (e) => { e.preventDefault(); setTab("family"); $("tabs").scrollIntoView({ block: "start", behavior: "smooth" }); };
+  // Tuplanapautus "Näytä kaikki" -painikkeeseen: toinen napautus osui riviin, joka liukui painikkeen paikalle, ja avasi
+  // satunnaisen sanan (yötesti 2026-11-25). Rivilinkit eivät toimi hetkeen laajennuksen jälkeen.
+  let famExpandAt = 0;
+  $("panel-family").onclick = (e) => {
+    if (e.target.closest(".fam-row, .fam-parts a") && Date.now() - famExpandAt < 600) { e.preventDefault(); return; }
+    const b = e.target.closest(".fam-more");
+    if (!b) return;
+    famExpandAt = Date.now();
+    state.familyOpen.add(b.dataset.fam);
+    renderFamily();
+  };
   $("speak-btn").onclick = () => speak(shownLemma(state.word), $("speak-btn"));
   $("fav-btn").onclick = toggleFavourite;
   bindFormPop();
@@ -6358,6 +7177,12 @@ function bindEvents() {
   $("history").addEventListener("click", (e) => { if (histLong) { e.preventDefault(); e.stopPropagation(); histLong = false; } }, true);
   $("history").addEventListener("contextmenu", (e) => { if (e.target.closest("li a")) e.preventDefault(); });
   $("clear-history-cancel").onclick = () => $("clear-history-dlg").close();
+  $("no-mail-cancel").onclick = () => $("no-mail-dlg").close();
+  $("no-mail-copy").onclick = async () => {
+    await copyText(noMailText);
+    $("no-mail-dlg").close();
+    toast(t("noMailCopied"));
+  };
   $("clear-history-ok").onclick = () => {
     $("clear-history-dlg").close();
     settings.history = [];
@@ -6388,8 +7213,8 @@ async function main() {
     const { sms, ...rest } = settings.exp;
     settings.exp = rest;
   }
-  settings.extraLangs = (settings.extraLangs || []).filter((l) => LANGUAGES[l] && !LANGUAGES[l].main);
-  if (LANGUAGES[settings.lang] && !LANGUAGES[settings.lang].main && !settings.extraLangs.includes(settings.lang)) {
+  settings.extraLangs = (settings.extraLangs || []).filter((l) => LANGUAGES[l]);
+  if (LANGUAGES[settings.lang] && !LANGUAGES[settings.lang].main && settings.uiLang !== "en" && !settings.extraLangs.includes(settings.lang)) {
     settings.extraLangs.push(settings.lang);
   }
   settings.lang = UI_LANGUAGES[settings.uiLang].translationLang;
@@ -6412,12 +7237,17 @@ async function main() {
     if (r) search(r.sme_lemma);
   };
   ex.appendChild(rnd);
+  const channelNotice = applyChannelDefaults();
   applyStaticTexts();
   bindEvents();
   bindExperimental();
   bindOcr();
   renderSidebar();
   if (FIRST_RUN) showFirstRun();
+  if (channelNotice) {  // BETA: kerran ilmoitus päälle kytketyistä; ensikäynnistyksellä kielen valinnan jälkeen
+    if ($("first-run").open) $("first-run").addEventListener("close", showChannelNotice, { once: true });
+    else setTimeout(showChannelNotice, 600);
+  }
 
   // Service worker vain verkkosivuna (PWA); työpöytä- ja Android-sovellus lukevat tiedostot omasta paketistaan
   if ("serviceWorker" in navigator && location.protocol.startsWith("http") && !IS_ANDROID) {
@@ -6429,9 +7259,9 @@ async function main() {
 
   try {
     showOnly("loading");
-    db = await loadDatabase();
+    db = (await openNativeDatabase()) || await loadDatabaseWithRetry();
   } catch (e) {
-    $("loading-text").textContent = t("loadFailedLong", e.message);
+    $("loading-text").textContent = e.stalled ? t("loadStalled") : t("loadFailedLong", e.message);
     return;
   }
   $("search").disabled = false;

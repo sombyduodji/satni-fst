@@ -19,6 +19,7 @@ import unicodedata
 
 import apertium_data
 import pivot_fin
+import sanaperhe
 import der_fin
 import cmp_fin
 import wiktionary_eng
@@ -41,6 +42,28 @@ BRACKETED = re.compile(r"\s*\([^()]*\)\s*")
 # Erikoiskirjaimet, joita Unicode-hajotus ei pura (č, á, ñ, å purkautuvat itsestään)
 EXTRA_LETTERS = str.maketrans({"đ": "d", "ŋ": "n", "ŧ": "t", "æ": "ae", "ø": "o", "ß": "ss", "ł": "l"})
 
+
+
+def eng_mt_table(src, lang="eng"):
+    """eng_mt.tsv (eng_mt.py) tai fin_mt.tsv (fin_mt.py) -> [(word_id, käännös, taso)] sanoille, joilla ei ole
+    sanakirjan käännöstä kyseisellä kielellä."""
+    path = os.path.join(SCRIPT_DIR, f"{lang}_mt.tsv")
+    if not os.path.exists(path):
+        return []
+    ids = collections.defaultdict(list)
+    for i, lemma, pos in src.execute(
+            "SELECT id, sme_lemma, pos FROM dictionary d WHERE NOT EXISTS "
+            "(SELECT 1 FROM meanings m WHERE m.word_id = d.id AND m.lang = ?)", (lang,)):
+        ids[(lemma, pos)].append(i)
+    out = {}
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            if line.startswith("#"):
+                continue
+            lemma, pos, eng, level, _ = line.rstrip("\n").split("\t")
+            for i in ids.get((lemma, pos), []):
+                out.setdefault(i, (i, eng, int(level)))  # sama sana kahdesti (eri merkitys): ensimmäinen
+    return list(out.values())
 
 def without_letters(text):
     """Hakusana ilman erikoiskirjaimia ja tarkkeita (árbol -> arbol, čáhci -> cahci, vyevdi -> vyevdi). Sama kuin
@@ -214,6 +237,12 @@ def export_minor(src, lang, cols):
     print(f"{lang}: {n} muotoa -> web/data/satni-{lang}.db.gz {packed / 1e6:.1f} Mt (purettuna {raw / 1e6:.1f} Mt)")
 
 
+
+def sms_plain(word):
+    """Koltan sana ilman erikoismerkkejä (sama kuin app.js smsPlain): pehmennysmerkki ja heittomerkit pois, õ ǩ ǥ ʒ ǯ â đ š č ž -> perusmerkit."""
+    w = re.sub(r"[ʹ'’ʼ]", "", word.lower())
+    return w.translate(str.maketrans("õǩǥʒǯâđščžŋ", "okgzzadsczn"))
+
 def fold(text):
     return text.lower().translate(SEARCH_FOLD) if isinstance(text, str) else text
 
@@ -333,10 +362,25 @@ def main():
         -- Johdokset (der_fin.py): pohjasanat yhdyssanojen käännökseen ja johdetut -vuohta-suomennokset (-uus/-yys)
         CREATE TABLE der_base (word_id INTEGER PRIMARY KEY, bases TEXT) WITHOUT ROWID;
         CREATE TABLE der_fin (word_id INTEGER PRIMARY KEY, fin TEXT, base TEXT, suffix TEXT) WITHOUT ROWID;
+        -- Johdos sanasta X (der_fin.der_of_rows, 2026-11-24): sanakortti näyttää pohjasanan, kun käännös puuttuu
+        CREATE TABLE der_of (word_id INTEGER PRIMARY KEY, base TEXT, base_id INTEGER) WITHOUT ROWID;
+        -- Sanaperhe (sanaperhe.py, 2026-11-24): johdos -> pohjasana (kind der, tag = johdin) ja yhdyssana -> osa (kind cmp,
+        -- nr = osan järjestys); vain analysaattorin varmat linkit hakusanojen välillä. Sanakortin Sanaperhe-välilehti.
+        CREATE TABLE family (child_id INTEGER, kind TEXT, parent_id INTEGER, nr INTEGER, tag TEXT,
+                             PRIMARY KEY (child_id, kind, parent_id, nr)) WITHOUT ROWID;
         -- Yhdyssanojen tarkistetut suomennokset sanoille ilman suomennosta (cmp_fin.py, cmp_fin_hyvaksytyt.tsv)
         CREATE TABLE cmp_fin (word_id INTEGER PRIMARY KEY, fin TEXT, parts TEXT) WITHOUT ROWID;
         -- Englanti Wiktionarysta suomen ja norjan kautta, kun molemmat antavat saman (wiktionary_eng.py, tarkistamaton)
         CREATE TABLE wikt_eng (word_id INTEGER PRIMARY KEY, eng TEXT) WITHOUT ROWID;
+        -- Konekäännetty englanti (kokeellinen, eng_mt.py / eng_mt.tsv): sanoille ilman englantia, kun vähintään kaksi
+        -- reittiä (saame, suomi, norja -> englanti) antaa saman sanan; level 3 = kaikki kolme, 2 = kaksi
+        CREATE TABLE eng_mt (word_id INTEGER PRIMARY KEY, eng TEXT, level INTEGER) WITHOUT ROWID;
+        -- Konekäännetyt suomennosehdotukset (kokeellinen, fin_mt.py / fin_mt.tsv), samat säännöt riippumattomin reitein
+        CREATE TABLE fin_mt (word_id INTEGER PRIMARY KEY, fin TEXT, level INTEGER) WITHOUT ROWID;
+        -- Konekäännetty espanja (kokeellinen, spa_mt.py / spa_mt.tsv): vähintään kolme lähdettä samaa mieltä
+        CREATE TABLE spa_mt (word_id INTEGER PRIMARY KEY, spa TEXT, level INTEGER) WITHOUT ROWID;
+        -- Konekäännetty saksa (kokeellinen BETA-kieli, deu_mt.py / deu_mt.tsv): ei sanakirjaa, vähintään 3/5 lähdettä
+        CREATE TABLE deu_mt (word_id INTEGER PRIMARY KEY, deu TEXT, level INTEGER) WITHOUT ROWID;
         -- Lisäsuomennokset käänteisestä dict-fin-sme:stä sanakortin Merkitykset-välilehdelle (fin_also.py)
         CREATE TABLE fin_also (word_id INTEGER PRIMARY KEY, items TEXT) WITHOUT ROWID;
         -- Loukkaavat, halventavat ja alatyyliset käännössanat (Wiktionaryn merkinnät, käyty käsin läpi; wiktionary_eng.py)
@@ -381,6 +425,20 @@ def main():
     search_rows += [(w, "fin", fold(f), -1) for w, f, _, _ in der_fin_rows]
     cmp_fin_rows = cmp_fin.rows(src)
     search_rows += [(w, "fin", fold(f), -1) for w, f, _ in cmp_fin_rows]
+    # Konekäännetty englanti (eng_mt.tsv) hakuun omalla kielikoodillaan engmt: app.js käyttää sitä vain
+    # Kokeelliset-asetuksella ja sanakirjan englannin jälkeen
+    eng_mt_rows = eng_mt_table(src)
+    for w, eng, _ in eng_mt_rows:
+        search_rows.append((w, "engmt", fold(eng), None))
+        plain = without_articles(eng)
+        if plain and fold(plain) != fold(eng):
+            search_rows.append((w, "engmt", fold(plain), None))
+    fin_mt_rows = eng_mt_table(src, "fin")
+    search_rows += [(w, "finmt", fold(fin), None) for w, fin, _ in fin_mt_rows]
+    spa_mt_rows = eng_mt_table(src, "spa")
+    search_rows += [(w, "spamt", fold(spa), None) for w, spa, _ in spa_mt_rows]
+    deu_mt_rows = eng_mt_table(src, "deu")
+    search_rows += [(w, "deumt", fold(x.strip()), None) for w, deu, _ in deu_mt_rows for x in deu.split(",") if x.strip()]
     dst.executemany("INSERT INTO trans_search VALUES (?, ?, ?, ?)", search_rows)
     # Hakusanat ilman saamen erikoiskirjaimia (čáhci -> cahci): hakukentän ehdotukset kirjoitettaessa tavallisilla
     # kirjaimilla (cah -> čáhci). Vain sanat, joissa erikoiskirjaimia on (app.js: suggestWords).
@@ -458,6 +516,27 @@ def main():
     sms_rows = {(lang, fold(word), pos): words for lang, word, pos, words in skolt_data.rows(SCRIPT_DIR)}
     dst.executemany("INSERT INTO sms VALUES (?,?,?,?)", ((*k, v) for k, v in sms_rows.items()))
     print(f"Koltansaame: {len(sms_rows)} riviä" if sms_rows else "Koltansaame: sanakirjoja ei löytynyt (hae_sanakirjat.sh)")
+    # Haku koltansaameksi (BETA, 2026-11-22): koltan sana -> sen suomen/norjan sana (GiellaLT dict-fin-sms, dict-nob-sms)
+    # -> pohjoissaamen sanat, joiden ensimmäisen merkityksen kaksi ensimmäistä käännöstä on se sana (sama sanaluokka).
+    # Likimääräinen kuten koltta pohjoissaamen sanakorteilla; app.js hakee näitä vain koltansaame päällä.
+    first_items = collections.defaultdict(set)
+    for wid, lang, tr, pos in src.execute(
+            "SELECT m.word_id, m.lang, m.translations, d.pos FROM meanings m JOIN dictionary d ON d.id = m.word_id "
+            "WHERE m.lang IN ('fin', 'nob') AND m.nr = (SELECT MIN(nr) FROM meanings x WHERE x.word_id = m.word_id AND x.lang = m.lang)"):
+        for item in [x.strip() for x in re.split(r"[,;]", re.sub(r"\([^)]*\)", "", tr or "")) if x.strip()][:2]:
+            first_items[(lang, fold(item), pos)].add(wid)
+    sms_search = set()
+    for (lang, key, pos), words in sms_rows.items():
+        for wid in first_items.get((lang, key, pos), ()):
+            for sw in (x.strip() for x in words.split(",")):
+                if sw:
+                    sms_search.add((wid, "smsvia", fold(sw), None))
+                    # Kirjoitusasu ilman koltan erikoismerkkejä (kueʹll -> kuell, piânnai -> piannai): app.js smsPlain
+                    plain = sms_plain(sw)
+                    if plain != fold(sw):
+                        sms_search.add((wid, "smsplain", plain, None))
+    dst.executemany("INSERT INTO trans_search VALUES (?, ?, ?, ?)", sorted(sms_search))
+    print(f"Haku koltansaameksi (BETA): {len(sms_search)} riviä")
 
     apertium_rows = apertium_data.rows(src)
     dst.executemany("INSERT INTO apertium VALUES (?,?)", apertium_rows)
@@ -471,6 +550,15 @@ def main():
     dst.executemany("INSERT INTO wikt_eng VALUES (?,?)", wikt_rows)
     print(f"Wiktionaryn englanti suomen ja norjan kautta: {len(wikt_rows)} riviä" if wikt_rows else "Wiktionary: wiktionary/ puuttuu (python3 wiktionary_eng.py --hae)")
 
+    dst.executemany("INSERT INTO eng_mt VALUES (?,?,?)", eng_mt_rows)
+    dst.executemany("INSERT INTO fin_mt VALUES (?,?,?)", fin_mt_rows)
+    dst.executemany("INSERT INTO spa_mt VALUES (?,?,?)", spa_mt_rows)
+    dst.executemany("INSERT INTO deu_mt VALUES (?,?,?)", deu_mt_rows)
+    print(f"Konekäännetty saksa (kokeellinen): {len(deu_mt_rows)} sanaa" if deu_mt_rows else "deu_mt.tsv puuttuu")
+    print(f"Konekäännetty espanja (kokeellinen): {len(spa_mt_rows)} sanaa" if spa_mt_rows else "spa_mt.tsv puuttuu")
+    print(f"Konekäännetyt suomennosehdotukset (kokeellinen): {len(fin_mt_rows)} sanaa" if fin_mt_rows else "fin_mt.tsv puuttuu")
+    print(f"Konekäännetty englanti (kokeellinen): {len(eng_mt_rows)} sanaa" if eng_mt_rows else "eng_mt.tsv puuttuu")
+
     register_rows = wiktionary_eng.register_rows(src)
     dst.executemany("INSERT INTO register VALUES (?,?,?)", register_rows)
     print(f"Tyylimerkinnät (loukkaava, halventava, alatyylinen): {len(register_rows)} käännössanaa")
@@ -480,6 +568,13 @@ def main():
     print(f"Suomennosehdotukset: {len(pivot_rows)} riviä" if pivot_rows else "Suomennosehdotukset: dict-smn-fin puuttuu (hae_sanakirjat.sh)")
     dst.executemany("INSERT INTO der_base VALUES (?,?)", der_base_rows)
     dst.executemany("INSERT INTO der_fin VALUES (?,?,?,?)", der_fin_rows)
+    der_of_rows = der_fin.der_of_rows(src)
+    dst.executemany("INSERT INTO der_of VALUES (?,?,?)", der_of_rows)
+    print(f"Johdos sanasta X: {len(der_of_rows)} sanaa ilman suomennosta tai norjannosta")
+    family_rows = sanaperhe.rows(src)
+    dst.executemany("INSERT INTO family VALUES (?,?,?,?,?)", family_rows)
+    print(f"Sanaperhe: {sum(1 for r in family_rows if r[1] == 'der')} johdosta, "
+          f"{len({r[0] for r in family_rows if r[1] == 'cmp'})} yhdyssanaa")
     dst.executemany("INSERT INTO cmp_fin VALUES (?,?,?)", cmp_fin_rows)
     print(f"Yhdyssanojen tarkistetut suomennokset: {len(cmp_fin_rows)}")
     print(f"Johdokset: {len(der_base_rows)} pohjasanaa, {len(der_fin_rows)} johdettua suomennosta"
@@ -500,7 +595,14 @@ def main():
     dst.executescript("""
         CREATE INDEX idx_lemma_fold ON dictionary(lemma_fold);
         CREATE INDEX idx_sme_lemma ON dictionary(sme_lemma);
+        CREATE INDEX idx_family_parent ON family(parent_id);
         CREATE INDEX idx_trans_search_word ON trans_search(word_id);
+        -- Yötesti 23.11.: saksan ja koltan haku (app.js queryDatabase: t.lang = 'deumt'/'smsvia'/'smsplain' AND
+        -- t.fold = ?) luki koko taulun joka haulla: OnePlus Nord N10 ~700 ms jokaiseen hakuun, indeksien kanssa ~16 ms.
+        -- Osittaiset indeksit vain näille kielille: tietokanta +1,6 Mt, pakattu +0,6 Mt.
+        CREATE INDEX idx_ts_deumt ON trans_search(fold) WHERE lang = 'deumt';
+        CREATE INDEX idx_ts_smsvia ON trans_search(fold) WHERE lang = 'smsvia';
+        CREATE INDEX idx_ts_smsplain ON trans_search(fold) WHERE lang = 'smsplain';
         CREATE INDEX idx_variant_fold ON dictionary(variant_fold);
         CREATE INDEX idx_paradigms_surface ON paradigms(surface);
         CREATE INDEX idx_meanings_word ON meanings(word_id);
@@ -524,6 +626,8 @@ def main():
     print(f"web/data/satni-web.db.gz: {packed / 1e6:.1f} Mt (purettuna {raw / 1e6:.1f} Mt)")
     # Sanastot (aihekohtaiset sanalistat) samasta tietokannasta: web/data/sanastot.json (gitignore, kuten tietokanta)
     subprocess.run(["python3", os.path.join(SCRIPT_DIR, "sanastot.py")], check=False)
+    # Kellonajat (kello.py, tallennettu kello.json): kellopeli ja kuunteluharjoitus
+    shutil.copyfile(os.path.join(SCRIPT_DIR, "kello.json"), os.path.join(SCRIPT_DIR, "web", "data", "kello.json"))
     # Minipelin sanat ja kategoriat sanastoista ja sanakirjasta: web/data/minipeli.json
     subprocess.run(["python3", os.path.join(SCRIPT_DIR, "minipeli.py")], check=False)
 

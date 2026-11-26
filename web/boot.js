@@ -4,7 +4,7 @@
 try {
   const s = JSON.parse(localStorage.getItem("satni-settings") || "{}");
   if (s.theme === "light" || s.theme === "dark") document.documentElement.dataset.theme = s.theme;
-  if (s.uiLang === "nb") document.documentElement.lang = "nb";
+  if (s.uiLang === "nb" || s.uiLang === "en") document.documentElement.lang = s.uiLang;
 } catch (e) {}
 // Android-sovellus jättää tilarivin tilan itse (MainActivity): yläpalkki ei lisää sitä toista kertaa
 if (location.hostname === "appassets.androidplatform.net") document.documentElement.classList.add("android-app");
@@ -19,10 +19,21 @@ if (location.hostname === "appassets.androidplatform.net") document.documentElem
     if (!h || !p) return;
     shown = true;
     h.removeAttribute("data-i18n"); p.removeAttribute("data-i18n");
-    var nb = document.documentElement.lang === "nb", app = location.hostname === "appassets.androidplatform.net";
-    h.textContent = nb ? "Nettleseren er for gammel" : "Selain on liian vanha";
+    var lang = document.documentElement.lang;
+    // Ensimmäinen käynnistys (kieltä ei vielä valittu): laitteen kieli, ettei englannin- tai norjankielinen puhelin saa
+    // ilmoitusta suomeksi (yötesti 2026-11-24, Android 9 -emulaattori en-US); suomi ja saame kuten ennen suomeksi
+    try {
+      if (!JSON.parse(localStorage.getItem("satni-settings") || "{}").uiLang) {
+        var nl = String(navigator.language || "").toLowerCase();
+        lang = /^(nb|nn|no)\b/.test(nl) ? "nb" : /^(fi|se|smn|sms)\b/.test(nl) || !nl ? "fi" : "en";
+      }
+    } catch (e) {}
+    var nb = lang === "nb", en = lang === "en", app = location.hostname === "appassets.androidplatform.net";
+    h.textContent = nb ? "Nettleseren er for gammel" : en ? "Your browser is too old" : "Selain on liian vanha";
     p.textContent = nb
       ? (app ? "Oppdater «Android System WebView» i Google Play og åpne appen på nytt." : "Oppdater nettleseren til nyeste versjon og åpne siden på nytt.")
+      : en
+      ? (app ? "Update \u201cAndroid System WebView\u201d in Google Play and open the app again." : "Update your browser to the latest version and open the page again.")
       : (app ? "Päivitä ”Android System WebView” Google Playssa ja avaa sovellus uudelleen." : "Päivitä selain uusimpaan versioon ja avaa sivu uudelleen.");
   }
   window.addEventListener("error", function (e) {

@@ -17,7 +17,9 @@ const PELI_TEXTS = {
     lead: "Valitse oikea käännös neljästä. Yksi väärä vastaus päättää pelin.",
     modes: { beginner: ["Aloittelija", "Yleisimmät sanat"], advanced: ["Edistynyt", "Kaikki sanat"],
       ordinals: ["Järjestysluvut", "1.–100."], time: ["Viikonpäivät, vuodenajat ja kuukaudet", "Biret sanoo oikean vastauksen"],
-      colours: ["Värit", "9 väriä"], questions: ["Kysymyssanat", "Biret sanoo oikean vastauksen"], animals: ["Eläimet", "23 eläintä"] },
+      colours: ["Värit", "9 väriä"], questions: ["Kysymyssanat", "Biret sanoo oikean vastauksen"], animals: ["Eläimet", "23 eläintä"], berries: ["Marjat, hedelmät ja kasvikset", "33 sanaa"], nearfar: ["Lähellä ja kaukana", "dát, diet, duot, dot …"],
+      clock: ["Kellonajat", "Tasan, puoli ja vartit"], clockAll: ["Kellonajat: kaikki", "Viiden minuutin välein, 144 aikaa"] },
+    clockListen: "Kuuntele ja valitse kello", clockAsk: "Paljonko kello on?", clockAgain: "Kuuntele uudelleen", clockText: "Näytä teksti", seeList: "Katso sanasto",
     groups: { words: "Sanat", cats: "Aiheet" }, groupSub: { words: "Sanakirjan sanoja kahdella tasolla", cats: "Lyhyitä teemapelejä" },
     rules: [["4 vaihtoehtoa"], ["oikein", "+1"], ["väärä vastaus päättää pelin"]],
     rulesWrite: [["oikea sana", "+3"], ["vihje", "−1"], ["tarkkeet puuttuvat", "−1"], ["väärä sana päättää pelin"]],
@@ -41,7 +43,9 @@ const PELI_TEXTS = {
     lead: "Velg riktig oversettelse av fire. Ett feil svar avslutter spillet.",
     modes: { beginner: ["Nybegynner", "De vanligste ordene"], advanced: ["Viderekommen", "Alle ordene"],
       ordinals: ["Ordenstall", "1.–100."], time: ["Ukedager, årstider og måneder", "Biret sier riktig svar"],
-      colours: ["Farger", "9 farger"], questions: ["Spørreord", "Biret sier riktig svar"], animals: ["Dyr", "23 dyr"] },
+      colours: ["Farger", "9 farger"], questions: ["Spørreord", "Biret sier riktig svar"], animals: ["Dyr", "23 dyr"], berries: ["Bær, frukt og grønnsaker", "33 ord"], nearfar: ["Nær og fjern", "dát, diet, duot, dot …"],
+      clock: ["Klokkeslett", "Hel, halv og kvarter"], clockAll: ["Klokkeslett: alle", "Hvert femte minutt, 144 tider"] },
+    clockListen: "Lytt og velg klokka", clockAsk: "Hva er klokka?", clockAgain: "Lytt igjen", clockText: "Vis teksten", seeList: "Se ordlisten",
     groups: { words: "Ord", cats: "Emner" }, groupSub: { words: "Ord fra ordboka på to nivåer", cats: "Korte temaspill" },
     rules: [["4 alternativer"], ["riktig", "+1"], ["feil svar avslutter spillet"]],
     rulesWrite: [["riktig ord", "+3"], ["hint", "−1"], ["manglende tegn", "−1"], ["feil ord avslutter spillet"]],
@@ -58,13 +62,41 @@ const PELI_TEXTS = {
     kbdTip: "Med samisk tastatur skriver du samisk i alle apper. På iPhone er det innebygd (Innstillinger → Generelt → Tastatur), til Android finnes gratis Divvun Keyboards.",
     kbdLink: "Slik legger du det til", close: "Lukk",
   },
+  en: {
+    statStreak: "best streak", statModes: "games tried", statGames: "games played", record: "record", rulesBtn: "Rules",
+    unfinished: (n) => `unfinished ${n} p`, restart: "Start the unfinished game again",
+    title: "Mini game", pick: "Choose a game", best: "Best", none: "–", score: (n) => `${n} right`,
+    lead: "Choose the right translation of four. One wrong answer ends the game.",
+    modes: { beginner: ["Beginner", "The most common words"], advanced: ["Advanced", "All words"],
+      ordinals: ["Ordinal numbers", "1st–100th"], time: ["Days, seasons and months", "Biret says the right answer"],
+      colours: ["Colours", "9 colours"], questions: ["Question words", "Biret says the right answer"], animals: ["Animals", "23 animals"], berries: ["Berries, fruit and vegetables", "33 words"], nearfar: ["Near and far", "dát, diet, duot, dot …"],
+      clock: ["Clock times", "O'clock, half and quarters"], clockAll: ["Clock times: all", "Every five minutes, 144 times"] },
+    clockListen: "Listen and pick the clock", clockAsk: "What time is it?", clockAgain: "Listen again", clockText: "Show text", seeList: "See the word list",
+    groups: { words: "Words", cats: "Topics" }, groupSub: { words: "Dictionary words on two levels", cats: "Short topic games" },
+    rules: [["4 options"], ["right", "+1"], ["a wrong answer ends the game"]],
+    rulesWrite: [["right word", "+3"], ["hint", "−1"], ["missing diacritics", "−1"], ["a wrong word ends the game"]],
+    askSme: "What is this in English?", askUi: (l) => `What is it ${l}`, inLang: { sme: "in Sámi", smn: "in Inari Sámi" }, over: "Game over", correctWas: "Right answer:",
+    again: "Play again", menu: "Choose another game", home: "To the start page", top: "Best results",
+    newBest: "New record!", youAnswered: "You answered:", resumeQ: "Continue the unfinished game?", resume: "Continue", fresh: "New game",
+    report: "Report an error", streak: "Streak", mute: "Mute the game sounds", unmute: "Turn the game sounds on",
+    style: "How to play", choose: "choose", write: "write", points: (n) => `${n} ${n === 1 ? "point" : "points"}`,
+    leadWrite: "Write the word in Sámi. A hint costs a point, and so do missing diacritics and a word that only partly fits. A wrong word ends the game.",
+    askWrite: (l) => `Write it ${l}`, allWords: (n) => `All ${n} words`, count: (n) => `${n} words`, samiLang: "Language", experimental: "experimental", check: "Check", inputLabel: "Your answer in Sámi", almost: "Almost!", nearly: "Close!", better: "A better fit here:",
+    youWrote: "You wrote:", letters: (n) => `${n} letters`,
+    hints: ["Hint: number of letters", "Hint: first letter", "Hint: Biret says the word"], listenAgain: "Listen again",
+    keys: "Sámi letters", hideKeys: "Hide Sámi letters", showKeys: "Show Sámi letters",
+    kbdTip: "With a Sámi keyboard you can write Sámi in every app. On iPhone it is built in (Settings → General → Keyboard); for Android there is the free Divvun Keyboards.",
+    kbdLink: "How to add it", close: "Close",
+  },
 };
 const pt = () => PELI_TEXTS[sanastoLang()];
 const PELI_MODES = [
   { id: "beginner", group: "words", color: "yellow" }, { id: "advanced", group: "words", color: "red" },
   { id: "ordinals", group: "cats", color: "blue" }, { id: "time", group: "cats", color: "blue" },
   { id: "colours", group: "cats", color: "green" }, { id: "questions", group: "cats", color: "yellow" },
-  { id: "animals", group: "cats", color: "green" },
+  { id: "animals", group: "cats", color: "green" }, { id: "berries", group: "cats", color: "red" },
+  { id: "nearfar", group: "cats", color: "yellow" },
+  { id: "clock", group: "cats", color: "blue" }, { id: "clockAll", group: "cats", color: "blue" },
 ];
 // Pelattava saamen kieli: pohjoissaame aina, inarinsaame vain asetuksista valittuna (kokeellinen, minipeli.json: smn).
 // Biret puhuu vain pohjoissaamea, joten inarinsaamessa ei ole ääntä eikä kolmatta (kuuntelu)vihjettä.
@@ -78,16 +110,29 @@ const peliSamiEnabled = () => !!settings.gameSmn && !!(peli && peli.smn);
 const peliMenuSami = () => (peliSamiEnabled() && peliStore.get("satni-peli-sami", "sme") === "smn" ? "smn" : "sme");
 const peliSamiOf = (run) => (run && run.sami === "smn" ? "smn" : "sme");
 const peliSet = (sami) => (sami === "smn" ? peli.smn : peli);
-const peliModesFor = (sami) => PELI_MODES.filter((m) => m.group === "words" || (peliSet(sami).cats[m.id] || []).length);
+// Käyttöliittymän kielen sarake pelin sanoissa: [saame, suomi, norja, ...]; englanniksi norjan paikalle englanti
+// (minipeli.json: en = saamen sana -> englanti), ja sana ilman englantia jää pois
+const peliUi = () => (sanastoLang() === "fi" ? 1 : 2);
+// Aiheissa oma kartta (enCats): sama saamen sana voi olla eri merkityksessä (mii = we pronomineissa, what kysymyksissä)
+const peliEn = (set, w, cat) => (cat && set.enCats && set.enCats[cat] ? set.enCats[cat][w[0]] : set.en && set.en[w[0]]);
+const peliLangWords = (list, set, cat) => (sanastoLang() !== "en" ? list
+  : list.map((w) => { const e = peliEn(set, w, cat); return e ? [w[0], w[1], e, ...w.slice(3)] : null; }).filter(Boolean));
+// Kellopelit (data/kello.json): vain pohjoissaame (GiellaLT:n kellogeneraattori ja Biretin äänet)
+const PELI_CLOCK = ["clock", "clockAll"];
+const peliIsClock = (mode) => PELI_CLOCK.includes(mode);
+const peliModesFor = (sami) => PELI_MODES.filter((m) => m.group === "words" || (peliIsClock(m.id) ? sami === "sme" && !!(peli && peli.clock)
+  : (peliSet(sami).cats[m.id] || []).length));
 
 // Pelitilojen kuvakkeet (sanastojen kuvakkeiden tyyliin): taimi, vuori, luvut, kalenteri, paletti, tassu
 const PELI_MODE_ICON = {
   beginner: '<path d="M12 21v-8"/><path d="M12 13c0-4 2.5-6.5 7-6.5 0 4.2-2.6 6.5-7 6.5z"/><path d="M12 15.5C12 12 9.8 10 6 10c0 3.5 2.2 5.5 6 5.5z"/>',
   advanced: '<path d="M3 19l6.5-11 4 6.5 2.5-4 5 8.5z"/><path d="M8 10.5l1.5 1.5 1.5-1.5"/>',
-  ordinals: null, time: null, colours: null, questions: null,
+  ordinals: null, time: null, colours: null, questions: null, nearfar: null,
+  clock: '<circle cx="12" cy="13" r="7.5"/><path d="M12 9.2V13l2.6 1.8"/><path d="M4.2 6.2l3-2.4M19.8 6.2l-3-2.4M7.3 19.2l-1.6 1.9M16.7 19.2l1.6 1.9"/>', clockAll: '<circle cx="12" cy="12" r="8.5"/><path d="M12 6.5V12h5"/><path d="M12 3.5v1.5M20.5 12H19M12 20.5V19M3.5 12H5"/>',
+  berries: '<circle cx="8.3" cy="15.2" r="3.6"/><circle cx="15.7" cy="15.2" r="3.6"/><circle cx="12" cy="9.2" r="3.6"/><path d="M12 5.6c.3-1.6 1.4-2.6 3.2-2.9"/>',
   animals: '<circle cx="7.5" cy="9" r="1.8"/><circle cx="12" cy="6.5" r="1.8"/><circle cx="16.5" cy="9" r="1.8"/><path d="M12 11.5c-3 0-5.5 3.5-5.5 5.6 0 1.6 1.3 2.4 2.7 2.4 1.1 0 1.8-.6 2.8-.6s1.7.6 2.8.6c1.4 0 2.7-.8 2.7-2.4 0-2.1-2.5-5.6-5.5-5.6z"/>',
 };
-const PELI_MODE_SANASTO_ICON = { ordinals: "numbers", time: "month", colours: "palette", questions: "question" };
+const PELI_MODE_SANASTO_ICON = { ordinals: "numbers", time: "month", colours: "palette", questions: "question", nearfar: "pointer" };
 const peliModeIcon = (id) => PELI_MODE_ICON[id]
   ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PELI_MODE_ICON[id]}</svg>`
   : sanastoSvg(PELI_MODE_SANASTO_ICON[id]);
@@ -115,7 +160,11 @@ function peliAddTop(mode, score, write = false, sami = "sme") {
 }
 
 async function loadPeli() {
-  if (!peli) peli = await (await fetch("data/minipeli.json")).json();
+  if (!peli) {
+    peli = await (await fetch("data/minipeli.json")).json();
+    // Kellonajat (kello.py): ilman tiedostoa kellopelit vain puuttuvat valikosta
+    try { const r = await fetch("data/kello.json"); if (r.ok) peli.clock = (await r.json()).rows; } catch (e) { /* ei kellopeliä */ }
+  }
   return peli;
 }
 
@@ -125,12 +174,17 @@ const peliVariants = (sami = "sme") => peliVariantMap[sami] ||
 
 // Kysymyspakka: tilan sanat sekoitettuna; [saame, suomi, norja, ryhmä] (ryhmä: vaihtoehdot samasta ryhmästä)
 function peliPool(mode, sami = "sme") {
+  // Kello: [saame (beal njeallje), suomi (puoli neljä), digitaalinen (3.30), taso, indeksi]; norjaksi ja englanniksi
+  // näytetään digitaalinen aika
+  if (peliIsClock(mode)) return (peli.clock || []).map((r, i) => [r.sme, r.fiShort, `${r.h}.${String(r.m).padStart(2, "0")}`, r.level, i])
+    .filter((w) => mode === "clockAll" || w[3] <= 2);
   const set = peliSet(sami);
   if (mode === "beginner" || mode === "advanced") {
-    return set.words.filter((w) => mode === "advanced" || w[4] === 1).map((w) => [w[0], w[1], w[2], w[3] || "N"]);
+    return peliLangWords(set.words, set).filter((w) => mode === "advanced" || w[4] === 1).map((w) => [w[0], w[1], w[2], w[3] || "N"]);
   }
   // Aika-aiheessa 5. kenttä = järjestysnumero Biretin palauteäänelle (audio/peli/aika-<i>-ok|no.ogg)
-  return (set.cats[mode] || []).map((w, i) => [w[0], w[1], w[2], mode === "time" ? w[3] : mode, i]);
+  // Indeksi ennen englannin suodatusta: Biretin äänitteet ovat alkuperäisen listan järjestyksessä
+  return peliLangWords((set.cats[mode] || []).map((w, i) => [w[0], w[1], w[2], mode === "time" ? w[3] : mode, i]), set, mode);
 }
 const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
@@ -140,13 +194,14 @@ function peliQuestion(run) {
   // Uusi pakka myös, jos tallennettu pakka on eri mittainen kuin sanalista (minipeli.json muuttui päivityksessä)
   if (run.pos >= run.deck.length || run.deck.length !== pool.length) { run.deck = shuffle(pool.map((_, i) => i)); run.pos = 0; }
   const item = pool[run.deck[run.pos++]];
-  const ui = sanastoLang() === "nb" ? 2 : 1;
+  const ui = peliUi();
+  if (peliIsClock(run.mode)) return peliClockQuestion(run, pool, item);
   if (run.write) {
     // Täysin oikein: sana, jonka käännökset kattavat kaikki kysymyksen merkitykset (ajatella: jurddašit ja smiehttat;
     // tuuli: biegga ja miella). Lähellä (-1 p): sana, jolla on vain osa merkityksistä (mieli, tuuli → biegga).
     const terms = (w) => w[ui].split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
     const itemTerms = terms(item);
-    const all = pool.concat(peliSet(sami).words);
+    const all = pool.concat(peliLangWords(peliSet(sami).words, peliSet(sami)));
     // Kirjoitusasut (sihkkar = sihkar) kelpaavat kuten sana itse (minipeli.json: sanan 6. kenttä)
     const withVariants = (list) => list.flatMap((w) => [w, ...((peliVariants(sami)[w]) || [])]);
     const accept = new Set(withVariants([item[0], ...all.filter((w) => { const t = terms(w); return itemTerms.every((x) => t.includes(x)); }).map((w) => w[0])]));
@@ -173,6 +228,33 @@ function peliQuestion(run) {
   return { sme: item[0], prompt: toSme ? item[ui] : item[0], toSme, opts: shuffle(opts.map(shown)), answer: shown(item),
     voice: PELI_VOICE[run.mode] && PELI_SAMI[sami].voice ? item[4] : null };
 }
+
+// Kellokysymys: luku (kello näkyy, Ollugo diibmu lea?, vastaus saameksi) tai kuuntelu (Biret sanoo ajan, valitaan kello);
+// kirjoituspelissä aina luku. Väärät vaihtoehdot mieluiten läheltä (sama tai seuraava tunti), jotta pitää lukea tarkasti.
+function peliClockQuestion(run, pool, item) {
+  const r = peli.clock[item[4]];
+  const base = { sme: item[0], clock: [r.h, r.m], toSme: true, voice: item[4] };
+  if (run.write) {
+    // Kelpaa myös koko lause (diibmu lea …) ja vartti sanalla njealjádas (sanakirjan esimerkit: njealjádas váile guokte)
+    const forms = [item[0], item[0].replace(/^kvárta /, "njealjádas ")];
+    return { ...base, prompt: "", write: true, accept: [...new Set(forms.flatMap((f) => [f, `diibmu lea ${f}`]))], related: [], answer: item[0], hints: 0 };
+  }
+  const listen = Math.random() < 0.5;
+  const near = (w) => Math.min(Math.abs(peli.clock[w[4]].h - r.h), 12 - Math.abs(peli.clock[w[4]].h - r.h)) <= 1;
+  const others = shuffle(pool.filter((w) => w[4] !== item[4]));
+  const opts = [item, ...others.filter(near).slice(0, 2)];
+  for (const w of others) { if (opts.length === 4) break; if (!opts.includes(w)) opts.push(w); }
+  const key = (w) => (listen ? String(w[4]) : w[0]);
+  return { ...base, listen, prompt: listen ? item[0] : "", opts: shuffle(opts.map(key)), answer: key(item) };
+}
+// Kellokysymyksen ääni: lukukysymyksessä Biret kysyy (Ollugo diibmu lea?), kuuntelussa sanoo ajan
+function peliClockSay(q) {
+  if (!q || !q.clock || settings.gameMute || !canOpus) return;
+  peliStopAudio();
+  peliAudio = new Audio(q.listen ? `audio/w/kello-${q.voice}-sme.ogg` : "audio/peli/kello-q.ogg");
+  peliAudio.play().catch(() => {});
+}
+const peliClockText = (q, o) => (q && q.listen && /^\d+$/.test(o) ? peli.clock[+o].sme : o);
 
 // --- Näkymät ---
 function peliHead(title, back) {
@@ -222,6 +304,7 @@ function peliModeSub(id, sami) {
 }
 
 function renderPeliMenu() {
+  if (!peli) return;  // vasta loadPeli:n jälkeen (openPeli piirtää valikon, kun data on ladattu; yötesti 2026-11-24)
   peliHead(pt().title, false);
   const T = pt();
   const sami = peliMenuSami();
@@ -279,14 +362,30 @@ function renderPeliQuestion() {
     `<div class="peli-stage"><div class="peli-meta">` +
     `<span class="peli-pill streak" title="${esc(T.streak)}">${PELI_FLAME}<b class="peli-score">${run.score}</b></span>` +
     `<span class="peli-pill best" title="${esc(T.best)}">${PELI_CUP}<b>${peliTop(run.mode, false, peliSamiOf(run))[0]?.score ?? 0}</b></span></div>` +
-    `<p class="peli-q">${esc(q.toSme ? `${T.askUi(T.inLang[peliSamiOf(run)])}?` : T.askSme)}</p>` +
-    `<p class="peli-word"${q.toSme ? "" : ' lang="se"'}>${esc(peliHy(q.prompt))}</p></div>` +
-    `<div class="peli-opts">${q.opts.map((o, i) => `<button type="button" class="peli-opt" data-o="${esc(o)}">` +
-      `<span class="po-key">${"ABCD"[i]}</span><span class="po-txt${peliLongClass(o)}"${q.toSme ? ' lang="se"' : ""}>${esc(peliHy(o))}</span>` +
+    (q.clock ? peliClockStage(q, T)
+      : `<p class="peli-q">${esc(q.toSme ? `${T.askUi(T.inLang[peliSamiOf(run)])}?` : T.askSme)}</p>` +
+        `<p class="peli-word"${q.toSme ? "" : ' lang="se"'}>${esc(peliHy(q.prompt))}</p>`) + `</div>` +
+    `<div class="peli-opts${q.clock && q.listen ? " clocks" : ""}">${q.opts.map((o, i) => `<button type="button" class="peli-opt" data-o="${esc(o)}">` +
+      `<span class="po-key">${"ABCD"[i]}</span>` + (q.clock && q.listen ? `<span class="po-clock">${kelloSvg(peli.clock[+o].h, peli.clock[+o].m)}</span>`
+        : `<span class="po-txt${peliLongClass(o)}"${q.toSme ? ' lang="se"' : ""}>${esc(peliHy(o))}</span>`) +
       `<span class="po-mark"></span></button>`).join("")}</div></div>` +
     `<p class="peli-report"><a href="#" class="report-link peli-report-link"><span aria-hidden="true">⚑</span> ${esc(T.report)}</a></p>`;
   peliMetaToHead();
   peliShownAt = performance.now();
+  peliClockSay(q);
+}
+// Kellokysymyksen yläosa: Biretin kysymys saameksi ja kello, tai kuuntelussa ohje, saamen aika ja Kuuntele uudelleen
+function peliClockStage(q, T) {
+  // Kuuntelu (käyttäjä 2026-11-23): äänet päällä aika on piilossa, kunnes käyttäjä pyytää tekstin (muuten tehtävän voi
+  // ratkaista lukemalla); mykistettynä tai ilman Opus-tukea teksti näkyy heti
+  if (q.listen) {
+    const show = q.showText || settings.gameMute || !canOpus;
+    return `<p class="peli-q">${esc(T.clockListen)}</p><p class="peli-word peli-clock-say${show ? "" : " masked"}" lang="se">${show ? esc(q.prompt) : "• • •"}</p>` +
+      `<div class="peli-clock-tools">${show ? "" : `<button type="button" class="peli-secondary peli-clock-again" data-act="clock-again">🔊 ${esc(T.clockAgain)}</button>`}` +
+      `${show ? "" : `<button type="button" class="peli-secondary peli-clock-text" data-act="clock-text">👁 ${esc(T.clockText)}</button>`}</div>`;
+  }
+  return `<p class="peli-q"><span lang="se">Ollugo diibmu lea?</span> <small>${esc(T.clockAsk)}</small></p>` +
+    `<div class="peli-clock">${kelloSvg(q.clock[0], q.clock[1])}</div>`;
 }
 // Putki ja ennätys otsikkoriville (kysymyskortti pienemmäksi, vastaukset alas peukalon ulottuville)
 function peliMetaToHead() {
@@ -310,7 +409,7 @@ function peliPodium(top, isNew) {
 // Oikea vastaus: iso peukalo kasvaa kysymyksen päälle, alla oikea saamen sana ja sen käännös
 function peliSplash(q) {
   const item = peliPool(peliRun.mode, peliSamiOf(peliRun)).find((w) => w[0] === q.sme);
-  const ui = item ? (sanastoLang() === "nb" ? item[2] : item[1]) : "";
+  const ui = item ? item[peliUi()] : "";
   const el = document.createElement("div");
   el.className = "peli-splash";
   el.setAttribute("aria-hidden", "true");
@@ -351,11 +450,14 @@ function renderPeliOver(chosen) {
   sheet.innerHTML = `<div class="peli-sheet-in" role="dialog" aria-label="${esc(T.over)}">` +
     `<div class="peli-ring"><b>${score}</b><span>${esc((write ? T.points : T.score)(score).replace(/^\d+\s*/, ""))}</span></div>` +
     `<h3>${esc(T.over)}${isNew ? ` <span class="peli-new">${PELI_CUP}${esc(T.newBest)}</span>` : ""}</h3>` +
-    `<p class="peli-correct">${esc(write ? T.youWrote : T.youAnswered)} <s${q.toSme ? ' lang="se"' : ""}>${esc(chosen)}</s> · ${esc(T.correctWas)} <b${q.toSme ? ' lang="se"' : ""}>${esc(q.answer)}</b></p>` +
+    `<p class="peli-correct">${esc(write ? T.youWrote : T.youAnswered)} <s${q.toSme ? ' lang="se"' : ""}>${esc(peliClockText(q, chosen))}</s> · ${esc(T.correctWas)} <b${q.toSme ? ' lang="se"' : ""}>${esc(peliClockText(q, q.answer))}</b></p>` +
+    // Minuutit 20-40 saameksi puolesta tunnista: vihje, jos virhe osui sellaiseen aikaan (käyttäjä 2026-11-23)
+    (q.clock && [20, 25, 35, 40].includes(q.clock[1]) ? `<p class="peli-cltip">${esc(t("harjClockTip"))}</p>` : "") +
     `<div class="peli-tops"><h4>${esc(T.top)}</h4>${peliPodium(top, isNew)}</div>` +
     `<div class="peli-actions"><button type="button" class="peli-primary" data-act="again" data-mode="${mode}">${esc(T.again)}</button>` +
     `<div class="peli-row"><button type="button" class="peli-secondary" data-act="menu">${esc(T.menu)}</button>` +
     `<button type="button" class="peli-secondary" data-act="home">${esc(T.home)}</button></div></div>` +
+    (PELI_LIST[mode] ? `<p class="peli-list-link"><button type="button" class="link-btn" data-act="open-list" data-list="${PELI_LIST[mode]}">📖 ${esc(T.seeList)}</button></p>` : "") +
     `<p class="peli-report"><a href="#" class="report-link peli-report-link"><span aria-hidden="true">⚑</span> ${esc(T.report)}</a></p></div>`;
   $("peli-body").querySelector(":scope > .peli-report")?.remove();
   document.querySelector(".pw-in")?.blur();  // näppäimistö alas, tulokset näkyviin
@@ -377,7 +479,7 @@ const peliSave = () => peliStore.set("satni-peli-run", peliRun);
 // Viikonpäivät, vuodenajat ja kuukaudet sekä kysymyssanat: Biret sanoo saameksi oikean vastauksen ("Riekta, dat lei …" / "Boastut. Rievttes
 // vástádus lea …"). Valmiit äänitteet (välimuistissa kuten sanastojen äänilistat), muissa peleissä ei ääntä.
 // Ääniaiheet ja tiedostojen etuliite: aika = kokonaiset lauseet, kysymyssanat = Biretin lause + sanan oma äänite yhdistettynä
-const PELI_VOICE = { time: "aika", questions: "kysy" };
+const PELI_VOICE = { time: "aika", questions: "kysy", clock: "kello", clockAll: "kello" };
 let peliAudio = null;
 function peliStopAudio() {
   if (!peliAudio) return;
@@ -496,7 +598,7 @@ function renderPeliWrite() {
     `<div class="peli-stage compact"><div class="peli-meta">` +
     `<span class="peli-pill streak" title="${esc(T.points(run.score))}">${PELI_FLAME}<b class="peli-score">${run.score}</b></span>` +
     `<span class="peli-pill best" title="${esc(T.best)}">${PELI_CUP}<b>${peliTop(run.mode, true, peliSamiOf(run))[0]?.score ?? 0}</b></span></div>` +
-    `<p class="peli-q">${esc(T.askWrite(T.inLang[peliSamiOf(run)]))}</p><p class="peli-word">${esc(peliHy(q.prompt))}</p>` +
+    (q.clock ? peliClockStage(q, T) : `<p class="peli-q">${esc(T.askWrite(T.inLang[peliSamiOf(run)]))}</p><p class="peli-word">${esc(peliHy(q.prompt))}</p>`) +
     `<div class="pw-hint" aria-live="polite">${peliHintHtml(q)}</div></div>` +
     `<form class="pw-form" autocomplete="off"><input class="pw-in" type="text" lang="se" autocomplete="off" autocapitalize="none" autocorrect="off" ` +
     `spellcheck="false" enterkeyhint="go" aria-label="${esc(T.inputLabel)}"><button type="submit" class="peli-primary pw-check">${esc(T.check)}</button></form>` +
@@ -512,6 +614,7 @@ function renderPeliWrite() {
   });
   peliMetaToHead();
   peliShownAt = performance.now();
+  peliClockSay(q);
   inp.focus({ preventScroll: true });
 }
 
@@ -550,7 +653,7 @@ function peliSubmit() {
   const s = document.querySelector(".peli-score");
   if (s) { s.textContent = peliRun.score; s.classList.remove("pop"); void s.offsetWidth; s.classList.add("pop"); }
   const item = peliPool(peliRun.mode, peliSamiOf(peliRun)).find((w) => w[0] === q.sme);
-  const ui = item ? (sanastoLang() === "nb" ? item[2] : item[1]) : "";
+  const ui = item ? item[peliUi()] : "";
   const el = document.createElement("div");
   const soft = r.almost || r.related;
   el.className = "peli-splash" + (soft ? " almost" : "");
@@ -608,6 +711,7 @@ async function peliSayWord(word, btn) {
 // --- Avaus ja sulkeminen ---
 function openPeli() {
   stopTts();
+  peliFromList = false;
   $("peli-view").hidden = false;
   overlayOpened();  // verkkoversion Takaisin sulkee pelin (app.js)
   loadPeli().then(() => {
@@ -618,11 +722,37 @@ function openPeli() {
     renderPeliMenu();
   }).catch(() => { $("peli-body").textContent = t("loadFailed", "minipeli.json"); });
 }
+// Peli pystyasennossa (käyttäjä 2026-11-23): lukitus näkymän avautuessa ja vapautus sulkeutuessa, kulki se mitä
+// reittiä tahansa (Sulje, Takaisin, Koti, toinen näkymä). Android: SatniApp.lockPortrait; asennettu verkkosovellus:
+// Screen Orientation API (toimii vain koko näytön tilassa, muuten ohitetaan).
+function peliOrientation() {
+  const on = !$("peli-view").hidden;
+  try { if (window.SatniApp && window.SatniApp.lockPortrait) return window.SatniApp.lockPortrait(on); } catch (e) { /* ei siltaa */ }
+  try { if (on) screen.orientation?.lock?.("portrait").catch(() => {}); else screen.orientation?.unlock?.(); } catch (e) { /* ei tukea */ }
+}
+if ($("peli-view")) new MutationObserver(peliOrientation).observe($("peli-view"), { attributes: true, attributeFilter: ["hidden"] });
+// Sanastojen Pelaa-painike (2026-11-23): peli auki suoraan listan tilaan (valittu pelitapa); jos tila ei ole käytössä
+// valitulla saamen kielellä (kello inariksi), näkyy valikko
+// Pelaa-reitti (käyttäjä 2026-11-24): Takaisin pelistä tai tulosruudusta suoraan listaan, ei pelivalikon kautta
+// (Android ja verkko samoin). Valikkoon itse siirtynyt käyttäjä palaa taas tavalliseen järjestykseen.
+let peliFromList = false;
+const peliSheetOpen = () => !!$("peli-body").querySelector(".peli-sheet");
+// Kerros pelin sisällä: käynnissä oleva peli tai tulosruutu (Takaisin vie pelivalikkoon); ei Pelaa-reitillä
+const peliInnerLayer = () => !$("peli-view").hidden && !peliFromList && ((peliRun && !$("peli-back").hidden) || peliSheetOpen());
+function peliOpenMode(mode) {
+  openPeli();
+  peliFromList = true;
+  loadPeli().then(() => { if (peliModesFor(peliMenuSami()).some((m) => m.id === mode)) peliStart(mode); }).catch(() => {});
+}
+// Pelitilan sanasto (tulossivun linkki): pelitila -> Sanastojen lista
+const PELI_LIST = { colours: "varit", questions: "kysymykset", time: "viikonpaivat", ordinals: "luvut", animals: "elaimet", berries: "marjat", nearfar: "lahellajakaukana",
+  clock: "kellonajat", clockAll: "kellonajat" };
 function hidePeli() { peliStopAudio(); const was = !$("peli-view").hidden; $("peli-view").hidden = true; if (was) overlayClosed(); }
-// Takaisin-ele: ensin pelistä valikkoon (peli jää jatkettavaksi), sitten näkymä kiinni
+// Takaisin-ele: ensin pelistä tai tulosruudusta valikkoon (peli jää jatkettavaksi), sitten näkymä kiinni;
+// Sanastojen Pelaa-reitillä suoraan listaan
 function closePeli() {
   if ($("peli-view").hidden) return false;
-  if (peliRun && !$("peli-back").hidden) { renderPeliMenu(); return true; }
+  if (peliInnerLayer()) { renderPeliMenu(); return true; }
   hidePeli();
   return true;
 }
@@ -678,7 +808,7 @@ function peliSendReport() {
     `${L.error}: ${kindText}`,
     `${pt().title}: ${peliLast ? pt().modes[peliLast.mode][0] : ""}${peliLast?.sami === "smn" ? " (" + PELI_SAMI.smn.name + ")" : ""}`,
     word ? `${L.word}: ${word}` : "",
-    item ? `${L.shown}: ${sanastoLang() === "nb" ? item[2] : item[1]}` : "",
+    item ? `${L.shown}: ${sanastoLang() === "en" ? (set.en || {})[item[0]] || "" : item[peliUi()]}` : "",
     q && q.toSme ? `${L.search}: ${q.prompt}` : "",
     `${L.ui}: ${UI_LANGUAGES[settings.uiLang].name}`,
     `${L.version}: ${$("about-version").textContent}`,
@@ -699,7 +829,7 @@ function bindPeli() {
     if (list) list.hidden = !open;
   };
   renderPeliMute();
-  $("peli-back").onclick = () => renderPeliMenu();
+  $("peli-back").onclick = () => { peliFromList = false; renderPeliMenu(); };
   if ($("game-toggle")) {
     $("game-toggle").onchange = (e) => { settings.game = e.target.checked; saveSettings(); applyPeliButton(); };
   }
@@ -729,7 +859,20 @@ function bindPeli() {
     if (act === "resume") renderPeliQuestion();
     else if (act === "fresh") { peliRun = null; peliSave(); renderPeliMenu(); }
     else if (act === "again") peliStart(e.target.closest("[data-act]").dataset.mode);
-    else if (act === "menu") renderPeliMenu();
+    else if (act === "menu") { peliFromList = false; renderPeliMenu(); }
+    else if (act === "clock-again") peliClockSay(peliRun?.q);
+    else if (act === "open-list") {
+      const id = e.target.closest("[data-act]").dataset.list;
+      hidePeli();
+      if (typeof openSanastot === "function") { sanastoAuki = id; openSanastot(); }
+    }
+    else if (act === "clock-text" && peliRun?.q?.listen) {
+      peliRun.q.showText = true;
+      peliSave();
+      const say = document.querySelector(".peli-clock-say");
+      if (say) { say.textContent = peliRun.q.prompt; say.classList.remove("masked"); }
+      e.target.closest("[data-act]").remove();
+    }
     else if (act === "hint") peliHint(e.target.closest("[data-act]"));
     else if (act === "listen") peliSayWord(peliRun?.q?.sme, e.target.closest("[data-act]"));
     else if (act === "keys-hide" || act === "keys-show") {
@@ -748,7 +891,7 @@ function bindPeli() {
   for (const ev of ["pointerdown", "mousedown"]) {
     $("peli-body").addEventListener(ev, (e) => { if (e.target.closest(".pw-key, .pw-hint-btn")) e.preventDefault(); });
   }
-  overlayLayerFns.push(() => (!$("peli-view").hidden && peliRun && !$("peli-back").hidden ? 1 : 0));  // käynnissä oleva peli (app.js)
+  overlayLayerFns.push(() => (peliInnerLayer() ? 1 : 0));  // käynnissä oleva peli tai tulosruutu (app.js); ei Pelaa-reitillä
   // Takaisin-ele (MainActivity: closeOcr) ja Esc: ensin avoin ikkuna, sitten peli
   const closeOcrBase = window.closeOcr;
   window.closeOcr = () => {

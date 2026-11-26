@@ -55,6 +55,37 @@ lists the North Sámi word. When the Wiktionary explanations of a word's first F
 give the same English, it is shown as an unchecked suggestion. The adapted data is licensed under GPL-3.0 with the rest of
 the app, which CC BY-SA 4.0 allows as a compatible licence.
 
+**English machine translations (experimental):** for words with no English in the dictionaries, [`eng_mt.py`](eng_mt.py)
+translates each word by three routes (from Sámi with smi-mt, the TartuNLP Smugri model, CC BY 4.0, base model NLLB-200
+CC BY-NC 4.0; from the word's Finnish and Norwegian translations with Helsinki-NLP opus-mt-fi-en and opus-mt-gmq-en,
+Apache-2.0, FinnWordNet 2.0, CC BY 3.0 with Princeton WordNet 3.0, Wiktionary, CC BY-SA 4.0, and Apertium
+apertium-fin-eng, GPL-3.0). A word is kept only when at least two routes agree ([`eng_mt.tsv`](eng_mt.tsv)); the app
+shows it only when the setting is on, marked as a machine translation. The test is in
+[docs/englanti-testi-2026-11-21.md](docs/englanti-testi-2026-11-21.md).
+
+**Finnish machine-translated suggestions (experimental):** [`fin_mt.py`](fin_mt.py) uses the same rule for words with no
+Finnish: at least two independent routes must agree, and Voikko must confirm a Finnish base form. Routes: smi-mt from
+Sámi; from the word's Norwegian with Helsinki-NLP opus-mt-no-fi (Apache-2.0), Wiktionary (CC BY-SA 4.0) and GiellaLT
+dict-nob-fin and dict-fin-nob (Trond Trosterud and Kirsti Kuosa, UiT, CC BY); via Inari Sámi and South Sámi with
+GiellaLT's dictionaries (dict-smn-fin, dict-sma-fin, CC BY 4.0); from English with opus-mt-en-fi (Apache-2.0) and
+FinnWordNet (CC BY 3.0). Result: [`fin_mt.tsv`](fin_mt.tsv).
+
+**Spanish machine translations (experimental):** [`spa_mt.py`](spa_mt.py) adds Spanish for words without it in Ángel Díaz de
+Rada and Kjell Kemi's dictionary, only when at least three of six sources agree: Helsinki-NLP opus-mt-fi-es, opus-mt-no-es
+and opus-mt-en-es (Apache-2.0) from the word's Finnish, Norwegian and English translations; smi-mt from Sámi; Wiktionary and
+WikDict (CC BY-SA, one source); and the Spanish wordnet of the Multilingual Central Repository 3.0 (CC BY 3.0) through
+FinnWordNet. The dictionary itself is not changed. Result: [`spa_mt.tsv`](spa_mt.tsv).
+
+**German machine translations (experimental):** there is no North Sámi–German dictionary, so [`deu_mt.py`](deu_mt.py) keeps a
+German word only when at least three of six independent sources agree: smi-mt from Sámi; Helsinki-NLP opus-mt-fi-de and
+opus-mt-no-de (Apache-2.0) from the word's Finnish and Norwegian translations; opus-mt-en-de (CC BY 4.0) from the
+dictionary's own English; FinnWordNet (CC BY 3.0) and Princeton WordNet 3.0 linked to OdeNet (CC BY-SA 4.0) through the
+Collaborative Interlingual Index (CC BY 4.0); Wiktionary (CC BY-SA 4.0) counted as one source; and the bilingual dictionary
+of [apertium/apertium-sme-deu](https://github.com/apertium/apertium-sme-deu) (GPL-3.0, © Flammie A Pirinen, Francis
+Tyers, lynnda-hill and the Apertium contributors; about 2,400 word pairs, a German word counts only if OdeNet or
+Wiktionary knows it). Álgu's German was
+used only to check the result, not in the app. Result: [`deu_mt.tsv`](deu_mt.tsv).
+
 `dict-sme-fin` is included in this repository as an unmodified copy ([dict-sme-fin/SOURCE.md](dict-sme-fin/SOURCE.md));
 the others are downloaded from GiellaLT by [`hae_sanakirjat.sh`](hae_sanakirjat.sh) and are not part
 of this repository.
@@ -199,6 +230,13 @@ subtitles. The ranking used [FrequencyWords](https://github.com/hermitdave/Frequ
 OpenSubtitles 2018 frequency lists, content CC BY-SA 4.0); the lists themselves are not included. The animal words
 are the same as in the Máhtte learning game. The spoken feedback for weekdays, seasons, months and question words is
 Divvun's speech synthesis, voice Biret, with Divvun's permission.
+
+The clock game and the clock times in listening practice ([`kello.py`](kello.py), `web/data/kello.json`) use the North
+Sámi time expressions of GiellaLT's clock transducer in lang-sme (`transcriptor-clock-digit2text`, GPL-3.0): *beal
+njeallje*, *kvárta váile njeallje*, *logi váile beal njeallje*. The question *Ollugo diibmu lea?* is from GiellaLT's
+dict-spa-sme. The Finnish times are made by rules in `kello.py` and checked with Voikko. The North Sámi audio is Divvun's
+speech synthesis, voice Biret, and the Finnish is Chatterbox Finnish (Harri), as above; each clip was checked with
+speech recognition (Aalto wav2vec2 XLS-R North Sámi, Apache-2.0; Whisper large v3 Finnish, Apache-2.0).
 
 ## Other links
 

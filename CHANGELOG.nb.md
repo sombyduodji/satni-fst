@@ -3,6 +3,28 @@
 Alle versjoner av Sátni FST. Nedlastinger: [GitHub-utgivelser](https://github.com/sombyduodji/satni-fst/releases).
 [English](CHANGELOG.md) · [Suomi](CHANGELOG.fi.md)
 
+## 1.1.0 — 2026-11-26
+
+Mye mindre minne og raskere oppstart på Android, engelsk brukergrensesnitt, et fornyet ordkort og nye ordlister og spill.
+
+- **Mye mindre minne, raskere oppstart (Android).** Ordboka leses nå med telefonens egen SQLite-databasemotor i stedet for å lastes inn i appens minne. Appen bruker rundt 70–80 MB i stedet for rundt 400 MB, er klar til søk på 0,4–0,8 s i stedet for 1,2–3,3 s, og jokersøk er opptil fire ganger raskere. Første oppstart etter oppdateringen kopierer ordboka til telefonens lagring (rundt 165 MB, under ett sekund); hvis det ikke lykkes, for eksempel når lagringen er full, bruker appen den gamle måten. 330 testsøk ga identiske resultater med begge motorene.
+- **Engelsk brukergrensesnitt.** Appen, ordlistene og spillet kan brukes på engelsk i tillegg til norsk og finsk (velg i menyen). Søk virker med engelske ord og bøyde former (*dogs*, *went*).
+- **Fornyet ordkort.**
+  - Hovedformer under ordet, som i trykte ordbøker: *áhčči, áhči*; *vielgat, vielgada, attr. vilges*; *dahkat, dagan*. Konsonantene som skifter i stadievekslingen er farget, med en lenke til hele forklaringen.
+  - Oversettelsen har sin egen boks. For en bøyd form forklares også grammatikken med vanlige ord.
+  - Lytt, favoritt og rapporter er ikoner ved siden av hverandre; andre betydninger og andre språk er ryddigere; andre søketreff samles på én linje; tomme faner skjules; på telefoner vises verbtidene under hverandre.
+- **Ordfamilie.** En ny fane viser ord avledet av ordet og sammensetninger som inneholder det, der GiellaLTs analysator knytter dem sammen og begge ordene finnes i ordboka.
+- **Guide.** **?**-knappen på slutten av søkeraden forklarer delene av ordkortet én etter én; du kan også trykke på hvilken som helst del av kortet.
+- **Smartere søk etter bøyde ord.** En form som *lohkamin* eller *guliid* viser nå først ordet den hører til (*lohkat*, *guolli*).
+- **Ingen blindveier.** Et ord uten oversettelse på ditt språk viser oversettelsen på et annet språk (merket) eller, for et avledet ord, ordet det kommer fra, med en lenke for å rapportere den manglende oversettelsen. *Ingen treff* har *Meld fra om et manglende ord*.
+- **Klokkeslett.** Et spill med analog klokke (*Ollugo diibmu lea?*): velg eller skriv klokkeslettet, eller lytt til Biret og velg riktig klokke; hele timer, halve og kvarter, eller hvert femte minutt. *Døgnet → Klokkeslett* viser alle klokkeslett som klokker. Samisk teller minutt 20–40 fra halvtimen (*logi badjel beal vihtta* = 4.40). Uttrykkene kommer fra GiellaLTs klokkegenerator.
+- **Nye ordlister.** *Dyr*; *Bær, frukt og grønnsaker*; *Nær og fjern* (*dát* nær meg, *diet* nær deg, *duot* der borte, *dot* lenger borte, med hvor- og hvor hen-ordene) med eget spill; og hjelpeord: *Dette og det*, *Her og der*, *Før og etter* og *Bindeord og småord*, med eksempelsetninger. *Døgnet* har åtte ord til, og spørreord, pronomen og demonstrativer viser flere kasus (*gii · gean · geasa · geas*, *muinna*). Lister som har et spill har en *Spill*-knapp.
+- **Bedre lyd.** All ordlyd ble laget på nytt så korte ord ikke mister lyder, og hvert opptak i alle fire stemmene ble lyttet gjennom; 145 ord bruker nå et bedre opptak.
+- **Bildesøk: velg ord selv** med en gang, ved å male eller ringe dem inn, ved siden av *Hent setning*.
+- **Eksperimentelle oversettelsesspråk** (av som standard, *Innstillinger → Oversettelsesspråk*): maskinoversatt engelsk for rundt 17 000 flere ord, spansk for rundt 6 300 og tysk for rundt 5 750 (det finnes ingen åpen nordsamisk–tysk ordbok), og finske forslag for rundt 2 200 ord uten finsk. Hver vises bare når flere uavhengige kilder er enige, merket som maskinoversettelse med antall kilder. Det går også an å søke med skoltesamiske ord (*põrtt*, også uten spesialtegn).
+- **Enaresamisk:** flere sikre ord; usikre ble fjernet. *Spill* vises bare på lister der spillet har enaresamiske ord.
+- **Rettelser:** hvis Android frøs appen mens ordboka lastet, kunne den bli stående på "Laster ordboken…" – lastingen starter nå på nytt av seg selv; feilrapport på en telefon uten e-postapp tilbyr å kopiere meldingen; Tilbake fra en ordliste går tilbake til kortet du kom fra; bytte av mørk modus laster ikke lenger appen på nytt; meldingen om utdatert system-WebView vises på telefonens språk.
+
 ## 1.0.0 — 2026-11-21
 
 Den første fullstendige versjonen. I tillegg til ordboka har appen nå ordlister med uttale, lytteøvelse, et ordspill og et mye bedre bildesøk.

@@ -89,8 +89,12 @@ public class MainActivity extends Activity {
         web.setWebViewClient(new Client());
         // Vain sovelluksen omat sivut latautuvat WebViewiin (ulkoiset linkit avataan muissa sovelluksissa)
         ocr = new Ocr(this, web);
+        // DEV: WebView DevTools puhelintesteihin (APK ei ole debuggable, joten ei automaattisesti); BETA ja julkaisu ilman
+        if (BuildConfig.WEB_DEBUG) WebView.setWebContentsDebuggingEnabled(true);
         web.addJavascriptInterface(ocr, "SatniOcr");
         web.addJavascriptInterface(new AppBridge(), "SatniApp");
+        // Sanakirja laitteen omalla SQLitellä (NativeDb, app.js openNativeDatabase); virheessä sovellus käyttää sql.js:ää
+        web.addJavascriptInterface(new NativeDb(this), "SatniNativeDb");
         // Kuunteluharjoituksen tila sivulle (DrillService soittaa myös näytön ollessa pois päältä)
         DrillService.listener = json -> web.post(() ->
                 web.evaluateJavascript("window.satniDrill && satniDrill.event(" + json + ")", null));
@@ -177,7 +181,7 @@ public class MainActivity extends Activity {
             // DEV-versiossa myös koontinumero: versionName on sama kaikissa DEV-koonneissa, joten muuten ei näe,
             // onko puhelimessa uusin APK (2026-11-19)
             @SuppressWarnings("deprecation") int code = pi.versionCode;
-            if (version != null && version.contains("DEV")) version += " · " + code;
+            if (version != null && version.toUpperCase(java.util.Locale.ROOT).contains("-DEV")) version += " · " + code;
         } catch (android.content.pm.PackageManager.NameNotFoundException e) {
             return;
         }
@@ -343,7 +347,11 @@ public class MainActivity extends Activity {
             try {
                 startActivity(new Intent(Intent.ACTION_VIEW, url));
             } catch (ActivityNotFoundException e) {
-                // Ei sovellusta, joka osaisi avata linkin
+                // Ei sovellusta, joka osaisi avata linkin. Sähköposti (virheilmoitus, palaute): web-käyttöliittymä
+                // kertoo, ettei sähköpostisovellusta löytynyt, ja tarjoaa viestin kopioimista (käyttäjä 2026-11-25)
+                if ("mailto".equals(url.getScheme())) {
+                    view.evaluateJavascript("window.noMailApp && noMailApp(" + org.json.JSONObject.quote(url.toString()) + ")", null);
+                }
             }
             return true;
         }
@@ -392,6 +400,14 @@ public class MainActivity extends Activity {
             DrillService.start(MainActivity.this, config);
         }
 
+        /** Peli pystyasennossa (käyttäjä 2026-11-23): peli on suunniteltu pystyyn, vaakatasossa vastaukset jäivät näytön
+         *  alle. Lukitus kun pelinäkymä avautuu, vapautus kun se sulkeutuu (web/minipeli.js tarkkailee näkymää). */
+        @android.webkit.JavascriptInterface
+        public void lockPortrait(boolean on) {
+            runOnUiThread(() -> setRequestedOrientation(on ? android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    : android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED));
+        }
+
         /** Natiivi soitin vain Android 10+:lla: MediaPlayer soittaa Ogg Opus -tiedostoja vasta siitä alkaen. Vanhemmilla
          *  harjoitus soi sivun omalla soittimella (WebView soittaa Opusta kaikilla versioilla), ilman näytönsammutusta. */
         @android.webkit.JavascriptInterface
@@ -412,6 +428,24 @@ public class MainActivity extends Activity {
         @android.webkit.JavascriptInterface
         public void drillControl(String cmd) {
             DrillService.control(MainActivity.this, cmd);
+        }
+
+        /** Suosikit ja historia JSONina (app.js: saveSettings): julkaistu sovellus tarjoaa ne BETA:lle (ShareProvider). */
+        @android.webkit.JavascriptInterface
+        public void shareSave(String json) {
+            getSharedPreferences(ShareProvider.PREFS, MODE_PRIVATE).edit().putString(ShareProvider.KEY, json).apply();
+        }
+
+        /** Vain BETA: suosikit ja historia Play-versiosta (tyhjä, jos sitä ei ole tai se on vanha versio ilman tukea). */
+        @android.webkit.JavascriptInterface
+        public String importFromMain() {
+            if (!ShareProvider.BETA.equals(getPackageName())) return "";
+            try (android.database.Cursor c = getContentResolver().query(
+                    android.net.Uri.parse("content://" + ShareProvider.STABLE + ".share/data"), null, null, null, null)) {
+                return c != null && c.moveToFirst() ? c.getString(0) : "";
+            } catch (Exception e) {
+                return "";
+            }
         }
 
         @android.webkit.JavascriptInterface

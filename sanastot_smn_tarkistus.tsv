@@ -2,8 +2,18 @@
 # Viimeinen sarake: inarinsaamen sana = käyttöön, '-' = ei käyttöön (tarkistettu), tyhjä = vielä tarkistamatta.
 # pivot = dict-sme-smn:n käännös pohjoissaamen sanalle; suora = dict-fin-smn/dict-smn-fin suomennoksen perusteella.
 pohjoissaame	suomi	norja	pivot	suora sanakirja	inarinsaame (tarkistettu)
+dat	ne				toh
+dát	nämä				taah
+gurká					kurkkâ
+gáiccamuorji					vađukkâš
+jieret					jiereeh
+kvárta					varttâ
+ruonas					ruonâs
+sekunda					seekunt
+čirsa					kirsik
 giđđageassi	alkukesä	forsommer			
 maŋŋelgaskabeaivi	iltapäivä	ettermiddag		eehidpeivi, ehidispeivi	
+árrat	aikaisin	tidlig	toolááš	tolehumos, tolemus, tooláá	
 galles	monelta?	hva tid?			
 oappáš	pikkusisko	lillesøster			
 vieljaš	pikkuveli	lillebror			
@@ -36,3 +46,25 @@ Mana dearvan	näkemiin (lähtevälle)	ha det (til den som går)		päccee tiervâ
 Oaidnaleapmái	näkemiin, nähdään	på gjensyn		päccee tiervân, pääcciđ tiervân, pääsi tiervân	
 Dearvvuođat	terveisiä	hilsener			
 Lihkku beivviin!	hyvää syntymäpäivää, onnea päivän johdosta	gratulerer med dagen			
+gáhttu	kissa	katt	káttu	kaasi, kissá	
+beahceloddi	metso	storfugl		kuáppil, čuhčá	
+eanamuorji	mansikka	jordbær	eennâmmyerji	mansik, mansikka	
+lávki	sipuli	løk	lävkki	siipuul	
+kálla	kaali	kål		kaali, kaalâ	
+dot	tuo (kauempana)	den lengst borte	tot	toovl, tovben, tovgo, tuo, tuogu, tuot	
+dot	tuo (kauempana)	den lengst borte	tot	toovl, tovben, tovgo, tuo, tuogu, tuot	
+doppe	tuolla kauempana	lenger borte	tobbeen		
+diekko	siinä	der	tiegu	nuuvt, tagopeht, tast, tastan, taste, tie	
+duos	tuossa, tuosta	akkurat der		tuo, tuogu, tuođee	
+ruovttus	kotona	hjemme		koođijn, kuáttun, pääihist	
+nu	niin, näin	slik, sånn	nuuvt	sama inarin sana nuuvt kuin sanalla nie	
+dasto	sen jälkeen, sitten	deretter, så	tastoo	nuuvt, sittá, talle, tassaaš, tastmaŋa, te	
+álo	aina	alltid	ain	sama inarin sana ain kuin sanalla ain	
+juogo	joko	enten			
+ovdalgo	ennen kuin	før	ovdilgo		
+nappo	siis	altså	ađai	talle, tast	
+maiddái	myös	også	meiddei	meid, meiddei, še	
+eanet	enemmän, useampi	mer, flere		eenâb, enâbiššáá, paijeel, čyevtib	
+baicce	sen sijaan, pikemminkin	heller	peic		
+berret	pitäisi	burde	perriđ		
+danin	sen takia, siksi	derfor	tondiet	sama inarin sana tondiet kuin sanalla danne	

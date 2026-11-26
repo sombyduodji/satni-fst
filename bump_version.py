@@ -5,8 +5,8 @@
 # se on. Sama commit saa siis saman version jokaisella koneella (tämä kone, kannettava, Forgejo-runner).
 # Committaamattomat muutokset: loppuun "+muokattu" (Androidin versionCode on sama kuin commitilla).
 # Androidin versionCode: päivämäärä * 100 + N (0.7.3.20261030.6 -> 2026103006), siksi N enintään 99.
-# Julkaisun numero kasvatetaan komennolla release.py: "sisalto" (uutta sisältöä, 0.9.3 -> 0.9.4, 0.9.9 -> 1.0.0)
-# tai "korjaus" (korjaukset ja käännökset, 0.9.3 -> 0.9.3.1, 0.9.3.9 -> 0.9.4).
+# Julkaisun numero kasvatetaan komennolla release.py: "sisalto" (uutta sisältöä, 1.0.0 -> 1.1.0, 1.9.0 -> 2.0.0)
+# tai "korjaus" (korjaukset ja käännökset, 1.0.0 -> 1.0.1, 1.0.9 -> 1.1.0); kanavat ks. release.py.
 import os
 import datetime
 import subprocess

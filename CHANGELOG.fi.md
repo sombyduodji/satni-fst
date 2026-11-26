@@ -3,6 +3,28 @@
 Sátni FST:n kaikki versiot. Lataukset: [GitHub-julkaisut](https://github.com/sombyduodji/satni-fst/releases).
 [English](CHANGELOG.md) · [Norsk](CHANGELOG.nb.md)
 
+## 1.1.0 — 2026-11-26
+
+Paljon vähemmän muistia ja nopeampi käynnistys Androidilla, englanninkielinen käyttöliittymä, uudistettu sanakortti sekä uusia sanastoja ja pelejä.
+
+- **Paljon vähemmän muistia, nopeampi käynnistys (Android).** Sanakirja luetaan nyt puhelimen omalla SQLite-tietokantamoottorilla sen sijaan, että se ladattaisiin sovelluksen muistiin. Sovellus käyttää noin 70–80 Mt noin 400 Mt:n sijaan, on hakuvalmis 0,4–0,8 sekunnissa (ennen 1,2–3,3 s), ja jokerihaut ovat jopa neljä kertaa nopeampia. Ensimmäinen käynnistys päivityksen jälkeen kopioi sanakirjan puhelimen tallennustilaan (noin 165 Mt, alle sekunti); jos se ei onnistu, esimerkiksi tila on täynnä, sovellus toimii vanhalla tavalla. 330 testihakua antoi molemmilla moottoreilla täsmälleen samat tulokset.
+- **Englanninkielinen käyttöliittymä.** Sovellusta, sanastoja ja peliä voi käyttää suomen ja norjan lisäksi englanniksi (valinta valikosta). Haku toimii englannin sanoilla ja niiden taivutusmuodoilla (*dogs*, *went*).
+- **Uudistettu sanakortti.**
+  - Pääsanamuodot sanan alla kuten painetuissa sanakirjoissa: *áhčči, áhči*; *vielgat, vielgada, attr. vilges*; *dahkat, dagan*. Astevaihtelussa vaihtuvat konsonantit on väritetty, ja linkki vie koko selitykseen.
+  - Käännös omassa laatikossaan. Taivutetusta muodosta kerrotaan myös kielioppi selkokielellä (*manai ≈ meni, kulki · preteriti, yks. 3. persoona*).
+  - Kuuntele, suosikki ja ilmoita virheestä ovat kuvakkeina vierekkäin; muut merkitykset ja muut kielet ovat siistimmin; muut hakutulokset tiivistyvät yhdelle riville; tyhjät välilehdet piilotetaan; puhelimessa verbin aikamuodot näkyvät allekkain.
+- **Sanaperhe.** Uusi välilehti näyttää sanasta johdetut sanat ja yhdyssanat, joissa se on, kun GiellaLT:n jäsennin yhdistää ne ja molemmat sanat ovat sanakirjassa.
+- **Opas.** Hakurivin lopussa oleva **?** selittää sanakortin osat yksi kerrallaan; myös mitä tahansa kortin osaa voi napauttaa.
+- **Fiksumpi haku taivutetuilla sanoilla.** Esimerkiksi *lohkamin* tai *guliid* näyttää nyt ensin sanan, johon muoto kuuluu (*lohkat*, *guolli*).
+- **Ei umpikujia.** Jos sanalla ei ole käännöstä valitulla kielellä, kortti näyttää käännöksen toisella kielellä (merkittynä) tai johdoksen kantasanan sekä linkin puuttuvan käännöksen ilmoittamiseen. *Ei tuloksia* -näkymässä on *Ilmoita puuttuvasta sanasta*.
+- **Kellonajat.** Peli analogisella kellolla (*Ollugo diibmu lea?*): valitse tai kirjoita aika, tai kuuntele Biretiä ja valitse oikea kello; tasatunnit, puolet ja vartit tai viiden minuutin välein. *Vuorokausi → Kellonajat* näyttää kaikki ajat kelloina. Saamessa minuutit 20–40 lasketaan puolesta tunnista (*logi badjel beal vihtta* = 4.40), ja suomennos tekee nyt samoin. Ajanilmaukset ovat GiellaLT:n kellogeneraattorista.
+- **Uusia sanastoja.** *Eläimet*; *Marjat, hedelmät ja kasvikset*; *Lähellä ja kaukana* (*dát* lähellä minua, *diet* lähellä sinua, *duot* tuolla, *dot* kauempana sekä niiden missä- ja mihin-sanat) omalla pelillään; sekä apusanat: *Tämä ja se*, *Täällä ja tuolla*, *Ennen ja jälkeen* ja *Sidesanat ja pikkusanat* esimerkkilauseineen. *Vuorokaudessa* on kahdeksan sanaa lisää, ja kysymyssanat, pronominit ja demonstratiivit näyttävät useampia sijamuotoja (*gii · gean · geasa · geas*, *muinna*). Sanastoissa, joilla on peli, on *Pelaa*-painike.
+- **Parempi ääni.** Kaikki sanojen äänet tehtiin uudelleen, jotta lyhyistä sanoista ei katoa äänteitä, ja jokainen neljän äänen tallenne kuunneltiin korvakuulolta; 145 sanaa käyttää nyt parempaa tallennetta.
+- **Valokuvahaku: valitse sanat itse** suoraan maalaamalla tai ympyröimällä, *Poimi lause* -painikkeen vieressä.
+- **Kokeelliset käännöskielet** (oletuksena pois, *Asetukset → Käännöskielet*): konekäännetty englanti noin 17 000 sanalle lisää, espanja noin 6 300:lle ja saksa noin 5 750:lle (avointa pohjoissaame–saksa-sanakirjaa ei ole) sekä suomennosehdotukset noin 2 200 sanalle, joilla suomennosta ei ole. Käännös näytetään vain, kun useampi riippumaton lähde on samaa mieltä, ja se merkitään konekäännökseksi lähteiden määrän kanssa. Myös koltansaamen sanoilla voi hakea (*põrtt*, myös ilman erikoismerkkejä).
+- **Inarinsaame:** lisää varmoja sanoja; epävarmat poistettiin. *Pelaa* näkyy vain sanastoissa, joiden pelissä on inarinsaamen sanoja.
+- **Korjauksia:** jos Android jäädytti sovelluksen sanakirjan latautuessa, se saattoi jäädä tilaan "Ladataan sanakirjaa…" – lataus käynnistyy nyt itsestään uudelleen; virheilmoitus puhelimessa, jossa ei ole sähköpostisovellusta, tarjoaa viestin kopiointia; Takaisin sanastosta palaa korttiin, josta lähdit; tumman tilan vaihto ei enää lataa sovellusta uudelleen; ilmoitus vanhentuneesta järjestelmän WebViewistä näkyy puhelimen kielellä; kokeellinen lauseenrakentaja käsittelee paremmin monikko- ja duaalisubjektit, partisiipit ja passiivin kiellon.
+
 ## 1.0.0 — 2026-11-21
 
 Ensimmäinen täysi versio. Sanakirjan lisäksi sovelluksessa on nyt sanastot ääntämyksineen, kuunteluharjoitus, sanapeli ja paljon parempi valokuvahaku.
