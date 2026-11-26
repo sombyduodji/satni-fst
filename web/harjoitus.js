@@ -65,7 +65,7 @@ async function harjLoad() {
   try {
     await loadSanastot();
     for (const l of harjIndex.lists) {
-      if (!APU_LISTS.includes(l.id) && !["marjat", "lahellajakaukana"].includes(l.id)) continue;
+      if (!APU_LISTS.includes(l.id) && !["marjat", "lahellajakaukana", "kaupassa", "pankissa", "liikkeella", "syominen"].includes(l.id)) continue;
       const src = sanastot.find((x) => x.id === l.id);
       if (!src) continue;
       // Kaikki rivin sanat (taulukon solussa dát ja dán): ensimmäinen sana voittaa, kuten ennen
@@ -528,7 +528,7 @@ function bindHarj() {
 // Painikkeet sanastoihin (sanastot.js kutsuu): listan yläreunaan ja yleisnäkymän alkuun
 // Listat, joille ei vielä ole kuunteluharjoitusta (Harrin suomenkieliset äänet puuttuvat): ei painiketta
 // (Lähellä ja kaukana sai harjoituksen 2026-11-26)
-const HARJ_NO_LIST = ["kaupassa", "pankissa", "liikkeella", "syominen"];  // Arki: Harrin äänet tekeillä
+const HARJ_NO_LIST = [];
 function harjListButton(listId) {
   if (!harjAvailable() || HARJ_NO_LIST.includes(listId)) return "";
   const id = listId === "luvut" ? "luvut" : listId;
