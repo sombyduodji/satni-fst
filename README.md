@@ -106,7 +106,7 @@ The finished apps are built from these steps. Most build steps run in Docker, so
 |---|---|---|
 | 1. Download the GiellaLT dictionaries | `./hae_sanakirjat.sh` | git |
 | 2. Build the database (`satni.db`, ~10 min) | `python3 import_full_dict.py` | Python 3, [HFST](https://hfst.github.io/) (`hfst-lookup`) |
-| 3. Desktop apps (AppImage + Windows) | `./build.sh` | Docker; a Windows PC or VM for the Windows build (see `build_qt_exe.sh`) |
+| 3. Desktop apps (AppImage + Windows) | `./build.sh` | Docker; a Windows PC or VM for the Windows build (see `build_qt_exe.sh`), or GitHub Actions: *Windows build* (`packaging/windows/build.ps1`, data pinned in `packaging/windows/web-data.txt`) |
 | 4. Android app (APK) | `./build_apk.sh` | Docker |
 | 5. Release | attach `dist/Satni_FST-x86_64.AppImage`, `dist/satni-fst-windows.zip` and `dist/satni-fst.apk` to a GitHub release | — |
 | 6. Home page (GitHub Pages) | `./julkaise_sivu.sh` (`--vain-kokoa` builds it without publishing) | git |
@@ -135,6 +135,23 @@ The compiled FST models are included in [`src/fst/`](src/fst/SOURCE.md), so buil
 [lang-sme](https://github.com/giellalt/lang-sme) yourself is not necessary.
 
 Comments in the source code are in Finnish; the release notes and commit messages are in English.
+
+## Code signing policy
+
+The Windows version is built automatically from this repository on GitHub's own Windows machines
+([.github/workflows/windows.yml](.github/workflows/windows.yml)), so each release can be traced back to the source code.
+Free code signing of the Windows version through [SignPath Foundation](https://signpath.org/) has been applied for;
+until it is in place, `satni-fst-windows.zip` is not signed and Windows may show "Windows protected your PC"
+(choose *More info → Run anyway*). Check the download against `SHA256SUMS.txt` in the release.
+The Android app is signed with the project's own release key (certificate SHA-256 `72:72:96:76:42:81:E2:01:46:F9…`),
+the same for Google Play and GitHub.
+
+- Committers and reviewers: [Juha Somby (sombyduodji)](https://github.com/sombyduodji)
+- Approvers: [Juha Somby (sombyduodji)](https://github.com/sombyduodji)
+
+Privacy: Sátni FST sends no usage statistics and has no account. The only network use is the word sent to the
+Divvun speech service when you press the speaker to hear a word you have not listened to before.
+Privacy policy: <https://sombyduodji.github.io/satni-fst/privacy.html>
 
 ## Licence
 
