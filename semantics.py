@@ -29,6 +29,10 @@ def people_lemmas():
             # Kirjoitusvirherivit eivät kerro sanasta (mánná+Err/Orth = raamatun manna, Sem/Food)
             if not m or "+Err/" in m.group(2):
                 continue
+            # Johdosrivin merkitysluokka on johdoksen (jahki+N+Sem/Ani_Hum:jag DER-AGAdj = jagáš), ei sanan:
+            # jahki, beaivi, sátni eivät ole ihmisiä (Jagis leat 365 beaivvi = vuodessa, ei vuodella; 2026-11-26)
+            if re.search(r"\sDER-", line):
+                continue
             for tag in re.findall(r"\+Sem/([A-Za-z_-]+)", m.group(2)):
                 sems.setdefault(m.group(1), set()).update(part.split("-")[0] for part in tag.split("_"))
     return {lemma for lemma, parts in sems.items()

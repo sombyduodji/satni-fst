@@ -6004,11 +6004,15 @@ function sentContext(toks) {
     if (!(c?.pos === "A" || (c?.pos === "Pron" && c.subtype !== "Pers" && !SENT_NO_AGREE.has(c.lemma))) || !c.f || !next?.finKey || !["N", "Pron"].includes(next.ctx?.pos)) return;
     if (!c.tags.some((t) => /(^|\+)Attr$/.test(t) || /^((Comp|Superl)\+)?(Sg|Pl)\+/.test(t)) && !(c.pos === "Pron" && !c.tags.length)) return;
     tok.finKey = next.finKey;
+    // Monikkoon taipunut adjektiivi pysyy (uudet karvakengät, ei sanaparin "uusi"); yksikössä sanapari saa valita
+    // käännösten välillä (kalju pää, ei paljas)
+    tok.ruleLock = next.finKey.startsWith("Pl");
     // Vertailuaste säilyy (čábbámus juovlalávlagiid = kauneimpia joululauluja)
     // Vain jos sana ei ole myös perusasteen muoto (várrogasat = varovaiset, ei varovaisemmat)
     // Vertailu go-sanan vieressä pitää vertailuasteen (go boarrásat olbmot = kuin vanhemmat ihmiset)
     const nearGo = [toks[i - 1], toks[i + 1]].some((t) => (t?.clean || "").toLowerCase() === "go");
-    const plain = !nearGo && c.tags.some((t) => /^(Sg|Pl)\+|^Attr$/.test(t));
+    // Perusasteen luku sopii pääsanaan (boarrásat viellja = vanhempi veli: monikko ei sovi yksikön sanaan)
+    const plain = !nearGo && c.tags.some((t) => t === "Attr" || t.startsWith(next.finKey.split("+")[0] + "+"));
     const deg = plain ? null : c.tags.map((t) => t.split("+")[0]).find((d) => d === "Comp" || d === "Superl");
     const degForm = deg && (next.finKey === "Sg+Nom" ? c.f[deg] : c.f[`${deg}+${next.finKey}`]);
     if (deg && !degForm) return;
@@ -6030,6 +6034,28 @@ function sentContext(toks) {
       if (fin) put(tok, fin[0]);
     }
   });
+  // Omistus: ihmisen paikallissija + leat (sus ledje garra bákčasat = hänellä oli kovat kivut, bártnis leat = pojalla on):
+  // verbi yksikössä (on / oli, ei ovat / olivat), ihmisestä adessiivi (pojalla, ei pojassa)
+  toks.forEach((tok, i) => {
+    const p = sentPossessor(toks, i);
+    if (!p) return;
+    const c = p.ctx;
+    if (c.pos === "N" && c.f?.[`${p.n}+Ade`]) { p.finKey = `${p.n}+Ade`; put(p, (c.prefix || "") + c.f[`${p.n}+Ade`]); }
+    // Kieltolauseessa omistettava partitiivissa (minulla ei ole aikaa); verbi on jo kieltomuoto (ole)
+    if (p.neg) {
+      // Kieltoverbi yksikössä (sus eai lean mánát = hänellä ei ollut lapsia)
+      for (const t of toks.slice(toks.indexOf(p) + 1, i)) if (SME_NEG.has((t.clean || "").toLowerCase()) && !t.fixed) put(t, "ei");
+      const x = toks[i + 1], xc = x?.ctx;
+      if (xc?.pos === "N" && xc.f && !x.fixed) {
+        const nn = (xc.tags || []).includes("Pl+Nom") && !(xc.tags || []).includes("Sg+Nom") ? "Pl" : "Sg";
+        if ((xc.tags || []).includes(`${nn}+Nom`) && xc.f[`${nn}+Par`]) { x.finKey = `${nn}+Par`; put(x, (xc.prefix || "") + xc.f[`${nn}+Par`]); }
+      }
+      return;
+    }
+    const o = tok.opts?.[tok.choice || 0] || "", past = /^oli/.test(o) || /Prt/.test(tok.ctx?.tagOf?.get(o) || "");
+    if (!/^(on|ovat|oli|olivat)$/.test(o)) return;
+    put(tok, past ? "oli" : "on");
+  });
   // go vertailun jälkeen = kuin (unnit bušeahtta go … = pienempi … kuin)
   toks.forEach((tok, i) => {
     if ((tok.clean || "").toLowerCase() !== "go" || !tok.opts?.includes("kuin")) return;
@@ -6037,11 +6063,38 @@ function sentContext(toks) {
     if (toks.slice(0, i + 2).some((t) => (t.ctx?.tags || []).some((tag) => /Comp/.test(tag)) || SENT_COMPARATIVES.has((t.clean || "").toLowerCase()))) put(tok, "kuin");
   });
 }
+// Omistuslause: tok i on leat-verbi, jota edeltää (1–2 sanaa ennen, ei kieltoa välissä) ihmisen tai persoonapronominin
+// paikallissija lauseen alussa (sus ledje = hänellä oli / hun hadde, bártnis leat = pojalla on / gutten har).
+// Palauttaa omistajan sanan (n = luku) tai null.
+const SME_LOC_PRON = { mus: "jeg", dus: "du", sus: "han/hun", mis: "vi", dis: "dere", sis: "de", munnos: "vi to", dudnos: "dere to", sudnos: "de to" };
+function sentPossessor(toks, i) {
+  const tok = toks[i];
+  if (!(tok?.ctx?.pos === "V" && SME_LEAT.has(tok.ctx.lemma)) || tok.fixed) return null;
+  for (const j of [i - 1, i - 2]) {
+    const p = toks[j];
+    if (!p || p.fixed) continue;
+    const c = p.ctx, w = (p.clean || "").toLowerCase();
+    const pron = SME_LOC_PRON[w] && c?.pos === "Pron";
+    const n = ["Sg", "Pl"].find((x) => (c?.tags || []).includes(`${x}+Loc`));
+    if ((pron || (c?.pos === "N" && n && c.human)) && (j === 0 || /[.!?,;:]/.test(toks[j - 1].punct || "") || CONJ_START.has((toks[j - 1].clean || "").toLowerCase()))) {
+      // Kielto välissä (mus ii leat áigi = minulla ei ole aikaa / jeg har ikke tid)
+      p.neg = toks.slice(j + 1, i).some((t) => SME_NEG.has((t.clean || "").toLowerCase()));
+      p.n = n || "Sg";
+      p.ruleLock = true;  // sanaparijärjestys ei vaihda (hän oli on yleisempi pari kuin hänellä oli)
+      tok.ruleLock = true;
+      return p;
+    }
+  }
+  return null;
+}
+const CONJ_START = new Set(["ja", "muhto", "go", "ahte", "jus", "dasgo", "danin", "de"]);
 // Norjan säännöt (pohjoissaame -> norja; norjassa ei ole sijoja): sija näkyy prepositiona ja sanajärjestyksenä.
 // Esimerkkilausekoe 4 805 norjankielisellä esimerkillä (2026-11-18).
 // leat-verbin sanakirjamuodot (lea -> leahkit sanakirjassa)
 const SME_LEAT = new Set(["leat", "leahkit"]);
 const NOB_POSTPOS = { "rájes": "siden", "rádjái": "til", "maŋŋel": "etter", "maŋŋil": "etter", "ovdal": "før", "vuostá": "mot", "vuostái": "mot", "áigge": "under" };
+// Persoonapronominin genetiivi substantiivin edellä (su riegádanbeaivi = hans/hennes fødselsdag)
+const NOB_GEN_PRON = { mu: "min", du: "din", su: "hans/hennes", min: "vår", din: "deres", sin: "deres", munno: "vår", dudno: "deres", sudno: "deres" };
 const NOB_POSSESSIVE = /^(min|mitt|mine|din|ditt|dine|hans|hennes|vår|vårt|våre|deres|sin|sitt|sine)$/;
 function sentContextNob(toks) {
   const numVal = (t) => !t ? 0 : t.num ? parseInt(t.clean || t.t, 10) || 0 : t.ctx?.pos === "Num" && !/^(okta|akta)$/.test(t.ctx.lemma || "") ? 2 : 0;
@@ -6057,7 +6110,7 @@ function sentContextNob(toks) {
     const has = (t) => (c.tags || []).includes(t), f = c.f;
     // Persoonapronomini substantiivin edellä: omistusmuoto (mu ahkásaš = min alder)
     if (c.pos === "Pron" && c.subtype === "Pers" && next?.ctx?.pos === "N") {
-      const pos = (tok.opts || []).find((o) => NOB_POSSESSIVE.test(o.toLowerCase()));
+      const pos = (tok.opts || []).find((o) => NOB_POSSESSIVE.test(o.toLowerCase())) || NOB_GEN_PRON[(tok.clean || "").toLowerCase()];
       if (pos) put(tok, pos);
       return;
     }
@@ -6119,6 +6172,17 @@ function sentContextNob(toks) {
     const prevNeg = SME_NEG.has((toks[i - 1]?.clean || "").toLowerCase());
     if (prevNeg) { tok.opts = tok.opts.map((o) => o.replace(/^\(ikke\)\s+/, "")); tok.swapPrev = true; }
   });
+  // Omistus: sus ledje garra bákčasat = han/hun hadde sterke smerter, bártnis leat = gutten har
+  toks.forEach((tok, i) => {
+    const p = sentPossessor(toks, i);
+    if (!p) return;
+    const w = (p.clean || "").toLowerCase(), f = p.ctx.f;
+    const subj = SME_LOC_PRON[w] || (f && (f[`${p.n}+Def`] || f[`${p.n}+Indef`]));
+    if (!subj) return;
+    const o = tok.opts?.[tok.choice || 0] || "", past = /\bvar\b/.test(o) || /Prt/.test(tok.ctx?.tagOf?.get(o) || "");
+    put(p, /^\p{Lu}/u.test(p.clean || "") ? subj.charAt(0).toUpperCase() + subj.slice(1) : subj);
+    put(tok, past ? "hadde" : "har");
+  });
   // go vertailun jälkeen = enn
   toks.forEach((tok, i) => {
     if ((tok.clean || "").toLowerCase() !== "go") return;
@@ -6171,7 +6235,7 @@ function sentRerank(toks) {
     }
     const first = toks.map((t) => words(t.fixed ? t.fixed.trans || t.fixed.word : t.name || t.unknown || !t.opts ? t.clean || t.t : t.opts[0]));
     toks.forEach((t, i) => {
-      if (!t.opts || t.opts.length < 2 || t.fixed || t.name || t.unknown) return;
+      if (!t.opts || t.opts.length < 2 || t.fixed || t.name || t.unknown || t.ruleLock) return;
       // Tyhjä ensimmäinen vaihtoehto = sääntö sulautti sanan naapuriin (norjan postpositio: etter møtet, apuverbi):
       // ei järjestetä uudelleen, muuten sana palaisi (etter møtet etter; yötesti 2026-11-19)
       if (t.opts[0] === "") return;
