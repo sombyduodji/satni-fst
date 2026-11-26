@@ -105,7 +105,9 @@ def english(db, data, lists):
 # merkitys). Ilmansuunnat jätettiin pois (käyttäjä); Poroista pois miessi ja čearpmat (suomeksi molemmat "vasa").
 LIST_GAMES = {"daytime": "aika", "family": "suku", "reindeer": "porot", "weather": "saa", "pronouns": "pronominit",
               "greetings": "tervehdykset", "thisthat": "tamajase", "herethere": "taallajatuolla", "beforeafter": "aikasanat",
-              "smallwords": "sidesanat"}
+              "smallwords": "sidesanat",
+              # Arki (arki.py, 2026-11-26)
+              "shop": "kaupassa", "bank": "pankissa", "travel": "liikkeella", "meals": "syominen"}
 LIST_GAME_SKIP = {"miessi", "čearpmat"}
 # Sukulaissanat pelissä sanakirjan tarkalla merkityksellä (dict-sme-fin ja norjan käyttörajoitukset "om mors eldre
 # søster" jne.), muuten kysymyksessä olisi kaksi oikeaa vastausta (täti, setä; käyttäjä hyväksyi 2026-11-26)

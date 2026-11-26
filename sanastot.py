@@ -390,6 +390,11 @@ def lists():
     import marjat
     L.append({"id": "marjat", "icon": "berry", "title": {"fi": "Marjat, hedelmät ja kasvikset", "nb": "Bær, frukt og grønnsaker"},
               "rows": [row([fi], [nb], [sme(s_, "N", [], fi=fi, nb=nb)]) for s_, fi, nb in marjat.WORDS]})
+    # Arki (arki.py, käyttäjä 2026-11-26): kauppa, pankki, liikkuminen, syöminen; aluksi vain sanoja
+    import arki
+    for lst in arki.LISTS:
+        L.append({"id": lst[0], "icon": lst[1], "title": {"fi": lst[2][0], "nb": lst[2][1]},
+                  "rows": [row([fi], [nb], [sme(s_, pos, [], fi=fi, nb=nb)]) for s_, pos, fi, nb, _en in arki.words(lst)]})
     # Kellonajat (kello.py ja kello.json, käyttäjä 2026-11-23): kello, saame ja suomi; norjaksi ja englanniksi
     # digitaalinen aika. Napautus soittaa Biretin lauseen (audio/w/kello-<i>-sme.ogg)
     clock = json.load(open(os.path.join(SCRIPT_DIR, "kello.json"), encoding="utf-8"))["rows"]
@@ -465,6 +470,10 @@ SECTIONS["elaimet"] = [(t[0], t[1], t[3]) for t in _ela.SECTIONS]
 # Marjojen, hedelmien ja kasvisten osiot (marjat.py)
 import marjat as _mar
 SECTIONS["marjat"] = [(t[0], t[1], t[3]) for t in _mar.SECTIONS]
+# Arjen sanastojen osiot (arki.py)
+import arki as _arki
+for _l in _arki.LISTS:
+    SECTIONS[_l[0]] = [(sec[0], sec[1], [w[0] for w in sec[3]]) for sec in _l[3]]
 # Apusanojen osiot samasta tiedostosta (apusanat.py)
 import apusanat as _apu
 for _spec in _apu.LISTS:

@@ -195,3 +195,10 @@ import marjat as _mar
 TITLES["marjat"] = "Berries, fruit and vegetables"
 SECTIONS["marjat"] = [t[2] for t in _mar.SECTIONS]
 ROWS["marjat"] = {a[0]: [_mar.EN[a[0]]] for a in _mar.WORDS}
+
+# Arki (arki.py, 2026-11-26): englanti käsin listan omista tiedoista
+import arki as _arki
+for _l in _arki.LISTS:
+    TITLES[_l[0]] = _l[2][2]
+    SECTIONS[_l[0]] = [sec[2] for sec in _l[3]]
+    ROWS[_l[0]] = {w[0]: [w[4]] for w in _arki.words(_l)}
