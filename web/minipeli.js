@@ -29,7 +29,7 @@ const PELI_TEXTS = {
     again: "Pelaa uudelleen", menu: "Valitse toinen peli", home: "Etusivulle", top: "Parhaat tulokset",
     newBest: "Uusi ennätys!", youAnswered: "Vastasit:", resumeQ: "Jatketaanko keskeneräistä peliä?", resume: "Jatka", fresh: "Uusi peli",
     report: "Ilmoita virheestä", streak: "Putki", mute: "Mykistä pelin äänet", unmute: "Pelin äänet päälle",
-    style: "Pelitapa", choose: "valitse", write: "kirjoita", points: (n) => `${n} ${n === 1 ? "piste" : "pistettä"}`,
+    style: "Pelitapa", choose: "valitse", write: "kirjoita", listen: "kuuntele", askListen: "Mitä sana tarkoittaa?", replay: "Kuuntele uudelleen", noAudio: "Ääni ei toiminut. Kuuntele uudelleen tai valitse arvaamalla.", points: (n) => `${n} ${n === 1 ? "piste" : "pistettä"}`,
     leadWrite: "Kirjoita sana saameksi. Vihje maksaa pisteen, samoin puuttuvat tarkkeet ja vain osin sopiva sana. Väärä sana päättää pelin.",
     askWrite: (l) => `Kirjoita ${l}`, allWords: (n) => `Kaikki ${n} sanaa`, count: (n) => `${n} sanaa`, samiLang: "Kieli", experimental: "kokeellinen", check: "Tarkista", inputLabel: "Vastauksesi saameksi", almost: "Melkein!", nearly: "Lähellä!", better: "Tähän sopii paremmin:",
     youWrote: "Kirjoitit:", letters: (n) => `${n} kirjainta`,
@@ -57,7 +57,7 @@ const PELI_TEXTS = {
     again: "Spill igjen", menu: "Velg et annet spill", home: "Til forsiden", top: "Beste resultater",
     newBest: "Ny rekord!", youAnswered: "Du svarte:", resumeQ: "Vil du fortsette spillet du ikke ble ferdig med?", resume: "Fortsett", fresh: "Nytt spill",
     report: "Meld fra om feil", streak: "Rekke", mute: "Slå av lyden i spillet", unmute: "Slå på lyden i spillet",
-    style: "Spillmåte", choose: "velg", write: "skriv", points: (n) => `${n} poeng`,
+    style: "Spillmåte", choose: "velg", write: "skriv", listen: "lytt", askListen: "Hva betyr ordet?", replay: "Lytt igjen", noAudio: "Lyden virket ikke. Lytt igjen eller gjett.", points: (n) => `${n} poeng`,
     leadWrite: "Skriv ordet på samisk. Et hint koster ett poeng, det samme gjør manglende diakritiske tegn og et ord som bare passer delvis. Feil ord avslutter spillet.",
     askWrite: (l) => `Skriv på ${l}`, allWords: (n) => `Alle ${n} ord`, count: (n) => `${n} ord`, samiLang: "Språk", experimental: "eksperimentell", check: "Sjekk", inputLabel: "Svaret ditt på samisk", almost: "Nesten!", nearly: "Nesten riktig!", better: "Her passer bedre:",
     youWrote: "Du skrev:", letters: (n) => `${n} bokstaver`,
@@ -85,7 +85,7 @@ const PELI_TEXTS = {
     again: "Play again", menu: "Choose another game", home: "To the start page", top: "Best results",
     newBest: "New record!", youAnswered: "You answered:", resumeQ: "Continue the unfinished game?", resume: "Continue", fresh: "New game",
     report: "Report an error", streak: "Streak", mute: "Mute the game sounds", unmute: "Turn the game sounds on",
-    style: "How to play", choose: "choose", write: "write", points: (n) => `${n} ${n === 1 ? "point" : "points"}`,
+    style: "How to play", choose: "choose", write: "write", listen: "listen", askListen: "What does the word mean?", replay: "Listen again", noAudio: "The sound didn't play. Listen again or guess.", points: (n) => `${n} ${n === 1 ? "point" : "points"}`,
     leadWrite: "Write the word in Sámi. A hint costs a point, and so do missing diacritics and a word that only partly fits. A wrong word ends the game.",
     askWrite: (l) => `Write it ${l}`, allWords: (n) => `All ${n} words`, count: (n) => `${n} words`, samiLang: "Language", experimental: "experimental", check: "Check", inputLabel: "Your answer in Sámi", almost: "Almost!", nearly: "Close!", better: "A better fit here:",
     youWrote: "You wrote:", letters: (n) => `${n} letters`,
@@ -120,7 +120,7 @@ const PELI_MODES = [
 const PELI_SAMI = {
   // Pelitavan nimet: pohjoissaamessa käskymuoto (vállje, čále), inarissa perusmuoto (valjiđ, čäälliđ: sanakirja ja
   // inarin oikoluku vahvistavat; käskymuotoja ei voi tarkistaa ilman generaattoria)
-  sme: { name: "Davvisámegiella", keys: ["á", "č", "đ", "ŋ", "š", "ŧ", "ž"], hints: 3, voice: true, choose: "Vállje", write: "Čále" },
+  sme: { name: "Davvisámegiella", keys: ["á", "č", "đ", "ŋ", "š", "ŧ", "ž"], hints: 3, voice: true, choose: "Vállje", write: "Čále", listen: "Guldal" },
   smn: { name: "Anarâškielâ", keys: ["á", "â", "ä", "č", "đ", "ŋ", "š", "ž"], hints: 2, voice: false, choose: "Valjiđ", write: "Čäälliđ" },
 };
 const peliSamiEnabled = () => !!settings.gameSmn && !!(peli && peli.smn);
@@ -137,8 +137,8 @@ const peliLangWords = (list, set, cat) => (sanastoLang() !== "en" ? list
 // Kellopelit (data/kello.json): vain pohjoissaame (GiellaLT:n kellogeneraattori ja Biretin äänet)
 const PELI_CLOCK = ["clock", "clockAll"];
 const peliIsClock = (mode) => PELI_CLOCK.includes(mode);
-const peliModesFor = (sami) => PELI_MODES.filter((m) => m.group === "words" || (peliIsClock(m.id) ? sami === "sme" && !!(peli && peli.clock)
-  : (peliSet(sami).cats[m.id] || []).length));
+const peliModesFor = (sami) => PELI_MODES.filter((m) => (peliListenOn(sami) && !peliIsClock(m.id) ? peliPool(m.id, sami, true).length >= 4 : true) &&
+  (m.group === "words" || (peliIsClock(m.id) ? sami === "sme" && !!(peli && peli.clock) : (peliSet(sami).cats[m.id] || []).length)));
 
 // Pelitilojen kuvakkeet (sanastojen kuvakkeiden tyyliin): taimi, vuori, luvut, kalenteri, paletti, tassu
 const PELI_MODE_ICON = {
@@ -166,7 +166,7 @@ const peliStore = {
 // Inarinsaamen tulokset omana listanaan ("beginner:w@smn")
 // Kolmen elämän pelin ennätykset erikseen (|3); vanhat ennätykset ovat yhden yrityksen pelistä (2026-11-26)
 const peliLives = () => (peliStore.get("satni-peli-lives", 3) === 1 ? 1 : 3);
-const peliKey = (mode, write, sami = "sme", lives = peliLives()) => (write ? mode + ":w" : mode) + (sami === "smn" ? "@smn" : "") + (lives === 3 ? "|3" : "");
+const peliKey = (mode, write, sami = "sme", lives = peliLives()) => (write === "listen" ? mode + ":l" : write ? mode + ":w" : mode) + (sami === "smn" ? "@smn" : "") + (lives === 3 ? "|3" : "");
 const peliTop = (mode, write = false, sami = "sme", lives = peliLives()) => (peliStore.get("satni-peli-top", {})[peliKey(mode, write, sami, lives)] || []);
 function peliAddTop(mode, score, write = false, sami = "sme", lives = peliLives()) {
   const all = peliStore.get("satni-peli-top", {});
@@ -185,15 +185,25 @@ async function loadPeli() {
     // Kellonajat (kello.py): ilman tiedostoa kellopelit vain puuttuvat valikosta
     try { const r = await fetch("data/kello.json"); if (r.ok) peli.clock = (await r.json()).rows; } catch (e) { /* ei kellopeliä */ }
   }
+  // Guldal: mukana tulevien äänten hakemisto (audio/s/index.json), jotta pelataan vain sanoilla, joilla on ääni
+  if (typeof sayIndexReady === "function") { try { peliSay = await sayIndexReady(); } catch (e) { /* ei ääniä */ } }
   return peli;
 }
 
+let peliSay = null;
+// Guldal-tavan sanat: valitulla äänellä (Biret, Máhtte, Sunná) sovelluksen mukana tuleva äänite
+const peliVoiceName = () => (typeof VOICES !== "undefined" && VOICES[settings.voice]) || "biret";
+const peliHasAudio = (sme) => !!(peliSay && peliSay[peliVoiceName()] && peliSay[peliVoiceName()][sme] != null);
 const peliVariantMap = {};
 const peliVariants = (sami = "sme") => peliVariantMap[sami] ||
   (peliVariantMap[sami] = Object.fromEntries(peliSet(sami).words.filter((w) => w[5]).map((w) => [w[0], w[5]])));
 
 // Kysymyspakka: tilan sanat sekoitettuna; [saame, suomi, norja, ryhmä] (ryhmä: vaihtoehdot samasta ryhmästä)
-function peliPool(mode, sami = "sme") {
+function peliPool(mode, sami = "sme", listen = false) {
+  if (listen && !peliIsClock(mode)) return peliPoolAll(mode, sami).filter((w) => peliHasAudio(w[0]));
+  return peliPoolAll(mode, sami);
+}
+function peliPoolAll(mode, sami = "sme") {
   // Kello: [saame (beal njeallje), suomi (puoli neljä), digitaalinen (3.30), taso, indeksi]; norjaksi ja englanniksi
   // näytetään digitaalinen aika
   if (peliIsClock(mode)) return (peli.clock || []).map((r, i) => [r.sme, r.fiShort, `${r.h}.${String(r.m).padStart(2, "0")}`, r.level, i])
@@ -210,7 +220,7 @@ const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math
 
 function peliQuestion(run) {
   const sami = peliSamiOf(run);
-  const pool = peliPool(run.mode, sami);
+  const pool = peliPool(run.mode, sami, !!run.listen);
   // Uusi pakka myös, jos tallennettu pakka on eri mittainen kuin sanalista (minipeli.json muuttui päivityksessä)
   if (run.pos >= run.deck.length || run.deck.length !== pool.length) { run.deck = shuffle(pool.map((_, i) => i)); run.pos = 0; }
   const item = pool[run.deck[run.pos++]];
@@ -230,7 +240,8 @@ function peliQuestion(run) {
     return { sme: item[0], prompt: item[ui], toSme: true, write: true, accept: [...accept], related: [...related], answer: item[0], hints: 0,
       voice: PELI_VOICE[run.mode] && PELI_SAMI[sami].voice ? item[4] : null };
   }
-  const toSme = Math.random() < 0.5;  // puolet kysymyksistä käännöksestä saameksi
+  // Guldal: aina saamen sana äänenä, vaihtoehdot käännöksinä; muuten puolet kysymyksistä käännöksestä saameksi
+  const toSme = run.listen ? false : Math.random() < 0.5;
   const shown = (w) => (toSme ? w[0] : w[ui]);
   // Väärät vaihtoehdot samasta ryhmästä (sanaluokka tai aihe), ei samaa näkyvää tekstiä kahdesti eikä sanaa, jolla on
   // yhteinen käännös oikean kanssa (ajatella: jurddašit ja smiehttat "miettiä, ajatella" olisivat molemmat oikein)
@@ -246,7 +257,7 @@ function peliQuestion(run) {
     opts.push(w);
   }
   return { sme: item[0], prompt: toSme ? item[ui] : item[0], toSme, opts: shuffle(opts.map(shown)), answer: shown(item),
-    voice: PELI_VOICE[run.mode] && PELI_SAMI[sami].voice ? item[4] : null };
+    voice: PELI_VOICE[run.mode] && PELI_SAMI[sami].voice ? item[4] : null, ...(run.listen ? { hear: true } : {}) };
 }
 
 // Kellokysymys: luku (kello näkyy, Ollugo diibmu lea?, vastaus saameksi) tai kuuntelu (Biret sanoo ajan, valitaan kello);
@@ -259,7 +270,7 @@ function peliClockQuestion(run, pool, item) {
     const forms = [item[0], item[0].replace(/^kvárta /, "njealjádas ")];
     return { ...base, prompt: "", write: true, accept: [...new Set(forms.flatMap((f) => [f, `diibmu lea ${f}`]))], related: [], answer: item[0], hints: 0 };
   }
-  const listen = Math.random() < 0.5;
+  const listen = run.listen || Math.random() < 0.5;
   const near = (w) => Math.min(Math.abs(peli.clock[w[4]].h - r.h), 12 - Math.abs(peli.clock[w[4]].h - r.h)) <= 1;
   const others = shuffle(pool.filter((w) => w[4] !== item[4]));
   const opts = [item, ...others.filter(near).slice(0, 2)];
@@ -290,6 +301,11 @@ function peliHead(title, back) {
 
 // Pelitapa: Vállje (valitse neljästä) tai Čále (kirjoita). Nimet saameksi, alla käyttöliittymän kielellä.
 let peliWrite = !!peliStore.get("satni-peli-write", false);
+// Guldal (2026-11-26): kuuntele sana (sovelluksen mukana tulevat äänet) ja valitse merkitys; vain pohjoissaame
+let peliListen = !peliWrite && !!peliStore.get("satni-peli-listen", false);
+const peliListenOn = (sami = peliMenuSami()) => peliListen && sami === "sme";
+// Ennätysten avain pelitavan mukaan: kirjoitus :w, kuuntelu :l
+const peliStyleKey = (sami) => (peliListenOn(sami) ? "listen" : peliWrite);
 const PELI_STYLE_ICON = {
   choose: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
   write: '<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
@@ -297,12 +313,15 @@ const PELI_STYLE_ICON = {
 function peliStyleSwitch() {
   const T = pt();
   // Pieni esikatselu: neljä vaihtoehtoa (yksi oikein) tai kirjoituskenttä vilkkuvalla kursorilla
-  const art = { choose: '<span class="ps-grid4"><i></i><i class="on"></i><i></i><i></i></span>', write: '<span class="ps-field" lang="se">čá</span>' };
-  const b = (id, sme, ui) => `<button type="button" role="radio" class="ps-opt" data-style="${id}" aria-checked="${(id === "write") === peliWrite}">` +
+  const art = { choose: '<span class="ps-grid4"><i></i><i class="on"></i><i></i><i></i></span>', write: '<span class="ps-field" lang="se">čá</span>',
+    listen: `<span class="ps-ear">${PELI_SOUND_ON}</span>` };
+  const cur = peliListenOn() ? "listen" : peliWrite ? "write" : "choose";
+  const b = (id, sme, ui) => `<button type="button" role="radio" class="ps-opt" data-style="${id}" aria-checked="${id === cur}">` +
     `<span class="ps-art" aria-hidden="true">${art[id]}</span><span class="ps-txt"><b lang="${peliMenuSami() === "smn" ? "smn" : "se"}">${sme}</b><small>${esc(ui)}</small></span>` +
     `<span class="ps-check" aria-hidden="true">${PELI_OK}</span></button>`;
   const L = PELI_SAMI[peliMenuSami()];
-  return `<div class="peli-style" role="radiogroup" aria-label="${esc(T.style)}">${b("choose", L.choose, T.choose)}${b("write", L.write, T.write)}</div>`;
+  return `<div class="peli-style${L.listen ? " three" : ""}" role="radiogroup" aria-label="${esc(T.style)}">${b("choose", L.choose, T.choose)}${b("write", L.write, T.write)}` +
+    (L.listen ? b("listen", L.listen, T.listen) : "") + `</div>`;
 }
 
 // Elämät: 3 (oletus) tai yksi yritys; ennätykset erikseen
@@ -323,9 +342,9 @@ function peliSamiSwitch(sami) {
 function peliModeSub(id, sami) {
   const T = pt();
   // Sanamäärä aina datasta (ennen kiinteä "Kaikki 1 089 sanaa", vaikka sanoja oli 1 079; testi 2026-11-21)
-  if (id === "advanced") return T.allWords(peliPool(id, sami).length);
+  if (id === "advanced") return T.allWords(peliPool(id, sami, peliListenOn(sami)).length);
   if (sami === "sme" || id === "beginner") return T.modes[id][1];
-  const n = peliPool(id, sami).length;
+  const n = peliPool(id, sami, peliListenOn(sami)).length;
   return id === "advanced" ? T.allWords(n) : T.count(n);
 }
 
@@ -335,13 +354,13 @@ function renderPeliMenu() {
   const T = pt();
   const sami = peliMenuSami();
   const modes = peliModesFor(sami);
-  const run = peliRun && peliRun.q && !!peliRun.write === peliWrite && peliSamiOf(peliRun) === sami ? peliRun : null;
+  const run = peliRun && peliRun.q && !!peliRun.write === peliWrite && !!peliRun.listen === peliListenOn(sami) && peliSamiOf(peliRun) === sami ? peliRun : null;
   // V2 (test-fable): omat tulokset ylhäällä, jokainen peli rivinä (ennätys ja palkki), säännöt ⓘ-painikkeen takana.
   // Palkin täysi mitta: pelin sanamäärä, enintään 30 (pitkissä sanapeleissä 30 oikeaa peräkkäin täyttää palkin).
-  const bests = modes.map((m) => peliTop(m.id, peliWrite, sami)[0]?.score ?? 0);
+  const bests = modes.map((m) => peliTop(m.id, peliStyleKey(sami), sami)[0]?.score ?? 0);
   const stat = (n, label) => `<div class="pm-stat"><b>${n}</b>${esc(label)}</div>`;
   const row = (m, i) => {
-    const best = bests[i], goal = Math.max(1, Math.min(30, peliPool(m.id, sami).length));
+    const best = bests[i], goal = Math.max(1, Math.min(30, peliPool(m.id, sami, peliListenOn(sami)).length));
     const unfinished = run && run.mode === m.id;
     return `<button type="button" class="peli-tile pm-row${unfinished ? " unfinished" : ""}" data-mode="${m.id}"${unfinished ? ' data-resume="1"' : ""} style="--tc: var(--flag-${m.color}); --tb: var(--btn-${m.color})">` +
       `<span class="pt-ico">${peliModeIcon(m.id)}</span><span class="pm-text"><span class="pt-name">${esc(T.modes[m.id][0])}` +
@@ -424,8 +443,9 @@ function renderPeliQuestion() {
   $("peli-body").innerHTML = `<div class="peli-play" style="--tc: var(--flag-${color}); --tb: var(--btn-${color})">` +
     `<div class="peli-stage"><div class="peli-meta">` +
     `<span class="peli-pill streak" title="${esc(T.streak)}">${PELI_FLAME}<b class="peli-score">${run.score}</b></span>` +
-    `<span class="peli-pill best" title="${esc(T.best)}">${PELI_CUP}<b>${peliTop(run.mode, false, peliSamiOf(run), run.maxLives || 1)[0]?.score ?? 0}</b></span>${peliHearts(run)}</div>` +
+    `<span class="peli-pill best" title="${esc(T.best)}">${PELI_CUP}<b>${peliTop(run.mode, run.listen ? "listen" : false, peliSamiOf(run), run.maxLives || 1)[0]?.score ?? 0}</b></span>${peliHearts(run)}</div>` +
     (q.clock ? peliClockStage(q, T)
+      : q.hear ? `<p class="peli-q">${esc(T.askListen)}</p><button type="button" class="peli-hear" data-act="hear" aria-label="${esc(T.replay)}" title="${esc(T.replay)}">${PELI_SOUND_ON}</button>`
       : `<p class="peli-q">${esc(q.toSme ? `${T.askUi(T.inLang[peliSamiOf(run)])}?` : T.askSme)}</p>` +
         `<p class="peli-word"${q.toSme ? "" : ' lang="se"'}>${esc(peliHy(q.prompt))}</p>`) + `</div>` +
     `<div class="peli-opts${q.clock && q.listen ? " clocks" : ""}">${q.opts.map((o, i) => `<button type="button" class="peli-opt" data-o="${esc(o)}">` +
@@ -438,6 +458,17 @@ function renderPeliQuestion() {
   for (const b of document.querySelectorAll(".peli-opt")) if ((q.wrong || []).includes(b.dataset.o)) { b.disabled = true; peliMark(b, false); }
   peliShownAt = performance.now();
   peliClockSay(q);
+  if (q.hear) peliHear(q);
+}
+// Guldal: sana soi heti kysymyksen tullessa ja uudelleen painikkeesta (mukana tuleva äänite, ei verkkoa)
+function peliHear(q) {
+  const btn = document.querySelector(".peli-hear");
+  if (!btn || !q) return;
+  btn.classList.add("playing");
+  peliSayWord(q.sme, null).then((ok) => {
+    btn.classList.remove("playing");
+    if (!ok && btn.isConnected && !document.querySelector(".peli-hear-err")) btn.insertAdjacentHTML("afterend", `<p class="peli-hear-err">${esc(pt().noAudio)}</p>`);
+  });
 }
 // Kellokysymyksen yläosa: Biretin kysymys saameksi ja kello, tai kuuntelussa ohje, saamen aika ja Kuuntele uudelleen
 function peliClockStage(q, T) {
@@ -495,8 +526,9 @@ const PELI_OVER_GUARD = 1000;  // OnePlus Nord: kaksi nopeaa napautusta tuli 700
 function renderPeliOver(chosen) {
   peliOverAt = performance.now();
   const T = pt(), run = peliRun, q = run.q, score = run.score, write = !!run.write;
-  const prevBest = peliTop(run.mode, write, peliSamiOf(run), run.maxLives || 1)[0]?.score ?? 0;
-  const top = peliAddTop(run.mode, score, write, peliSamiOf(run), run.maxLives || 1);
+  const styleKey = run.listen ? "listen" : write;
+  const prevBest = peliTop(run.mode, styleKey, peliSamiOf(run), run.maxLives || 1)[0]?.score ?? 0;
+  const top = peliAddTop(run.mode, score, styleKey, peliSamiOf(run), run.maxLives || 1);
   peliLog(run, q, false);
   if ((run.maxLives || 1) > 1) { run.lives = 0; peliUpdateHearts(); }
   const isNew = score > 0 && score > prevBest;
@@ -537,7 +569,7 @@ function renderPeliOver(chosen) {
 function peliStart(mode) {
   peliStopAudio();
   peliBusy = false;  // edellisen pelin peukalon ajastin ei estä uuden pelin vastauksia
-  peliRun = { mode, score: 0, deck: [], pos: 0, q: null, write: peliWrite, sami: peliMenuSami(), lives: peliLives(), maxLives: peliLives(), log: [] };
+  peliRun = { mode, score: 0, deck: [], pos: 0, q: null, write: peliWrite, listen: peliListenOn(), sami: peliMenuSami(), lives: peliLives(), maxLives: peliLives(), log: [] };
   peliRun.q = peliQuestion(peliRun);
   peliSave();
   renderPeliQuestion();
@@ -944,7 +976,11 @@ function bindPeli() {
     const lang = e.target.closest(".pl-opt");
     if (lang) { peliStore.set("satni-peli-sami", lang.dataset.sami); return renderPeliMenu(); }
     const style = e.target.closest(".ps-opt");
-    if (style) { peliWrite = style.dataset.style === "write"; peliStore.set("satni-peli-write", peliWrite); return renderPeliMenu(); }
+    if (style) {
+      peliWrite = style.dataset.style === "write"; peliListen = style.dataset.style === "listen";
+      peliStore.set("satni-peli-write", peliWrite); peliStore.set("satni-peli-listen", peliListen);
+      return renderPeliMenu();
+    }
     const key = e.target.closest(".pw-key[data-key]");
     if (key) return peliInsertKey(key.dataset.key);
     const opt = e.target.closest(".peli-opt");
@@ -969,6 +1005,7 @@ function bindPeli() {
       if (say) { say.textContent = peliRun.q.prompt; say.classList.remove("masked"); }
       e.target.closest("[data-act]").remove();
     }
+    else if (act === "hear") peliHear(peliRun?.q);
     else if (act === "say") peliSayWord(e.target.closest("[data-act]").dataset.w, e.target.closest("[data-act]"));
     else if (act === "card") { const w = e.target.closest("[data-act]").dataset.w; hidePeli(); if (typeof search === "function") search(w); }
     else if (act === "lives") { peliStore.set("satni-peli-lives", Number(e.target.closest("[data-act]").dataset.n) === 1 ? 1 : 3); renderPeliMenu(); }

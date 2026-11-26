@@ -2579,3 +2579,19 @@ body.sidebar-open #help-btn, body:has(dialog[open]:not(#help-dlg)) #help-btn { p
   background: transparent; color: var(--accent); cursor: pointer; }
 .pp-say svg { width: 20px; height: 20px; }
 .pp-say:disabled { opacity: .5; }
+
+/* Guldal (kuuntelupeli, 2026-11-26): kolme pelitapaa rinnakkain ja iso kuuntelupainike */
+.peli-style.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* Kolme tapaa: selite nimen alle, jottei "Guldal kuuntele" leikkaudu kapealla näytöllä */
+.peli-style.three .ps-txt { flex-direction: column; align-items: center; gap: 0; text-align: center; }
+.peli-style.three .ps-txt small { margin-top: 1px; }
+.ps-ear { display: inline-flex; color: var(--accent); }
+.ps-ear svg { width: 22px; height: 22px; }
+.peli-hear { display: inline-flex; align-items: center; justify-content: center; width: 84px; height: 84px; margin: 6px auto 0;
+  border-radius: 50%; border: 2px solid var(--tc, var(--accent)); background: color-mix(in srgb, var(--tc, var(--accent)) 12%, var(--surface));
+  color: var(--tc, var(--accent)); cursor: pointer; }
+.peli-hear svg { width: 40px; height: 40px; }
+.peli-hear.playing { animation: peli-pulse 1s ease-in-out infinite; }
+@keyframes peli-pulse { 50% { transform: scale(1.06); } }
+@media (prefers-reduced-motion: reduce) { .peli-hear.playing { animation: none; } }
+.peli-hear-err { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
