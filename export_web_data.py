@@ -343,6 +343,11 @@ def main():
         CREATE TABLE sme_passive (word_id INTEGER, tag TEXT, surface TEXT, PRIMARY KEY (word_id, tag)) WITHOUT ROWID;
         -- Omistusliitteelliset muodot ja vertailumuotojen essiivit (sme_extra.py: SIKOR CC BY 3.0 + GiellaLT lang-sme)
         CREATE TABLE sme_extra (word_id INTEGER, tag TEXT, surface TEXT, PRIMARY KEY (word_id, tag, surface)) WITHOUT ROWID;
+        -- SIKOR-korpusfrekvenssi sanoille, joilta GiellaLT:n frekvenssi puuttuu (sikor_freq.py; buorre 58 815):
+        -- vain homografien vertailuun lauseessa, ei hakujärjestykseen
+        CREATE TABLE sikor_freq (word_id INTEGER PRIMARY KEY, n INTEGER) WITHOUT ROWID;
+        -- Sanamuodon tavallinen lukutapa korpuksessa (sme_dominant.py, SIKOR): garra = garas (A), orru = orrut (V)
+        CREATE TABLE sme_dominant (surface TEXT PRIMARY KEY, lemma TEXT, pos TEXT, share REAL) WITHOUT ROWID;
         -- Saamen sanamuotojen esiintymät sanakirjan esimerkkilauseissa: lausekääntäjä valitsee rinnakkaismuodoista
         -- yleisimmän (lei eikä leai: 465 / 1)
         CREATE TABLE sme_seen (form TEXT PRIMARY KEY, n INTEGER) WITHOUT ROWID;
@@ -505,6 +510,11 @@ def main():
     if src.execute("SELECT 1 FROM sqlite_master WHERE name = 'sme_passive'").fetchone():
         dst.executemany("INSERT OR IGNORE INTO sme_passive VALUES (?,?,?)",
                         src.execute("SELECT word_id, tag, surface FROM sme_passive ORDER BY word_id, tag"))
+    if src.execute("SELECT 1 FROM sqlite_master WHERE name = 'sme_dominant'").fetchone():
+        dst.executemany("INSERT INTO sme_dominant VALUES (?,?,?,?)", src.execute("SELECT * FROM sme_dominant ORDER BY surface"))
+    if src.execute("SELECT 1 FROM sqlite_master WHERE name = 'freq_sources'").fetchone():
+        dst.executemany("INSERT OR IGNORE INTO sikor_freq VALUES (?,?)",
+                        src.execute("SELECT word_id, MAX(n) FROM freq_sources WHERE source LIKE 'SIKOR%' GROUP BY word_id ORDER BY word_id"))
     if src.execute("SELECT 1 FROM sqlite_master WHERE name = 'sme_extra'").fetchone():
         dst.executemany("INSERT OR IGNORE INTO sme_extra VALUES (?,?,?)",
                         src.execute("SELECT word_id, tag, surface FROM sme_extra ORDER BY word_id, tag, surface"))

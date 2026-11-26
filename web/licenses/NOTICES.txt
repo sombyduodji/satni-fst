@@ -205,6 +205,8 @@ Possessive word forms: SIKOR North Saami free corpus 2015-10-10
   Source: http://hdl.handle.net/11509/100 (CLARINO Bergen)
   Changes: only the list of word forms is used (no text); possessive
   forms and comparative essives confirmed by the GiellaLT analyser.
+  The corpus's part-of-speech counts choose the usual reading of
+  common word forms in photo sentences.
 
 Related words in other Sámi languages: Álgu, the
 Etymological Database of the Saami Languages, XML version 16.3.2023

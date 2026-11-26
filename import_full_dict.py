@@ -33,6 +33,7 @@ import kartverket_names
 import fin_forms
 import sme_passive
 import sme_extra
+import sme_dominant
 import nob_forms
 import spa_data
 import wiktionary_eng
@@ -871,11 +872,19 @@ def apply_corrections(words, details):
             info = details.setdefault((lemma, pos, subtype), {"freq": None, "notes": [], "meanings": [], "reverse": []})
             # Vanhojen merkitysten esimerkkilauseet siirtyvät korjattuun merkitykseen (ennen ne katosivat: 35
             # esimerkkiä, esim. oalát, váili; 2026-11-20)
-            fixed = new_meaning("fin", [corrections[key]])
+            # " | " erottaa merkitykset (giella: kieli | ansa; järjestyksen korjaus 2026-11-26)
+            segs = [x.strip() for x in corrections[key].split("|") if x.strip()]
+            trans = {**trans, "fin": ", ".join(segs)}
+            new = [new_meaning("fin", [x]) for x in segs]
+            # Esimerkit seuraavat merkitystään: sama sanamuoto uudessa merkityksessä (olmmái: ystävä-esimerkki ystävä-
+            # merkitykseen), muuten ensimmäiseen
+            norm = lambda x: re.sub(r"\s+", " ", x.lower()).strip()
             for m in info["meanings"]:
                 if m["lang"] == "fin":
-                    fixed["examples"] += [e for e in m["examples"] if e not in fixed["examples"]]
-            info["meanings"] = [fixed] + [m for m in info["meanings"] if m["lang"] != "fin"]
+                    old = norm(", ".join(m["translations"]))
+                    target = next((n for n, x in zip(new, segs) if norm(x) == old), new[0])
+                    target["examples"] += [e for e in m["examples"] if e not in target["examples"]]
+            info["meanings"] = new + [m for m in info["meanings"] if m["lang"] != "fin"]
             info["new_from"] = "fin"
         result.append((lemma, pos, subtype, sem_type, trans))
 
@@ -1265,6 +1274,7 @@ def main():
     fin_forms.add_fin_forms(cursor)
     sme_passive.apply(cursor)
     sme_extra.apply(cursor)
+    sme_dominant.apply(cursor)
 
     print("Luodaan tietokantaan indeksit...")
     cursor.execute("CREATE INDEX idx_lemma ON dictionary(sme_lemma COLLATE NOCASE);")

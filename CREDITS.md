@@ -181,6 +181,8 @@ Downloaded by [`hae_lahteet.sh`](hae_lahteet.sh) from the publishers' own addres
   © UiT The Arctic University of Norway (Giellatekno and Divvun) and the Norwegian Sámi Parliament, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
   [`sme_extra.py`](sme_extra.py) takes only the list of word forms that occur in the corpus (no text) and keeps possessive
   forms and comparative essives that the GiellaLT analyser confirms and the Divvun speller accepts (barggustis, álkibun).
+  [`sme_dominant.py`](sme_dominant.py) uses the corpus's own part-of-speech counts to choose the usual reading of 353
+  common word forms in photo sentences (garra = garas "hard", not garra "crust").
 - **Related words in other Sámi languages:** [Álgu](https://kaino.kotus.fi/algu), the Etymological Database of the Saami
   Languages (XML 16.3.2023), © Kotimaisten kielten keskus, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
   [`algu_related.py`](algu_related.py) uses only the links between related words and shows a word only when it is in the

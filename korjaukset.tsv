@@ -12,6 +12,7 @@
 #
 # - sanaluokka kuten tietokannassa: N, V, A, Adv, Num, Pron, Pcle, Po, Pr, CC, CS, Interj, Cmp, MWE
 # - suomennokset pilkulla eroteltuina; ne KORVAAVAT XML:n suomennokset
+# - " | " erottaa erilliset merkitykset (giella: kieli | ansa); ensimmäinen on päämerkitys
 # - suomennokseksi pelkkä "-" poistaa sanan kokonaan
 # - jos sanaa ei ole XML:ssä, se lisätään uutena
 #
@@ -883,3 +884,6 @@ mugga	N	muki, kannu
 sisriikkalaš	A	kotimainen, valtakunnallinen
 # giđđageassi: oli "suvi" (norja: forsommer)
 giđđageassi	N	alkukesä
+# Merkitysten järjestys (2026-11-26): suomessa harvinaisempi merkitys oli ensin; norja, englanti ja espanja samaa mieltä
+# (olmmái jätettiin ennalleen: monikko olbmát = ystävät, testi 2026-11-26)
+giella	N	kieli | ansa

@@ -2510,6 +2510,23 @@ function translationForms(lang, word, pos) {
 // Saamessa ei ole määräistä artikkelia: prepositioiden kanssa käytetään määräistä muotoa.
 function nobPhrase(tag, pos, f) {
   const parts = tag.split("+");
+  // Omistusliite (sme_extra.py): barggustis = i arbeidet sitt, áhččán = faren min; suku määräisestä muodosta (-et = neutri)
+  const px = parts.find((p) => /^Px/.test(p));
+  if (px && pos !== "V") {
+    const rest = parts.filter((p) => p !== px), n = rest[0] === "Pl" ? "Pl" : "Sg", def = f[`${n}+Def`];
+    if (!def) return null;
+    const k = n === "Pl" ? 2 : /et$/.test(f["Sg+Def"] || "") ? 1 : 0;
+    const own = { Sg1: ["min", "mitt", "mine"], Sg2: ["din", "ditt", "dine"], Du1: ["vår", "vårt", "våre"], Pl1: ["vår", "vårt", "våre"],
+                  Du2: ["deres", "deres", "deres"], Pl2: ["deres", "deres", "deres"] }[px.slice(2)] || ["sin", "sitt", "sine"];
+    const np = `${def} ${own[k]}`;
+    switch (rest[rest.length - 1]) {
+      case "Ill": return `til ${np}`;
+      case "Loc": return `i ${np} / fra ${np}`;
+      case "Com": return `med ${np}`;
+      case "Ess": return `som ${np}`;
+      default: return np;
+    }
+  }
   // Numeraali ei taivu norjassa: tre, til tre, med tre (genetiiville ei ole luonnollista vastinetta)
   if (pos === "Num") {
     return { Nom: f.word, Acc: f.word, Ill: `til ${f.word}`, Loc: `i ${f.word} / fra ${f.word}`, Com: `med ${f.word}`,
@@ -2523,6 +2540,32 @@ function nobPhrase(tag, pos, f) {
     if (tag === "Ind+Prs+ConNeg") return f.Prs && `(ikke) ${f.Prs}`;
     if (tag === "Ind+Prt+ConNeg") return f.Prt && `(ikke) ${f.Prt}`;
     if (tag === "Imprt+ConNeg") return f.Imp && `ikke ${f.Imp}!`;
+    // sme_extra.py: -eapmi (vuođđudeapmi = å grunnlegge), -goahtit (doaibmagoahtá = begynner å fungere),
+    // passiivi (daddjo = blir sagt), gerundi (meannudettiin = mens man behandler)
+    if (parts[0] === "NomAct") {
+      if (!f.Inf) return null;
+      const c = parts[parts.length - 1];
+      return { Ill: `til å ${f.Inf}`, Loc: `ved å ${f.Inf}`, Com: `med å ${f.Inf}`, Ess: `som å ${f.Inf}` }[c] || `å ${f.Inf}`;
+    }
+    if (parts[0] === "Inch") {
+      const b = f.Inf && translationForms("nob", "begynne", "V");
+      const ph = b && nobPhrase(parts.slice(1).join("+"), "V", b);
+      return ph ? `${ph.replace(/^\(ikke\) /, "(ikke) ")} å ${f.Inf}` : null;
+    }
+    if (parts[0] === "Pass") {
+      if (!f.PrfPrc) return null;
+      if (parts[1] === "PrfPrc") return `har blitt ${f.PrfPrc}`;
+      if (parts[1] === "Inf") return `å bli ${f.PrfPrc}`;
+      if (parts[3] === "ConNeg") return `(ikke) ${parts[2] === "Prt" ? "ble" : "blir"} ${f.PrfPrc}`;
+      if (parts[1] === "Ind") return `${parts[2] === "Prt" ? "ble" : "blir"} ${f.PrfPrc}`;
+      if (parts[1] === "Cond") return `ville bli ${f.PrfPrc}`;
+      return null;
+    }
+    if (parts[0] === "Ger") {
+      if (!f.Prs) return null;
+      const gp = parts[1] && NOB_PRONOUNS[parts[1].replace(/^Px/, "")];
+      return `mens ${gp || "man"} ${f.Prs}`;
+    }
     if (!person) return null;
     const who = NOB_PRONOUNS[person];
     if (parts[0] === "Ind") return parts[1] === "Prs" ? f.Prs && `${who} ${f.Prs}` : f.Prt && `${who} ${f.Prt}`;
@@ -4708,6 +4751,13 @@ function ocrGloss(word, original = "", pick = null) {
       if (known) row = known;
     }
   }
+  // Korpuksen tavallinen lukutapa (sme_dominant.py, SIKOR): garra = garas "kova" eikä garra "kuori", orru = orrut
+  // "asuu", gielat = giella "kielet". Vain kun sillä on käännös; lauseyhteyden valinta (pick) voittaa.
+  if (hasTable("sme_dominant")) {
+    const d = all("SELECT lemma, pos FROM sme_dominant WHERE surface = ?", [word.toLowerCase()])[0];
+    const alt = d && !(row.sme_lemma === d.lemma && row.pos === d.pos) && translated.find((r) => r.sme_lemma === d.lemma && r.pos === d.pos);
+    if (alt) row = alt;
+  }
   // Lauseyhteys valitsee rivin (leat + partisiippi: ráđđádallan = neuvotellut, ei neuvottelu)
   if (pick) { const p = pick(translated); if (p) row = p; }
   const lemma = fold(row.sme_lemma) !== fold(word) ? row.sme_lemma : "";
@@ -5746,6 +5796,35 @@ function sentTokens(raw) {
       tok.unknown = false; tok.name = true;
     }
   });
+  // Adverbin hakusana väistyy adjektiivin muodolle substantiivin edellä, kun adjektiivilla on sama sija ja luku
+  // (buriid čálgoortnegiid = hyviä hyvinvointijärjestelmiä, ei adverbi "hyvällä")
+  if (settings.ocrFrom === "sme") toks.forEach((tok, i) => {
+    const next = toks[i + 1];
+    if (tok.fixed || tok.name || !["Adv", "Pcle", "N"].includes(tok.ctx?.pos) || next?.ctx?.pos !== "N" || /[,.;:!?]/.test(tok.punct || "")) return;
+    const want = (next.ctx.tags || []).filter((t) => /^(Sg|Pl)\+(Acc|Gen|Ill|Loc|Com|Nom)$/.test(t));
+    if (!want.length) return;
+    const ids = new Set(all(`SELECT DISTINCT p.word_id AS id FROM paradigms p JOIN tags t ON t.id = p.tag_id JOIN dictionary d ON d.id = p.word_id
+      WHERE p.surface = ? AND d.pos = 'A' AND t.tag IN (${want.map(() => "?").join(",")})`, [tok.word, ...want]).map((r) => r.id));
+    if (!ids.size) return;
+    // Substantiivi väistyy vain selvästi yleisemmälle adjektiiville (buriid: buorri "gode" -> buorre "hyvä"), jotta
+    // genetiiviketju (skuvlla oahpaheaddji) säilyy
+    if (tok.ctx.pos === "N") {
+      // Frekvenssi myös SIKOR-taulusta (buorre: GiellaLT:n frekvenssi puuttuu, SIKOR 58 815)
+      const sk = hasTable("sikor_freq");
+      const fq = sk ? "COALESCE(d.freq, (SELECT n FROM sikor_freq s WHERE s.word_id = d.id))" : "d.freq";
+      const fr = (sql, a) => all(sql, a)[0]?.f || 0;
+      const af = fr(`SELECT MAX(${fq}) AS f FROM dictionary d WHERE d.id IN (${[...ids].join(",")})`, []);
+      const nf = fr(`SELECT MAX(${fq}) AS f FROM dictionary d WHERE d.sme_lemma = ? AND d.pos = 'N'`, [tok.ctx.lemma]);
+      if (!(af >= 10 * Math.max(nf, 1))) return;
+    }
+    const g = ocrGloss(tok.word, "", (rs) => rs.find((r) => ids.has(r.id)));
+    if (!g.id || !ids.has(g.id) || !g.trans) return;
+    const strip = (x) => x.replace(/\s*\([^)]*\)/g, "").trim();
+    tok.opts = [...new Set([...(g.form ? g.form.split(" / ") : []), ...splitList(g.trans).map(strip)].map((x) => x.trim()).filter(Boolean))];
+    tok.choice = 0;
+    tok.lemma = g.lemma || "";
+    if (["fin", "nob"].includes(settings.lang) && ocrTo() === settings.lang) tok.ctx = sentWordCtx(g, tok.word);
+  });
   sentContext(toks);
   sentRerank(toks);
   sentPluralParticiples(toks);
@@ -6155,8 +6234,9 @@ function sentContextNob(toks) {
     }
     // Objekti (genetiivin/akkusatiivin näköinen verbin jälkeen): epämääräinen muoto (fállat aviissa = tilby en avis)
     const amb = ["Sg", "Pl"].find((n) => has(`${n}+Gen`) && has(`${n}+Acc`));
-    if (c.pos === "N" && amb && !["N", "A", "Po"].includes(next?.ctx?.pos) && !has(`${amb}+Nom`)
-        && toks.slice(Math.max(0, i - 3), i).some((t) => t.ctx?.pos === "V") && f[`${amb}+Indef`]) { put(tok, f[`${amb}+Indef`]); return; }
+    // Myös ilman verbiä lähellä (rinnasteinen objekti: ja buriid čálgoortnegiid = og gode velferdsordninger): genetiivi
+    // ilman pääsanaa ei ole norjaa (velferdsordningenes)
+    if (c.pos === "N" && amb && !["N", "A", "Po"].includes(next?.ctx?.pos) && !has(`${amb}+Nom`) && f[`${amb}+Indef`]) { put(tok, f[`${amb}+Indef`]); return; }
     // Genetiivi substantiivin edellä: norjassa yleensä ilman -s:ää (sámi giella = samisk språk, gáfe = kaffe)
     if (c.pos === "N" && (has("Sg+Gen") || has("Pl+Gen")) && next?.ctx?.pos === "N" && indef && !has("Sg+Nom")) put(tok, indef);
     // Adjektiivi monikollisen substantiivin edellä: monikko (viiddis váttisvuođat = store problemer)
