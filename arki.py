@@ -67,6 +67,12 @@ EX = {
  "vuodjit": ("Son vuodjá Guovdageidnui.", "Hän ajaa Koutokeinoon.", "Hun kjører til Kautokeino.", "She drives to Kautokeino."),
  "busse": ("Busse lea maŋŋonan.", "Bussi on myöhässä.", "Bussen er forsinka.", "The bus is late."),
  "vázzit": ("Son váccii, ja gaskkohagaid viegai.", "Hän käveli ja välillä juoksi.", "Hun gikk, og innimellom sprang hun.", "She walked, and now and then she ran."),
+ # Lisää sanakirjan esimerkkejä muista osioista (käyttäjä hyväksyi 2026-11-26). lássa: lähteessä kirjoitusvirhe juhkát,
+ # jäsennin ja oikoluku hyväksyvät vain asun juhkat. Norja omaa käännöstä, kun sanakirjassa ei ole (lássa, ruhta, vuolláičállit).
+ "monni": ("Lasit 3 moni ja 100 grámma sohkkara.", "Lisää 3 munaa ja 100 grammaa sokeria.", "Tilsett 3 egg og 100 gram sukker.", "Add 3 eggs and 100 grams of sugar."),
+ "lássa": ("Lásas sáhttá juhkat čázi.", "Lasista voi juoda vettä.", "Man kan drikke vann av et glass.", "You can drink water from a glass."),
+ "ruhta": ("Son čorgestii ja gávnnai ruđaid soffá vuolde.", "Hän siivosi ja löysi rahat sohvan alta.", "Han ryddet og fant pengene under sofaen.", "He tidied up and found the money under the sofa."),
+ "vuolláičállit": ("vuolláičállit dokumeantta", "allekirjoittaa asiakirja", "skrive under et dokument", "sign a document"),
 }
 
 

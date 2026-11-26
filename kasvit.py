@@ -28,6 +28,11 @@ LISTS = [
 ]
 
 
+# Sanakirjan oma esimerkki (käyttäjä hyväksyi 2026-11-26); suomi norjasta käännetty
+EX = {"beassi": ("Mun gaikon beassi muoras cahkkehahkan.", "Revin tuohta puusta sytykkeeksi.", "Jeg flerret never av treet til opptenning.",
+                 "I tore birch bark off the tree for kindling.")}
+
+
 def words(lst):
     return [w for sec in lst[3] for w in sec[3]]
 

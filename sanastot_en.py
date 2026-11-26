@@ -207,3 +207,5 @@ for _l in _arki.LISTS + _kasvit.LISTS:
 # Arjen sanastojen esimerkit (arki.EX)
 for _e in _arki.EX.values():
     EXAMPLES[_e[0]] = _e[3]
+for _e in _kasvit.EX.values():
+    EXAMPLES[_e[0]] = _e[3]

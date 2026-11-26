@@ -415,8 +415,15 @@ def lists():
         L.append(lst_d)
     # Puut ja kasvit (kasvit.py, 2026-11-26), Luonto-ryhmään
     for lst in kasvit.LISTS:
-        L.append({"id": lst[0], "icon": lst[1], "title": {"fi": lst[2][0], "nb": lst[2][1]},
-                  "rows": [row([fi], [nb], [sme_fi(s_, pos, fi, nb)]) for s_, pos, fi, nb, _en in kasvit.words(lst)]})
+        rows = [row([fi], [nb], [sme_fi(s_, pos, fi, nb)]) for s_, pos, fi, nb, _en in kasvit.words(lst)]
+        for r in rows:
+            e = kasvit.EX.get(r["sme"][0]["w"][0])
+            if e:
+                r["ex"] = {"sme": e[0], "fi": e[1], "nb": e[2]}
+        lst_d = {"id": lst[0], "icon": lst[1], "title": {"fi": lst[2][0], "nb": lst[2][1]}, "rows": rows}
+        if any(r.get("ex") for r in rows):
+            lst_d["layout"] = "ex"
+        L.append(lst_d)
     # Kellonajat (kello.py ja kello.json, käyttäjä 2026-11-23): kello, saame ja suomi; norjaksi ja englanniksi
     # digitaalinen aika. Napautus soittaa Biretin lauseen (audio/w/kello-<i>-sme.ogg)
     clock = json.load(open(os.path.join(SCRIPT_DIR, "kello.json"), encoding="utf-8"))["rows"]
