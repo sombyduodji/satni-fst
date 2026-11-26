@@ -64,7 +64,7 @@ docker run --rm \
 RELEASE_CERT_SHA256=727296764281e20146f999a54636265a799ef4c4a21f3f23f7320c4620b1587d
 BUILT="$CACHE_DIR/build/app/outputs/apk/$APK"
 CHECK=$(docker run --rm -v "$(dirname "$BUILT")":/apk:ro satni-fst-android-build sh -c \
-    "BT=/opt/android-sdk/build-tools/35.0.0; \$BT/apksigner verify --print-certs /apk/$(basename "$BUILT") && \$BT/aapt dump badging /apk/$(basename "$BUILT") | grep -c application-debuggable" 2>&1)
+    "BT=\$(ls -d /opt/android-sdk/build-tools/* | sort -V | tail -1); \$BT/apksigner verify --print-certs /apk/$(basename "$BUILT") && \$BT/aapt dump badging /apk/$(basename "$BUILT") | grep -c application-debuggable" 2>&1)
 if ! echo "$CHECK" | grep -qi "certificate SHA-256 digest: $RELEASE_CERT_SHA256"; then
     echo "VIRHE: APK ei ole allekirjoitettu julkaisuavaimella:"; echo "$CHECK" | head -5; exit 1
 fi

@@ -1,0 +1,6 @@
+# Dictionary data for the Windows build (web/data). It is generated from the source dictionaries with
+# export_web_data.py and is too large for git, so it is published as a release asset and pinned here by
+# SHA-256. get-web-data.ps1 downloads it, checks the hash and unpacks it into web\data.
+# Update both lines when the data changes: tar -cf satni-fst-web-data-X.Y.Z.tar -C web data, then sha256sum.
+url=https://github.com/sombyduodji/satni-fst/releases/download/v1.1.0/satni-fst-web-data-1.1.0.tar
+sha256=12049b6510314a3f58084325b9e92143aac49e7b2c48353700db8bcd6334813a

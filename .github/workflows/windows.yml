@@ -1,0 +1,76 @@
+# Windows build of the Sátni FST desktop app on GitHub's own Windows runner, so that the released
+# satni-fst-windows.zip is an automated build from this repository (needed for code signing through
+# SignPath Foundation). Run it by hand: Actions -> Windows build -> Run workflow, with the commit to build.
+# Build from branch dev (or its release commit): its full history gives the same version number as the
+# Android and Linux builds (bump_version.py counts the commits of the day; main has one commit per release).
+name: Windows build
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit, tag or branch to build (for a release: the release commit on dev)"
+        required: true
+        default: dev
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0  # bump_version.py needs the full history
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Dictionary data (pinned by SHA-256)
+        shell: pwsh
+        run: packaging/windows/get-web-data.ps1
+
+      - name: Version
+        run: python bump_version.py
+
+      - name: Build
+        shell: pwsh
+        run: packaging/windows/build.ps1 -Python python -Out build-windows
+
+      - name: Self-test (search, inflection, speech)
+        shell: pwsh
+        continue-on-error: true  # needs the Divvun speech service and a desktop session
+        run: |
+          $p = Start-Process -FilePath build-windows\dist\satni-fst\satni-fst.exe -ArgumentList "--testaa" -NoNewWindow -Wait -PassThru -RedirectStandardOutput testaa.log
+          Get-Content testaa.log
+          if ($p.ExitCode -ne 0) { exit $p.ExitCode }
+
+      - name: Checksum
+        shell: pwsh
+        run: (Get-FileHash build-windows\satni-fst-windows.zip -Algorithm SHA256).Hash.ToLower() + "  satni-fst-windows.zip" | Tee-Object build-windows\SHA256SUMS-windows.txt
+
+      - uses: actions/upload-artifact@v4
+        id: upload
+        with:
+          name: satni-fst-windows
+          path: |
+            build-windows/satni-fst-windows.zip
+            build-windows/SHA256SUMS-windows.txt
+          if-no-files-found: error
+
+      # Code signing (after SignPath Foundation has accepted the project): the unsigned artifact is sent to
+      # SignPath, which signs satni-fst.exe inside the zip after the maintainer approves the request.
+      # - uses: signpath/github-action-submit-signing-request@v1
+      #   with:
+      #     api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+      #     organization-id: <from SignPath>
+      #     project-slug: satni-fst
+      #     signing-policy-slug: release-signing
+      #     github-artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      #     wait-for-completion: true
+      #     output-artifact-directory: signed
