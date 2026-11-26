@@ -4300,6 +4300,12 @@ function ocrCorrector() {
     }
     // Ehdokkaat samassa järjestyksessä kuin ennen: sana itse, 1–3 tarketta, kaksoiskirjain, kaksoiskirjain + tarke
     const cands = [w];
+    // Pohjoissaamessa ei ole å:ta eikä ä:tä, mutta tunnistus lukee á:n usein niiksi (ráđđádallan -> råđđádallan,
+    // käyttäjän kuva 2026-11-26). Sana itse ensin, koska nimissä ne ovat oikein (Håkon, Borås, Gävle); sitten kaikki
+    // å/ä -> á. Vain vähintään 4 kirjaimen sanat eikä muita korjauksia samaan, muuten norjan sanoista tuli saamea
+    // (må -> má, nå -> ná, både -> báđe)
+    const aw = w.replace(/[åä]/g, "á");
+    if (aw !== w && [...w].length >= 4) cands.push(aw);
     const spots = [...w].map((c, i) => (OCR_DIACRITICS[c] ? i : -1)).filter((i) => i >= 0).slice(0, 10);
     const variant = (picked) => [...w].map((c, i) => (picked.includes(i) ? OCR_DIACRITICS[c] : c)).join("");
     const combos = (k, from = 0) => (k === 0 ? [[]] : spots.slice(from).flatMap((sp, j) =>
