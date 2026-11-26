@@ -4407,7 +4407,8 @@ function ocrCorrector() {
     if (w.length >= 1 && w.length <= 20) {
       const chars = [...w], doubled = [];
       for (const i of doubleOrder(chars)) {
-        if (chars.length <= 3 && !/[ij]/.test(chars[i])) continue;
+        // Saamen tarkkeelliset konsonantit myös lyhyessä sanassa (ožo -> ožžo, vino kuvakaappaus 2026-11-26)
+        if (chars.length <= 3 && !/[ijčšžđŋŧ]/.test(chars[i])) continue;
         const v = [...chars.slice(0, i + 1), chars[i], ...chars.slice(i + 1)].join("");
         cands.push(v); doubled.push(v);
       }
@@ -4762,8 +4763,9 @@ function ocrResult(r) {
   if (r.error) { $("ocr-status").textContent = t(r.error === "noApp" ? "ocrNoApp" : "ocrError"); return; }
   // Välilyönnin sisältävä "sana" (ML Kit: "lágidit juohke" yhtenä; käyttäjän kuva 2026-11-26) kahdeksi sanaksi:
   // leveys ja keskikohta jaetaan merkkien määrän mukaan kallistus huomioiden
+  // Myös virkeraja ilman välilyöntiä (sámegillii.Sámegielat; vino kuvakaappaus 2026-11-26): pieni kirjain, välimerkki, iso
   r.words = r.words.flatMap((w) => {
-    const parts = (w.t || "").trim().split(/\s+/);
+    const parts = (w.t || "").trim().replace(/(\p{Ll})([.,;:!?])(\p{Lu})/gu, "$1$2 $3").split(/\s+/);
     if (parts.length < 2) return [w];
     const total = parts.reduce((n, p) => n + p.length, 0) + parts.length - 1, rad = ((w.a || 0) * Math.PI) / 180;
     let at = 0;
@@ -5706,7 +5708,8 @@ function sentTokens(raw) {
       if (!verb && settings.ocrFrom === "sme" && g.id && ["fin", "nob"].includes(settings.lang) && ocrTo() === settings.lang) tok.ctx = sentWordCtx(g, w.word);
       else if (verb) tok.ctx = { pos: "V", lemma: g.lemma || w.word, tagOf: verb.tagOf };
       // Iso alkukirjain keskellä lausetta (Siiddas = Siida-museo, ei "kotona"): oletuksena sana sellaisenaan, käännös valittavissa
-      if (cap && n > 0 && !tok.name && !g.prop) tok.opts = [r.clean, ...tok.opts];
+      // Virkkeen alussa (edellinen sana päättyy . ! ? :) käännös kuten lauseen ensimmäisellä sanalla
+      if (cap && n > 0 && !/[.!?:]$/.test(rows[n - 1].t || "") && !tok.name && !g.prop) tok.opts = [r.clean, ...tok.opts];
     }
     // Tuntematon yhdyssana (prográmma + fitnodat): osien käännökset ehdotukseksi
     if (tok.unknown && sentCanSplit() && !hy) {
@@ -5940,7 +5943,7 @@ function sentContext(toks) {
     // Kielen nimi illatiivissa = suomen translatiivi (sámegillii = saameksi, suomagillii = suomeksi)
     // Ei substantiivin määreenä (kolmen saameksi tiedot) eikä numeron jälkeen
     if (/giella$/.test(c.lemma || "") && has("Sg+Ill") && c.f["Sg+Tra"]
-        && !["N", "A"].includes(next?.ctx?.pos) && prev?.ctx?.pos !== "Num" && !numVal(prev)) { tok.finKey = "Sg+Tra"; put(tok, c.f["Sg+Tra"]); return; }
+        && (/[.!?:;]/.test(tok.punct || "") || !["N", "A"].includes(next?.ctx?.pos)) && prev?.ctx?.pos !== "Num" && !numVal(prev)) { tok.finKey = "Sg+Tra"; put(tok, c.f["Sg+Tra"]); return; }
     if (numVal(prev) >= 2 && has("Sg+Gen")) key = "Sg+Par";
     else if (amb) {
       // Pilkku sanan perässä: seuraava sana ei ole sen pääsana (gálvvuid, gođiid ja mánáid = tavarat, kodat ja lapset)
@@ -6017,6 +6020,20 @@ function sentContext(toks) {
     const degForm = deg && (next.finKey === "Sg+Nom" ? c.f[deg] : c.f[`${deg}+${next.finKey}`]);
     if (deg && !degForm) return;
     put(tok, deg ? degForm : c.f[next.finKey]);
+  });
+  // Yksin seisova monikon adjektiivi (Sámegielat oidnojedje = Saamenkieliset näkyivät): monikko, kun sanalla on vain
+  // monikon nominatiivi eikä perässä ole substantiivia
+  toks.forEach((tok, i) => {
+    const c = tok.ctx, next = toks[i + 1];
+    if (c?.pos !== "A" || !c.f?.["Pl+Nom"] || tok.fixed || tok.finKey || ["N", "A"].includes(next?.ctx?.pos) && !/[.,!?:;]/.test(tok.punct || "")) return;
+    // Vain monikon nominatiivi, tai perässä monikon verbi (Sámegielat oidnojedje: sámegielat on myös yksikkö)
+    const nv = next?.ctx?.pos === "V" ? next.ctx.tagOf?.get(next.opts?.[next.choice || 0]) || "" : "";
+    const plOnly = (c.tags || []).includes("Pl+Nom") && !(c.tags || []).some((t) => /^(Sg\+|Attr$)/.test(t));
+    // Yksikön asu monikoksi vain virkkeen alussa subjektina (ei viššal guovlladit = ahkera pistäytymään)
+    const start = i === 0 || /[.!?:;]/.test(toks[i - 1].punct || "");
+    if (!plOnly && !(start && /Pl3$/.test(nv) && (c.tags || []).includes("Sg+Nom"))) return;
+    tok.finKey = "Pl+Nom";
+    put(tok, c.f["Pl+Nom"]);
   });
   // Liittomuodot: leat + partisiippi (lea váldán = on ottanut, lean vásihan = olen kokenut)
   const isLeat = (t) => t?.ctx?.pos === "V" && SME_LEAT.has(t.ctx.lemma);
@@ -6713,6 +6730,10 @@ function renderSentSugs(text) {
     }
   }
   if (pre) for (const o of out) { o.word = pre + o.word; if (o.trans) o.trans = pre + o.trans; if (o.parts) o.parts = pre + o.parts; }
+  // Muokattavan sanan nykyinen käännös ensimmäisenä (golmma sámegillii = kolmen saameksi)
+  const cur = sent?.toks?.[sent.sheet], be = cur?.beforeEdit;
+  if (be && !be.unknown && be.trans && raw.toLowerCase() === (cur.clean || cur.t || "").toLowerCase() && !out.some((o) => o.trans === be.trans))
+    out.unshift({ word: raw, trans: be.trans, ...(be.lemma && /\s/.test(be.lemma) ? { parts: be.lemma.replace(/\s+\+?\s*/g, " + ") } : {}) });
   const kept = out.slice(0, 4);
   kept.push({ word: raw, trans: "", keep: true });
   show(kept);
@@ -6764,6 +6785,7 @@ function bindSentView() {
     if (cut && sent.split) { const c = +cut.dataset.cut; sent.split.cuts.has(c) ? sent.split.cuts.delete(c) : sent.split.cuts.add(c); renderSentSplit(); return; }
     if (act === "type") { sent.typing = sent.sheet; sent.split = null; renderSentView(); return; }
     if (act === "keep") {
+      delete tok.beforeEdit;
       const word = sent.typing === sent.sheet ? ($("sent-input").value || "").trim() || tok.clean || tok.t : tok.clean || tok.t;
       save({ fixed: { word, trans: "", edited: true, keep: true }, unknown: false, name: false });
       if (sent.solo != null) { sent.soloDone = true; closeSentView(); return; }
@@ -6777,11 +6799,20 @@ function bindSentView() {
     if (opt) { save({ choice: +opt.dataset.opt }); sent.sheet = null; renderSentView(); return; }
     // Ehdotuksen napautus vaihtaa sanan heti
     if (sug) { $("sent-sugs").querySelectorAll(".sent-opt").forEach((b) => b.classList.toggle("sel", b === sug)); act = "done"; }
-    if (act === "cancel") { if (sent.solo != null) { closeSentView(); return; } sent.sheet = null; sent.split = null; renderSentView(); return; }
-    if (act === "edit") { save({ fixed: { word: tok.clean || tok.t, trans: sentWordText(tok), edited: true } }); renderSentView(); return; }
+    if (act === "cancel") {
+      // Muokkaa -> Peruuta: sana palaa ennalleen (käännös ei katoa; käyttäjän kuva 2026-11-26, golmma sámegillii)
+      if (tok.beforeEdit) { const b = tok.beforeEdit; delete tok.beforeEdit; save({ fixed: b.fixed, unknown: b.unknown, name: b.name, lemma: b.lemma }); }
+      if (sent.solo != null) { closeSentView(); return; }
+      sent.sheet = null; sent.split = null; sent.typing = null; renderSentView(); return;
+    }
+    if (act === "edit") {
+      tok.beforeEdit = { fixed: tok.fixed, unknown: tok.unknown, name: tok.name, lemma: tok.lemma, trans: sentWordText(tok) };
+      save({ fixed: { word: tok.clean || tok.t, trans: sentWordText(tok), edited: true } }); renderSentView(); return;
+    }
     // Lause-välilehdeltä sanakirjaan; takaisin-ele palaa lauseeseen (lauseet.js: lauseReturnHash)
     if (act === "open" && sent.lause) { const q = (tok.lemma || tok.word || "").split(" + ").pop(); sent.sheet = null; renderSentView(); lauseToDictionary(q); return; }
     if (act === "open") { const q = tok.lemma || tok.word; closeSentView(); closeSentView(); $("ocr-view").hidden = true; search(q); ocrReturnHash = location.hash; return; }
+    if (act === "done") delete tok.beforeEdit;
     if (act === "done" && sent.split) {
       const info = sent.split.info, text = sent.split.text;
       if (info) save({ fixed: { word: info.word, trans: info.trans, edited: true }, lemma: info.parts.map((x) => x.word).join(" + "), unknown: false, name: false });
