@@ -528,7 +528,7 @@ function bindHarj() {
 // Painikkeet sanastoihin (sanastot.js kutsuu): listan yläreunaan ja yleisnäkymän alkuun
 // Listat, joille ei vielä ole kuunteluharjoitusta (Harrin suomenkieliset äänet puuttuvat): ei painiketta
 // (Lähellä ja kaukana sai harjoituksen 2026-11-26)
-const HARJ_NO_LIST = [];
+const HARJ_NO_LIST = ["kaupassa", "pankissa", "liikkeella", "syominen"];  // Arki: Harrin äänet tekeillä
 function harjListButton(listId) {
   if (!harjAvailable() || HARJ_NO_LIST.includes(listId)) return "";
   const id = listId === "luvut" ? "luvut" : listId;
