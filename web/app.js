@@ -691,16 +691,18 @@ async function loadDatabaseWithRetry() {
 // step, get, getAsObject, reset, free), joten kyselykohdat pysyvät ennallaan. JavascriptInterface-kutsu on
 // synkroninen; step() hakee koko tuloksen yhdellä kutsulla. Virhe avauksessa -> sql.js kuten ennen.
 // Testaus: localStorage satniForceSqlJs = "1" pakottaa sql.js:n (A/B-vertailu).
-function nativeQuery(sql, params) {
-  const r = JSON.parse(window.SatniNativeDb.query(sql, JSON.stringify(params || [])));
+// name: pääsanakirja (tyhjä) tai pienempi tiedosto (smn, sms, fin-ngram, nob-ngram; vaihe 4, openNativeExtra)
+function nativeQuery(sql, params, name = "") {
+  const p = JSON.stringify(params || []);
+  const r = JSON.parse(name ? window.SatniNativeDb.queryIn(name, sql, p) : window.SatniNativeDb.query(sql, p));
   if (r.error) throw new Error(r.error);
   return r;
 }
 class NativeStatement {
-  constructor(sql) { this.sql = sql; this.params = []; this.res = null; this.i = -1; }
+  constructor(sql, name = "") { this.sql = sql; this.name = name; this.params = []; this.res = null; this.i = -1; }
   bind(params = []) { this.params = Array.isArray(params) ? params : []; this.res = null; this.i = -1; return true; }
   step() {
-    if (!this.res) { this.res = nativeQuery(this.sql, this.params); this.i = -1; }
+    if (!this.res) { this.res = nativeQuery(this.sql, this.params, this.name); this.i = -1; }
     return ++this.i < this.res.rows.length;
   }
   get() { return this.res.rows[this.i].slice(); }
@@ -711,18 +713,68 @@ class NativeStatement {
   free() { this.res = null; return true; }
 }
 class NativeDatabase {
+  constructor(name = "") { this.name = name; }
   get native() { return true; }
   // sql.js heittää virheen jo prepare-vaiheessa (puuttuva taulu, syntaksi); sovellus käyttää sitä varakyselyihin
   prepare(sql) {
-    const err = window.SatniNativeDb.check(sql);
+    const err = this.name ? window.SatniNativeDb.checkIn(this.name, sql) : window.SatniNativeDb.check(sql);
     if (err) throw new Error(err);
-    return new NativeStatement(sql);
+    return new NativeStatement(sql, this.name);
   }
   all(sql, params) {
-    const r = nativeQuery(sql, params);
+    const r = nativeQuery(sql, params, this.name);
     return r.rows.map((row) => { const o = {}; r.cols.forEach((c, k) => { o[c] = row[k]; }); return o; });
   }
+  // Pienempi tiedosto suljetaan muistin vapauttamiseksi (kopio jää levylle); pääsanakirja pysyy auki
+  close() { if (this.name) window.SatniNativeDb.closeExtra(this.name); }
+  // Yhden arvon kysely (ensimmäisen rivin ensimmäinen sarake) pienempään tiedostoon: kevyempi sillan polku toistuville
+  // pienille hauille (scalarIn: käännetty lause tallessa, ei kursoria). Numerot palautetaan numeroina.
+  prepareOne(sql) {
+    if (!this.name) return this.prepare(sql);
+    const err = window.SatniNativeDb.checkIn(this.name, sql);
+    if (err) throw new Error(err);
+    return new NativeScalarStatement(sql, this.name);
+  }
 }
+class NativeScalarStatement {
+  constructor(sql, name) { this.sql = sql; this.name = name; this.params = []; this.row = undefined; this.done = false; }
+  bind(params = []) { this.params = Array.isArray(params) ? params : []; this.row = undefined; this.done = false; return true; }
+  step() {
+    if (this.done) return false;
+    this.done = true;
+    const r = JSON.parse(window.SatniNativeDb.scalarIn(this.name, this.sql, JSON.stringify(this.params)));
+    if (r.error) throw new Error(r.error);
+    if (r.none) return false;
+    const v = r.v;
+    this.row = [typeof v === "string" && /^-?\d+(\.\d+)?$/.test(v) ? Number(v) : v];
+    return true;
+  }
+  get() { return this.row.slice(); }
+  reset() { this.row = undefined; this.done = false; this.params = []; return true; }
+  free() { return true; }
+}
+// Yhden arvon kysely: natiivissa pienemmässä tiedostossa kevyt polku, sql.js:ssä tavallinen prepare
+const prepareOne = (d, sql) => (d.prepareOne ? d.prepareOne(sql) : d.prepare(sql));
+// Pienempi tiedosto natiivisti (inari, koltta, sanaparit): null, jos ei Android-sovellusta, pääsanakirja on sql.js:llä
+// tai avaus epäonnistuu; silloin tiedosto luetaan sql.js:llä kuten ennen
+async function openNativeExtra(name) {
+  const N = window.SatniNativeDb;
+  if (!db?.native || !N || typeof N.openExtra !== "function") return null;
+  try {
+    N.openExtra(name);
+    for (;;) {
+      const st = N.extraStatus(name);
+      if (st === "ready") return new NativeDatabase(name);
+      if (st.startsWith("error") || st === "closed" || st === "idle") { console.warn("NativeDb", name, st); return null; }
+      await new Promise((r) => setTimeout(r, 50));
+    }
+  } catch (e) {
+    console.warn("NativeDb", name, e);
+    return null;
+  }
+}
+// sql.js vain tarvittaessa: natiivilla pääsanakirjalla moduulia (16 Mt) ei ladata, ellei pienempi tiedosto tarvitse sitä
+const ensureSqlModule = async () => (sqlModule ||= await initSqlJs({ locateFile: (f) => "vendor/" + f }));
 async function openNativeDatabase() {
   const N = window.SatniNativeDb;
   if (!N || typeof N.open !== "function") return null;
@@ -740,8 +792,7 @@ async function openNativeDatabase() {
       }
       await new Promise((r) => setTimeout(r, 100));
     }
-    // Inarin, koltan ja sanaparien tiedostot luetaan yhä sql.js:llä (vaihe 4)
-    sqlModule = sqlModule || await initSqlJs({ locateFile: (f) => "vendor/" + f });
+    // Inarin, koltan ja sanaparien tiedostot avataan myös natiivisti (openNativeExtra); sql.js vain varalle
     $("progress-bar").style.width = "100%";
     return new NativeDatabase();
   } catch (e) {
@@ -872,7 +923,6 @@ const WILD_CHUNK = 1000;  // sanaa palassa: noin 19 000 muotoa, OnePlus Nordilla
 const wildChannel = new MessageChannel(), wildWaiting = [];
 wildChannel.port1.onmessage = () => wildWaiting.shift()?.();
 const isSlowWildcard = (query) => isWildcard(query) && /^\s*[*?]/.test(query);
-let wildFreq = null;  // id -> freq, luetaan ensimmäisellä jokerihaulla
 function setSearchBusy(query, share) {
   const el = $("search-busy");
   if (query === null) { el.hidden = true; return; }
@@ -880,18 +930,23 @@ function setSearchBusy(query, share) {
   el.querySelector(".search-busy-bar").style.width = `${Math.round(share * 100)}%`;
   el.hidden = false;
 }
+// Jokerihaun osumien yleisyys (id -> freq) vain osuneille sanoille, paloina SQLiten muuttujarajan alla. Ennen luettiin
+// koko sanaluettelo (79 838 riviä) ensimmäisellä jokerihaulla, mikä hidasti sitä natiivilla SQLitellä vanhassa
+// puhelimessa (OnePlus Nord 1,1 s; sql-native-suunnitelma, vaihe 3)
+function hitFreqs(ids) {
+  const out = new Map();
+  for (let i = 0; i < ids.length; i += SQL_IN_CHUNK) {
+    const part = ids.slice(i, i + SQL_IN_CHUNK);
+    for (const r of all(`SELECT id, freq FROM dictionary WHERE id IN (${part.map(() => "?").join(",")})`, part)) out.set(r.id, r.freq);
+  }
+  return out;
+}
 async function wildcardSearch(query, index, pushHistory, run) {
   const pat = fold(query.trim()).replace(/[[\]]/g, "");
   const yieldNow = () => new Promise((r) => { wildWaiting.push(r); wildChannel.port2.postMessage(0); });
   setSearchBusy(query, 0);
   await yieldNow();
   if (run !== searchRun) return;
-  if (!wildFreq) {
-    wildFreq = new Map();
-    const st = db.prepare("SELECT id, freq FROM dictionary");
-    while (st.step()) { const [id, f] = st.get(); wildFreq.set(id, f); }
-    st.free();
-  }
   const hits = new Map();  // id -> pienin täsmäävä muoto
   const max = all("SELECT MAX(id) AS m FROM dictionary")[0].m;
   // Sanoittain jo SQLitessä (pääavaimen järjestys, ei lajittelua): laajassa kuviossa (*ii*) JS:ään tulee sana eikä joka muoto
@@ -918,6 +973,7 @@ async function wildcardSearch(query, index, pushHistory, run) {
       slice = performance.now();
     }
   } finally { st.free(); lt.free(); }
+  const wildFreq = hitFreqs([...hits.keys()]);
   const f = (id) => wildFreq.get(id) ?? -Infinity;
   const top = [...hits.keys()].sort((a, b) => f(b) - f(a) || a - b).slice(0, WILD_LIMIT);
   const cols = `id, sme_lemma, pos, subtype, freq, ${TRANS_COLS}${hasHumanColumn() ? ", human" : ""}, dial_same`;
@@ -1651,7 +1707,7 @@ function renderSearchParts(query) {
   };
   draw(info);
   // Suomeksi: koko sanan käännös vaatii sanaparit (Leipzig); ladataan ja piirretään uudelleen
-  if (settings.lang === "fin" && !(ngramDb && ngramLang === "fin") && sqlModule) {
+  if (settings.lang === "fin" && !(ngramDb && ngramLang === "fin") && db) {
     ngramForSearch = true;
     loadNgram().then(() => {
       if (state.query !== query || state.results.length) return;
@@ -3782,19 +3838,24 @@ function mall(lang, sql, params = []) {
   return rows;
 }
 function loadMinor(lang) {
-  if (minorDb[lang] || !sqlModule) return Promise.resolve();
+  if (minorDb[lang] || !db) return Promise.resolve();
   return (minorLoading[lang] ||= loadMinorNow(lang));
 }
 async function loadMinorNow(lang) {
   try {
-    const res = await fetch(`data/satni-${lang}.db.gz`);
-    if (!res.ok) return;
-    const raw = new Uint8Array(await res.arrayBuffer());
-    // Palvelin voi jo purkaa gzipin (Content-Encoding); puretaan vain jos tiedosto on yhä pakattu
-    const bytes = raw[0] === 0x1f && raw[1] === 0x8b
-      ? new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()) : raw;
-    if (!settings.ocrLangs.includes(lang) || !photoData.wanted) return;  // valinta poistettiin tai muisti vapautettiin latauksen aikana
-    minorDb[lang] = new sqlModule.Database(bytes);
+    // Android-sovelluksessa natiivisti (ei 25-33 Mt:n kopiota sivun muistiin); muuten tai virheessä sql.js:llä
+    let mdb = await openNativeExtra(lang);
+    if (!mdb) {
+      const res = await fetch(`data/satni-${lang}.db.gz`);
+      if (!res.ok) return;
+      const raw = new Uint8Array(await res.arrayBuffer());
+      // Palvelin voi jo purkaa gzipin (Content-Encoding); puretaan vain jos tiedosto on yhä pakattu
+      const bytes = raw[0] === 0x1f && raw[1] === 0x8b
+        ? new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()) : raw;
+      mdb = new (await ensureSqlModule()).Database(bytes);
+    }
+    if (!settings.ocrLangs.includes(lang) || !photoData.wanted) { mdb.close(); return; }  // valinta poistettiin tai muisti vapautettiin latauksen aikana
+    minorDb[lang] = mdb;
     delete minorCmpCache[lang];
     applyOcrLook();
     // Kuva auki: sanat haetaan uudelleen, nyt myös tällä kielellä
@@ -3811,7 +3872,7 @@ async function loadMinorNow(lang) {
 let ngramDb = null, ngramLoading = null, ngramLang = null;
 function loadNgram() {
   const lang = settings.lang === "nob" ? "nob" : "fin";
-  if ((ngramDb && ngramLang === lang) || !sqlModule) return Promise.resolve();
+  if ((ngramDb && ngramLang === lang) || !db) return Promise.resolve();
   return (ngramLoading ||= loadNgramNow(lang));
 }
 // Sanakirjahaku (yhdyssana, jota ei ole sanakirjassa) voi ladata sanaparit myös ilman kuvanäkymää; ne vapautetaan
@@ -3826,14 +3887,18 @@ function ngramForSearchDone() {
 }
 async function loadNgramNow(lang) {
   try {
-    const res = await fetch(`data/satni-${lang}-ngram.db.gz`);
-    if (!res.ok) return;
-    const raw = new Uint8Array(await res.arrayBuffer());
-    const bytes = raw[0] === 0x1f && raw[1] === 0x8b
-      ? new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()) : raw;
-    if (!photoData.wanted && !ngramForSearch) return;  // muisti vapautettiin latauksen aikana
-    ngramDb?.close();
-    ngramDb = new sqlModule.Database(bytes);
+    let ndb = await openNativeExtra(`${lang}-ngram`);  // Android: natiivisti, muuten sql.js
+    if (!ndb) {
+      const res = await fetch(`data/satni-${lang}-ngram.db.gz`);
+      if (!res.ok) return;
+      const raw = new Uint8Array(await res.arrayBuffer());
+      const bytes = raw[0] === 0x1f && raw[1] === 0x8b
+        ? new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()) : raw;
+      ndb = new (await ensureSqlModule()).Database(bytes);
+    }
+    if (!photoData.wanted && !ngramForSearch) { ndb.close(); return; }  // muisti vapautettiin latauksen aikana
+    if (ngramDb && ngramDb !== ndb) ngramDb.close();
+    ngramDb = ndb;
     ngramLang = lang;
   } catch (e) {
     console.warn("loadNgram", e.message);
@@ -3849,8 +3914,8 @@ let ngramStmts = null;
 function ngramQ() {
   if (!ngramDb) return null;
   if (ngramStmts?.db !== ngramDb) {
-    ngramStmts = { db: ngramDb, id: ngramDb.prepare("SELECT id FROM fin_vocab WHERE w = ?"), bi: ngramDb.prepare("SELECT n FROM fin_bigram WHERE a = ? AND b = ?"), ids: new Map() };
-    try { ngramStmts.uni = ngramDb.prepare("SELECT n FROM fin_unigram WHERE id = ?"); } catch (e) { /* vanha tiedosto */ }
+    ngramStmts = { db: ngramDb, id: prepareOne(ngramDb, "SELECT id FROM fin_vocab WHERE w = ?"), bi: prepareOne(ngramDb, "SELECT n FROM fin_bigram WHERE a = ? AND b = ?"), ids: new Map() };
+    try { ngramStmts.uni = prepareOne(ngramDb, "SELECT n FROM fin_unigram WHERE id = ?"); } catch (e) { /* vanha tiedosto */ }
   }
   const q = ngramStmts;
   const id = (w) => { if (!q.ids.has(w)) { q.id.bind([w]); q.ids.set(w, q.id.step() ? q.id.get()[0] : 0); q.id.reset(); } return q.ids.get(w); };
@@ -3936,7 +4001,7 @@ function syncMinorDbs() {
   else if (ngramDb) { ngramDb.close(); ngramDb = null; ngramStmts = null; ngramLang = null; }
   return Promise.all(loads);
 }
-const photoDataMissing = () => photoEnabled() && sqlModule
+const photoDataMissing = () => photoEnabled() && db
   && (settings.ocrLangs.some((l) => MINOR.includes(l) && !minorDb[l]) || !ngramDb || ngramLang !== (settings.lang === "nob" ? "nob" : "fin"));
 function ensurePhotoData() {
   photoData.wanted = true;
@@ -3959,12 +4024,28 @@ function minorMatcher(lang) {
   const st = minorDb[lang].prepare(`SELECT surface FROM ${lang}_forms WHERE fold = ?`);
   const looks = MINOR_LOOKALIKES[lang], clitics = MINOR_CLITICS[lang], norm = (c) => minorFold(lang, c);
   const cache = new Map();
+  // fold -> muodot. Sanan kaikki kokeiltavat asut (sellaisenaan, ilman liitepartikkelia, kaksoiskirjaimin) haetaan yhdellä
+  // kyselyllä (prefetch): natiivissa SQLitessä jokaisella sillan kutsulla on kiinteä hinta (OnePlus Nord ~2 ms), joten
+  // asu kerrallaan haku oli 2-3 kertaa hitaampi kuin sql.js:llä (vaihe 4). Tulos on sama kuin asu kerrallaan.
+  const folds = new Map();
+  const prefetch = (ws) => {
+    const need = [...new Set(ws.map((w) => minorFold(lang, w)))].filter((f) => !folds.has(f));
+    for (let i = 0; i < need.length; i += SQL_IN_CHUNK) {
+      const part = need.slice(i, i + SQL_IN_CHUNK);
+      for (const f of part) folds.set(f, new Set());
+      for (const r of mall(lang, `SELECT fold, surface FROM ${lang}_forms WHERE fold IN (${part.map(() => "?").join(",")})`, part)) folds.get(r.fold).add(r.surface);
+    }
+  };
   const lookup = (w) => {
-    st.bind([minorFold(lang, w)]);
-    const out = new Set();
-    while (st.step()) out.add(st.get()[0]);
-    st.reset();
-    return [...out];
+    const f = minorFold(lang, w);
+    if (!folds.has(f)) {
+      st.bind([f]);
+      const out = new Set();
+      while (st.step()) out.add(st.get()[0]);
+      st.reset();
+      folds.set(f, out);
+    }
+    return [...folds.get(f)];
   };
   const best = (w, cands) => {
     if (!cands.length) return null;
@@ -3972,13 +4053,24 @@ function minorMatcher(lang) {
     const chars = [...w], diff = (c) => [...c].reduce((n, ch, i) => n + (ch !== chars[i]), 0) + Math.abs([...c].length - chars.length);
     return cands.sort((a, b) => diff(a) - diff(b))[0];
   };
+  // Asut, joita correct kokeilee (sama järjestys): sellaisenaan, ilman liitepartikkelia ja kaksoiskirjaimin
+  const triesOf = (w) => {
+    const chars = [...w], tries = [w];
+    for (const c of clitics) if (w.length > c.length + 2 && w.endsWith(c)) tries.push(w.slice(0, -c.length));
+    if (chars.length >= 4 && chars.length <= 20) {
+      for (const i of doubleOrder(chars, norm)) tries.push([...chars.slice(0, i + 1), chars[i], ...chars.slice(i + 1)].join(""));
+    }
+    return tries;
+  };
+  const lower = (word) => [...word.toLowerCase()].map((c) => looks[c] || c).join("");
   const correct = (word) => {
-    const w = [...word.toLowerCase()].map((c) => looks[c] || c).join("");
+    const w = lower(word);
     if ([...w].filter((c) => /\p{L}/u.test(c)).length < 2) return null;
     if (w.includes("-")) {
       const head = w.slice(0, w.lastIndexOf("-")), last = w.slice(w.lastIndexOf("-") + 1);
       return clitics.includes(last) ? correct(head) : correct(last);
     }
+    prefetch(triesOf(w));  // kaikki alla kokeiltavat asut kerralla
     const hit = best(w, lookup(w));
     if (hit) return hit;
     for (const c of clitics) {
@@ -4009,6 +4101,8 @@ function minorMatcher(lang) {
   const compounds = new Map();
   return {
     correct: (w) => { if (!cache.has(w)) cache.set(w, correct(w)); return cache.get(w); },
+    // Kuvan kaikkien sanojen asut yhdellä kyselyllä ennen sanoittaista korjausta (ocrMatches)
+    prefetchWords: (list) => prefetch(list.flatMap((word) => lower(word).split("-").filter(Boolean).flatMap(triesOf))),
     compound: (word) => compounds.get(word.toLowerCase()) || null,
     free: () => { st.free(); fuzzy?.free(); },
   };
@@ -4075,9 +4169,9 @@ function minorCmp(lang) {
 // eivät haittaa), joten kokeiltavana on kaksoiskirjain (luettu yhdeksi: lijjii -> lijii, ii -> i, tt -> t) ja yhdyssanan
 // raja alkuosan (perusmuoto, Sg+Nom, Sg+Gen, Attr tai {kieli}_cmp) jälkeen. Palauttaa { word, parts: [{ stem, id }] | null }.
 function minorFuzzySearch(lang) {
-  const pre = minorDb[lang].prepare(`SELECT 1 FROM ${lang}_forms WHERE fold >= ? AND fold < ? LIMIT 1`);
+  const pre = prepareOne(minorDb[lang], `SELECT 1 FROM ${lang}_forms WHERE fold >= ? AND fold < ? LIMIT 1`);
   const ex = minorDb[lang].prepare(`SELECT surface, word_id FROM ${lang}_forms WHERE fold = ?`);
-  const lf = minorDb[lang].prepare(`SELECT 1 FROM ${lang}_forms f JOIN tags t ON t.id = f.tag_id JOIN ${lang}_words s ON s.id = f.word_id
+  const lf = prepareOne(minorDb[lang], `SELECT 1 FROM ${lang}_forms f JOIN tags t ON t.id = f.tag_id JOIN ${lang}_words s ON s.id = f.word_id
     WHERE f.fold = ? AND t.tag IN ('Lemma', 'Sg+Nom', 'Sg+Gen', 'Attr') AND s.pos IN ('N', 'A') LIMIT 1`);
   const memo = new Map();
   const cached = (k, fn) => { if (!memo.has(k)) memo.set(k, fn()); return memo.get(k); };
@@ -4600,6 +4694,7 @@ function ocrMatches(r, from) {
   // valinta kokeilee useaa kieltä, ja pohjoissaamen yhdistämä ain + tuájáreh jäi muuten inarin sanoiksi (oikea kuva
   // 2026-11-20). Tulos jää r.joinsBy[suunta]:an analyzeOcr:lle ja toiselle luvulle.
   const joins = new Map(), cl = (w) => joins.get(w) ?? w.clean;
+  corrector?.prefetchWords?.(r.words.map((w) => w.clean).filter((c) => c && c.length >= 2));
   const match = (clean) => {
     if (clean.length < 2) return null;
     if (corrector) return corrector.correct(clean);
@@ -5482,12 +5577,6 @@ function sentVerbForms(g, word, prev, prevLemma) {
 async function quickWildcard(query, limit, stale) {
   const pat = fold(query.trim()).replace(/[[\]]/g, "");
   if (!/[^*?]/.test(pat.replace(/[*?]/g, "")) || pat.replace(/[*?]/g, "").length < 3) return [];
-  if (!wildFreq) {
-    wildFreq = new Map();
-    const st = db.prepare("SELECT id, freq FROM dictionary");
-    while (st.step()) { const [id, f] = st.get(); wildFreq.set(id, f); }
-    st.free();
-  }
   const hits = new Map(), max = all("SELECT MAX(id) AS m FROM dictionary")[0].m;
   const st = db.prepare("SELECT word_id, MIN(surface) FROM paradigms WHERE word_id >= ? AND word_id < ? AND surface GLOB ? GROUP BY word_id");
   const lt = db.prepare("SELECT id, sme_lemma FROM dictionary WHERE id >= ? AND id < ? AND lemma_fold GLOB ?");
@@ -5506,6 +5595,7 @@ async function quickWildcard(query, limit, stale) {
       }
     }
   } finally { st.free(); lt.free(); }
+  const wildFreq = hitFreqs([...hits.keys()]);
   const f = (id) => wildFreq.get(id) ?? -Infinity;
   return [...hits.keys()].sort((a, b) => f(b) - f(a) || a - b).slice(0, limit).map((id) => hits.get(id));
 }
@@ -6659,7 +6749,7 @@ function applyExperimental() {
   for (const box of document.querySelectorAll("[data-exp]")) box.checked = !!settings.exp[box.dataset.exp];
   $("exp-ocr-row").hidden = !window.SatniOcr;
   renderOcrOpts();
-  if (sqlModule) syncMinorDbs();
+  if (db) syncMinorDbs();
   $("ocr-btn").hidden = !(window.SatniOcr && settings.exp.ocr);
   if (!settings.exp.ocr) $("ocr-view").hidden = true;
   // Lausekääntäjä (lauseet.js): painike yläpalkkiin kameran ja sanastojen viereen. Toimii vain suomeksi, joten

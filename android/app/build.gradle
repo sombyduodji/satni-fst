@@ -5,7 +5,7 @@ plugins {
 android {
     namespace "fi.somby.satnifst"
     compileSdk 36
-    buildToolsVersion "35.0.0"  // sama kuin packaging/android/Dockerfile
+    buildToolsVersion "36.0.0"  // sama kuin packaging/android/Dockerfile
 
     defaultConfig {
         applicationId "fi.somby.satnifst"

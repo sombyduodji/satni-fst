@@ -60,14 +60,16 @@ async function harjLoad() {
     const k = await fetch("data/kello.json");
     if (k.ok) harjIndex.lists.push({ id: "kello", rows: (await k.json()).rows.map((x) => ({ fi: x.fi, sme: x.smeFull, d: x.d || [2, 2], level: x.level, h: x.h, m: x.m })) });
   } catch (e) { /* ei kelloharjoitusta */ }
-  // Apusanalistojen ja Marjat-listan (2026-11-24) osiot sanastoista (sana -> osion numero) ja osioiden nimet
+  // Apusanalistojen, Marjat-listan (2026-11-24) ja Lähellä ja kaukana -taulukon (2026-11-26) osiot sanastoista
+  // (sana -> osion numero) ja osioiden nimet
   try {
     await loadSanastot();
     for (const l of harjIndex.lists) {
-      if (!APU_LISTS.includes(l.id) && l.id !== "marjat") continue;
+      if (!APU_LISTS.includes(l.id) && !["marjat", "lahellajakaukana"].includes(l.id)) continue;
       const src = sanastot.find((x) => x.id === l.id);
       if (!src) continue;
-      const sec = Object.fromEntries(src.rows.map((r) => [r.sme[0].w[0], r.sec]));
+      // Kaikki rivin sanat (taulukon solussa dát ja dán): ensimmäinen sana voittaa, kuten ennen
+      const sec = Object.fromEntries(src.rows.flatMap((r) => r.sme[0].w.map((w) => [w, r.sec])).reverse());
       for (const r of l.rows) r.sec = sec[r.sme.split(" / ")[0]];
       l.sections = src.sections || [];
     }
@@ -525,7 +527,8 @@ function bindHarj() {
 
 // Painikkeet sanastoihin (sanastot.js kutsuu): listan yläreunaan ja yleisnäkymän alkuun
 // Listat, joille ei vielä ole kuunteluharjoitusta (Harrin suomenkieliset äänet puuttuvat): ei painiketta
-const HARJ_NO_LIST = ["lahellajakaukana"];
+// (Lähellä ja kaukana sai harjoituksen 2026-11-26)
+const HARJ_NO_LIST = [];
 function harjListButton(listId) {
   if (!harjAvailable() || HARJ_NO_LIST.includes(listId)) return "";
   const id = listId === "luvut" ? "luvut" : listId;
