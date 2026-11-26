@@ -479,7 +479,7 @@ function peliHear(q) {
   btn.classList.add("playing");
   peliSayWord(q.sme, null).then((ok) => {
     btn.classList.remove("playing");
-    if (!ok && btn.isConnected && !document.querySelector(".peli-hear-err")) btn.insertAdjacentHTML("afterend", `<p class="peli-hear-err">${esc(pt().noAudio)}</p>`);
+    if (ok === false && btn.isConnected && !document.querySelector(".peli-hear-err")) btn.insertAdjacentHTML("afterend", `<p class="peli-hear-err">${esc(pt().noAudio)}</p>`);
   });
 }
 // Kellokysymyksen yläosa: Biretin kysymys saameksi ja kello, tai kuuntelussa ohje, saamen aika ja Kuuntele uudelleen
@@ -837,11 +837,13 @@ async function peliSayWord(word, btn) {
   if (btn) btn.disabled = true;
   try {
     const blob = await ttsBlob(word, signal);
-    if (!blob) return false;
+    if (!blob) return signal.aborted ? null : false;
     await playTtsBlob(blob);
     return true;
   } catch (e) {
-    if (!signal.aborted && e.name !== "AbortError") toast(t("ttsFailed", e.message));
+    // Uusi soitto keskeytti tämän (Kuuntele uudelleen nopeasti peräkkäin): null, ei "ei ääntä" -virhettä (yötesti 27.11)
+    if (signal.aborted || e.name === "AbortError") return null;
+    toast(t("ttsFailed", e.message));
     return false;
   } finally {
     if (btn && btn.isConnected) btn.disabled = false;
