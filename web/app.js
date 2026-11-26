@@ -4671,6 +4671,20 @@ function ocrResult(r) {
   setOcrBusy(null);
   if (!r) { $("ocr-status").textContent = ocr ? ocr.status : ""; return; }  // kuvan otto peruttiin
   if (r.error) { $("ocr-status").textContent = t(r.error === "noApp" ? "ocrNoApp" : "ocrError"); return; }
+  // Välilyönnin sisältävä "sana" (ML Kit: "lágidit juohke" yhtenä; käyttäjän kuva 2026-11-26) kahdeksi sanaksi:
+  // leveys ja keskikohta jaetaan merkkien määrän mukaan kallistus huomioiden
+  r.words = r.words.flatMap((w) => {
+    const parts = (w.t || "").trim().split(/\s+/);
+    if (parts.length < 2) return [w];
+    const total = parts.reduce((n, p) => n + p.length, 0) + parts.length - 1, rad = ((w.a || 0) * Math.PI) / 180;
+    let at = 0;
+    return parts.map((p) => {
+      const mid = (at + p.length / 2) / total - 0.5;
+      at += p.length + 1;
+      const off = mid * (w.w || 0);
+      return { ...w, t: p, cx: Math.round((w.cx || 0) + off * Math.cos(rad)), cy: Math.round((w.cy || 0) + off * Math.sin(rad)), w: (w.w || 0) * p.length / total };
+    });
+  });
   // Pisteetön ı (Prográmmafıtnodat): ei saamessa, suomessa eikä norjassa, aina i
   for (const w of r.words) { w.t = w.t.replace(/ı/g, "i"); w.clean = w.t.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, ""); }
   // Iso I ja pieni l näyttävät samalta: kieltoverbi Ii luettiin "li" (sanakirjassa li = huudahdus, käännös "opinto-ohjaaja";
@@ -5828,11 +5842,24 @@ function sentContext(toks) {
       const k = `${loc}+${c.human ? "Abl" : "Ela"}`;
       if (c.f[k]) { tok.finKey = k; put(tok, (c.prefix || "") + c.f[k]); return; }
     }
+    // juohke + sana: suomeksi perusmuoto (juohke jagi = joka vuosi, juohke beaivvi = joka päivä; käyttäjän kuva 2026-11-26)
+    // Ei postposition edellä: juohke juvlla ovddas = jokaisen pyörän edessä (genetiivi säilyy)
+    if ((prev?.clean || "").toLowerCase() === "juohke" && (has("Sg+Gen") || has("Sg+Acc") || has("Sg+Nom")) && c.f["Sg+Nom"]
+        && next?.ctx?.pos !== "Po" && !SENT_POSTPOS[(next?.clean || "").toLowerCase()]) {
+      tok.finKey = "Sg+Nom"; put(tok, (c.prefix || "") + c.f["Sg+Nom"]); return;
+    }
+    // Kielen nimi illatiivissa = suomen translatiivi (sámegillii = saameksi, suomagillii = suomeksi)
+    // Ei substantiivin määreenä (kolmen saameksi tiedot) eikä numeron jälkeen
+    if (/giella$/.test(c.lemma || "") && has("Sg+Ill") && c.f["Sg+Tra"]
+        && !["N", "A"].includes(next?.ctx?.pos) && prev?.ctx?.pos !== "Num" && !numVal(prev)) { tok.finKey = "Sg+Tra"; put(tok, c.f["Sg+Tra"]); return; }
     if (numVal(prev) >= 2 && has("Sg+Gen")) key = "Sg+Par";
     else if (amb) {
       const nextPos = next?.ctx?.pos;
       const negated = toks.slice(0, i).some((t) => SME_NEG.has((t.clean || "").toLowerCase()));
-      const verbBefore = toks.slice(Math.max(0, i - 3), i).some((t) => t.ctx?.pos === "V");
+      // Verbi samassa lauseessa ennen (pilkku katkaisee): lágidit juohke jagi miehtá Suoma dáhpáhusaid = järjestävät … tapahtumia
+      let cs = i;
+      while (cs > 0 && !/[,;:]/.test(toks[cs - 1].punct || "")) cs--;
+      const verbBefore = toks.slice(cs, i).some((t) => t.ctx?.pos === "V");
       // Sama asu myös nominatiivina (ášši, verdde): genetiivi vain substantiivin tai postposition edellä, muuten
       // nominatiivi (Ášši lea … = Asia on …; esimerkkilausekoe 2026-11-18: 20 virhettä pelkästä ášši-sanasta)
       const nomToo = has(`${amb}+Nom`);
