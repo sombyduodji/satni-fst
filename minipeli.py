@@ -93,10 +93,46 @@ def english(db, data, lists):
         own = {r["sme"][0]["w"][0]: first(r["en"][0], 1) for lid in lids for r in lists[lid]["rows"] if r.get("en")}
         cats[k] = {it[0]: own[it[0]] for it in data["cats"][k] if it[0] in own}
     cats["nearfar"] = {r["sme"][0]["w"][0]: r["en"][0].split(" · ")[0] for r in lists["lahellajakaukana"]["rows"] if r.get("en")}
+    for mode, lid in LIST_GAMES.items():
+        cats[mode] = {it[0]: it[3] for it in list_game(lists[lid]) if it[3]}
     data["enCats"] = cats
     print(f"Englanti: {len(en)} sanaa (sanoista {sum(src.values())} / {len(data['words'])}: sanastot {src['list']}, "
           f"sanakirja {src['dict']}, konekäännös {src['mt']})")
     return en
+
+
+# Sanastojen pelit (2026-11-26): pelin tila -> sanaston id. Sanat ja käännökset sanastoista (perusmuoto, ensimmäinen
+# merkitys). Ilmansuunnat jätettiin pois (käyttäjä); Poroista pois miessi ja čearpmat (suomeksi molemmat "vasa").
+LIST_GAMES = {"daytime": "aika", "family": "suku", "reindeer": "porot", "weather": "saa", "pronouns": "pronominit",
+              "greetings": "tervehdykset", "thisthat": "tamajase", "herethere": "taallajatuolla", "beforeafter": "aikasanat",
+              "smallwords": "sidesanat"}
+LIST_GAME_SKIP = {"miessi", "čearpmat"}
+# Sukulaissanat pelissä sanakirjan tarkalla merkityksellä (dict-sme-fin ja norjan käyttörajoitukset "om mors eldre
+# søster" jne.), muuten kysymyksessä olisi kaksi oikeaa vastausta (täti, setä; käyttäjä hyväksyi 2026-11-26)
+KIN = {"goaski": ("äidin vanhempi sisar", "mors eldre søster", "mother's elder sister"),
+       "muoŧŧá": ("äidin nuorempi sisar", "mors yngre søster", "mother's younger sister"),
+       "siessá": ("isän sisar", "fars søster", "father's sister"),
+       "eahki": ("isän vanhempi veli", "fars eldre bror", "father's elder brother"),
+       "čeahci": ("isän nuorempi veli", "fars yngre bror", "father's younger brother"),
+       "eanu": ("eno", "mors bror", "mother's brother")}
+
+
+def list_game(lst):
+    """[[saame, suomi, norja, englanti], ...] sanaston riveistä: rivin ensimmäinen sana ja käännösten perusmuoto
+    (kuka · kenen -> kuka). Sama saamen sana vain kerran (dát = tämä ja nämä: vain ensimmäinen merkitys)."""
+    base = lambda t: (t or "").split(" · ")[0].strip()
+    out, seen = [], set()
+    for r in lst["rows"]:
+        sme = r["sme"][0]["w"][0]
+        if sme in seen or sme in LIST_GAME_SKIP:
+            continue
+        seen.add(sme)
+        fi, nb, en = base((r.get("fi") or [""])[0]), base((r.get("nb") or [""])[0]), base((r.get("en") or [""])[0])
+        if sme in KIN:
+            fi, nb, en = KIN[sme]
+        if fi and nb:
+            out.append([sme, fi, nb, en])
+    return out
 
 
 def ordinals():
@@ -330,6 +366,9 @@ def main():
     nearfar = [[r["sme"][0]["w"][0], base(r["fi"][0]), base(r["nb"][0])] for r in lists["lahellajakaukana"]["rows"]]
     data = {"words": words, "cats": {"ordinals": ordinals(), "time": time, "colours": colours, "questions": questions,
                                      "animals": [list(a) for a in ANIMALS], "berries": [list(a) for a in marjat.WORDS], "nearfar": nearfar}}
+    lg = {mode: list_game(lists[lid]) for mode, lid in LIST_GAMES.items()}
+    for mode, items in lg.items():
+        data["cats"][mode] = [it[:3] for it in items]
     data["en"] = english(db, data, lists)
     # Inarinsaame (asetuksista valittava, kokeellinen): samat käsitteet, sana kahdesta lähteestä tarkistettuna
     data["smn"] = inari(db, data)

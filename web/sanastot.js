@@ -778,7 +778,8 @@ function sanastoSpeakAll() {
 
 // Listan yläreunan painikkeet (2026-11-23): Harjoittele kuunnellen ja Pelaa (jos listalle on pelitila)
 const SANASTO_GAME = { varit: "colours", kysymykset: "questions", viikonpaivat: "time", kuukaudet: "time", vuodenajat: "time",
-  luvut: "ordinals", elaimet: "animals", marjat: "berries", kellonajat: "clock", lahellajakaukana: "nearfar" };
+  luvut: "ordinals", elaimet: "animals", marjat: "berries", kellonajat: "clock", lahellajakaukana: "nearfar",
+  aika: "daytime", aikasanat: "beforeafter", suku: "family", pronominit: "pronouns", tervehdykset: "greetings", porot: "reindeer", saa: "weather", taallajatuolla: "herethere", tamajase: "thisthat", sidesanat: "smallwords" };
 const SANASTO_GAME_SMN = ["time", "colours", "questions", "animals", "berries"];
 function sanastoActions(listId) {
   const harj = typeof harjListButton === "function" ? harjListButton(listId === "kellonajat" ? "kello" : listId) : "";
