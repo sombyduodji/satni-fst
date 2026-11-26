@@ -6927,13 +6927,14 @@ function applyExperimental() {
   if ($("exp-engmt-row")) $("exp-engmt-row").hidden = settings.lang !== "eng";  // muuten alakohtana englannin alla
   if ($("lause-btn")) {
     const fi = settings.uiLang === "fi";
-    // Lause kaikilla kielillä (2026-11-26): saame -> käyttöliittymän kieli; suomi -> saame vain suomeksi (lauseet.js: lauseDir)
-    $("exp-lause-row").hidden = false;
+    // Lause vain suomeksi (käyttäjä 2026-11-26: lausekääntäjä toistaiseksi vain suomelle; molemmat suunnat suomi <-> saame).
+    // Norjaksi ja englanniksi kuvan lauseen käännös (Lause kuvasta) on yhä käytössä.
+    $("exp-lause-row").hidden = !fi;
     // Suomennosehdotukset vain suomeksi ja Apertiumin norjannokset vain norjaksi (muuten ne eivät vaikuta mihinkään)
     $("exp-pivotfin-row").hidden = !fi;
     $("exp-apertium-row").hidden = settings.uiLang !== "nb";
-    $("lause-btn").hidden = !settings.exp.lause;
-    if (!settings.exp.lause && !$("lause-view").hidden) { $("lause-view").hidden = true; overlayClosed(); }
+    $("lause-btn").hidden = !(fi && settings.exp.lause);
+    if (!(fi && settings.exp.lause) && !$("lause-view").hidden) { $("lause-view").hidden = true; overlayClosed(); }
     else if (!$("lause-view").hidden && typeof lauseRender === "function") lauseRender();  // kieli vaihtui: suunta ja tekstit
   }
 }
