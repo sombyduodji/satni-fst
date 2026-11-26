@@ -4315,10 +4315,10 @@ function ocrCorrector() {
     // 2026-11-18: yleisin lukuvirhe, 129 / 8 637 sanaa). Ensin pelkkä tuplaus, sitten tuplaus ja yksi tarke.
     // Kolmikirjaimisessa vain i ja j (ige -> iige, käyttäjän kuva 2026-11-26): muut tuplaukset tekivät lyhyistä
     // sanoista vääriä sanoja (va, pa), eikä niihin lisätä tarkkeita
-    if (w.length >= 3 && w.length <= 20) {
+    if (w.length >= 1 && w.length <= 20) {
       const chars = [...w], doubled = [];
       for (const i of doubleOrder(chars)) {
-        if (chars.length === 3 && !/[ij]/.test(chars[i])) continue;
+        if (chars.length <= 3 && !/[ij]/.test(chars[i])) continue;
         const v = [...chars.slice(0, i + 1), chars[i], ...chars.slice(i + 1)].join("");
         cands.push(v); doubled.push(v);
       }
@@ -4341,6 +4341,23 @@ function ocrCorrector() {
     const has = batchExists([...cands, ...cands.flatMap(stems)]);
     // Liitepartikkelin kanssa (válddátgo = válddát + -go, songe = son + -ge): haku tuntee nämä (queryDatabase)
     const hit = cands.find((c) => has(c) || stems(c).some(has));
+    // Kuvan sana on itsekin sana, mutta harvinainen: tarkkeellinen tai kaksoiskirjaimellinen asu, joka on korpuksessa
+    // moninkertaisesti yleisempi, voittaa (odda -> ođđa, mi -> mii, i -> ii, billa -> biilla; iso testi 2026-11-26).
+    // Yhtä yleiset jäävät (manná / maŋŋá, girji / girjji): niihin tarvittaisiin lauseyhteys.
+    // Vain ŋ, đ ja kaksois-i (iso testi: niistä 43 oikeaa korjausta; á-tarke ja kaksoiskonsonantti vaihtoivat oikeita sanoja:
+    // iežas -> iežás, norga -> norgga, joten ne eivät kuulu tähän). Myös lyhyet: mi -> mii, i -> ii.
+    if (hit === w) {
+      const norm = (x) => x.replace(/ŋ/g, "n").replace(/đ/g, "d").replace(/i+/g, "i");
+      const extra = w.length <= 2 ? [...w].map((ch, i) => (ch === "i" ? w.slice(0, i + 1) + "i" + w.slice(i + 1) : null)).filter(Boolean) : [];
+      const hasX = extra.length ? batchExists(extra) : () => false;
+      const fw = surfFreq(w);
+      let best = null, bf = 0;
+      for (const c of [...cands, ...extra]) {
+        if (c === w || norm(c) !== norm(w) || !(has(c) || hasX(c))) continue;
+        const f = surfFreq(c); if (f > bf) { bf = f; best = c; }
+      }
+      if (best && ((fw === 0 && bf >= 100) || (bf >= 50 * fw && bf >= 1000))) return { word: best };
+    }
     if (hit) return { word: hit };
     // Viimeisenä sumea haku (useampi tarke ja tuplaus yhdessä: vattisvuodat -> váttisvuođat); yhdyssanat erikseen
     // (ocrMatches -> compound), koska niitä ei ole sanakirjassa sellaisinaan.
@@ -4355,6 +4372,16 @@ function ocrCorrector() {
   };
   // Tulokset myös tämän kuvan omaan muistiin: yhteinen välimuisti tyhjenee 20 000 sanan jälkeen, ja jos se tyhjeni kesken
   // kuvan, jo haettujen yhdyssanojen osat katosivat (compound palautti null; testipenkki 2026-11-20, guovlostivra)
+  // Kirjoitusasun yleisyys: suurin korpusfrekvenssi sanoista, joilla on tämä muoto (0 = ei korpuksessa)
+  const freqMemo = new Map();
+  const surfFreq = (s) => {
+    if (!freqMemo.has(s)) {
+      const r = all(`SELECT MAX(f) AS f FROM (SELECT d.freq AS f FROM paradigms p JOIN dictionary d ON d.id = p.word_id WHERE p.surface = ?1
+        UNION ALL SELECT freq FROM dictionary WHERE sme_lemma = ?1)`, [s]);
+      freqMemo.set(s, (r[0] && r[0].f) || 0);
+    }
+    return freqMemo.get(s);
+  };
   const local = new Map();
   const correctCached = (word) => {
     if (!ocrCorrectCache.has(word)) {
