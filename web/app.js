@@ -4313,13 +4313,16 @@ function ocrCorrector() {
     for (let k = 1; k <= 3; k++) for (const picked of combos(k)) cands.push(variant(picked));
     // Kaksoiskirjain luettu yhdeksi (sámiid -> sámid, áššiid -> áššid, lii -> li, rávagirjji -> rávagirji; uutiskoe
     // 2026-11-18: yleisin lukuvirhe, 129 / 8 637 sanaa). Ensin pelkkä tuplaus, sitten tuplaus ja yksi tarke.
-    if (w.length >= 4 && w.length <= 20) {
+    // Kolmikirjaimisessa vain i ja j (ige -> iige, käyttäjän kuva 2026-11-26): muut tuplaukset tekivät lyhyistä
+    // sanoista vääriä sanoja (va, pa), eikä niihin lisätä tarkkeita
+    if (w.length >= 3 && w.length <= 20) {
       const chars = [...w], doubled = [];
       for (const i of doubleOrder(chars)) {
+        if (chars.length === 3 && !/[ij]/.test(chars[i])) continue;
         const v = [...chars.slice(0, i + 1), chars[i], ...chars.slice(i + 1)].join("");
         cands.push(v); doubled.push(v);
       }
-      for (const v of doubled) {
+      if (chars.length >= 4) for (const v of doubled) {
         const vc = [...v];
         for (let i = 0; i < vc.length; i++) if (OCR_DIACRITICS[vc[i]]) cands.push([...vc.slice(0, i), OCR_DIACRITICS[vc[i]], ...vc.slice(i + 1)].join(""));
       }
@@ -4723,7 +4726,10 @@ function ocrMatches(r, from) {
       // Välimerkki palojen välissä (pilkku, piste, lainausmerkki) erottaa aina kaksi sanaa: buggeluossabuođus, iige
       // liitettiin yhdeksi (buggeluossa + buođu + siige; käyttäjän kuva 2026-11-26)
       if (/[^\p{L}]$/u.test(a.t) || /^[^\p{L}]/u.test(b.t)) continue;
-      if (match(a.clean) || match(b.clean)) continue;
+      // Pala, joka on sana sellaisenaan tai korjattuna, jää omaksi sanakseen; paitsi kolmikirjaiminen vain korjattuna
+      // löytyvä (eandal + ige: ige -> iige olisi sana, mutta oikea on eandaliige)
+      const isWord = (x) => { const m = match(x); return !!m && (m === x.toLowerCase() || [...x].length >= 4); };
+      if (isWord(a.clean) || isWord(b.clean)) continue;
       const joined = a.clean + b.clean;
       if (match(joined) || corrector.compound?.(joined)) { joins.set(a, joined); joins.set(b, joined); i++; }
     }
@@ -5381,7 +5387,10 @@ function ocrRepairs(word, capital = false) {
   const ex = [...exact];
   for (let i = 0; i < ex.length; i += 400) q(`p.surface IN (${ex.slice(i, i + 400).map(() => "?").join(",")})`, ex.slice(i, i + 400));
   const out = [];
-  for (const [v] of [...found].sort((a, b) => b[1] - a[1])) {
+  // Kaksoiskirjaimen i tai j palautus ensin (ige -> iige ennen iđe:tä): tunnistuksen yleisin virhe, muuten yleisyyden mukaan
+  const lw = w.toLowerCase();
+  const dbl = (v) => [...v].length === [...lw].length + 1 && [...v].some((c, i, a) => /[ij]/.test(c) && a[i + 1] === c && a.slice(0, i).join("") + a.slice(i + 1).join("") === lw);
+  for (const [v] of [...found].sort((a, b) => dbl(b[0]) - dbl(a[0]) || b[1] - a[1])) {
     if (fold(v) === fold(w) || v.length < 2 || (!capital && /^\p{Lu}/u.test(v))) continue;
     const g = ocrGloss(v);
     if (!g.trans) continue;
