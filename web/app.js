@@ -6036,23 +6036,23 @@ function minorPartInfo(lang, raw, fz) {
 // (dáiddabargu = taide + työ, ei dát "tämä" -> tämä työ; bivdinlohpi ei pyytää lupa; smi-mt-vertailu 2026-11-19)
 function lastNoun(g, word, last) {
   if (!g.id) return g;
+  // Käännöskielen sarake (ennen aina suomi: norjan lauseeseen tuli "pukkellaks patoutuma"; 2026-11-26)
+  const tl = ["fin", "nob"].includes(ocrTo()) ? ocrTo() : settings.lang, col = (LANGUAGES[tl] || LANGUAGES.fin).col;
   // Viimeinen osa, joka on itse substantiivin perusmuoto (dikšun = hoito), ennen toisen sanan taivutusmuotoa
   // (dikšu + essiivi = hoitona -> potilaan hoitona)
   if (last && g.lemma) {
-    const col = LANGUAGES.fin.col;
     const base = all(`SELECT * FROM dictionary WHERE lemma_fold = ? AND pos = 'N' AND ${col} != '' AND subtype != 'Prop' ORDER BY freq DESC LIMIT 1`, [fold(word)])[0];
-    if (base) return { lemma: "", form: "", trans: translationOf(base, 2, "fin"), say: word, query: word, id: base.id };
+    if (base) return { lemma: "", form: "", trans: translationOf(base, 2, tl), say: word, query: word, id: base.id };
   }
   const own = all("SELECT pos FROM dictionary WHERE id = ?", [g.id])[0];
   if (!own || own.pos === "N") return g;
   if (!last && !["Pron", "V"].includes(own.pos)) return g;
   // Viimeinen osa: verbi tai adjektiivi (myös vertailuaste: ahkidat = ikävämpi / ikävät): substantiivi ensin, jos on
   const want = !last ? ["N", "A"] : own.pos === "V" ? ["N", "A"] : ["N"];
-  const col = LANGUAGES.fin.col;
   const row = queryDatabase(word).find((r) => SAMI_RANKS.includes(r.rank) && want.includes(r.pos) && r[col] && r.subtype !== "Prop");
   if (!row) return g;
   const lemma = fold(row.sme_lemma) !== fold(word) ? row.sme_lemma : "";
-  return { lemma, form: lemma ? ocrFormTranslation(row, word) : "", trans: translationOf(row, 2, "fin"), say: word, query: word, id: row.id };
+  return { lemma, form: lemma ? ocrFormTranslation(row, word) : "", trans: translationOf(row, 2, tl), say: word, query: word, id: row.id };
 }
 const hasCompTag = (surface) => all(`SELECT 1 FROM paradigms p JOIN tags t ON t.id = p.tag_id WHERE p.surface = ? AND (t.tag LIKE '%Comp%' OR t.tag LIKE '%Superl%') LIMIT 1`, [surface]).length > 0
   && !all(`SELECT 1 FROM paradigms p JOIN tags t ON t.id = p.tag_id JOIN dictionary d ON d.id = p.word_id WHERE p.surface = ? AND d.pos = 'N' LIMIT 1`, [surface]).length;
@@ -6214,13 +6214,16 @@ function sentCmpJoin(text) {
 }
 function sentWordText(tok) {
   const raw = sentWordTextRaw(tok);
-  return tok.cmpJoin && raw && raw.includes(" + ") ? sentCmpJoin(raw) || raw : raw;
+  if (!raw || !raw.includes(" + ")) return raw;
+  // Muuten osat välilyönnillä ilman plussia (käyttäjä 2026-11-26: plussat sekoittivat lauseen lukemista);
+  // osat plussin kanssa näkyvät yhä sanan valikossa
+  return (tok.cmpJoin && sentCmpJoin(raw)) || raw.replace(/ \+ /g, " ");
 }
 function sentWordTextRaw(tok) {
   if (tok.fixed) return tok.fixed.trans || (tok.fixed.keep ? tok.fixed.word : `[${tok.fixed.word}]`);
   // Luku (9.11.) sellaisenaan, mutta lopun välimerkki tulee tok.punctista: muuten "9.11.."
   if (tok.name) return tok.clean || (tok.punct ? tok.t.slice(0, -tok.punct.length) : tok.t);
-  if (tok.unknown) return tok.capKeep ? tok.clean || tok.t : `[${tok.clean || tok.t}]`;
+  if (tok.unknown) return tok.capKeep ? tok.clean || tok.t : `[${(tok.word && ocr?.words?.some((x) => x.cx === tok.cx && x.cy === tok.cy && !x.unknown) ? tok.word : tok.clean) || tok.t}]`;
   const o = tok.opts?.[tok.choice || 0];
   return o === "" ? "" : o || tok.clean;  // tyhjä = sana sulautui naapuriin (norjan postpositio, apuverbi)
 }
