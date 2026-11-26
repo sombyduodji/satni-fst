@@ -2595,3 +2595,6 @@ body.sidebar-open #help-btn, body:has(dialog[open]:not(#help-dlg)) #help-btn { p
 @keyframes peli-pulse { 50% { transform: scale(1.06); } }
 @media (prefers-reduced-motion: reduce) { .peli-hear.playing { animation: none; } }
 .peli-hear-err { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+
+/* Lause kuvasta: sovelluksen osista kokoama yhdyssana (kyttyrälohipadossa), ei suomen sanastossa */
+#sent-text .sent-cmp { text-decoration: underline dotted; text-decoration-color: var(--muted); text-underline-offset: 0.2em; }

@@ -5578,6 +5578,11 @@ function sentTokens(raw) {
       if (parts) {
         const info = compoundPartsInfo(parts, { named: capWord(r.clean || "") });
         tok.unknown = false; tok.opts = [info.trans]; tok.lemma = parts.join(" + ");
+        // Yhdeksi sanaksi vain substantiiveista (suomen yhdyssana; verbi tai adjektiivi osana tuotti uusihylätä,
+        // puolue-edistää) eikä monikkoisesta alkuosasta (alkuperäisasukkaatnaiset)
+        tok.cmpJoin = settings.lang === "fin" && ocrTo() === "fin" && !info.separate && !capWord(r.clean || "") &&
+          (info.parts || []).every((x) => ocrGloss(x.base || x.word).pos === "N") &&
+          info.trans.split(" + ").slice(0, -1).every((x) => !/t$/.test(x));
         // Yhdyssana taipuu viimeisen osansa mukaan: alkuosat + viimeisen osan muoto lauseyhteydestä (uuden kokouspalvelun)
         if (info.separate) tok.lemma = parts.join(" ");
         else if (lang === "sme" && settings.lang === "fin" && ocrTo() === "fin" && info.parts.every((x) => x.trans)) {
@@ -6193,7 +6198,25 @@ function renderSentSplit() {
       `<div class="sent-split-tr">→ ${esc(info.trans)}</div></div>` : "");
 }
 const sentKey = (tok) => `${tok.cx},${tok.cy}`;
+// Arvattu suomen yhdyssana (ei suomen korpuksessa) yhdeksi sanaksi plussien sijaan (käyttäjä 2026-11-26):
+// kyttyrälohi + kalapadossa = kyttyrälohipadossa; yhdysmerkki, kun sama vokaali kohtaa (kala-aikomus). Vain yksisanaiset,
+// tunnetut osat; -nen-adjektiivi alkuosana ei käy (tasainen + pohja). Merkit \uE000 … \uE001 = katkoviivalla alleviivattu
+// (koottu sovelluksessa); kopioitavassa tekstissä ei merkkejä.
+function sentCmpJoin(text) {
+  const ps = text.split(" + ");
+  if (ps.length < 2 || !ps.every((x) => /^[\p{L}-]+$/u.test(x)) || ps.slice(0, -1).some((x) => /nen$/.test(x))) return null;
+  let out = ps[0].toLowerCase();
+  for (const x of ps.slice(1)) {
+    const a = out.slice(-1), b = x[0].toLowerCase();
+    out += (a === b && /[aeiouyäö]/.test(a) ? "-" : "") + x.toLowerCase();
+  }
+  return "\uE000" + out + "\uE001";
+}
 function sentWordText(tok) {
+  const raw = sentWordTextRaw(tok);
+  return tok.cmpJoin && raw && raw.includes(" + ") ? sentCmpJoin(raw) || raw : raw;
+}
+function sentWordTextRaw(tok) {
   if (tok.fixed) return tok.fixed.trans || (tok.fixed.keep ? tok.fixed.word : `[${tok.fixed.word}]`);
   // Luku (9.11.) sellaisenaan, mutta lopun välimerkki tulee tok.punctista: muuten "9.11.."
   if (tok.name) return tok.clean || (tok.punct ? tok.t.slice(0, -tok.punct.length) : tok.t);
@@ -6219,7 +6242,7 @@ function sentTranslation() {
   let text = words.filter(([w, p]) => w || p).map(([w, p]) => w + p).join(" ").replace(/\s+([.,!?:;])/g, "$1").replace(/\s{2,}/g, " ").trim();
   // Itse valituissa sanoissa voi olla useampi virke: iso alkukirjain myös pisteen jälkeen
   text = text.replace(/([.!?]\s+)(\p{Ll})/gu, (m, a, b) => a + b.toUpperCase());
-  return text.charAt(0).toUpperCase() + text.slice(1);
+  return text.replace(/^(\uE000?)(.)/u, (m, a, b) => a + b.toUpperCase());
 }
 // Tuntemattoman sanan kuva: leikataan kuvasta sanan laatikon kohdalta (canvas)
 function sentCutout(tok, scale = 1) {
@@ -6304,13 +6327,13 @@ function renderSentView() {
     const cls = tok.fixed ? "" : tok.unknown ? " unk" : tok.name ? " name" : "";
     const src = tok.unknown && !tok.fixed ? sentCutout(tok) : "";
     const top = src ? `<img src="${src}" alt="${esc(tok.clean || tok.t)}">` : esc(tok.fixed ? tok.fixed.word : sentShownWord(tok));
-    const sub = tok.fixed ? tok.fixed.trans || "" : tok.unknown ? t("sentUnknown") : tok.num ? "" : tok.name ? t("sentName") : sentWordText(tok) + (tok.opts?.length > 1 ? "…" : "");
+    const sub = tok.fixed ? tok.fixed.trans || "" : tok.unknown ? t("sentUnknown") : tok.num ? "" : tok.name ? t("sentName") : sentWordText(tok).replace(/[\uE000\uE001]/g, "") + (tok.opts?.length > 1 ? "…" : "");
     return `<button class="sent-chip${cls}${sent.sheet === i ? " on" : ""}" data-i="${i}"><b>${top}</b><span>${esc(sub)}</span></button>`;
   };
   const from = ocrLangName(settings.ocrFrom), to = ocrLangName(ocrTo());
   $("sent-body").innerHTML = `<p class="sent-lab">${esc(t("sentWords"))}</p><div class="sent-chips">${sent.toks.map(chip).join("")}</div>` +
     `<div class="sent-tr"><div class="sent-tr-head"><span>${esc(from)} → ${esc(to)}</span>` +
-    `<button class="link-btn" id="sent-copy">${esc(t("sentCopy"))}</button></div><p id="sent-text">${esc(sentTranslation())}</p>` +
+    `<button class="link-btn" id="sent-copy">${esc(t("sentCopy"))}</button></div><p id="sent-text">${esc(sentTranslation()).replace(/\uE000/g, '<span class="sent-cmp" title="' + esc(t("sentCmpHint")) + '">').replace(/\uE001/g, "</span>")}</p>` +
     `<small>${esc(t("sentGist"))}</small></div>` + reportLinkHtml("sent-report");
   const sheet = $("sent-sheet");
   if (sent.sheet == null) { sheet.hidden = true; return; }
