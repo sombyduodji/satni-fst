@@ -4720,6 +4720,9 @@ function ocrMatches(r, from) {
       const nextLine = b.cy > a.cy + (a.h || 10) * 0.6 && b.cx < a.cx;
       const sameLine = Math.abs(b.cy - a.cy) < (a.h || 10) * 0.4 && a.w && b.w && b.cx > a.cx && (b.cx - b.w / 2) - (a.cx + a.w / 2) < (a.h || 10) * 0.6;
       if (!(nextLine || sameLine) || a.clean.length < 3 || b.clean.length < 3) continue;
+      // Välimerkki palojen välissä (pilkku, piste, lainausmerkki) erottaa aina kaksi sanaa: buggeluossabuođus, iige
+      // liitettiin yhdeksi (buggeluossa + buođu + siige; käyttäjän kuva 2026-11-26)
+      if (/[^\p{L}]$/u.test(a.t) || /^[^\p{L}]/u.test(b.t)) continue;
       if (match(a.clean) || match(b.clean)) continue;
       const joined = a.clean + b.clean;
       if (match(joined) || corrector.compound?.(joined)) { joins.set(a, joined); joins.set(b, joined); i++; }
