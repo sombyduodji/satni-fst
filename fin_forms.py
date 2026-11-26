@@ -39,7 +39,10 @@ NOMINAL_CELLS = {f"{n}+{c}": f"{n}+{c}" for n in ("Sg", "Pl") for c in CASES}
 CELLS = {
     "N": NOMINAL_CELLS,
     "Num": NOMINAL_CELLS,
-    "A": {**NOMINAL_CELLS, "Comp": "Comp+Sg+Nom", "Superl": "Superl+Sg+Nom"},
+    # Vertailuasteet kaikissa sijoissa lausekääntäjää varten (čábbámus juovlalávlagiid = kauneimpia joululauluja);
+    # yksikön nominatiivi on Comp / Superl (haku ja taulukko)
+    "A": {**NOMINAL_CELLS, "Comp": "Comp+Sg+Nom", "Superl": "Superl+Sg+Nom",
+          **{f"{d}+{n}+{c}": f"{d}+{n}+{c}" for d in ("Comp", "Superl") for n in ("Sg", "Pl") for c in CASES if (n, c) != ("Sg", "Nom")}},
     "V": {
         "Inf": "Act+InfA+Sg+Lat",
         # 3. infinitiivin illatiivi (lähden juoksemaan): lausekääntäjässä saamen infinitiivi (manan viehkat)
@@ -50,6 +53,10 @@ CELLS = {
         "InfMa+Ela": "Act+InfMa+Sg+Ela",
         "InfMa+Abe": "Act+InfMa+Sg+Abe",
         "PrsPrc": "Act+PrsPrc+Sg+Nom",
+        # 2. infinitiivin inessiivi (käsitellessä): saamen gerundi (meannudettiin, meannudettiinis = käsitellessään)
+        "InfE+Ine": "Act+InfE+Sg+Ine",
+        # -minen-teonnimi (perustaminen): saamen -eapmi (vuođđudeapmi); sijamuodot muodostaa web/app.js (säännöllinen)
+        "Minen": "Der/minen+N+Sg+Nom",
         "Pss+Prs": "Pss+Ind+Prs+Pe4",
         "Pss+Prt": "Pss+Ind+Prt+Pe4",
         "PssPrfPrc": "Pss+PrfPrc+Sg+Nom",
@@ -168,6 +175,9 @@ def voikko_expected(cell):
         return {"NUMBER": "singular" if parts[0] == "Sg" else "plural", "SIJAMUOTO": VOIKKO_CASES[parts[1]]}
     if cell in ("Comp", "Superl"):
         return {"COMPARISON": "comparative" if cell == "Comp" else "superlative", "NUMBER": "singular", "SIJAMUOTO": "nimento"}
+    if parts[0] in ("Comp", "Superl") and len(parts) == 3 and parts[2] in VOIKKO_CASES:
+        return {"COMPARISON": "comparative" if parts[0] == "Comp" else "superlative",
+                "NUMBER": "singular" if parts[1] == "Sg" else "plural", "SIJAMUOTO": VOIKKO_CASES[parts[2]]}
     if parts[0] in VOIKKO_MOODS and len(parts) == 2 and parts[1][:2] in ("Sg", "Pl"):
         mood, tense = VOIKKO_MOODS[parts[0]]
         return {"MOOD": mood, "TENSE": tense, "PERSON": parts[1][2], "NUMBER": "singular" if parts[1][:2] == "Sg" else "plural"}
@@ -231,8 +241,8 @@ def voikko_check(found):
                 continue
             # Jo vertailuaste (suurempi, eteläisin): ei komparatiivia eikä superlatiivia (eteläisimpin)
             if any(a.get("COMPARISON") in ("comparative", "superlative") and a.get("SIJAMUOTO") == "nimento" for a in analyses):
-                cells.pop("Comp", None)
-                cells.pop("Superl", None)
+                for c in [c for c in cells if c.split("+")[0] in ("Comp", "Superl")]:
+                    cells.pop(c)
         for c, v in cells.items():
             want = voikko_expected(c)
             if not v or want is None or c == "Imprt+Sg2":
@@ -256,6 +266,11 @@ def voikko_check(found):
             cands = [v[0][:k] + v[0][k:].translate(str.maketrans("aouäöy", "äöyaou"))]
             if c == "Pl+Ill" and v[0].endswith("iin") and word[-1] in "aä":
                 cands += [v[0][:-3] + ("oihin" if word[-1] == "a" else "öihin")]
+            # -is-adjektiivin superlatiivi: generaattori antaa kauniin / kaunin / kauniimpia, oikein kaunein / kauneimpia
+            # (ii tai i ennen superlatiivin -in-/-im-päätettä -> ei); Voikko vahvistaa
+            if c.startswith("Superl"):
+                for f in v:
+                    cands += [re.sub(r"ii?(?=(n|mm\w*|mp\w*|m\w*)$)", "ei", f, count=1)]
             own[v[0]] = [x for x in cands if x != v[0]]
         out = run_voikko(VOIKKO_ANALYSE, "\n".join(sorted({x for v in own.values() for x in v})) + "\n") or ""
         own_info = {w: (ok, an) for w, ok, an in map(json.loads, out.splitlines())}

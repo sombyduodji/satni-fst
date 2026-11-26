@@ -341,6 +341,8 @@ def main():
         CREATE TABLE sme_cmp (stem TEXT PRIMARY KEY, lemma TEXT) WITHOUT ROWID;
         -- Saamen passiivi (sme_passive.py, GiellaLT lang-sme): lausekääntäjän suomen passiiville (maksetaan = máksojuvvo)
         CREATE TABLE sme_passive (word_id INTEGER, tag TEXT, surface TEXT, PRIMARY KEY (word_id, tag)) WITHOUT ROWID;
+        -- Omistusliitteelliset muodot ja vertailumuotojen essiivit (sme_extra.py: SIKOR CC BY 3.0 + GiellaLT lang-sme)
+        CREATE TABLE sme_extra (word_id INTEGER, tag TEXT, surface TEXT, PRIMARY KEY (word_id, tag, surface)) WITHOUT ROWID;
         -- Saamen sanamuotojen esiintymät sanakirjan esimerkkilauseissa: lausekääntäjä valitsee rinnakkaismuodoista
         -- yleisimmän (lei eikä leai: 465 / 1)
         CREATE TABLE sme_seen (form TEXT PRIMARY KEY, n INTEGER) WITHOUT ROWID;
@@ -503,6 +505,9 @@ def main():
     if src.execute("SELECT 1 FROM sqlite_master WHERE name = 'sme_passive'").fetchone():
         dst.executemany("INSERT OR IGNORE INTO sme_passive VALUES (?,?,?)",
                         src.execute("SELECT word_id, tag, surface FROM sme_passive ORDER BY word_id, tag"))
+    if src.execute("SELECT 1 FROM sqlite_master WHERE name = 'sme_extra'").fetchone():
+        dst.executemany("INSERT OR IGNORE INTO sme_extra VALUES (?,?,?)",
+                        src.execute("SELECT word_id, tag, surface FROM sme_extra ORDER BY word_id, tag, surface"))
 
     cmp_rows = sme_compound.rows(dst)
     dst.executemany("INSERT INTO sme_cmp VALUES (?,?)", cmp_rows)
@@ -608,6 +613,7 @@ def main():
         CREATE INDEX idx_meanings_word ON meanings(word_id);
         CREATE INDEX idx_trans_bare ON trans_bare(bare);
         CREATE INDEX idx_sme_passive_surface ON sme_passive(surface);
+        CREATE INDEX idx_sme_extra_surface ON sme_extra(surface);
         CREATE INDEX idx_examples_word ON examples(word_id);
         CREATE INDEX idx_sme_definitions_word ON sme_definitions(word_id);
         CREATE INDEX idx_related_sami_word ON related_sami(word_id);

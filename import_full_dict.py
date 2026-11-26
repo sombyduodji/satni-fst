@@ -32,6 +32,7 @@ import algu_related
 import kartverket_names
 import fin_forms
 import sme_passive
+import sme_extra
 import nob_forms
 import spa_data
 import wiktionary_eng
@@ -1263,6 +1264,7 @@ def main():
     nob_forms.add_nob_forms(cursor)
     fin_forms.add_fin_forms(cursor)
     sme_passive.apply(cursor)
+    sme_extra.apply(cursor)
 
     print("Luodaan tietokantaan indeksit...")
     cursor.execute("CREATE INDEX idx_lemma ON dictionary(sme_lemma COLLATE NOCASE);")

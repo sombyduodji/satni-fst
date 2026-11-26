@@ -198,6 +198,14 @@ list 2015-10-10
   Changes: used only for words without a frequency; letters and
   abbreviations are left out.
 
+Possessive word forms: SIKOR North Saami free corpus 2015-10-10
+  © UiT The Arctic University of Norway (Giellatekno and Divvun)
+  and the Norwegian Sámi Parliament
+  Licence: Creative Commons Attribution 3.0 Unported (CC-BY-3.0.txt)
+  Source: http://hdl.handle.net/11509/100 (CLARINO Bergen)
+  Changes: only the list of word forms is used (no text); possessive
+  forms and comparative essives confirmed by the GiellaLT analyser.
+
 Related words in other Sámi languages: Álgu, the
 Etymological Database of the Saami Languages, XML version 16.3.2023
   © Kotimaisten kielten keskus (Institute for the Languages of Finland),

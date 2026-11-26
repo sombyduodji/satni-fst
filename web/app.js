@@ -1146,6 +1146,13 @@ function queryDatabase(query) {
        FROM sme_passive p JOIN dictionary d ON d.id = p.word_id WHERE p.surface IN (?, ?, ?, ?, ?)`, forms
     )) add(r, 5);
   } catch (e) { /* vanha aineisto */ }
+  // Omistusliitteellinen muoto tai vertailumuodon essiivi (barggustis -> bargu, álkibun -> álki), sme_extra.py
+  try {
+    for (const r of all(
+      `SELECT DISTINCT d.${cols.split(", ").join(", d.")}
+       FROM sme_extra p JOIN dictionary d ON d.id = p.word_id WHERE p.surface IN (?, ?, ?, ?, ?)`, forms
+    )) add(r, r.freq >= COMMON_WORD ? 1.2 : 5);
+  } catch (e) { /* vanha aineisto */ }
   // 4.5–4.9 = taivutettu suomen- tai norjankielinen sana (juon, taloon, husene): sen perusmuodon (juoda, talo, hus)
   // saamennokset perusmuodon omassa järjestyksessä, kaikkien suorien käännösosumien jälkeen. Muodot ovat taulussa
   // fin_forms / nob_forms (sama kuin viesus ≈ talossa -rivillä), joten tämä ei kasvata tietokantaa.
@@ -1401,6 +1408,11 @@ function samiCaseOfFinCell(cell, pos) {
     return null;
   }
   if (cell === "Comp" || cell === "Superl") return `${cell}+Sg+Nom`;
+  // kauneimpia = čábbámusaid (Superl+Pl+Acc ~ Pl+Par), isommassa = stuorát (Comp+Sg+Loc)
+  if ((p[0] === "Comp" || p[0] === "Superl") && p.length === 3) {
+    const rest = samiCaseOfFinCell(`${p[1]}+${p[2]}`, pos);
+    return rest ? `${p[0]}+${rest}` : null;
+  }
   const cases = { Nom: "Nom", Gen: "Gen", Ine: "Loc", Ela: "Loc", Ade: "Loc", Abl: "Loc", Ill: "Ill", All: "Ill" };
   if (p[1] === "Ess" || p[1] === "Tra") return "Ess";
   return cases[p[1]] ? `${p[0]}+${cases[p[1]]}` : null;
@@ -1557,6 +1569,13 @@ function loadWord(id) {
   try {
     for (const r of all(`SELECT tag, surface FROM sme_passive WHERE word_id = ?`, [id])) paradigm.set("Pass+" + r.tag, [r.surface]);
   } catch (e) { /* vanha aineisto ilman passiivia */ }
+  // Omistusliitteet ja vertailumuotojen essiivit (sme_extra.py): vain tekstissä esiintyneet muodot, eivät taulukossa
+  try {
+    for (const r of all(`SELECT tag, surface FROM sme_extra WHERE word_id = ?`, [id])) {
+      if (!paradigm.has(r.tag)) paradigm.set(r.tag, []);
+      if (!paradigm.get(r.tag).includes(r.surface)) paradigm.get(r.tag).push(r.surface);
+    }
+  } catch (e) { /* vanha aineisto */ }
   const meanings = all(`SELECT * FROM meanings WHERE word_id = ? ORDER BY rowid`, [id])
     .map((m) => ({ ...m, examples: examples.get(m.lang + m.nr) || [] }));
   // Pohjoissaamenkieliset määritelmät (sme_definitions.py, GiellaLT dict-sme)
@@ -2466,6 +2485,15 @@ function translationForms(lang, word, pos) {
   if (lang === "nob" && pos === "Num") return word ? { word, __back: null } : null;
   try {
     const row = all(`SELECT * FROM ${lang}_forms WHERE word = ? AND pos = ?`, [word, pos])[0];
+    // Käännös on jo vertailuaste (čábbámus = kaunein): taivutus perusmuodon vertailuasteen soluista (kauneimpia)
+    if (!row && lang === "fin" && pos === "A") {
+      const hit = translationFormsOf(word, "fin").find((h) => h.pos === "A" && (h.cell === "Superl" || h.cell === "Comp"));
+      const base = hit && translationForms("fin", hit.base, "A");
+      if (!base || !base[`${hit.cell}+Pl+Nom`]) return null;
+      const g = { "Sg+Nom": base[hit.cell], __back: base.__back, __word: word };
+      for (const k in base) if (k.startsWith(hit.cell + "+")) g[k.slice(hit.cell.length + 1)] = base[k];
+      return g;
+    }
     if (!row) return null;
     const forms = Object.fromEntries(row.forms.split(";").map((c) => c.split("=")).map(([k, v]) => [k, v.split("/")[0]]));
     if (lang === "fin" && word === "olla") Object.assign(forms, FIN_OLLA_POTENTIAL);
@@ -2521,10 +2549,54 @@ function nobPhrase(tag, pos, f) {
   return null;
 }
 
+// -minen-sanan sijamuodot (säännöllinen taivutus): perustaminen, perustamisen, perustamista, perustamiseen, perustamisessa …
+function finMinenForms(word) {
+  const st = word.slice(0, -3), a = /[aou]/.test(st.replace(/[^aouäöy]/g, "").slice(-1)) ? "a" : "ä";
+  const sg = { Nom: "nen", Gen: "sen", Par: "st" + a, Ine: "sess" + a, Ela: "sest" + a, Ill: "seen", Ess: "sen" + a,
+               Ade: "sell" + a, Abl: "selt" + a, All: "selle", Tra: "seksi" };
+  const pl = { Nom: "set", Gen: "sten", Par: "si" + a, Ine: "siss" + a, Ela: "sist" + a, Ill: "siin", Ess: "sin" + a,
+               Ade: "sill" + a, Abl: "silt" + a, All: "sille", Tra: "siksi" };
+  const f = {};
+  for (const c in sg) { f[`Sg+${c}`] = st + sg[c]; f[`Pl+${c}`] = st + pl[c]; }
+  return f;
+}
+// Suomen omistusliite sijamuodon perään: talon -> taloni / talonsa, taloon -> talooni, talossa -> talossani / talossaan,
+// taloksi -> talokseni, talon kanssa -> talonsa kanssa. Saamen duaali = suomen monikko.
+const FIN_PX = { Sg1: "ni", Sg2: "si", Du1: "mme", Pl1: "mme", Du2: "nne", Pl2: "nne" };
+function finPxWord(w, px) {
+  const p = px.slice(2), back = /[aou]$/.test(w.replace(/[^aouäöy]/g, ""));
+  let stem = w, third;
+  if (/[nt]$/.test(w)) { stem = w.slice(0, -1); third = back ? "nsa" : "nsä"; }
+  else {
+    if (/ksi$/.test(w)) stem = w.slice(0, -1) + "e";
+    // Pitkän vokaalin jälkeen -nsa (ansaa -> ansaansa, ei ansaaan), muuten vokaalin pidennys (talossa -> talossaan)
+    third = /([aeiouyäö])\1$/.test(stem) ? (back ? "nsa" : "nsä") : stem.slice(-1) + "n";
+  }
+  return stem + (FIN_PX[p] || third);
+}
+function finPx(phrase, px) {
+  return phrase.split(" / ").map((part) => {
+    const ws = part.split(" "), i = ws[ws.length - 1] === "kanssa" && ws.length > 1 ? ws.length - 2 : ws.length - 1;
+    ws[i] = finPxWord(ws[i], px);
+    return ws.join(" ");
+  }).filter((x, k, a) => a.indexOf(x) === k).join(" / ");
+}
+
 // Saamen muodon tagi -> suomenkielinen muoto. Saamen lokatiivi on suomeksi sisä- tai ulkopaikallissija
 // (viesus = talossa / talosta), illatiivi illatiivi tai allatiivi (taloon / talolle), komitatiivi "kanssa".
 function finPhrase(tag, pos, f, human = false) {
   const parts = tag.split("+");
+  // Omistusliite (sme_extra.py): barggustis = työssään, áhččán = isäni, mánáidasaset = lapsilleen; muoto sijamuodosta
+  const px = parts.find((p) => /^Px/.test(p));
+  if (px) {
+    // Gerundi + omistusliite: meannudettiinis = käsitellessään
+    if (pos === "V") return tag.startsWith("Ger+") && f["InfE+Ine"] ? finPx(f["InfE+Ine"], px) : null;
+    const rest = parts.filter((p) => p !== px).join("+") || "Sg+Nom";
+    const n = rest.startsWith("Pl") ? "Pl" : "Sg";
+    // Nominatiivi genetiivin vartalosta (käsi -> käteni)
+    const ph = /(^|\+)Nom$/.test(rest) ? f[n === "Pl" ? "Pl+Nom" : "Sg+Gen"] : finPhrase(rest, pos, f, human);
+    return ph ? finPx(ph, px) : null;
+  }
   const join = (...forms) => forms.filter(Boolean).join(" / ") || null;
   if (pos === "V") {
     const person = FIN_PERSON[parts[parts.length - 1]];
@@ -2536,6 +2608,15 @@ function finPhrase(tag, pos, f, human = false) {
     if (tag === "VAbess") return f["InfMa+Abe"];
     if (tag === "Actio+Loc") return f["InfMa+Ela"];
     if (tag === "PrsPrc") return f.PrsPrc;
+    if (tag === "Ger") return f["InfE+Ine"];  // meannudettiin = käsitellessä
+    // -eapmi-teonnimi (sme_extra.py): vuođđudeapmi = perustaminen, vuođđudeapmái = perustamiseen
+    if (parts[0] === "NomAct") return f.Minen ? finPhrase(parts.slice(1).join("+"), "N", finMinenForms(f.Minen), human) : null;
+    // -goahtit (sme_extra.py): doaibmagoahtá = alkaa toimia, doaibmagođii = alkoi toimia
+    if (parts[0] === "Inch") {
+      const alkaa = f.Inf && translationForms("fin", "alkaa", "V");
+      const ph = alkaa && finPhrase(parts.slice(1).join("+"), "V", alkaa, human);
+      return ph ? `${ph} ${f.Inf}` : null;
+    }
     // Passiivi (sme_passive.py): suomen passiivi on persoonaton (mun válljejuvvon = minut valittiin)
     if (parts[0] === "Pass") {
       if (tag === "Pass+PrfPrc") return f.PssPrfPrc;
@@ -2554,8 +2635,15 @@ function finPhrase(tag, pos, f, human = false) {
     return null;
   }
   if (pos === "A") {
-    if (parts[0] === "Comp") return f.Comp;
-    if (parts[0] === "Superl") return f.Superl;
+    // Vertailuasteet sijoittain (fin_forms.py): čábbámus juovlalávlagiid = kauneimpia, stuorát viesus = isommassa talossa
+    if (parts[0] === "Comp" || parts[0] === "Superl") {
+      if (parts.length === 1 || parts[1] === "Attr" || !f[`${parts[0]}+Pl+Nom`]) return f[parts[0]];
+      const g = { "Sg+Nom": f[parts[0]] };
+      for (const k in f) if (k.startsWith(parts[0] + "+")) g[k.slice(parts[0].length + 1)] = f[k];
+      // Saamen essiivi on suomeksi myös translatiivi (álkibun = helpompana / helpommaksi)
+      if (parts.slice(1).join("+") === "Ess") return [g["Sg+Ess"], g["Sg+Tra"]].filter(Boolean).join(" / ") || null;
+      return finPhrase(parts.slice(1).join("+"), "A", g, human);
+    }
     if (tag === "Attr") return f["Sg+Nom"];
   }
   const n = parts[0] === "Pl" ? "Pl" : "Sg";
@@ -4286,6 +4374,7 @@ function ocrCorrector() {
       for (const r of all(`SELECT lemma_fold AS v FROM dictionary WHERE lemma_fold IN (${marks})`, folds)) found.add("fold:" + r.v);
       q(`SELECT surface FROM paradigms WHERE surface IN (${m2})`, both);
       try { q(`SELECT surface FROM sme_passive WHERE surface IN (${m2})`, both); } catch (e) { /* vanha aineisto */ }
+      try { q(`SELECT surface FROM sme_extra WHERE surface IN (${m2})`, both); } catch (e) { /* vanha aineisto */ }
     }
     return (w) => found.has("fold:" + fold(w)) || found.has(w) || found.has(capitalize(w));
   };
@@ -4413,7 +4502,7 @@ const FUZZY_ALTS = { a: "á", c: "č", d: "đ", n: "ŋ", s: "š", t: "ŧ", z: "�
 // ML Kitin läpi): đ -> d ja ŋ -> n yleisiä, á, č ja š luetaan lähes aina oikein
 const FUZZY_COST = { a: 1.2, c: 0.9, d: 0.4, n: 0.5, s: 0.9, t: 0.9, z: 0.9, å: 0.3, ä: 0.5 };
 function ocrFuzzySearch() {
-  const tables = [["paradigms", "surface"], ["dictionary", "sme_lemma"], ["sme_passive", "surface"], ["sme_cmp", "stem"]];
+  const tables = [["paradigms", "surface"], ["dictionary", "sme_lemma"], ["sme_passive", "surface"], ["sme_extra", "surface"], ["sme_cmp", "stem"]];
   const pre = [], exact = [];
   for (const [tb, col] of tables) {
     try {
@@ -5854,7 +5943,8 @@ function sentContext(toks) {
         && !["N", "A"].includes(next?.ctx?.pos) && prev?.ctx?.pos !== "Num" && !numVal(prev)) { tok.finKey = "Sg+Tra"; put(tok, c.f["Sg+Tra"]); return; }
     if (numVal(prev) >= 2 && has("Sg+Gen")) key = "Sg+Par";
     else if (amb) {
-      const nextPos = next?.ctx?.pos;
+      // Pilkku sanan perässä: seuraava sana ei ole sen pääsana (gálvvuid, gođiid ja mánáid = tavarat, kodat ja lapset)
+      const nextPos = /,/.test(tok.punct || "") ? null : next?.ctx?.pos;
       const negated = toks.slice(0, i).some((t) => SME_NEG.has((t.clean || "").toLowerCase()));
       // Verbi samassa lauseessa ennen (pilkku katkaisee): lágidit juohke jagi miehtá Suoma dáhpáhusaid = järjestävät … tapahtumia
       let cs = i;
@@ -5879,6 +5969,25 @@ function sentContext(toks) {
       put(tok, (c.prefix || "") + c.f[key] + (key !== "Pl+Ine" && c.tags.some((t) => t.endsWith("Com")) ? " kanssa" : ""));
     }
   });
+  // Rinnasteiset objektit samaan sijaan (guttiimet bevddiid ja stuoluid = kannoimme pöytiä ja tuoleja; visot gálvvuid,
+  // gođiid ja mánáid = kaikki tavarat, kodat ja lapset): ja / dahje / pilkku, sama luku, edellisen sija
+  // genetiivi, partitiivi tai nominatiivi. Ei, jos jälkimmäinen on substantiivin määre (genetiivi pääsanan edellä).
+  const CONJ = new Set(["ja", "dahje", "ja/dahje", "vai", "ige"]);
+  toks.forEach((tok, i) => {
+    const c = tok.ctx;
+    if (!tok.finKey || !c?.f || c.pos !== "N" || tok.fixed || ["N", "A", "Po"].includes(toks[i + 1]?.ctx?.pos) && !/,/.test(tok.punct || "")) return;
+    const conj = CONJ.has((toks[i - 1]?.clean || "").toLowerCase()) && !toks[i - 1].punct;
+    const j = conj ? i - 2 : /,/.test(toks[i - 1]?.punct || "") ? i - 1 : -1;
+    const y = toks[j];
+    if (!y?.finKey || y.ctx?.pos !== "N" || !/^(Sg|Pl)\+(Gen|Par|Nom)$/.test(y.finKey)) return;
+    const [ny, cy] = y.finKey.split("+"), [nx] = tok.finKey.split("+");
+    // Molemmat objektin näköisiä (Gen/Acc-muoto) ja sama luku
+    if (ny !== nx || !(c.tags || []).some((t) => /\+(Acc|Gen)$/.test(t)) || !(y.ctx.tags || []).some((t) => /\+(Acc|Gen)$/.test(t))) return;
+    const key = `${nx}+${cy}`;
+    if (key === tok.finKey || !c.f[key]) return;
+    tok.finKey = key;
+    put(tok, (c.prefix || "") + c.f[key]);
+  });
   // Pronomini objektina verbin jälkeen: partitiivi (oidnen su = näin hänet/häntä; esimerkkilausekoe: hänen -> häntä 17,
   // sinun -> sinua 10, sen -> sitä 7), ei substantiivin edellä (su viessu = hänen talonsa)
   toks.forEach((tok, i) => {
@@ -5893,9 +6002,17 @@ function sentContext(toks) {
     const c = tok.ctx, next = toks[i + 1];
     // Adjektiivi tai määräävä pronomini (makkárge doaimmaid = minkäänlaisia toimia), ei persoonapronomini
     if (!(c?.pos === "A" || (c?.pos === "Pron" && c.subtype !== "Pers" && !SENT_NO_AGREE.has(c.lemma))) || !c.f || !next?.finKey || !["N", "Pron"].includes(next.ctx?.pos)) return;
-    if (!c.tags.some((t) => t === "Attr" || /^(Sg|Pl)\+/.test(t)) && !(c.pos === "Pron" && !c.tags.length)) return;
+    if (!c.tags.some((t) => /(^|\+)Attr$/.test(t) || /^((Comp|Superl)\+)?(Sg|Pl)\+/.test(t)) && !(c.pos === "Pron" && !c.tags.length)) return;
     tok.finKey = next.finKey;
-    put(tok, c.f[next.finKey]);
+    // Vertailuaste säilyy (čábbámus juovlalávlagiid = kauneimpia joululauluja)
+    // Vain jos sana ei ole myös perusasteen muoto (várrogasat = varovaiset, ei varovaisemmat)
+    // Vertailu go-sanan vieressä pitää vertailuasteen (go boarrásat olbmot = kuin vanhemmat ihmiset)
+    const nearGo = [toks[i - 1], toks[i + 1]].some((t) => (t?.clean || "").toLowerCase() === "go");
+    const plain = !nearGo && c.tags.some((t) => /^(Sg|Pl)\+|^Attr$/.test(t));
+    const deg = plain ? null : c.tags.map((t) => t.split("+")[0]).find((d) => d === "Comp" || d === "Superl");
+    const degForm = deg && (next.finKey === "Sg+Nom" ? c.f[deg] : c.f[`${deg}+${next.finKey}`]);
+    if (deg && !degForm) return;
+    put(tok, deg ? degForm : c.f[next.finKey]);
   });
   // Liittomuodot: leat + partisiippi (lea váldán = on ottanut, lean vásihan = olen kokenut)
   const isLeat = (t) => t?.ctx?.pos === "V" && SME_LEAT.has(t.ctx.lemma);
@@ -5916,7 +6033,8 @@ function sentContext(toks) {
   // go vertailun jälkeen = kuin (unnit bušeahtta go … = pienempi … kuin)
   toks.forEach((tok, i) => {
     if ((tok.clean || "").toLowerCase() !== "go" || !tok.opts?.includes("kuin")) return;
-    if (toks.slice(0, i).some((t) => (t.ctx?.tags || []).some((tag) => /Comp/.test(tag)) || SENT_COMPARATIVES.has((t.clean || "").toLowerCase()))) put(tok, "kuin");
+    // Myös heti go-sanan jälkeen (go boarrásat olbmot = kuin vanhemmat ihmiset)
+    if (toks.slice(0, i + 2).some((t) => (t.ctx?.tags || []).some((tag) => /Comp/.test(tag)) || SENT_COMPARATIVES.has((t.clean || "").toLowerCase()))) put(tok, "kuin");
   });
 }
 // Norjan säännöt (pohjoissaame -> norja; norjassa ei ole sijoja): sija näkyy prepositiona ja sanajärjestyksenä.
@@ -6439,7 +6557,9 @@ function renderSentViewIn() {
     // näytti turhalta ja leike tekstikentältä). Kentän arvo (arvaus) säilyy piilossa: Valmis ja Jaa osiin käyttävät sitä.
     const chip = (act, icon, label) => `<button type="button" class="sh-chip" data-act="${act}">${icon ? shIcon(icon) : ""}<span>${esc(label)}</span></button>`;
     sheet.innerHTML = `<div class="sent-sh-head">${src ? `<div class="sent-cut-box"><span class="sent-cut-lab">${esc(t("sentInPhoto"))}</span><img class="sent-cut" src="${src}" alt=""></div>` : "<span></span>"}` +
-      `<button class="chip-btn" data-act="cancel">${esc(t("cancel"))}</button><button class="chip-btn primary" data-act="done">${esc(t("sentDone"))}</button></div>` +
+      // Ehdotus valitaan yhdellä napautuksella (käyttäjä 2026-11-26: sanan vaihto suoraviivaisemmaksi); Valmis vain, kun
+      // sanaa kirjoitetaan tai jaetaan itse
+      `<button class="chip-btn" data-act="cancel">${esc(t("cancel"))}</button>${typing || sent.split ? `<button class="chip-btn primary" data-act="done">${esc(t("sentDone"))}</button>` : ""}</div>` +
       `<div class="sent-type"${typing ? "" : " hidden"}><label class="sent-lab sent-what" for="sent-input">${esc(t("sentWhat"))}</label>` +
       `<input id="sent-input" type="text" autocapitalize="none" spellcheck="false" placeholder="${esc(t("sentWhat"))}" value="${esc(guess)}"></div>` +
       (sent.split ? `<div id="sent-split" class="sent-split"></div>` : `${typing ? "" : `<p class="sent-q">${esc(t("ocrMeant"))}</p>`}<div id="sent-sugs" class="sent-opts sent-cards"></div>`) +
@@ -6463,7 +6583,7 @@ function renderSentSugs(text) {
   // Sellaisenaan-vaihtoehto omana Jätä kääntämättä -painikkeenaan, ei listassa
   const show = (all) => {
     const list = all.filter((o) => !o.keep);
-    sugs.innerHTML = list.length ? list.map((o, k) => `<button class="sent-opt${k === 0 ? " sel" : ""}" data-sug="${k}">` +
+    sugs.innerHTML = list.length ? list.map((o, k) => `<button class="sent-opt${k === 0 && sent?.typing === sent?.sheet ? " sel" : ""}" data-sug="${k}">` +
       `<span>${esc(o.keep ? t("sentKeep") : o.parts || o.word)}</span>${o.trans ? `<i>${esc(o.trans)}</i>` : ""}</button>`).join("")
       : `<p class="sent-lab">${esc(t("ocrNoSugs"))}</p>`;
     sugs.sugs = list;
@@ -6561,6 +6681,10 @@ function bindSentView() {
     sent.split = null;
     renderSentView();
   };
+  // Enter kirjoituskentässä = Valmis
+  $("sent-sheet").onkeydown = (e) => {
+    if (e.key === "Enter" && e.target.id === "sent-input") { e.preventDefault(); $("sent-sheet").querySelector('[data-act="done"]')?.click(); }
+  };
   $("sent-sheet").oninput = (e) => {
     if (e.target.id !== "sent-input") return;
     if (sent?.split) { sent.split.text = e.target.value.trim(); sent.split.cuts = sentDefaultCuts(sent.split.text); renderSentSplit(); }
@@ -6570,7 +6694,8 @@ function bindSentView() {
     if (!sent || sent.sheet == null) return;
     const tok = sent.toks[sent.sheet], key = sentKey(tok);
     const save = (patch) => { Object.assign(tok, patch); ocr.sentChoice[key] = { ...(ocr.sentChoice[key] || {}), ...patch }; };
-    const opt = e.target.closest("[data-opt]"), sug = e.target.closest("[data-sug]"), act = e.target.closest("[data-act]")?.dataset.act;
+    const opt = e.target.closest("[data-opt]"), sug = e.target.closest("[data-sug]");
+    let act = e.target.closest("[data-act]")?.dataset.act;
     const cut = e.target.closest("[data-cut]");
     if (cut && sent.split) { const c = +cut.dataset.cut; sent.split.cuts.has(c) ? sent.split.cuts.delete(c) : sent.split.cuts.add(c); renderSentSplit(); return; }
     if (act === "type") { sent.typing = sent.sheet; sent.split = null; renderSentView(); return; }
@@ -6586,7 +6711,8 @@ function bindSentView() {
       renderSentView(); return;
     }
     if (opt) { save({ choice: +opt.dataset.opt }); sent.sheet = null; renderSentView(); return; }
-    if (sug) { $("sent-sugs").querySelectorAll(".sent-opt").forEach((b) => b.classList.toggle("sel", b === sug)); return; }
+    // Ehdotuksen napautus vaihtaa sanan heti
+    if (sug) { $("sent-sugs").querySelectorAll(".sent-opt").forEach((b) => b.classList.toggle("sel", b === sug)); act = "done"; }
     if (act === "cancel") { if (sent.solo != null) { closeSentView(); return; } sent.sheet = null; sent.split = null; renderSentView(); return; }
     if (act === "edit") { save({ fixed: { word: tok.clean || tok.t, trans: sentWordText(tok), edited: true } }); renderSentView(); return; }
     // Lause-välilehdeltä sanakirjaan; takaisin-ele palaa lauseeseen (lauseet.js: lauseReturnHash)
@@ -6612,7 +6738,7 @@ function bindSentView() {
     }
   };
   // Lause-välilehdellä samat käsittelijät lauseen omassa tilassa (sentCtx)
-  for (const [id, prop] of [["sent-body", "onclick"], ["sent-sheet", "onclick"], ["sent-sheet", "oninput"]]) {
+  for (const [id, prop] of [["sent-body", "onclick"], ["sent-sheet", "onclick"], ["sent-sheet", "oninput"], ["sent-sheet", "onkeydown"]]) {
     const f = $(id)[prop];
     $(id)[prop] = (e) => sentCtx(() => f(e));
   }
