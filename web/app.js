@@ -2494,6 +2494,21 @@ function translationForms(lang, word, pos) {
       for (const k in base) if (k.startsWith(hit.cell + "+")) g[k.slice(hit.cell.length + 1)] = base[k];
       return g;
     }
+    // Monisanainen verbi (greie seg, bryte sammen, pitää kiinni): ensimmäinen sana taipuu, loppu pysyy (greier seg,
+    // pidetään kiinni). Vain lyhyt loppu ilman vaihtoehtoja (ei "laskea tai työskennellä tietokoneella")
+    if (!row && pos === "V" && / /.test(word)) {
+      const [head, ...tail] = word.split(" "), rest = tail.join(" ");
+      // suomen "olla tapana" ym.: subjekti olisi adessiivissa (meillä on tapana), ei taivuteta (me olemme tapana)
+      if (lang === "fin" && head === "olla") return null;
+      if (tail.length > 2 || /[,()/]|\b(tai|eller|og|ja|noe|jotakin|jonkin|jotain)\b/.test(rest)) return null;
+      const base = translationForms(lang, head, pos);
+      if (!base) return null;
+      const g = { __back: base.__back, __word: word, __rest: rest };
+      for (const k in base) if (!k.startsWith("__") && base[k]) g[k] = base[k].split(" / ").map((x) => `${x} ${rest}`).join(" / ");
+      // -minen-teonnimi: suomessa täydennys edelle (kiinni pitäminen) ja sija voi vaihtua: ei arvata
+      delete g.Minen;
+      return g;
+    }
     if (!row) return null;
     const forms = Object.fromEntries(row.forms.split(";").map((c) => c.split("=")).map(([k, v]) => [k, v.split("/")[0]]));
     if (lang === "fin" && word === "olla") Object.assign(forms, FIN_OLLA_POTENTIAL);
@@ -2508,7 +2523,17 @@ function translationForms(lang, word, pos) {
 
 // Saamen muodon tagi (Sg+Loc, Ind+Prs+Sg1 ...) -> norjankielinen ilmaus, esim. "i huset / fra huset".
 // Saamessa ei ole määräistä artikkelia: prepositioiden kanssa käytetään määräistä muotoa.
+// Refleksiivipronomini persoonan mukaan (greie seg: jeg greier meg, mens vi greier oss)
+const NOB_REFL = { Sg1: "meg", Sg2: "deg", Du1: "oss", Pl1: "oss", Du2: "dere", Pl2: "dere" };
 function nobPhrase(tag, pos, f) {
+  if (pos === "V" && f?.__rest) {
+    if (tag.startsWith("Pass+")) return null;  // passiivi monisanaisesta verbistä (blir greid seg) ei toimi
+    const ph = nobPhraseBase(tag, pos, f), person = tag.split("+").map((p) => p.replace(/^Px/, "")).find((p) => NOB_REFL[p]);
+    return ph && person && /\bseg\b/.test(f.__rest) ? ph.replace(/\bseg\b/g, NOB_REFL[person]) : ph;
+  }
+  return nobPhraseBase(tag, pos, f);
+}
+function nobPhraseBase(tag, pos, f) {
   const parts = tag.split("+");
   // Omistusliite (sme_extra.py): barggustis = i arbeidet sitt, áhččán = faren min; suku määräisestä muodosta (-et = neutri)
   const px = parts.find((p) => /^Px/.test(p));
@@ -2633,7 +2658,8 @@ function finPhrase(tag, pos, f, human = false) {
   const px = parts.find((p) => /^Px/.test(p));
   if (px) {
     // Gerundi + omistusliite: meannudettiinis = käsitellessään
-    if (pos === "V") return tag.startsWith("Ger+") && f["InfE+Ine"] ? finPx(f["InfE+Ine"], px) : null;
+    // Monisanainen verbi: liite verbiin, loppu perään (pitäessään kiinni)
+    if (pos === "V") return tag.startsWith("Ger+") && f["InfE+Ine"] ? (f.__rest ? `${finPx(f["InfE+Ine"].slice(0, -f.__rest.length - 1), px)} ${f.__rest}` : finPx(f["InfE+Ine"], px)) : null;
     const rest = parts.filter((p) => p !== px).join("+") || "Sg+Nom";
     const n = rest.startsWith("Pl") ? "Pl" : "Sg";
     // Nominatiivi genetiivin vartalosta (käsi -> käteni)
@@ -2734,7 +2760,12 @@ function finEndingBack(word) {
 const FIN_NEG = /^\((ei|älä)\) (.+)$/;
 const FIN_NEG_CLITIC = { go: "kö", son: "hän", han: "hän" };
 
-function finWithClitics(phrase, clitics, back) {
+function finWithClitics(phrase, clitics, back, rest = "") {
+  // Monisanainen verbi (lähteä juoksemaan): liite verbiin, ei loppuun (lähdetkö juoksemaan, ei lähdet juoksemaanko)
+  if (rest && phrase.split(" / ").every((p) => p.endsWith(" " + rest))) {
+    const bare = phrase.split(" / ").map((p) => p.slice(0, -rest.length - 1)).join(" / ");
+    return finWithClitics(bare, clitics, back).split(" / ").map((p) => `${p} ${rest}`).join(" / ");
+  }
   // "talossa / talosta" (paikallissija) on kaksi vaihtoehtoa: liite kumpaankin
   let variants = phrase.split(" / ");
   const neg = variants.length === 1 && phrase.match(FIN_NEG);
@@ -2778,7 +2809,7 @@ function translationOfForm(w, tags, finClitics = null, transWords = state.transW
     const forms = translationForms(settings.lang, word.replace(/\(.*?\)/g, "").trim(), pos);
     if (!forms) continue;
     let phrases = [...new Set(tg.map((tag) => FORM_PHRASES[settings.lang](tag, pos, forms, w.human)).filter(Boolean))];
-    if (finClitics) phrases = phrases.map((p) => finWithClitics(p, finClitics, forms.__back));
+    if (finClitics) phrases = phrases.map((p) => finWithClitics(p, finClitics, forms.__back, forms.__rest));
     if (phrases.length) out.push(phrases.join(" / "));
   }
   return [...new Set(out)].join(", ");
@@ -5755,6 +5786,10 @@ function sentTokens(raw) {
       const verb = settings.ocrFrom === "sme" && settings.lang === ocrTo() ? sentVerbForms(g, w.word, prev, prevLemma, negFar) : null;
       tok.opts = verb ? [...new Set([...verb, ...opts.filter((o) => !g.form || !g.form.split(" / ").includes(o))])] : sentNegOrder([...new Set(opts)], prev);
       tok.lemma = g.lemma || "";
+      // Liitepartikkelin muoto (Siihan = hehän, dálge = nytkin) ei väisty sanaparijärjestyksessä paljaalle muodolle
+      // (ennen: Siihan vulget = he lähtevät)
+      const o0 = tok.opts[0] || "";
+      if (/(hän|han|kin|kaan|kään|kö|ko)$/.test(o0) && tok.opts.slice(1).some((o) => o.length < o0.length && o0.startsWith(o))) tok.ruleLock = true;
       if (!verb && settings.ocrFrom === "sme" && g.id && ["fin", "nob"].includes(settings.lang) && ocrTo() === settings.lang) tok.ctx = sentWordCtx(g, w.word);
       else if (verb) tok.ctx = { pos: "V", lemma: g.lemma || w.word, tagOf: verb.tagOf };
       // Iso alkukirjain keskellä lausetta (Siiddas = Siida-museo, ei "kotona"): oletuksena sana sellaisenaan, käännös valittavissa
@@ -5825,11 +5860,62 @@ function sentTokens(raw) {
     tok.lemma = g.lemma || "";
     if (["fin", "nob"].includes(settings.lang) && ocrTo() === settings.lang) tok.ctx = sentWordCtx(g, tok.word);
   });
+  // Verbin jälkeen infinitiivi, kun muoto voi olla infinitiivi tai monikon 3. persoona (jallošii suinna náitalit =
+  // haksahti menemään naimisiin, ei "menevät"); ei, jos välissä on monikon subjekti (Sii / mánát náitalit)
+  if (settings.ocrFrom === "sme") toks.forEach((tok, i) => {
+    const tagOf = tok.ctx?.tagOf;
+    if (!tagOf || tok.fixed || ![...tagOf.values()].includes("Inf")) return;
+    const inf = (tok.opts || []).find((o) => tagOf.get(o) === "Inf");
+    if (!inf || tagOf.get(tok.opts[0]) !== "Ind+Prs+Pl3") return;
+    let j = i - 1;
+    for (; j >= 0 && j >= i - 3; j--) {
+      const t = toks[j];
+      if (/[,.;:!?]/.test(t.punct || "")) return;
+      if (t.ctx?.pos === "V") break;
+      // Substantiivi tai sivulauseen aloittaja välissä aloittaa uuden lauseen (válljejit báikenamaid maid háliidit =
+      // valitsevat paikannimet, joita haluavat)
+      if (t.ctx?.pos === "N" || /^(maid|gii|geat|go|ahte|ja|dahje|muhto|vai|dasgo|jus)$/i.test(t.clean || "")) return;
+      if ((t.ctx?.tags || []).some((x) => /^(Pl\+Nom|Nom)$/.test(x)) || SME_PRON[(t.clean || "").toLowerCase()]) return;
+    }
+    if (j < 0 || j < i - 3 || SME_LEAT.has(toks[j].ctx?.lemma)) return;
+    tok.opts = [inf, ...tok.opts.filter((o) => o !== inf)]; tok.choice = 0;
+  });
   sentContext(toks);
+  sentIdioms(toks);
   sentRerank(toks);
   sentPluralParticiples(toks);
   for (const tok of toks) { const key = `${tok.cx},${tok.cy}`; if (ocr.sentChoice?.[key]) Object.assign(tok, ocr.sentChoice[key]); }
   return toks;
+}
+// Vakiintuneet ilmaukset lauseyhteyden jälkeen (ruleLock: uudelleenjärjestys ei kumoa):
+// adjektiivi + mielas = mieliala (Nieida lea buori mielas dál, muhto bárdni lea velgo heajos mielas = Tyttö on hyvällä
+// tuulella nyt, mutta poika on vieläkin huonolla tuulella / Jenta er i godt humør …, sanakirjan esimerkkilause), ei
+// postpositio "mielestä" (mu mielas = minun mielestäni). Adjektiivi attribuuttina tai genetiivissä (buori = buorre Sg+Gen)
+const SENT_MIELAS_PRON = { mu: ["minun", "ni"], du: ["sinun", "si"], su: ["hänen", "än"], min: ["meidän", "mme"], din: ["teidän", "nne"],
+  sin: ["heidän", "än"], munno: ["meidän", "mme"], dudno: ["teidän", "nne"], sudno: ["heidän", "än"] };
+function sentIdioms(toks) {
+  if (settings.ocrFrom !== "sme" || !["fin", "nob"].includes(settings.lang) || ocrTo() !== settings.lang) return;
+  const set = (tok, text) => { if (tok.fixed) return; tok.opts = [...new Set([text, ...(tok.opts || [])])]; tok.choice = 0; tok.ruleLock = true; };
+  toks.forEach((tok, i) => {
+    const prev = toks[i - 1], c = prev?.ctx;
+    if ((tok.clean || "").toLowerCase() !== "mielas" || c?.pos !== "A" || !(c.tags || []).some((t) => t === "Attr" || t === "Sg+Gen") || !c.f || /[,.;:!?]/.test(prev.punct || "")) return;
+    if (settings.lang === "fin" && c.f["Sg+Ade"]) { set(prev, c.f["Sg+Ade"]); set(tok, "tuulella"); }
+    else if (settings.lang === "nob" && (c.f.Neu || c.f.Pos)) { set(prev, "i " + (c.f.Neu || c.f.Pos)); set(tok, "humør"); }
+  });
+  // Persoonapronomini + mielas = jonkun mielestä (mu mielas = minun mielestäni / etter min mening)
+  toks.forEach((tok, i) => {
+    const prev = toks[i - 1], pr = (prev?.clean || "").toLowerCase(), px = SENT_MIELAS_PRON[pr];
+    if ((tok.clean || "").toLowerCase() !== "mielas" || !px || /[,.;:!?]/.test(prev.punct || "")) return;
+    if (settings.lang === "fin") { set(prev, px[0]); set(tok, "mielestä" + px[1]); }
+    else { set(prev, `etter ${NOB_GEN_PRON[pr]}`); set(tok, "mening"); }
+  });
+  // Norjaksi substantiivin genetiivi + mielas = etter farens mening (ei "far i sinnet")
+  if (settings.lang === "nob") toks.forEach((tok, i) => {
+    const prev = toks[i - 1], c = prev?.ctx, gen = c?.f?.["Sg+Def"];
+    if ((tok.clean || "").toLowerCase() !== "mielas" || c?.pos !== "N" || !(c.tags || []).includes("Sg+Gen") || !gen || /s$/.test(gen)
+      || /[,.;:!?]/.test(prev.punct || "") || ["A", "Pron"].includes(toks[i - 2]?.ctx?.pos)) return;
+    set(prev, `etter ${gen}s`); set(tok, "mening");
+  });
 }
 // Kieltoverbin jälkeinen muoto (ii álgán = ei alkanut): "(ei) …" vain, kun edellinen sana on kieltoverbi; muuten
 // sama muoto on partisiippi (leat álgán = ovat alkaneet), joten "(ei)"-vaihtoehdot pois tai viimeisiksi

@@ -56,11 +56,13 @@ def apply(cursor):
         print(f"  SIKOR-korpusta ei löydy ({SIKOR}): sme_dominant jää tyhjäksi")
         return
     heads = collections.defaultdict(set)
-    has_trans = set()
+    has_trans, has_fin = set(), set()
     for lemma, pos, fin, nob in cursor.execute("SELECT sme_lemma, pos, finnish_translation, nob_translation FROM dictionary"):
         heads[lemma].add(pos)
         if (fin or "").strip() or (nob or "").strip():
             has_trans.add((lemma, pos))
+        if (fin or "").strip():
+            has_fin.add((lemma, pos))
     translated = lambda w, pos: (w, pos) in has_trans
     heads_pos = {(l, p) for l, ps in heads.items() for p in ps}
     # Myös taivutusmuodot, jotka kuuluvat usealle sanakirjan sanalle (buorit: buorre A monikko / buoridit V)
@@ -78,7 +80,12 @@ def apply(cursor):
             lemma = same[0][0]
         if tot < MIN_COUNT or pos not in heads.get(lemma, ()) or len(same) > 1:
             continue  # saman sanaluokan kilpailijat (lea: leat / leahkit) jäävät ennalleen
-        if w in heads and pos in heads[w] and translated(w, pos):
+        # Persoonapronominin muoto, jonka oma hakusana on vain norjaksi käännetty (mis Pron "vi", ei suomea) ja jonka
+        # kanssa kilpailee partikkeli (mis Pcle "tosiaan"): korpuksessa 2 239 / 2 240 kertaa mun Pl1 Loc "meillä"
+        sure_pron = pos == "Pron" and tot >= 300 and n / tot >= 0.98 and len(same) == 1 and (w, pos) not in has_fin
+        if sure_pron:
+            lemma = same[0][0]
+        elif w in heads and pos in heads[w] and translated(w, pos):
             continue
         if w in heads and not (w, pos) in heads_pos:
             if n / tot < MIN_SHARE:
@@ -89,7 +96,8 @@ def apply(cursor):
         # eahpitkeahttá = epäilemättä): sanakirjan adverbi on idiomaattisempi, pidetään
         others = heads[w] if w in heads else {p for _, p in forms[w]} - {pos}
         # Lukusana vs pronomini (máŋga = monta / usea): pronominin taivutus lauseessa toimii paremmin (testi 2026-11-26)
-        if pos in SKIP_DOM or others & SKIP_HEAD or ("Adv" in others and pos in ("N", "V")) or (pos == "Num" and "Pron" in others):
+        sure_pron = sure_pron and not others & (SKIP_HEAD - {"Pcle"})
+        if pos in SKIP_DOM or (others & SKIP_HEAD and not sure_pron) or ("Adv" in others and pos in ("N", "V")) or (pos == "Num" and "Pron" in others):
             continue
         rows.append((w, lemma, pos, round(n / tot, 3)))
     cursor.executemany("INSERT INTO sme_dominant VALUES (?, ?, ?, ?)", sorted(rows))
