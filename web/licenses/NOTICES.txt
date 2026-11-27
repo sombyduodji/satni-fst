@@ -208,6 +208,16 @@ Possessive word forms: SIKOR North Saami free corpus 2015-10-10
   The corpus's part-of-speech counts choose the usual reading of
   common word forms in photo sentences.
 
+Compound translations from parallel texts: GiellaLT free corpus
+(corpus-fin, corpus-nob: North Sámi texts and their human
+translations, TMX)
+  © UiT The Arctic University of Norway (Giellatekno and Divvun)
+  and the original publishers (texts GiellaLT may redistribute)
+  Source: https://github.com/giellalt/corpus-fin
+  Changes: statistics only (no text); words aligned offline with
+  eflomal (Robert Östling, GPL-3.0); only compounds whose usual
+  translation equals the dictionary translations of their parts.
+
 Related words in other Sámi languages: Álgu, the
 Etymological Database of the Saami Languages, XML version 16.3.2023
   © Kotimaisten kielten keskus (Institute for the Languages of Finland),

@@ -38,11 +38,15 @@ DEG = re.compile(r"^(?P<lemma>[^+#]+)\+(?P<pos>A)\+Der/(?P<deg>Comp|Superl)\+A\+
 # - gerundi + omistusliite (meannudettiinis = käsitellessään): Ger+PxSg3
 # - teonnimi -eapmi (vuođđudeapmi = perustaminen, beaivádeami = päivittämisen): NomAct+Sg+Gen
 # - alkaa tehdä -goahtit (doaibmagoahtá = alkaa toimia): Inch+Ind+Prs+Sg3
+# - -keahtes-adjektiivi (bisánkeahtes = pysähtymätön, prentekeahtes = painamaton): Geahtes (2026-11-27)
+# Passiivi myös intransitiiviverbeistä, kun muoto on tekstissä (váikkuhuvvo = vaikutetaan; 2026-11-27): suomessa
+# passiivi on persoonaton ja muodostuu myös intransitiiviverbeistä
 VERB = re.compile(r"^(?P<lemma>[^+#]+)\+(?P<pos>V)\+(TV|IV)\+(?:"
                   r"Der/(?P<pass>PassS|PassL)\+V\+IV\+(?P<ptag>Inf|PrfPrc|Ind\+(Prs|Prt)\+(Sg3|Pl3|ConNeg)|Cond\+Prs\+(Sg3|Pl3))"
                   r"|(?P<ger>Ger\+Px(Sg|Du|Pl)\d)"
                   r"|Der/NomAct\+N\+(?P<act>(Sg|Pl)\+(Nom|Acc|Gen|Ill|Loc|Com)|Ess)"
-                  r"|Der/InchL\+V\+(IV\+|TV\+)?(?P<inch>Inf|PrfPrc|Ind\+(Prs|Prt)\+(Sg|Pl)\d|Ind\+(Prs|Prt)\+ConNeg))$")
+                  r"|Der/InchL\+V\+(IV\+|TV\+)?(?P<inch>Inf|PrfPrc|Ind\+(Prs|Prt)\+(Sg|Pl)\d|Ind\+(Prs|Prt)\+ConNeg)"
+                  r"|Der/(?P<geah>geahtes)\+A\+Attr)$")
 
 
 def corpus_words(cursor):
@@ -95,7 +99,8 @@ def apply(cursor):
     def family(a):
         lemma = a.split("+")[0]
         kind = ("Pass" if re.search(r"Der/Pass[SL]", a) else "NomAct" if "Der/NomAct" in a else "Inch" if "Der/InchL" in a
-                else "Deg" if re.search(r"Der/(Comp|Superl)", a) else "Ger" if "+Ger" in a else "Px" if "+Px" in a else "other")
+                else "Deg" if re.search(r"Der/(Comp|Superl)", a) else "Geahtes" if "Der/geahtes" in a
+                else "Ger" if "+Ger" in a else "Px" if "+Px" in a else "other")
         return lemma, kind
     by_word = collections.defaultdict(list)
     for line in proc.stdout.splitlines():
@@ -108,11 +113,11 @@ def apply(cursor):
         for a in analyses:
             p = (w, a)
             m = PX.match(p[1]) or DEG.match(p[1]) or VERB.match(p[1])
-            if not m or (m.groupdict().get("pass") and "+V+TV+" not in a):  # passiivi vain transitiiviverbeistä
+            if not m:
                 continue
             d = m.groupdict()
             if d["pos"] == "V":
-                tag = ("Pass+" + d["ptag"] if d["pass"] else d["ger"] if d["ger"] else
+                tag = ("Pass+" + d["ptag"] if d["pass"] else d["ger"] if d["ger"] else "Geahtes" if d["geah"] else
                        "NomAct+" + d["act"] if d["act"] else "Inch+" + d["inch"])
             else:
                 tag = f"{d['deg']}+{d['tag']}" if d.get("deg") else d["tag"]
@@ -121,7 +126,7 @@ def apply(cursor):
     rows = sorted(r for r in rows if spell(r[2]))
     cursor.executemany("INSERT INTO sme_extra VALUES (?, ?, ?)", rows)
     cursor.execute("CREATE INDEX idx_sme_extra_surface ON sme_extra(surface)")
-    tags = collections.Counter(t.split("+")[0] if t.split("+")[0] in ("Pass", "Ger", "NomAct", "Inch") else "Px" if "Px" in t
+    tags = collections.Counter(t.split("+")[0] if t.split("+")[0] in ("Pass", "Ger", "NomAct", "Inch", "Geahtes") else "Px" if "Px" in t
                                else "vertailumuoto" for _, t, _ in rows)
     print(f"  {len(rows)} muotoa ({', '.join(f'{k} {v}' for k, v in tags.items())}), {len({r[2] for r in rows})} sanaa")
 

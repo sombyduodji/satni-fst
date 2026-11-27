@@ -183,6 +183,12 @@ Downloaded by [`hae_lahteet.sh`](hae_lahteet.sh) from the publishers' own addres
   forms and comparative essives that the GiellaLT analyser confirms and the Divvun speller accepts (barggustis, álkibun).
   [`sme_dominant.py`](sme_dominant.py) uses the corpus's own part-of-speech counts to choose the usual reading of 353
   common word forms in photo sentences (garra = garas "hard", not garra "crust").
+- **Compound translations from parallel texts (group D in `cmp_fin_hyvaksytyt.tsv`):** the free part of GiellaLT's
+  [corpus-fin](https://github.com/giellalt/corpus-fin) and [corpus-nob](https://github.com/giellalt/corpus-nob)
+  (North Sámi texts with their human Finnish/Norwegian translations, sentence-aligned TMX; texts GiellaLT can redistribute,
+  used for statistics only as agreed with Divvun). Words were aligned offline with [eflomal](https://github.com/robertostling/eflomal)
+  (Robert Östling, GPL-3.0) after GiellaLT lang-sme disambiguation. Only a compound whose usual translation is exactly the
+  dictionary translations of its parts is kept (čoakkán + mearrádus = kokous + päätös = kokouspäätös); no corpus text is included.
 - **Related words in other Sámi languages:** [Álgu](https://kaino.kotus.fi/algu), the Etymological Database of the Saami
   Languages (XML 16.3.2023), © Kotimaisten kielten keskus, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
   [`algu_related.py`](algu_related.py) uses only the links between related words and shows a word only when it is in the

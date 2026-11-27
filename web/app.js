@@ -2567,6 +2567,7 @@ function nobPhraseBase(tag, pos, f) {
     if (tag === "Imprt+ConNeg") return f.Imp && `ikke ${f.Imp}!`;
     // sme_extra.py: -eapmi (vuođđudeapmi = å grunnlegge), -goahtit (doaibmagoahtá = begynner å fungere),
     // passiivi (daddjo = blir sagt), gerundi (meannudettiin = mens man behandler)
+    if (tag === "Geahtes") return f.Inf ? `uten å ${f.Inf}` : null;  // bisánkeahtes = (som er) uten å stoppe
     if (parts[0] === "NomAct") {
       if (!f.Inf) return null;
       const c = parts[parts.length - 1];
@@ -2675,6 +2676,8 @@ function finPhrase(tag, pos, f, human = false) {
     // (myös myymisestä), bálvaleaddji = palveleva (usein oma adjektiivinsa); rivi on aina likimääräinen (≈)
     if (tag === "Actio+Ess") return f["InfMa+Ine"];
     if (tag === "VAbess") return f["InfMa+Abe"];
+    // -keahtes-adjektiivi (sme_extra.py): bisánkeahtes = pysähtymätön; 3. infinitiivin abessiivista (pysähtymättä)
+    if (tag === "Geahtes") return f["InfMa+Abe"] ? f["InfMa+Abe"].replace(/matta$/, "maton").replace(/mättä$/, "mätön") : null;
     if (tag === "Actio+Loc") return f["InfMa+Ela"];
     if (tag === "PrsPrc") return f.PrsPrc;
     if (tag === "Ger") return f["InfE+Ine"];  // meannudettiin = käsitellessä

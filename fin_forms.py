@@ -290,6 +290,35 @@ def voikko_check(found):
     return dict(stats)
 
 
+def strict_voikko(found):
+    """Varareittien (eri sanaluokka, yhdyssanan loppuosa) muodoista säilyvät vain ne, jotka Voikko analysoi juuri
+    tämän sanan oikeaksi muodoksi (voikko_expected); solut, joita ei voi verrata (infinitiivit, partisiipit), vain
+    Voikon hyväksyminä. Muutos tehdään paikallaan; tilasto tulostetaan."""
+    if not found:
+        return
+    words = {f for _, _, cells in found for v in cells.values() for f in v}
+    out = run_voikko(VOIKKO_ANALYSE, "\n".join(sorted(words)) + "\n")
+    if out is None:
+        for _, _, cells in found:
+            cells.clear()
+        return
+    info = {w: (ok, an) for w, ok, an in map(json.loads, out.splitlines())}
+    kept = dropped = 0
+    for word, pos, cells in found:
+        for c in list(cells):
+            want = voikko_expected(c)
+            ok = [f for f in cells[c] if info.get(f, (False,))[0] and (want is None or any(
+                a.get("BASEFORM") == word and all(a.get(k) == v for k, v in want.items()) for a in info[f][1]))]
+            if want is None and c not in ("Inf", "PrfPrc", "PrsPrc", "InfMa+Ill", "InfMa+Ine", "InfMa+Ela", "InfE+Ine"):
+                ok = []
+            dropped += len(cells[c]) - len(ok)
+            if ok:
+                cells[c] = ok; kept += len(ok)
+            else:
+                del cells[c]
+    print(f"  Varareitit: {len(found)} sanaa, {kept} Voikon vahvistamaa muotoa, {dropped} hylätty")
+
+
 def voikko_filter(forms, cell, word, rejected):
     """Voikon hylkäämät muodot pois, paitsi kun jäljelle jäisi vain huonompi vaihtoehto, jonka muut säännöt
     karsisivat: pelkkä vanha monikon genetiivi -in (hyväksyntäin) tai yhdyssana, jonka alkuosakin taipuu
@@ -420,13 +449,50 @@ def add_fin_forms(cursor):
     # nimi tunnistetaan (Inariin -> Anárii); translation_words ottaa vain pienellä alkavat
     words = sorted(set(words) | proper_names(cursor))
     analyses = lookup(ANALYSER, sorted({w for w, _ in words}))
-    requests = {}
+    # Varareitit sanoille, joita lang-fin ei taivuta sellaisenaan (2026-11-27). Muodot hyväksytään vain, jos Voikko
+    # analysoi ne juuri tämän sanan oikeaksi sijaksi ja luvuksi (strict_voikko):
+    #  - eri sanaluokka: saamen substantiivin suomennos on adjektiivi (vanha) tai päinvastoin; nominien sijat samat
+    #  - yhdyssana, jota lang-fin ei tunne (korkeamessu, ilmestymätön): pisin tunnettu loppuosa taivutetaan ja
+    #    alkuosa lisätään eteen (korkea + messu), kuten nob_forms.py tekee norjalle; vain Voikon hyväksymät sanat
+    plan = {}
     for word, pos in words:
-        for stem in stems(word, pos, analyses.get(word, [])):
+        st = stems(word, pos, analyses.get(word, []))
+        # Vain saamen substantiivi + suomen adjektiivi (vanha); toisin päin suomen sana on usein taipumaton määrite
+        # (olles = koko, ei "koon käden"; testi 2026-11-27)
+        if not st and pos == "N":
+            st = stems(word, "A", analyses.get(word, []))
+        if st:
+            plan[(word, pos)] = ("", st)
+    missing = [(w, p) for w, p in words if (w, p) not in plan and p in ("N", "A", "V") and "-" not in w and " " not in w]
+    accepted = set()
+    if missing:
+        out = run_voikko(VOIKKO_ANALYSE, "\n".join(sorted({w for w, _ in missing})) + "\n") or ""
+        accepted = {w for w, ok, an in map(json.loads, out.splitlines()) if ok and any(a.get("BASEFORM") == w for a in an)}
+    tails = {w[i:] for w, _ in missing if w in accepted for i in range(2, len(w) - 2)}
+    tail_analyses = lookup(ANALYSER, sorted(tails))
+    fallback = set()
+    for word, pos in missing:
+        if word not in accepted:
+            continue
+        for i in range(2, len(word) - 2):
+            tail = word[i:]
+            st = stems(tail, pos, tail_analyses.get(tail, []))
+            if not st and pos == "N":
+                st = stems(tail, "A", tail_analyses.get(tail, []))
+            if st:
+                plan[(word, pos)] = (word[:i], st)
+                fallback.add((word, pos))
+                break
+    fallback |= {(w, p) for (w, p), (pre, st) in plan.items() if not pre and not stems(w, p, analyses.get(w, []))}
+    requests, prefix_of = {}, {}
+    for (word, pos), (pre, st) in plan.items():
+        prefix_of[(word, pos)] = pre
+        for stem in st:
             for cell, tags in CELLS[pos].items():
                 requests.setdefault((word, pos), []).append((cell, f"{stem}+{tags}"))
             # Perusmuodon generointi tarkistusta varten (alku kelpaa vain, jos se tuottaa käännöksen itsensä)
-            requests[(word, pos)].append(("citation", stem + CITATION_TAGS[pos]))
+            cit = CITATION_TAGS["N" if pos == "A" and "+N" in stem.split("#")[-1] else pos] if pos in ("N", "A") else CITATION_TAGS[pos]
+            requests[(word, pos)].append(("citation", stem + cit))
     generated = lookup(GENERATOR, sorted({q for reqs in requests.values() for _, q in reqs}), generate=True)
 
     # Rinnakkaismuodot, jotka analysaattori merkitsee murteellisiksi tai virheellisiksi juuri tässä muodossa
@@ -446,13 +512,16 @@ def add_fin_forms(cursor):
     rows, found = [], []
     for (word, pos), reqs in requests.items():
         cells = {}
-        valid_stems = {q[:-len(CITATION_TAGS[pos])] for c, q in reqs if c == "citation" and word in generated.get(q, [])}
+        pre = prefix_of.get((word, pos), "")
+        valid_stems = {q[:-len("+Sg+Nom" if q.endswith("+Sg+Nom") else CITATION_TAGS[pos])] for c, q in reqs
+                       if c == "citation" and word[len(pre):] in generated.get(q, [])}
         for cell, query in reqs:
             if cell == "citation" or not any(query.startswith(st + "+") for st in valid_stems):
                 continue
             for form in generated.get(query, []):
                 if ((query, form) in nonstandard and len(generated[query]) > 1) or not confirmed(query, form):
                     continue
+                form = pre + form
                 cells.setdefault(cell, [])
                 if form not in cells[cell]:
                     cells[cell].append(form)
@@ -464,6 +533,7 @@ def add_fin_forms(cursor):
     for word, pos, cells in found:
         cells.update({c: clean_variants(cells[c], c, pos, word, rejected) for c in CELLS[pos] if c in cells})
     voikko_check(found)
+    strict_voikko([x for x in found if (x[0], x[1]) in fallback])
     for word, pos, cells in found:
         forms = ";".join(f"{c}={'/'.join(cells[c])}" for c in CELLS[pos] if cells.get(c))
         if forms:
