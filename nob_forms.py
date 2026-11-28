@@ -83,6 +83,36 @@ def preferred_first(forms, cell, word):
     return sorted(forms, key=penalty)
 
 
+CORPUS = os.path.join(os.path.expanduser("~"), ".cache", "satni-fst-build", "align", "nob.trg.txt")
+
+
+def homograph_choice(per_lemma, lemma_words=frozenset()):
+    """Saman kirjoitusasun substantiivit eri suvuilla (tall = tallet 'luku' / tallen 'mänty'): muodot ennen sekoittuivat
+    (reintallen/reintallet). Valitaan se, jonka yksikön määräinen muoto (vähintään 4 kirjainta) on norjan rinnakkaistekstien
+    (GiellaLT corpus-nob, vain tilastot) puolella vähintään 3 kertaa ja 3 kertaa yleisempi kuin muiden; muuten kaikki
+    vaihtoehdot kuten ennen. {(perusmuoto, "N"): valitun lemman solut}"""
+    if not os.path.exists(CORPUS):
+        return {}
+    cnt = collections.Counter()
+    with open(CORPUS, encoding="utf-8") as f:
+        for line in f:
+            cnt.update(re.findall(r"[a-zæøåé]+", line.lower()))
+    by = collections.defaultdict(list)
+    for (lemma, pos, _lid), cells in per_lemma.items():
+        if pos == "N":
+            by[lemma].append(cells)
+    out = {}
+    for lemma, tables in by.items():
+        if len({tuple(sorted(t.get("Sg+Def", []))) for t in tables if t.get("Sg+Def")}) < 2:
+            continue
+        # Muoto, joka on myös jonkin sanan perusmuoto (verken = ei-kenkään/verk), ei kelpaa laskuun
+        scores = sorted(((sum(cnt[x] for x in t.get("Sg+Def", []) if len(x) >= 4 and x not in lemma_words), i)
+                         for i, t in enumerate(tables)), reverse=True)
+        if scores[0][0] >= 3 and scores[0][0] >= 3 * max(1, scores[1][0]):
+            out[(lemma, "N")] = tables[scores[0][1]]
+    return out
+
+
 def read_ordbank():
     """{(perusmuoto, pos): {solu: [muodot]}} ordbankin lemma- ja fullformslistasta."""
     lemmas = {}
@@ -92,6 +122,7 @@ def read_ordbank():
             if len(cols) > 2:
                 lemmas[cols[1]] = cols[2]
     table = collections.defaultdict(lambda: collections.defaultdict(list))
+    per_lemma = collections.defaultdict(lambda: collections.defaultdict(list))
     with open(os.path.join(ORDBANK_DIR, "fullformsliste.txt"), encoding="latin-1") as f:
         next(f)
         for line in f:
@@ -103,6 +134,12 @@ def read_ordbank():
                 cell = ordbank_cell(pos, cols[3])
                 if cell and cols[2] not in table[(lemma, pos)][cell]:
                     table[(lemma, pos)][cell].append(cols[2])
+                if cell and cols[2] not in per_lemma[(lemma, pos, cols[1])][cell]:
+                    per_lemma[(lemma, pos, cols[1])][cell].append(cols[2])
+    chosen = homograph_choice(per_lemma, set(lemmas.values()))
+    for key, cells in chosen.items():
+        table[key] = cells
+    print(f"  homografit: {len(chosen)} substantiivia valittu norjan rinnakkaistekstien mukaan")
     return table
 
 
@@ -124,15 +161,28 @@ def translation_words(cursor, lang="nob", column="nob_translation", poses=("N", 
     return words
 
 
-def inflect(word, pos, table):
-    """Sanan muodot ordbankista; yhdyssanalle pisimmän tunnetun loppuosan muodot (vain N ja A)."""
+def inflect(word, pos, table, known=frozenset()):
+    """Sanan muodot ordbankista; yhdyssanalle pisimmän tunnetun loppuosan muodot (vain N ja A).
+    Käyttäjän havainnot 2026-11-28 (voksenen, ansvarshavenden):
+      - substantiivina käytetty adjektiivi tai partisiippi (voksen, ansvarshavende, pårørende), jota ordbankissa ei ole
+        substantiivina, taipuu kuten norjassa adjektiivi: en voksen, den voksne, voksne, de voksne (määräinen ja monikko =
+        adjektiivin monikkomuoto)
+      - yhdyssanan enintään 3-kirjaiminen loppuosa ei kelpaa, jos alkuosakin on lyhyt eikä sana (vok-sen)."""
     if (word, pos) in table:
         return table[(word, pos)]
     if pos == "V":
         return None
+    if pos == "N":
+        adj = table.get((word, "A"))
+        if adj and adj.get("Pl"):
+            pl = adj["Pl"]
+            return {"Sg+Indef": [word], "Sg+Def": pl, "Pl+Indef": pl, "Pl+Def": pl, "AdjN": ["1"]}
     for i in range(1, len(word) - 2):
         tail = table.get((word[i:], pos))
         if tail and "-" not in word[i:]:
+            head = word[:i]
+            if len(word) - i <= 3 and len(head) <= 3 and head not in known:
+                continue
             return {cell: [word[:i] + f for f in forms] for cell, forms in tail.items()}
     return None
 
@@ -145,12 +195,21 @@ def add_nob_forms(cursor):
         print(f"  Norsk ordbankia ei löydy kansiosta {ORDBANK_DIR} (aja ./hae_sanakirjat.sh): nob_forms jää tyhjäksi")
         return
     table = read_ordbank()
+    # Kaikki ordbankin perusmuodot (myös adverbit ja prepositiot: ute-dag, av-reise)
+    known = set()
+    with open(os.path.join(ORDBANK_DIR, "lemma.txt"), encoding="latin-1") as f:
+        for line in f:
+            cols = line.rstrip("\r\n").split("\t")
+            if len(cols) > 2:
+                known.add(cols[2])
     words = translation_words(cursor)
     rows = []
     for word, pos in sorted(words):
-        cells = inflect(word, pos, table)
+        cells = inflect(word, pos, table, known)
         if cells:
             forms = ";".join(f"{c}={'/'.join(preferred_first(cells[c], c, word))}" for c in CELLS[pos] if c in cells)
+            if "AdjN" in cells:  # substantiivina käytetty adjektiivi: määräiseen muotoon artikkeli (den voksne, de voksne)
+                forms += ";AdjN=1"
             rows.append((word, pos, forms))
     cursor.executemany("INSERT INTO nob_forms VALUES (?, ?, ?)", rows)
     cursor.execute("CREATE INDEX idx_nob_forms_word ON nob_forms(word)")

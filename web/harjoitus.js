@@ -65,7 +65,7 @@ async function harjLoad() {
   try {
     await loadSanastot();
     for (const l of harjIndex.lists) {
-      if (!APU_LISTS.includes(l.id) && !["marjat", "lahellajakaukana", "kaupassa", "pankissa", "liikkeella", "syominen", "kasvit"].includes(l.id)) continue;
+      if (!APU_LISTS.includes(l.id) && !["marjat", "lahellajakaukana", "kaupassa", "pankissa", "liikkeella", "syominen", "kasvit", "leat"].includes(l.id)) continue;
       const src = sanastot.find((x) => x.id === l.id);
       if (!src) continue;
       // Kaikki rivin sanat (taulukon solussa dát ja dán): ensimmäinen sana voittaa, kuten ennen

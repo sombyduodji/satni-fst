@@ -24,7 +24,7 @@ moai	Pron	me (2)
 doai	Pron	te (2)
 soai	Pron	he (2)
 
-# Yleisiä sanoja ilman suomennosta, käyttäjän tarkistamat 2026-11-02 (docs/puuttuvat-suomennokset.md)
+# Yleisiä sanoja ilman suomennosta, käyttäjän tarkistamat 2026-11-02 (muistiinpanot/puuttuvat-suomennokset.md)
 maiddai	Adv	myös
 máid	Adv	myös
 eisseváldi	N	viranomainen, virkavalta
@@ -590,7 +590,7 @@ oappážat (pl,), oappážagat	N	-
 # kuvahaussa ML Kitin väärin lukema ii (käyttäjän kuva 2026-11-20)
 li	Interj	-
 
-# Suomennosten tarkistus 2026-11-20 (docs/suomennosten-tarkistus-2026-11-20.md): viitesanakirjat osoittivat
+# Suomennosten tarkistus 2026-11-20 (muistiinpanot/suomennosten-tarkistus-2026-11-20.md): viitesanakirjat osoittivat
 # epäilyttävät sanat, korjaus omaa sanavalintaa ja tarkistettu norjannosta (GiellaLT dict-sme-nob) vasten.
 # Käyttötesti: Poimi lause chrF 56,66 -> 56,74, lausekääntäjä 51,27 -> 51,31.
 # ektui: oli "ehdolla" (norja: i forhold til, sammenlignet med)

@@ -13,7 +13,7 @@ smi-mt:n omaa norja -> suomi -käännöstä ei käytetä: sama malli molemmilla 
 Hyväksytään, kun vähintään kaksi reittiä antaa saman suomen sanan ja Voikko vahvistaa sen perusmuodoksi oikeassa
 sanaluokassa. Kahden reitin parit, jotka kalibroinnissa olivat heikkoja (alle 60 % oikein: englanti + norja,
 englanti + saame, eteläsaame + norja, eteläsaame + saame, englanti + eteläsaame), eivät yksin riitä. Erisnimet ohitetaan.
-Kalibrointi 2026-11-21 (docs/englanti-testi-2026-11-21.md, kohta 4): 5 000 sanaa, joilla suomennos on, käsiteltiin
+Kalibrointi 2026-11-21 (muistiinpanot/englanti-testi-2026-11-21.md, kohta 4): 5 000 sanaa, joilla suomennos on, käsiteltiin
 kuin se puuttuisi. Kolme tai useampi reitti: 85–98 % oikein; saame + norja 74 % (synonyymit mukaan 80 %).
 
 EI KONEKÄÄNNÖSTEN KETJUJA (käyttäjä 2026-11-21): syötteinä vain satni.db:n meanings-taulu (ihmisen tekemät sanakirjat)

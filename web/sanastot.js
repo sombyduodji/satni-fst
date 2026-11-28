@@ -110,7 +110,7 @@ const APU_LISTS = ["tamajase", "taallajatuolla", "aikasanat", "sidesanat"];
 const SANASTO_GROUPS = [
   { id: "perus", color: "yellow", lists: ["luvut", "varit", "kysymykset", "tamajase", "lahellajakaukana", "sidesanat"] },
   { id: "aika", color: "blue", lists: ["viikonpaivat", "kuukaudet", "vuodenajat", "aika", "kellonajat", "aikasanat"] },
-  { id: "ihmiset", color: "red", lists: ["suku", "pronominit", "tervehdykset"] },
+  { id: "ihmiset", color: "red", lists: ["suku", "pronominit", "leat", "tervehdykset"] },
   { id: "luonto", color: "green", lists: ["suunnat", "taallajatuolla", "saa", "porot", "elaimet", "marjat", "kasvit"] },
   // Arki (käyttäjä 2026-11-26): arjen tilanteet, aluksi vain sanoja (arki.py)
   { id: "arki", color: "blue", lists: ["kaupassa", "pankissa", "liikkeella", "syominen"] },
@@ -787,7 +787,7 @@ function sanastoSpeakAll() {
 // Listan yläreunan painikkeet (2026-11-23): Harjoittele kuunnellen ja Pelaa (jos listalle on pelitila)
 const SANASTO_GAME = { varit: "colours", kysymykset: "questions", viikonpaivat: "time", kuukaudet: "time", vuodenajat: "time",
   luvut: "ordinals", elaimet: "animals", marjat: "berries", kellonajat: "clock", lahellajakaukana: "nearfar",
-  aika: "daytime", aikasanat: "beforeafter", suku: "family", pronominit: "pronouns", tervehdykset: "greetings", porot: "reindeer", saa: "weather", taallajatuolla: "herethere", tamajase: "thisthat", sidesanat: "smallwords", kaupassa: "shop", pankissa: "bank", liikkeella: "travel", syominen: "meals", kasvit: "plants" };
+  aika: "daytime", aikasanat: "beforeafter", suku: "family", pronominit: "pronouns", leat: "tobe", tervehdykset: "greetings", porot: "reindeer", saa: "weather", taallajatuolla: "herethere", tamajase: "thisthat", sidesanat: "smallwords", kaupassa: "shop", pankissa: "bank", liikkeella: "travel", syominen: "meals", kasvit: "plants" };
 const SANASTO_GAME_SMN = ["time", "colours", "questions", "animals", "berries"];
 function sanastoActions(listId) {
   const harj = typeof harjListButton === "function" ? harjListButton(listId === "kellonajat" ? "kello" : listId) : "";

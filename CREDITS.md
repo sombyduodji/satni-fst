@@ -60,8 +60,7 @@ translates each word by three routes (from Sámi with smi-mt, the TartuNLP Smugr
 CC BY-NC 4.0; from the word's Finnish and Norwegian translations with Helsinki-NLP opus-mt-fi-en and opus-mt-gmq-en,
 Apache-2.0, FinnWordNet 2.0, CC BY 3.0 with Princeton WordNet 3.0, Wiktionary, CC BY-SA 4.0, and Apertium
 apertium-fin-eng, GPL-3.0). A word is kept only when at least two routes agree ([`eng_mt.tsv`](eng_mt.tsv)); the app
-shows it only when the setting is on, marked as a machine translation. The test is in
-[docs/englanti-testi-2026-11-21.md](docs/englanti-testi-2026-11-21.md).
+shows it only when the setting is on, marked as a machine translation.
 
 **Finnish machine-translated suggestions (experimental):** [`fin_mt.py`](fin_mt.py) uses the same rule for words with no
 Finnish: at least two independent routes must agree, and Voikko must confirm a Finnish base form. Routes: smi-mt from
@@ -189,6 +188,10 @@ Downloaded by [`hae_lahteet.sh`](hae_lahteet.sh) from the publishers' own addres
   used for statistics only as agreed with Divvun). Words were aligned offline with [eflomal](https://github.com/robertostling/eflomal)
   (Robert Östling, GPL-3.0) after GiellaLT lang-sme disambiguation. Only a compound whose usual translation is exactly the
   dictionary translations of its parts is kept (čoakkán + mearrádus = kokous + päätös = kokouspäätös); no corpus text is included.
+  The same method adds 327 compounds as new headwords with a Finnish or Norwegian translation and 39 Norwegian translations
+  to existing words ([`rinnakkais_sanat.tsv`](rinnakkais_sanat.tsv); a random sample of 13 was checked against the source pages).
+- **Words checked by the author:** [`omat_sanat.tsv`](omat_sanat.tsv) adds words confirmed by the author, a native
+  North Sámi speaker (guovtteolbmobeavdi = kahden hengen pöytä, bord for to).
 - **Related words in other Sámi languages:** [Álgu](https://kaino.kotus.fi/algu), the Etymological Database of the Saami
   Languages (XML 16.3.2023), © Kotimaisten kielten keskus, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
   [`algu_related.py`](algu_related.py) uses only the links between related words and shows a word only when it is in the
@@ -205,7 +208,10 @@ come from [Norsk ordbank – bokmål 2005](https://www.nb.no/sprakbanken/ressurs
 [CC BY](https://creativecommons.org/licenses/by/4.0/). It is downloaded by
 [`hae_sanakirjat.sh`](hae_sanakirjat.sh) and is not part of this repository.
 Changes: [`nob_forms.py`](nob_forms.py) keeps only the forms of words used as translations, and
-inflects compounds missing from the word bank by their last part (*arealgrense* like *grense*).
+inflects compounds missing from the word bank by their last part (*arealgrense* like *grense*). An adjective or
+participle used as a noun is inflected as an adjective (*en voksen, den voksne*). For nouns spelled alike but with
+different genders (*tall* 'number' / *tall* 'pine'), the gender is chosen by how often each definite form occurs in the
+Norwegian side of GiellaLT's corpus-nob (statistics only); otherwise all forms are kept.
 
 ## Consonant gradation table — Oahpa
 

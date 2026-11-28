@@ -440,6 +440,18 @@ def lists():
         if any(r.get("ex") for r in rows):
             lst_d["layout"] = "ex"
         L.append(lst_d)
+    # Olla: leat ja kieltoverbi (leat.py, käyttäjä 2026-11-28), Ihmiset-ryhmään pronominien perään. Napautus avaa
+    # leat-verbin sanakortin (kielteisissä kieltoverbin ii)
+    import leat
+    lid = {}
+    for v in ("leat", "ii"):
+        e = db.execute("SELECT id FROM dictionary WHERE sme_lemma = ? AND pos = 'V'", (v,)).fetchone()
+        lid[v] = e[0] if e else None
+    for lst in leat.LISTS:
+        rows = [row([fi], [nb], [{"w": [s_], "id": lid["ii" if len(s_.split()) == 3 else "leat"], "fi": fi, "nb": nb}])
+                for s_, pos, fi, nb, _en in leat.words(lst)]
+        L.append({"id": lst[0], "icon": lst[1], "title": {"fi": lst[2][0], "nb": lst[2][1]}, "rows": rows,
+                  "hint": {"fi": leat.HINTS[lst[0]][0], "nb": leat.HINTS[lst[0]][1]}})
     # Kellonajat (kello.py ja kello.json, käyttäjä 2026-11-23): kello, saame ja suomi; norjaksi ja englanniksi
     # digitaalinen aika. Napautus soittaa Biretin lauseen (audio/w/kello-<i>-sme.ogg)
     clock = json.load(open(os.path.join(SCRIPT_DIR, "kello.json"), encoding="utf-8"))["rows"]
@@ -518,7 +530,8 @@ SECTIONS["marjat"] = [(t[0], t[1], t[3]) for t in _mar.SECTIONS]
 # Arjen sanastojen osiot (arki.py)
 import arki as _arki
 import kasvit as _kasvit
-for _l in _arki.LISTS + _kasvit.LISTS:
+import leat as _leat
+for _l in _arki.LISTS + _kasvit.LISTS + _leat.LISTS:
     SECTIONS[_l[0]] = [(sec[0], sec[1], [w[0] for w in sec[3]]) for sec in _l[3]]
 # Apusanojen osiot samasta tiedostosta (apusanat.py)
 import apusanat as _apu

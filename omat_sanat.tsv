@@ -1,0 +1,5 @@
+# Käyttäjän vahvistamat sanat (pohjoissaamen äidinkielinen puhuja, käyttäjä 2026-11-28). Sana lisätään hakusanaksi, vaikka
+# GiellaLT:n analysaattori ei tunne sitä (esim. lukusanaan alkavat yhdyssanat). Esimerkki: saame, suomi, norja.
+# taipuu_kuin: yhdyssanan viimeinen osa; jos generaattori ei taivuta sanaa, taulukko tehdään sen muodoista (guovtteolbmo + beavddi).
+sme	pos	fi	nb	en	esimerkki_sme	esimerkki_fi	esimerkki_nb	taipuu_kuin
+guovtteolbmobeavdi	N	kahden hengen pöytä	bord for to	table for two	Mun várrejin guovtteolbmobeavddi.	Varasin kahden hengen pöydän.	Jeg reserverte et bord for to.	

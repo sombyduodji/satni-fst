@@ -1,6 +1,6 @@
 """Apusanat (käyttäjä 2026-11-22): neljä sanastolistaa usein käytetyistä lauseen apusanoista.
 
-Luonnos ja perustelut: docs/apusanat-ehdotus-2026-11-22.md. Sanat ja merkitykset sanakirjasta (GiellaLT dict-sme-fin,
+Luonnos ja perustelut: muistiinpanot/apusanat-ehdotus-2026-11-22.md. Sanat ja merkitykset sanakirjasta (GiellaLT dict-sme-fin,
 dict-sme-nob); dat- ja dát-muodot GiellaLT lang-sme -generaattorilla. Esimerkkilauseet ovat sanakirjojen omia
 esimerkkejä (dict-sme-nob, dict-sme-fin, dict-sme-spa); käännöksen lähde kentässä src:
   "nob", "fin", "spa" = sanakirjan oma käännös; "own" = kirjoitettu sanakirjan käännöksen pohjalta (Claude 2026-11-22,

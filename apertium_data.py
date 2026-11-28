@@ -9,7 +9,7 @@ satni.db:ssä ja joilla ei ole norjan käännöstä. Suljetut sanaluokat jätet�
 konekääntimen sääntöjä varten (go = da, ala = på). apertium-sme-fin jätetään kokonaan pois: sen rivit ovat
 liian karkeita sanakirjakäytössä (lossut = kävellä, vaikka sana tarkoittaa raskaammaksi tulemista).
 
-Tarkistukset (2026-11-02, docs/apertium-2026-11-02.md): samoista sanoista 92 % samaa mieltä GiellaLT:n sanakirjan
+Tarkistukset (2026-11-02, muistiinpanot/apertium-2026-11-02.md): samoista sanoista 92 % samaa mieltä GiellaLT:n sanakirjan
 kanssa, mutta suurin osa sanastosta on alun perin samasta lähteestä, joten luku ei ole riippumaton tarkistus.
 """
 import collections

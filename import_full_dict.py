@@ -37,6 +37,8 @@ import sme_dominant
 import nob_forms
 import spa_data
 import wiktionary_eng
+import rinnakkais_sanat
+import omat_sanat
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 GENERATOR = os.path.join(SCRIPT_DIR, "src", "fst", "generator-gt-norm.hfst")
@@ -603,6 +605,10 @@ def parse_xml_dictionaries():
             print(f"  dict-sme-{lang}: {merged} käännöstä olemassa oleviin sanoihin, {added} uutta sanaehdokasta")
 
     parse_reverse_dictionaries(entries, by_lemma)
+    # Rinnakkaistekstien yhdyssanat ja norjannokset (käyttäjän päätös 2026-11-28; rinnakkais_sanat.py)
+    rinnakkais_sanat.add(entries, by_lemma, new_meaning)
+    # Käyttäjän vahvistamat sanat (omat_sanat.py, 2026-11-28)
+    omat_sanat.add(entries, by_lemma, new_meaning)
     fill_sami_translations(entries, by_lemma)
     fill_spanish(entries, by_lemma)
     resolve_bracket_lemmas(entries, by_lemma)
@@ -1260,6 +1266,8 @@ def main():
         if rows:
             s[1] += 1
 
+    # Käyttäjän vahvistamat yhdyssanat, joita generaattori ei taivuta: taulukko viimeisen osan mukaan (omat_sanat.py)
+    omat_sanat.add_paradigms(cursor)
     add_gradation(cursor)
     dialects.apply(cursor)
     # Luokka vasta kirjoitusasujen yhdistämisen jälkeen, kuten --vain-taivutusluokka-ajossa: yhdistetyn sanan

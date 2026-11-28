@@ -108,7 +108,9 @@ LIST_GAMES = {"daytime": "aika", "family": "suku", "reindeer": "porot", "weather
               "smallwords": "sidesanat",
               # Arki (arki.py, 2026-11-26)
               "shop": "kaupassa", "bank": "pankissa", "travel": "liikkeella", "meals": "syominen",
-              "plants": "kasvit"}
+              "plants": "kasvit",
+              # Olla: leat ja kieltoverbi (leat.py, 2026-11-28)
+              "tobe": "leat"}
 LIST_GAME_SKIP = {"miessi", "čearpmat"}
 # Sukulaissanat pelissä sanakirjan tarkalla merkityksellä (dict-sme-fin ja norjan käyttörajoitukset "om mors eldre
 # søster" jne.), muuten kysymyksessä olisi kaksi oikeaa vastausta (täti, setä; käyttäjä hyväksyi 2026-11-26)

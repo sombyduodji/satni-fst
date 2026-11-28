@@ -6,7 +6,7 @@ Kolme reittiä englantiin, ja sana hyväksytään vain, jos vähintään kaksi r
   2. sanakirjan suomennos -> englanti: Helsinki-NLP opus-mt-fi-en (Apache-2.0), FinnWordNet 2.0 (CC BY 3.0,
      Princeton WordNet -lisenssi), Wiktionary (CC BY-SA 4.0, kaikki.org) ja Apertium apertium-fin-eng (GPL-3.0)
   3. sanakirjan norjannos -> englanti: Helsinki-NLP opus-mt-gmq-en (Apache-2.0) ja Wiktionary (CC BY-SA 4.0)
-Kalibrointi 2026-11-21 (docs/englanti-testi-2026-11-21.md): 4 595 sanaa, joilla englanti on, käsiteltiin kuin englanti
+Kalibrointi 2026-11-21 (muistiinpanot/englanti-testi-2026-11-21.md): 4 595 sanaa, joilla englanti on, käsiteltiin kuin englanti
 puuttuisi. Kolme reittiä samaa mieltä: noin 97 % oikein (otos), kaksi reittiä noin 85–90 %. Yksi reitti ei riitä.
 
 EI KONEKÄÄNNÖSTEN KETJUJA (käyttäjä 2026-11-21): syötteinä vain ihmisen tekemät lähteet, eli satni.db:n meanings-taulu

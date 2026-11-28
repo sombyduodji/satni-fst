@@ -11,7 +11,7 @@ jokainen sana on konekäännös. Hyväksytään vain, kun vähintään kolme kuu
        ja sen sanakin kelpaa vain, jos se on OdeNetissä tai Wiktionaryssa.
 Saksan sanaksi kelpaa vain OdeNetin tai Wiktionaryn sana; ei Wiktionaryn mallineita eikä numeroita; substantiivit isolla,
 muut pienellä alkukirjaimella.
-Kalibrointi 2026-11-22 (docs/englanti-testi-2026-11-21.md, kohta 7): Wiktionaryn saame–saksa-parit (kalibrointisanoille
+Kalibrointi 2026-11-22 (muistiinpanot/englanti-testi-2026-11-21.md, kohta 7): Wiktionaryn saame–saksa-parit (kalibrointisanoille
 Wiktionary-lähde ilman niitä käännösryhmiä, joissa sana itse on): 3 lähdettä 82 %, 4 lähdettä 92 %, 5 lähdettä 93 % sama
 tai synonyymi (448 / 292 / 83 sanaa). Álgun saksaa (Sammallahti & Nickel) käytettiin vain tarkistukseen, ei sovellukseen.
 

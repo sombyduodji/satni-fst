@@ -600,6 +600,8 @@ def main():
         alt = set()
         for word, pos, forms in dst.execute(f"SELECT word, pos, forms FROM {forms_lang}_forms").fetchall():
             for cell in forms.split(";"):
+                if cell.startswith("AdjN="):  # merkintä (substantiivina käytetty adjektiivi), ei muoto
+                    continue
                 for form in cell.split("=", 1)[1].split("/") if "=" in cell else []:
                     pre = form[:2].lower()
                     if form and word[:2] not in (pre, pre[:1].upper() + pre[1:]):

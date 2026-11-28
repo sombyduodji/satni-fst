@@ -2,7 +2,7 @@
 # Kirjoittaa version.py-tiedoston (sovellukset ja build-skriptit lukevat sen) gitin tiedoista.
 # Versio on muotoa X.Y.Z[.W].VVVVKKPP.N: X.Y.Z[.W] on julkaisun numero tiedostosta RELEASE_VERSION (sama kuin
 # GitHub-julkaisun tagi vX.Y.Z[.W]), VVVVKKPP viimeisimmän commitin päivämäärä ja N monesko sen päivän commit
-# se on. Sama commit saa siis saman version jokaisella koneella (tämä kone, kannettava, Forgejo-runner).
+# se on. Sama commit saa siis saman version jokaisella koneella (eri kehityskoneet ja CI).
 # Committaamattomat muutokset: loppuun "+muokattu" (Androidin versionCode on sama kuin commitilla).
 # Androidin versionCode: päivämäärä * 100 + N (0.7.3.20261030.6 -> 2026103006), siksi N enintään 99.
 # Julkaisun numero kasvatetaan komennolla release.py: "sisalto" (uutta sisältöä, 1.0.0 -> 1.1.0, 1.9.0 -> 2.0.0)

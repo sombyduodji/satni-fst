@@ -38,7 +38,7 @@ VERSION_CODE=$(python3 -c "import version; print(version.VERSION_CODE)") || exit
 [ "$1" = "--beta" ] && VERSION="${BETA_VERSION:-$(python3 release.py beta)}"
 
 # Väliaikaiset tiedostot (Gradle, käännös, debug-avain) välimuistikansioon, ei projektikansioon. Debug-avain on
-# $CACHE_DIR/home/.android/debug.keystore: ANDROID_USER_HOME osoittaa siihen, koska root-käyttäjänä (WSL)
+# $CACHE_DIR/home/.android/debug.keystore: ANDROID_USER_HOME osoittaa siihen, koska root-käyttäjänä (esim. WSL)
 # Android-työkalut käyttäisivät muuten /root/.android-kansiota ja loisivat uuden avaimen (eri allekirjoitus, päivitys
 # ei asennu vanhan DEV-version päälle; 2026-11-13)
 mkdir -p "$CACHE_DIR/home" "$CACHE_DIR/build" || exit 1

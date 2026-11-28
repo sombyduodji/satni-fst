@@ -55,9 +55,11 @@ const DEFAULT_SETTINGS = {
   // Koltansaame Muut kielet -kohdassa (skoltFor): skolt = suomen/norjan hakusanan koltan vastineet,
   // skoltViaSme = myös pohjoissaamen sanakortissa suomennoksen kautta (likimääräinen). Ennen 0.9.4 kokeellinen exp.sms.
   skolt: false, skoltViaSme: false,
-  // Kokeelliset ominaisuudet (valikon lopussa), kukin erikseen: ocr = kuvasta haku (Android-sovellus),
+  // Työkalut ja kokeelliset ominaisuudet, kukin erikseen: ocr = kuvasta haku (Android-sovellus) ja lause = Lause-välilehti
+  // ovat 1.2.0:sta lähtien tavallisia työkaluja, oletuksena päällä (käyttäjä 2026-11-28);
+  // kokeellisia:
   // tableTr = muotojen käännökset taivutustaulukossa, apertium = Apertiumin norjan käännökset, pivotFin = suomennosehdotukset. experimental: vanha yhteinen kytkin (= ocr), siirretään exp.ocr:ään.
-  exp: { ocr: false, lause: false, tableTr: false, apertium: false, pivotFin: false, engMt: false, spaMt: false, deuMt: false },
+  exp: { ocr: true, lause: true, tableTr: false, apertium: false, pivotFin: false, engMt: false, spaMt: false, deuMt: false },
   // Kuvasta haku: suunta ("sme" = saamen teksti, "ui" = käyttöliittymän kielen teksti), merkintätapa ja väri
   ocrFrom: "sme", ocrTo: "", ocrStyle: "frame",
   // Valokuvahaun omat kielet (asetukset → Työkalut → Valokuvahaku): kuvan lisäkielet (inari, koltta) ja käännöskielet
@@ -73,6 +75,19 @@ const DEFAULT_SETTINGS = {
 // Ensimmäinen käynnistys: asetuksia ei ole vielä tallennettu, joten kysytään käyttöliittymän kieli
 const FIRST_RUN = (() => { try { return localStorage.getItem("satni-settings") === null; } catch (e) { return false; } })();
 let settings = loadSettings();
+// Valokuvahaku ja Lause eivät ole enää kokeellisia (käyttäjä 2026-11-28, versio 1.2.0): kytketään päälle kerran myös
+// niille, joiden tallennetuissa asetuksissa ne ovat pois (asetusten exp-olio korvaa oletukset kokonaan). Jos käyttäjä
+// kytkee ne myöhemmin pois, ne pysyvät pois.
+(function graduateTools() {
+  const GRADUATED = ["ocr", "lause"];
+  let done = [];
+  try { done = JSON.parse(localStorage.getItem("satni-graduated") || "[]"); } catch (e) { return; }
+  const add = GRADUATED.filter((f) => !done.includes(f));
+  if (!add.length) return;
+  for (const f of add) settings.exp = { ...settings.exp, [f]: true };
+  try { localStorage.setItem("satni-graduated", JSON.stringify([...done, ...add])); } catch (e) { /* yksityinen tila */ }
+  if (!FIRST_RUN) saveSettings();
+})();
 
 function loadSettings() {
   try {
@@ -1097,6 +1112,8 @@ function queryDatabase(query) {
   // 1.5 = käänteisen sanakirjan (dict-fin-sme, dict-nob-sme) hakusana, sen ensisijainen saamennos ensin;
   // 2 = ainoa käännös, 3 = ensimmäinen käännös, 4 = jokin muu
   const items = itemsTableFor(searchLang, q);
+  const revHits = [];  // käänteisen sanakirjan rivit tälle hakusanalle (nr >= 0), järjestyksen tarkistusta varten
+  const directOnly = new Set(), directFirst = new Set();  // saamen sanan oma käännös on vain / alkaa hakusanalla
   for (const r of all(
     `SELECT d.${cols.split(", ").join(", d.")}, t.fold, t.lang, t.nr FROM trans_search t JOIN dictionary d ON d.id = t.word_id
      WHERE t.lang = ? ${items ? `AND t.word_id IN (SELECT word_id FROM ${items} WHERE item = ?)` : ""} AND ${TRANS_MATCH}
@@ -1106,6 +1123,22 @@ function queryDatabase(query) {
     // nr -1 = johdettu suomennos (der_fin.py: váralašvuohta ≈ vaarallisuus): sanakirjan omien käännösten jälkeen
     add(r, r.nr === -1 ? 4.2 : r.nr !== null ? (r.fold === q ? 1.5 + Math.min(r.nr, 9) / 100 : 4)
       : r.fold === q ? 2 : r.fold.startsWith(`${q},`) ? 3 : 4);
+    if (r.nr !== null && r.nr >= 0 && r.fold === q) revHits.push(r);
+    if (r.nr === null && r.fold === q) directOnly.add(r.id);
+    if (r.nr === null && (r.fold === q || r.fold.startsWith(`${q},`))) directFirst.add(r.id);
+  }
+  // Käänteisen sanakirjan ensimmäinen sana ei aina ole hakusanan perusmerkitys (käyttäjä 2026-11-27: tehdä = bargat
+  // "työskennellä, tehdä työtä" ennen dahkat "tehdä"). Ensin nostetaan sana, jonka ainoa oma käännös on juuri
+  // hakusana, jos käänteisen sanakirjan ensimmäisen sanan oma käännös ei ala hakusanalla ja nostettava on korpuksessa
+  // vähintään puolet niin yleinen. Vain molemmat ihmisten tekemät sanakirjat; 50 suomen hakusanaa vaihtuu (hän = son,
+  // aika = áigi, ensimmäinen = vuosttaš), muut säilyttävät käänteisen sanakirjan järjestyksen.
+  if (revHits.length > 1) {
+    revHits.sort((a, b) => a.nr - b.nr);
+    const top = revHits[0];
+    if (top.freq && !directFirst.has(top.id)) {
+      const lift = revHits.slice(1).find((r) => directOnly.has(r.id) && r.freq && r.freq >= top.freq / 2);
+      if (lift && found.get(lift.id).rank > 1.49) found.get(lift.id).rank = 1.49;
+    }
   }
   // Englanti (2026-11-21): taivutettu hakusana perusmuotoon (dogs -> dog, went -> go) sanakirjan englannista, ja
   // konekäännetty englanti (kokeellinen, trans_search lang = engmt) vasta sanakirjan omien käännösten jälkeen
@@ -1322,6 +1355,11 @@ const SME_OF_FIN_CLITIC = { ko: ["go"], kö: ["go"], kin: ["ge", "nai"], kaan: [
 
 // Pohjoissaamen liitepartikkelit (lang-sme: +Qst, +Foc/...), pisimmät ensin. Merkitys näytetään viidelle, joiden
 // merkitys on tarkistettu (sanakirjat ja oppikirja): go, ge, nai, son, han (i18n.js: cliticMeaning).
+// Taivutustaulukon liitepartikkelit (käyttäjä 2026-11-28): ne viisi, joiden merkitys on tarkistettu (cliticMeaning).
+// Muoto = taulukon muoto + liite: GiellaLT:n generaattori antoi 3 000 satunnaisella muodolla (verbit, substantiivit,
+// adjektiivit, pronominit) kaikilla liitteillä täsmälleen muoto + liite. Imperatiivi (paitsi Sg2) ei saa liitettä, eikä
+// kieltoverbi -nai-liitettä (generaattori); kieltoverbi saa muut (ingo, inge, inson, inhan).
+const TABLE_CLITICS = ["go", "ge", "nai", "son", "han"];
 const CLITICS = ["gen", "ges", "gis", "nai", "son", "han", "hal", "bai", "bat", "go", "ge", "ba", "be"];
 // Saamen sanan osumat: perusmuoto (1), yleisen sanan muoto (1.2), taivutusmuoto (5), perusmuoto ilman käännöstä (5.5)
 const SAMI_HIT_RANKS = [1, 1.2, 5, 5.5, 6];
@@ -1360,6 +1398,7 @@ function translationFormsOf(word, lang) {
     for (const r of rows) {
       for (const cell of r.forms.split(";")) {
         const [c, v] = cell.split("=");
+        if (c === "AdjN") continue;  // merkintä, ei muoto
         if (v.split("/").some((f) => f === word || f === cap)) out.push({ base: r.word, cell: c, pos: r.pos });
       }
     }
@@ -1926,6 +1965,8 @@ function selectResult(i, pushHistory = true) {
   state.via = r.via || null;  // haettu taivutettu käännös (juon = juoda), ks. queryDatabase
   // Liitepartikkeli haussa (boađátgo): vartalo (boađát) ja partikkelit järjestyksessä (renderInfo)
   state.clitic = r.clitics ? { stem: r.cliticStem, clitics: r.clitics } : null;
+  // Taivutustaulukon liitepartikkeli (käyttäjä 2026-11-28): haun liite (ožžogo -> -go) valitaan valmiiksi, muuten ei liitettä
+  state.tableClitic = r.clitics && TABLE_CLITICS.includes(r.clitics[r.clitics.length - 1]) ? r.clitics[r.clitics.length - 1] : "";
   // Suomen- tai norjankielinen hakusana, jos sana löytyi sen käännöksenä (rank 1.5–4.9, ks. queryDatabase)
   state.transWord = r.via ? r.via.base : r.rank > 1.2 && r.rank < 5 ? r.finStem || state.query : null;
   // Suomen liitepartikkeli haussa (tuletko): vartalo ja liite (renderInfo)
@@ -2606,7 +2647,9 @@ function nobPhraseBase(tag, pos, f) {
     return parts[0] === "Pl" ? f.Pl : f.Pos;
   }
   const pl = parts[0] === "Pl";
-  const indef = f[pl ? "Pl+Indef" : "Sg+Indef"], def = f[pl ? "Pl+Def" : "Sg+Def"];
+  // Substantiivina käytetty adjektiivi (nob_forms AdjN: voksen, ansvarshavende): määräiseen artikkeli (til den voksne, de voksne)
+  const art = f.AdjN ? (pl ? "de " : "den ") : "";
+  const indef = f[pl ? "Pl+Indef" : "Sg+Indef"], def0 = f[pl ? "Pl+Def" : "Sg+Def"], def = def0 && art + def0;
   switch (parts[parts.length - 1]) {
     case "Nom": case "Acc": return indef;
     case "Gen": return def && def + (/[sxz]$/.test(def) ? "'" : "s");
@@ -2743,7 +2786,7 @@ const FORM_POS = { N: "N", V: "V", A: "A", NUM: "Num", PRON: "Pron" };
 // Pohjoissaamen liitepartikkeli suomeksi (GiellaLT lang-fin: +Qst, +Foc/kin, +Foc/kaan, +Foc/han):
 // takavokaalinen ja etuvokaalinen muoto. -ge on myönteisessä lauseessa -kin, kielteisessä -kaan, joten molemmat.
 const FIN_CLITICS = { go: [["ko", "kö"]], nai: [["kin", "kin"]], ge: [["kin", "kin"], ["kaan", "kään"]],
-                      son: [["han", "hän"]], han: [["han", "hän"]] };
+                      son: [["kohan", "köhän"]], han: [["han", "hän"]] };
 // Vokaalisointu sanan viimeisestä a/o/u- tai ä/ö/y-vokaalista: vain varalla, jos tietokannassa ei ole fin_forms.back-
 // merkintää (yhdyssanan jälkiosan mukaan, export_web_data.py: fin_harmony)
 function finBackVowels(word) {
@@ -2761,7 +2804,58 @@ function finEndingBack(word) {
 // Kieltoverbin kanssa (ei/älä + pääverbi) suomessa kysymys- ja -han-liite tulevat kieltoverbiin: eikö tuleskele,
 // eihän tule (ei *tuleskeleko). -kaan jää pääverbiin (ei tulekaan), ja -kin ei käy kieltolauseeseen lainkaan.
 const FIN_NEG = /^\((ei|älä)\) (.+)$/;
-const FIN_NEG_CLITIC = { go: "kö", son: "hän", han: "hän" };
+const FIN_NEG_CLITIC = { go: "kö", son: "köhän", han: "hän" };
+
+// Taivutustaulukon suomennos valitun liitteen kanssa (käyttäjä 2026-11-28: Suomago näytti "Suomen"): -go = -ko/-kö,
+// -ge ja -nai = -kin (kieltolauseessa -ge = -kaan/-kään), -han ja -son = -han/-hän. Verbin -go-kysymys verbi edellä
+// (menenkö minä?, enkö minä mene?); kieltolauseessa -han kieltoverbiin (enhän minä mene).
+function finTableClitic(phrase, cl, verb, back = null, lemma = "") {
+  // Vokaalisointu: sanan oma fin_forms.back (yhdyssanan jälkiosan mukaan: toimenpidekö), muuten sanan lopusta;
+  // kieltoverbi (en, et, ei …) aina etuvokaalinen
+  // Järjestys: sanan oma pääte (merta -> mertako), sitten fin_forms.back (vain nomineille: yhdyssanan jälkiosa,
+  // toimenpidekö), lopuksi sanan viimeisten kuuden kirjaimen vokaalit (kaksikielinenkö, lienenkö)
+  // Verbi ei ole yhdyssana: koko sanan vokaalit (olisimmeko, lienenkö, lukeneetkaan); nomini: pääte, fin_forms.back,
+  // sitten kuusi viimeistä kirjainta (yhdyssanan jälkiosa: kaksikielinenkö, toimenpidekö)
+  // Nominin sointu perusmuodosta: sen kuuden viimeisen kirjaimen viimeinen a/o/u- tai ä/ö/y-vokaali (yhdyssanan jälkiosa:
+  // kaksikielinen -> kö); jos niissä on vain e/i, pitkä sana on etuvokaalinen (saamenkielinen, toimenpide), lyhyt
+  // fin_forms.back-merkinnän mukaan (meri -> merikö). Taivutettu muoto: oma pääte ensin (merta -> mertako, lapselle -> lapsi).
+  const tail = (w) => { const m = w.slice(-6).match(/[aouäöy](?=[^aouäöy]*$)/); return m ? "aou".includes(m[0]) : null; };
+  const lem = (lemma || "").split(" ").pop();
+  // fin_forms.back ensin (johdokset säilyttävät vartalon soinnun: mahdollinenko, tavallinenko); poikkeus yhdyssanat, joiden
+  // jälkiosa on -kielinen tai -tieteellinen (kaksikielinenkö, maantieteellinenkö), joissa merkintä on väärin
+  const nounBack = /(kielinen|kieli|tieteellinen|tiede|nimi|mies|metri|pide)$/.test(lem) ? false : lem ? tail(lem) ?? back ?? finBackVowels(lem) : back;
+  const v = (w, own) => finEndingBack(w) ?? (own || verb ? finBackVowels(w) : nounBack ?? finBackVowels(w));
+  const add = (w, b, f, own = false) => w + (v(w, own) ? b : f);
+  const end = (w, own) => cl === "go" ? add(w, "ko", "kö", own) : cl === "son" ? add(w, "kohan", "köhän", own) : cl === "han" ? add(w, "han", "hän", own) : add(w, "kin", "kin", own);
+  const pron = [...new Set(Object.values(FIN_PRONOUNS))].sort((x, y) => y.length - x.length);
+  return phrase.split(" / ").map((p) => {
+    // Pronomini voi olla kaksisanainen ("me (2)"): erotetaan se ensin
+    const who = verb ? pron.find((x) => p.startsWith(x + " ")) : null;
+    if (who) {
+      const rest = p.slice(who.length + 1).split(" ");
+      // Kielteinen: liite kieltoverbiin (enkö minä mene?, enhän minä mene), -ge pääverbiin (en menekään)
+      if (/^(en|et|ei|emme|ette|eivät)$/.test(rest[0]) && rest.length >= 2) {
+        const [aux, main, ...tail] = rest;
+        if (cl === "go") return [`${add(aux, "ko", "kö", true)} ${who} ${main}`, ...tail].join(" ") + "?";
+        // -son = "mahtaakohan": kysymys -kohan/-köhän, verbi ensin (enköhän minä mene?)
+        if (cl === "son") return [`${add(aux, "kohan", "köhän", true)} ${who} ${main}`, ...tail].join(" ") + "?";
+        if (cl === "han") return [who, add(aux, "han", "hän", true), main, ...tail].join(" ");
+        if (cl === "ge") return [who, aux, add(main, "kaan", "kään"), ...tail].join(" ");
+        return "";
+      }
+      // Myönteinen: liite taivutettuun verbiin, ei lauseen loppuun (laskeudunko minä rinnettä?)
+      const [fin, ...tail] = rest;
+      if (cl === "go") return [`${end(fin)} ${who}`, ...tail].join(" ") + "?";
+      if (cl === "son") return [`${add(fin, "kohan", "köhän")} ${who}`, ...tail].join(" ") + "?";
+      return [who, end(fin), ...tail].join(" ");
+    }
+    // Verbin nominaalimuoto ilman pronominia (panna täytäntöön): liite verbiin, ei lauseen loppuun (pannako täytäntöön)
+    if (verb && p.includes(" ")) { const [first, ...tail] = p.split(" "); return [cl === "son" ? add(first, "kohan", "köhän") : end(first), ...tail].join(" "); }
+    const ws = p.split(" "), last = ws.pop();
+    if (last === "kanssa") return [...ws, "kanssa" + { go: "ko", ge: "kin", nai: "kin", han: "han", son: "han" }[cl]].join(" ");
+    return [...ws, end(last)].join(" ");
+  }).filter(Boolean).join(" / ");
+}
 
 function finWithClitics(phrase, clitics, back, rest = "") {
   // Monisanainen verbi (lähteä juoksemaan): liite verbiin, ei loppuun (lähdetkö juoksemaan, ei lähdet juoksemaanko)
@@ -2957,17 +3051,18 @@ function formTranslator(w) {
   const pron = w.subtype === "Pers" && PERS_PRONOUNS[w.sme_lemma];
   if (pron && pron[lang]) return (tags) => translationOfForm(w, tags);
   if (!pos || !FORM_PHRASES[lang]) return () => "";
-  let forms = null;
+  let forms = null, used = null;
   for (const word of state.transWords || []) {
-    forms = translationForms(lang, word.replace(/\(.*?\)/g, "").trim(), pos);
+    used = word.replace(/\(.*?\)/g, "").trim();
+    forms = translationForms(lang, used, pos);
     if (forms) break;
   }
   if (!forms) return () => "";
   const f = forms;
-  return (tags, neg = null) => {
+  return Object.assign((tags, neg = null) => {
     const phrases = tags.map((tag) => (neg ? negVerbPhrase(lang, tag, neg, f) : positivePhrase(lang, tag, pos, f, w.human))).filter(Boolean);
     return [...new Set(phrases.flatMap((p) => p.split(" / ")))].join(" / ");
-  };
+  }, { back: f.__back, word: used });
 }
 
 function positivePhrase(lang, tag, pos, f, human = false) {
@@ -3024,18 +3119,41 @@ function renderTable() {
   // Persoonapronominien muodot on tarkistettu, joten ne näkyvät aina; muiden sanojen konekäännökset kokeellisella kytkimellä
   const translate = settings.exp.tableTr || (w.subtype === "Pers" && PERS_PRONOUNS[w.sme_lemma]) ? formTranslator(w) : null;
   // Muotosolu: pronomini harmaana, muodot asteen värillä; napautus ääntää muodon
+  // Liitepartikkeli (state.tableClitic): muoto + liite; -go:lla verbi ensin (oaččungo mun?, ingo mun oaččo?)
+  // Ei liitteitä (GiellaLT-generaattori, tarkistus 2026-11-28): kysymys-, relatiivi- ja refleksiivipronominit, indefiniitit
+  // (vain -ge muuttuneella vartalolla: mihkkige), lyhenteet ja isoin kirjaimin, viivalla tai numerolla kirjoitetut sanat
+  const noClitics = ["Interr", "Rel", "Refl", "Indef", "ABBR"].includes(w.subtype) || /^[A-ZÁČĐŊŠŦŽ]{2,}$/.test(w.sme_lemma || "") || /[-\d]/.test(w.sme_lemma || "");
+  const clitics = noClitics ? [] : (w.pos || "").toUpperCase() === "V" ? TABLE_CLITICS : TABLE_CLITICS.filter((c) => c !== "son");
+  const cl = clitics.includes(state.tableClitic) ? state.tableClitic : "";
+  const hit = state.clitic ? fold(state.clitic.stem) : null;
   const cell = (items, prefix = "", trTags = null, neg = null) => {
     if (!items.length) return `<td class="pron">-</td>`;
+    let pre = prefix, post = "";
+    if (cl) {
+      const imprt = items.some(([tag]) => tag.startsWith("Imprt") && tag !== "Imprt+Sg2");
+      if (imprt || (neg && cl === "nai")) return `<td class="pron">–</td>`;
+      if (neg && prefix) {
+        // "mun in" (leveä taulukko) tai pelkkä "in" (kapea: pronomini riviotsikkona)
+        const ws = prefix.split(" "), pron = ws.length > 1 ? ws[0] : "", aux = ws.length > 1 ? ws.slice(1).join(" ") : ws[0];
+        pre = cl === "go" ? `${aux}${cl}${pron ? " " + pron : ""}` : `${pron ? pron + " " : ""}${aux}${cl}`;
+        if (cl === "go") post = "?";
+      } else if (prefix && cl === "go") { pre = ""; post = ` ${prefix}?`; }
+    }
     const forms = items.map(([tag, v]) => {
       const g = showGrade ? state.grades.get(tag + "|" + v) : null;
       const cls = g === "GD" ? "gd" : g === "HD" ? "hd" : "";
-      const speak = (prefix ? prefix + " " : "") + v;
-      return `<span class="form ${cls}" data-speak="${esc(speak)}" title="${esc(t("listenTo", speak))}">${esc(v)}</span>`;
+      const shown = cl && !neg ? v + cl : v;
+      const speak = ((pre ? pre + " " : "") + shown + post).replace(/\?$/, "");
+      const mark = cl && !neg && hit && fold(v) === hit ? " cl-hit" : "";
+      return `<span class="form ${cls}${mark}" data-speak="${esc(speak)}" title="${esc(t("listenTo", speak))}">${esc(shown)}</span>`;
     // Kauttaviiva kiinni edelliseen muotoon (sitova välilyönti): rivi katkeaa vasta sen jälkeen, eikä yksinäinen "/"
     // jää omalle rivilleen kapealla näytöllä (nuorraláganiin / nuorralágániin, Kom)
     }).join('<span class="sep">\u00a0/ </span>');
-    const tr = translate ? translate(trTags || items.map(([tag]) => tag), neg) : "";
-    return `<td>${prefix ? `<span class="pron">${esc(prefix)}</span> ` : ""}${forms}${tr ? `<span class="form-tr">${tr.split(" / ").map(esc).join("<br>")}</span>` : ""}</td>`;
+    let tr = translate ? translate(trTags || items.map(([tag]) => tag), neg) : "";
+    // Liite valittuna: suomennokseen sama liite; norjassa ja englannissa vastinetta ei ole, joten suomennos piiloon
+    // Imperatiiviin suomessa ei voi lisätä -ko-liitettä (oleko, lueko): imperatiivin suomennos piiloon, kun liite on valittu
+    if (cl && tr) tr = settings.lang === "fin" && !items.some(([tag]) => tag.startsWith("Imprt")) ? finTableClitic(tr, cl, pos === "V", translate.back ?? null, translate.word || "") : "";
+    return `<td>${pre ? `<span class="pron">${esc(pre)}</span> ` : ""}${forms}${post ? `<span class="pron">${esc(post)}</span>` : ""}${tr ? `<span class="form-tr">${tr.split(" / ").map(esc).join("<br>")}</span>` : ""}</td>`;
   };
   const label = (t) => `<td class="label">${esc(t)}</td>`;
   const section = (...cells) => `<tr class="section">${cells.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`;
@@ -3053,9 +3171,15 @@ function renderTable() {
   } else if (pos === "V" && NARROW_TABLE.matches) {
     // Kapea näyttö (käyttäjä 2026-11-25: preteritin sarakkeet jäivät näytön ulkopuolelle): aikamuodot allekkain,
     // kolme saraketta (persoona, myönteinen, kielteinen)
-    const block = (first, title, sub, aff, neg, prn = true) => verbSection(first, title, sub, "") + personRows((pp) => {
-      const pr = prn ? PRONOUNS[pp] : "";
-      return `${label(pp)}${cell(pairs(aff(pp)), pr)}${cell(pairs(neg), prn ? `${pr} ${NEG_AUX[pp]}` : NEG_AUX_IMPRT[pp], null, pp)}`;
+    // Pronomini riviotsikkona (käyttäjä 2026-11-28: taulukko oli puhelimessa liian leveä, "mun in / oaččo" rivitti):
+    // myönteinen pelkkä muoto, kielteinen kieltoverbi + muoto. -go:lla kysymys verbi edellä (oaččungo mun?), otsikko tyhjä.
+    // Osion otsikko koko rivin levyisenä ("Indikatiivi · preesens"), jottei pitkä otsikko levennä pronominisaraketta
+    const wideSection = (first, title, sub) => (first ? "" : gap("gap-sec")) +
+      `<tr class="section"><td colspan="3">${esc([title, sub].filter(Boolean).join(" · "))}</td></tr>` + gap("gap-after");
+    const block = (first, title, sub, aff, neg, prn = true) => wideSection(first, title, sub) + personRows((pp) => {
+      const pr = prn ? PRONOUNS[pp] : "", goQ = prn && cl === "go";
+      return `${prn ? `<td class="label pron-label" title="${esc(pp)}">${goQ ? "" : esc(pr)}</td>` : label(pp)}` +
+        `${cell(pairs(aff(pp)), goQ ? pr : "")}${cell(pairs(neg), prn ? (goQ ? `${pr} ${NEG_AUX[pp]}` : NEG_AUX[pp]) : NEG_AUX_IMPRT[pp], null, pp)}`;
     });
     let rows = block(true, t("indicative"), t("present"), (pp) => `Ind+Prs+${pp}`, "Ind+Prs+ConNeg");
     rows += block(false, "", t("preterite"), (pp) => `Ind+Prt+${pp}`, "Ind+Prt+ConNeg");
@@ -3106,8 +3230,17 @@ function renderTable() {
     html = table([t("caseCol"), t("singular"), t("plural")], rows);
   }
 
+  // Kysymys- ja korostusliitteet aina näkyvissä taivutuvalle sanalle (käyttäjä 2026-11-28): ilman liitettä ensin, haun
+  // liite valittuna ja "Hakemasi ožžogo = ožžo + -go". -son vain verbeille (SIKOR: substantiiveissa ja adjektiiveissa ei käytössä).
+  const clList = clitics;
+  const chips = !p.size || UNINFLECTED_POS.includes(pos) || !clitics.length ? "" :
+    `<div class="cl-box" role="group" aria-label="${esc(t("cliticChips"))}"><div class="cl-title">${esc(t("cliticChips"))}</div>` +
+    (cl && state.clitic && state.clitic.clitics.includes(cl) ? `<div class="cl-mean">${esc(t("cliticSearched", state.query, state.clitic.stem, cl))}</div>` : "") +
+    `<div class="cl-chips">` +
+    ["", ...clList].map((c) => `<button type="button" class="cl-chip${c === cl ? " on" : ""}" data-cl="${c}" aria-pressed="${c === cl}">${c ? "-" + c : esc(t("cliticNone"))}</button>`).join("") +
+    `</div><div class="cl-mean">${cl ? `-${esc(cl)}: ${esc(t("cliticMeaning")[cl] || "")}${cl === "go" && pos === "V" ? " · " + esc(t("cliticGoOrder")) : ""}` : esc(t("cliticPick"))}</div></div>`;
   $("panel-table").innerHTML =
-    (legend ? `<p class="legend">${t("gradeLegend")}</p>` : "") +
+    (legend ? `<p class="legend">${t("gradeLegend")}</p>` : "") + chips +
     html + (settings.exp.tableTr && html.includes("form-tr") ? `<p class="hint form-tr-note">${esc(t("tableTrNote"))}</p>` : "") +
     `<p class="hint">${esc(t("tapHint"))}</p>`;
   boxTables($("panel-table"));
@@ -4494,6 +4627,10 @@ function ocrCorrector() {
         for (let i = 0; i < vc.length; i++) if (OCR_DIACRITICS[vc[i]]) cands.push([...vc.slice(0, i), OCR_DIACRITICS[vc[i]], ...vc.slice(i + 1)].join(""));
       }
     }
+    // Ylimääräinen á-tarke (čálálaččat -> čálalaččat, käyttäjän kuva 2026-11-27): tunnistus lisää joskus tarkkeen.
+    // Yksi á -> a vasta tarkkeiden lisäysten ja tuplausten jälkeen (máhtá -> máhttá eikä máhta, iso testi) ja vain
+    // vähintään 7 kirjaimen sanoissa (bádni, luettu sanasta bárdni, ei badni:ksi)
+    if ([...w].length >= 7) [...w].forEach((c, i) => { if (c === "á") cands.push([...w].map((x, j) => (j === i ? "a" : x)).join("")); });
     // I, l ja i näyttävät monessa fontissa samalta (ii -> "li", lea -> "Iea", leat -> "Ieat"; käyttäjän kuva 2026-11-20):
     // viimeisinä ehdokkaina yksi tai kaksi vaihtoa i <-> l. Kokeillaan vain, jos mikään edellinen ei ole sana.
     // Suunta kuvan merkin mukaan: iso I -> l (Iea = lea); l -> i vain vähintään 4 kirjaimen sanassa, ei nimessä
@@ -4576,7 +4713,7 @@ function ocrCorrector() {
 // å ja ä -> á: pohjoissaamessa ei ole niitä, tunnistus lukee á:n niiksi (råđđádallan, käyttäjän kuva 2026-11-26).
 // Halpa vaihto, mutta nimen alkuperäinen asu (Håkon) löytyy ilman hintaa ja voittaa.
 const FUZZY_ALTS = { a: "á", c: "č", d: "đ", n: "ŋ", s: "š", t: "ŧ", z: "ž", å: "á", ä: "á" };
-// Hinta testikuvien lukuvirheistä (docs/kuvatunnistus-testipenkki-2026-11-18.md: 121 kallistettua ja sumennettua kuvaa
+// Hinta testikuvien lukuvirheistä (muistiinpanot/kuvatunnistus-testipenkki-2026-11-18.md: 121 kallistettua ja sumennettua kuvaa
 // ML Kitin läpi): đ -> d ja ŋ -> n yleisiä, á, č ja š luetaan lähes aina oikein
 const FUZZY_COST = { a: 1.2, c: 0.9, d: 0.4, n: 0.5, s: 0.9, t: 0.9, z: 0.9, å: 0.3, ä: 0.5 };
 function ocrFuzzySearch() {
@@ -4593,7 +4730,7 @@ function ocrFuzzySearch() {
   // adjektiivin attribuutti- tai genetiivimuoto tai sme_cmp-taulun alkumuoto
   const leftSql = `SELECT 1 FROM dictionary WHERE sme_lemma = ?1 AND pos IN ('N', 'A')
     UNION ALL SELECT 1 FROM paradigms p JOIN dictionary d ON d.id = p.word_id JOIN tags t ON t.id = p.tag_id
-      WHERE p.surface = ?1 AND ((d.pos = 'N' AND t.tag = 'Sg+Gen') OR (d.pos = 'A' AND t.tag IN ('Attr', 'Sg+Gen')))`;
+      WHERE p.surface = ?1 AND ((d.pos IN ('N', 'Num') AND t.tag = 'Sg+Gen') OR (d.pos = 'A' AND t.tag IN ('Attr', 'Sg+Gen')))`;
   try { cmpStmt = db.prepare(`${leftSql} UNION ALL SELECT 1 FROM sme_cmp WHERE stem = ?1 LIMIT 1`); } catch (e) { cmpStmt = db.prepare(`${leftSql} LIMIT 1`); }
   // Korpusfrekvenssi: harvinainen osa (coahkkin, freq puuttuu) häviää yleiselle (čoahkkin 14 556)
   let freqStmt = null;
@@ -5556,6 +5693,10 @@ function splitFinCompound(word) {
 // itse kahdesta tällaisesta, kaksi tasoa). Osat vähintään 4 kirjainta (alkuosan osat 3). Pisin loppuosa ensin.
 // Korpuskoe 2026-11-17: sanakirjasta puuttuvista yhdyssanoista 58 % oikea pääsana, selvästi väärin alle 1 %,
 // suomen sanoista jaettiin 0,4 %. Näytetään vain napautuksesta, ei automaattisesti.
+// Lukusanan genetiivi alkuosana kuten substantiivin (guovtte + olbmo + beavddi, käyttäjä 2026-11-28): sanakirjassa
+// 59 guovtte- ja 33 golmma-alkuista yhdyssanaa; GiellaLT:n analysaattori ei muodosta niitä itse. Myös substantiivin
+// monikon genetiivi (jekkiid + suodjalanguovlu, guovlluid + geavaheapmi): korpuskoe 2026-11-28, 4 000 sanakirjasta puuttuvaa
+// yhdyssanaa, jaetut 92,9 -> 94,6 %, aiemmat jaot ennallaan. Vain hakuun ja kuvan sanan osiin, ei kuvahaun sumeaan hakuun.
 // Yhdysmuoto -> perusmuoto (geaidno -> geaidnu): kuplassa osan käännös ja napautus haetaan perusmuodolla
 const cmpLemma = new Map();
 function splitCompound(word) {
@@ -5570,7 +5711,7 @@ function splitCompound(word) {
                          UNION SELECT lemma_fold FROM dictionary WHERE lemma_fold IN (${marks})`, [...part, ...part])) known.add(r.v);
     for (const r of all(`SELECT lemma_fold AS v FROM dictionary WHERE pos IN ('N', 'A') AND lemma_fold IN (${marks})
         UNION SELECT p.surface FROM paradigms p JOIN dictionary d ON d.id = p.word_id JOIN tags t ON t.id = p.tag_id
-        WHERE p.surface IN (${marks}) AND ((d.pos = 'N' AND t.tag = 'Sg+Gen') OR (d.pos = 'A' AND t.tag IN ('Attr', 'Sg+Gen'))
+        WHERE p.surface IN (${marks}) AND ((d.pos IN ('N', 'Num') AND t.tag = 'Sg+Gen') OR (d.pos = 'N' AND t.tag = 'Pl+Gen') OR (d.pos = 'A' AND t.tag IN ('Attr', 'Sg+Gen'))
           OR (d.pos = 'V' AND t.tag = 'Actio+Nom'))`,
       [...part, ...part])) left.add(r.v);
     if (hasTable("sme_cmp")) {
@@ -7399,6 +7540,8 @@ function bindExperimental() {
     const name = e.target.dataset.exp;
     if (!name) return;
     if (!e.target.checked) { set(name, false); return; }
+    // Valokuvahaku ja Lause ovat tavallisia työkaluja (1.2.0): päälle ilman kokeiluikkunaa
+    if (name === "ocr" || name === "lause") { set(name, true); return; }
     e.target.checked = false;  // päälle vasta, kun käyttäjä hyväksyy
     pending = name;
     const key = { ocr: "expOcr", lause: "lauseTitle", tableTr: "expTableTr", apertium: "expApertium", pivotFin: "expPivotFin", engMt: "expEngMt", spaMt: "expSpaMt", deuMt: "expDeuMt" }[name];
@@ -7550,6 +7693,8 @@ function bindFormPop() {
   const pop = $("form-pop");
   for (const id of ["panel-table", "panel-raw"]) {
     $(id).addEventListener("click", (e) => {
+      const chip = e.target.closest(".cl-chip");
+      if (chip) { closeFormPop(); state.tableClitic = chip.dataset.cl; renderTable(); return; }
       const form = e.target.closest(".form");
       if (form && form !== formPopTarget) openFormPop(form);
       else closeFormPop();

@@ -9,7 +9,7 @@ Kuusi lähderyhmää (käyttäjä 2026-11-21: vähintään kolme samaa mieltä):
   wikt  Wiktionary ja siitä tehty WikDict yhtenä lähteenä (CC BY-SA 4.0 / 3.0; eivät ole toisistaan riippumattomia)
   wn    espanjan wordnet MCR 3.0 (CC BY 3.0) FinnWordNetin (CC BY 3.0) ja Princeton WordNetin kautta
 Espanjan sanaksi kelpaa vain MCR:n tai yleisten espanjan sanojen listan sana.
-Kalibrointi 2026-11-21 (docs/englanti-testi-2026-11-21.md, kohta 6) sanakirjan 7 698 sanaa vasten: kolme lähdettä 74 %,
+Kalibrointi 2026-11-21 (muistiinpanot/englanti-testi-2026-11-21.md, kohta 6) sanakirjan 7 698 sanaa vasten: kolme lähdettä 74 %,
 neljä 85 %, viisi tai kuusi 90–97 % sama tai synonyymi; käsin otoksessa uusista kolmen lähteen sanoista 15/15 oikein.
 
 EI KONEKÄÄNNÖSTEN KETJUJA: syötteinä vain meanings-taulu (ihmisen tekemät sanakirjat) ja avoimet sanakirjat.

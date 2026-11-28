@@ -6,7 +6,7 @@ satni.db.uusi
 sanakirja.db
 
 # Buildien tulokset ja väliaikaiset tiedostot
-# dist on linkki synkronoituun kansioon ~/dist/satni-fst (ei kauttaviivaa: linkki ei ole kansio)
+# dist voi olla linkki toiseen kansioon (ei kauttaviivaa: linkki ei ole kansio)
 /dist
 build/
 *.spec
@@ -62,3 +62,10 @@ keystore.properties
 
 # test-lahteet: uudet avoimet lähteet (hae_lahteet.sh)
 /lahteet/
+
+# Sisäiset muistiinpanot (testiraportit, suunnitelmat, tehtävät) ovat erillisessä yksityisessä repossa, eivät täällä.
+# docs/:iin kuuluvat vain README:n ja kotisivun kuvakaappaukset.
+/docs/*
+!/docs/screenshots/
+CLAUDE.md
+CLAUDE.local.md

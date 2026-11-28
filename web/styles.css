@@ -2533,6 +2533,13 @@ html.view-open #help-btn, body:has(#ocr-view:not([hidden])) #help-btn { display:
 /* Kun Lisää-valikko (sivupaneeli/alapaneeli) tai jokin ikkuna on auki, ? jää näkyviin taustalle kuten muut sanakortin
    painikkeet, mutta ei ole napautettavissa (puhelintesti 2026-11-25; käyttäjä: ei katoa taustalta). openHelp tarkistaa saman. */
 body.sidebar-open #help-btn, body:has(dialog[open]:not(#help-dlg)) #help-btn { pointer-events: none; }
+/* ?-opas matalalla vaakanäytöllä (yötesti 28.11, Samsung vaaka 848x315): paneeli 46dvh jätti Edellinen/Seuraava/Sulje
+   paneelin vieritysalueen alle näkymättömiin. Tiiviimpi paneeli ja hieman korkeampi raja, jotta painikkeet näkyvät. */
+@media (orientation: landscape) and (max-height: 480px) {
+  .help-panel { max-height: 64dvh; padding-top: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+  .help-text { margin: 4px 0 6px; min-height: 0; }
+  .help-tip { margin: 0 0 6px; }
+}
 
 /* Lähellä ja kaukana (2026-11-25): etäisyys | mikä | missä | mihin */
 /* Selitteet eivät katkea kesken sanan ("(kauempana" + ")" omalle rivilleen 360 px:n näytöllä): sarakkeet vähintään
@@ -2613,3 +2620,26 @@ body.sidebar-open #help-btn, body:has(dialog[open]:not(#help-dlg)) #help-btn { p
 /* Sanan valikko Lause-välilehdellä: alhaalla alapalkin päällä kuten kuvan lausenäkymässä */
 .lause-smeui .sent-sheet { position: fixed; left: 0; right: 0; bottom: var(--nav-h, 0px); z-index: 48; max-height: 55vh;
   box-shadow: 0 -6px 18px rgba(0, 0, 0, .25); border-radius: 14px 14px 0 0; }
+
+/* Taivutustaulukon liitepartikkelit (2026-11-28) */
+.cl-box { border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px; margin: 2px 0 12px; background: var(--surface); }
+.cl-title { font-weight: 600; }
+.cl-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0; }
+.cl-box .cl-mean { color: var(--muted); font-size: .85em; margin: 2px 0 0; }
+.pron-label { color: var(--muted); font-weight: 400; }
+.cl-lab { font-size: .85em; color: var(--muted); margin-right: 2px; }
+.cl-chip { font: inherit; font-size: .9em; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
+.cl-chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+.cl-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cl-mean { margin: -4px 0 10px; }
+.form.cl-hit { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 5px; }
+.paradigm .pron-label { width: 3.4em; white-space: nowrap; }
+/* Kapea puhelin (käyttäjä 2026-11-28): taivutustaulukolle lisää tilaa, vähemmän sisäkkäisiä reunuksia, jotta
+   "eahppi oaččo" ja muut pitkät parit mahtuvat yhdelle riville */
+@media (max-width: 420px) {
+  #panel-table.card { padding-left: 8px; padding-right: 8px; }
+  table.paradigm td, table.paradigm th { padding-left: 4px; padding-right: 4px; }
+  table.paradigm.grouped td.label { padding-left: 9px; }
+  table.paradigm.grouped tbody tr td:last-child { padding-right: 9px; }
+  .paradigm .pron-label { width: 2.8em; }
+}

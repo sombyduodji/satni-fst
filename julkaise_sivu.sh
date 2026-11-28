@@ -44,6 +44,14 @@ if [ "$1" = "--vain-kokoa" ]; then
     echo "Sivu koottu: $OUT"; exit 0
 fi
 
+# Vain projektidataa GitHubiin: sama tarkistus kuin pre-push-koukussa, jos se on tällä koneella
+GUARD=${GITHUB_GUARD:-$HOME/Git/satni-fst-notes/github-guard/github_guard.py}
+if [ -x "$GUARD" ]; then
+    "$GUARD" --dir "$OUT" --section gh-pages || exit 1
+else
+    echo "Varoitus: GitHub-tarkistusta ei löytynyt ($GUARD)" >&2
+fi
+
 # Oma väliaikainen git-repo, jottei sanakirja tallennu projektikansion .git-kansioon
 URL=$(git config --get remote.github.url) && SSH=$(git config --get core.sshCommand) || exit 1
 cd "$OUT" && git init -q -b gh-pages && git add -A || exit 1

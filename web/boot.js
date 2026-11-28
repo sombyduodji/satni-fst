@@ -35,6 +35,12 @@ if (location.hostname === "appassets.androidplatform.net") document.documentElem
       : en
       ? (app ? "Update \u201cAndroid System WebView\u201d in Google Play and open the app again." : "Update your browser to the latest version and open the page again.")
       : (app ? "Päivitä ”Android System WebView” Google Playssa ja avaa sovellus uudelleen." : "Päivitä selain uusimpaan versioon ja avaa sivu uudelleen.");
+    // Muu käyttöliittymä (hakukenttä, valikko, alapalkki, painikkeet) ei toimi ilman app.js:ää ja jäisi suomeksi,
+    // koska i18n.js ei myöskään aja: piilotetaan, jolloin näkyy vain nimi ja tämä ilmoitus (käyttäjä 2026-11-28)
+    var hide = document.querySelectorAll("#sidebar-toggle, .header-tools, .brand-sub, .searchbar, #search-busy, #sidebar, #drawer-scrim, #menu-tip, #bottom-nav, #loading .progress");
+    for (var i = 0; i < hide.length; i++) hide[i].style.display = "none";
+    var main = document.getElementById("main");
+    for (var c = main ? main.firstElementChild : null; c; c = c.nextElementSibling) if (c.id !== "loading") c.style.display = "none";
   }
   window.addEventListener("error", function (e) {
     // Vain sivun latauksen aikana (skriptin jäsennysvirhe), ei myöhempiä virheitä kuten JSON.parse käyttäjän toimista

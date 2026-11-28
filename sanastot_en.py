@@ -218,3 +218,10 @@ for _e in _arki.EX.values():
     EXAMPLES[_e[0]] = _e[3]
 for _e in _kasvit.EX.values():
     EXAMPLES[_e[0]] = _e[3]
+# Olla: leat (leat.py, 2026-11-28)
+import leat as _leat
+for _l in _leat.LISTS:
+    TITLES[_l[0]] = _l[2][2]
+    SECTIONS[_l[0]] = [sec[2] for sec in _l[3]]
+    ROWS[_l[0]] = {w[0]: [w[4]] for w in _leat.words(_l)}
+    HINTS[_l[0]] = _leat.HINTS[_l[0]][2]

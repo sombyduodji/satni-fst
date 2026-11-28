@@ -1,5 +1,5 @@
 """Arki (käyttäjä 2026-11-26): arjen tilanteiden sanastot (kauppa, pankki, liikkuminen, syöminen) – aluksi vain
-yksittäisiä sanoja; lauseet myöhemmin, kun ne on tarkistettu (ehdokkaat: docs/arki-ehdokkaat.md).
+yksittäisiä sanoja; lauseet myöhemmin, kun ne on tarkistettu (ehdokkaat: muistiinpanot/arki-ehdokkaat.md).
 
 Jokainen saamen sana on sovelluksen sanakirjassa (satni.db: dict-sme-fin, dict-sme-nob) juuri tällä merkityksellä ja
 Divvunin oikoluku hyväksyy sen. Suomi ja norja sanakirjan ensimmäisestä merkityksestä; englanti käsin kuten marjat.py:ssä.
